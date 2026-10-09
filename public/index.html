@@ -283,10 +283,16 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .buzon .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .buzon .msg{margin:0;font-size:.95rem}
 .buzon .msg.ok{color:var(--ok)} .buzon .msg.bad{color:var(--bad)}
+
+/* ---------- Créditos ---------- */
+.credit{margin:36px 0 0;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;color:var(--muted);font-size:.95rem}
+.credit p{margin:0}
+.credit a{display:block;border-radius:8px}
+.credit img{display:block;width:230px;max-width:70vw;height:auto}
 @media (max-width:520px){ .tools{width:100%} }
 @media print{
   body{background:#fff;color:#000}
-  body::before,.tools,.actions,.bar,.current,footer,.buzon,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
+  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
   #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cell.key{border-width:3px}
@@ -556,6 +562,17 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
       <div class="row"><button class="primary" type="submit" id="bzSend"></button><p class="msg" id="bzStatus" role="status" aria-live="polite"></p></div>
     </form>
   </details>
+
+  <!-- ===== Créditos ===== -->
+  <div class="credit">
+    <p id="creditText">Un proyecto hecho con amor junto a</p>
+    <a href="https://bitcoin.ar" target="_blank" rel="noopener">
+      <picture>
+        <source srcset="img/bitcoin-ar-oscuro.png" media="(prefers-color-scheme: dark)">
+        <img src="img/bitcoin-ar.png" alt="Bitcoin.AR" width="230" height="37">
+      </picture>
+    </a>
+  </div>
 
 </div>
 <script>
@@ -2269,14 +2286,16 @@ Object.assign(T.es,{
   bzTypeL:"Tipo", bzTypes:["Sugerir un juego","Comentario","Algo no funciona"],
   bzMsgL:"Mensaje", bzMsgPh:"Contame tu idea…", bzWhoL:"Tu nombre o mail", bzWhoOpt:"(opcional, si querés respuesta)",
   bzSend:"Enviar", bzSending:"Enviando…", bzOk:"¡Gracias! Me llegó tu mensaje.", bzEmpty:"Escribí un mensaje primero.",
-  bzFail:"No se pudo enviar. Probá de nuevo en un rato."
+  bzFail:"No se pudo enviar. Probá de nuevo en un rato.",
+  creditText:"Un proyecto hecho con amor junto a"
 });
 Object.assign(T.en,{
   bzTitle:"Ideas or feedback?", bzIntro:"Suggest a new game or tell me what you think.", bzOpen:"Write",
   bzTypeL:"Type", bzTypes:["Suggest a game","Comment","Something's broken"],
   bzMsgL:"Message", bzMsgPh:"Tell me your idea…", bzWhoL:"Your name or email", bzWhoOpt:"(optional, if you'd like a reply)",
   bzSend:"Send", bzSending:"Sending…", bzOk:"Thanks! Your message got through.", bzEmpty:"Write a message first.",
-  bzFail:"Couldn't send it. Please try again later."
+  bzFail:"Couldn't send it. Please try again later.",
+  creditText:"A project made with love together with"
 });
 const Buzon = (()=>{
   // Después de activar FormSubmit se puede cambiar el mail por el código aleatorio que mandan, para no dejarlo a la vista
@@ -2284,7 +2303,7 @@ const Buzon = (()=>{
   let sending = false;
   function texts(){
     const t=T[lang];
-    ["bzTitle","bzIntro","bzOpen","bzTypeL","bzMsgL","bzWhoL","bzWhoOpt"].forEach(k=>$(k).textContent=t[k]);
+    ["bzTitle","bzIntro","bzOpen","bzTypeL","bzMsgL","bzWhoL","bzWhoOpt","creditText"].forEach(k=>$(k).textContent=t[k]);
     [...$("bzType").options].forEach((o,i)=>o.textContent=t.bzTypes[i]);
     $("bzMsg").placeholder=t.bzMsgPh;
     $("bzSend").textContent = sending ? t.bzSending : t.bzSend;
