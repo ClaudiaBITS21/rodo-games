@@ -262,10 +262,31 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .rtabs button{border:0;border-radius:0;padding:7px 12px;background:transparent}
 .rtabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 .rank .small{font-size:.82rem}
+
+/* ---------- Buzón de sugerencias (visible en todas las pantallas) ---------- */
+.buzon{margin-top:32px;border-radius:14px;background:var(--paper);border:1px solid var(--line)}
+.buzon summary{cursor:pointer;list-style:none;padding:16px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.buzon summary::-webkit-details-marker{display:none}
+.buzon summary b{font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+.buzon summary span{color:var(--muted);font-size:.95rem;flex:1;min-width:14em}
+.buzon summary i{font-style:normal;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:8px 14px;background:var(--cell-bg)}
+.buzon[open] summary i{display:none}
+.buzon summary:focus-visible{outline:3px solid var(--btc);outline-offset:2px;border-radius:14px}
+.buzon form{display:grid;gap:12px;padding:0 18px 18px}
+.buzon label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+.buzon label small{font-weight:400;color:var(--muted)}
+.buzon select,.buzon textarea,.buzon input{font:400 1rem "Bricolage Grotesque",system-ui,sans-serif;padding:10px 12px;border:1px solid var(--line);
+  border-radius:10px;background:var(--cell-bg);color:var(--ink);width:100%}
+.buzon textarea{min-height:7em;resize:vertical}
+.buzon select:focus,.buzon textarea:focus,.buzon input:focus{outline:none;border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+.buzon .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.buzon .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.buzon .msg{margin:0;font-size:.95rem}
+.buzon .msg.ok{color:var(--ok)} .buzon .msg.bad{color:var(--bad)}
 @media (max-width:520px){ .tools{width:100%} }
 @media print{
   body{background:#fff;color:#000}
-  body::before,.tools,.actions,.bar,.current,footer,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
+  body::before,.tools,.actions,.bar,.current,footer,.buzon,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
   #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cell.key{border-width:3px}
@@ -517,6 +538,24 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
     </div>
     <footer id="lFoot"></footer>
   </section>
+
+  <!-- ===== Buzón de sugerencias: fuera de las vistas, se ve siempre ===== -->
+  <details class="buzon" id="buzon">
+    <summary><b id="bzTitle"></b><span id="bzIntro"></span><i id="bzOpen"></i></summary>
+    <form id="bzForm" novalidate>
+      <label><span id="bzTypeL"></span>
+        <select id="bzType"><option value="juego"></option><option value="comentario"></option><option value="error"></option></select>
+      </label>
+      <label><span id="bzMsgL"></span>
+        <textarea id="bzMsg" maxlength="2000" required></textarea>
+      </label>
+      <label><span><span id="bzWhoL"></span> <small id="bzWhoOpt"></small></span>
+        <input type="text" id="bzWho" maxlength="120" autocomplete="email">
+      </label>
+      <div class="hp" aria-hidden="true"><input type="text" id="bzHp" tabindex="-1" autocomplete="off"></div>
+      <div class="row"><button class="primary" type="submit" id="bzSend"></button><p class="msg" id="bzStatus" role="status" aria-live="polite"></p></div>
+    </form>
+  </details>
 
 </div>
 <script>
@@ -2223,6 +2262,59 @@ Object.assign(T.en,{
 });
 
 // =====================================================================
+// BUZÓN DE SUGERENCIAS: llega por mail a través de FormSubmit
+// =====================================================================
+Object.assign(T.es,{
+  bzTitle:"¿Ideas o comentarios?", bzIntro:"Sugerí un juego nuevo o contame qué te parece.", bzOpen:"Escribir",
+  bzTypeL:"Tipo", bzTypes:["Sugerir un juego","Comentario","Algo no funciona"],
+  bzMsgL:"Mensaje", bzMsgPh:"Contame tu idea…", bzWhoL:"Tu nombre o mail", bzWhoOpt:"(opcional, si querés respuesta)",
+  bzSend:"Enviar", bzSending:"Enviando…", bzOk:"¡Gracias! Me llegó tu mensaje.", bzEmpty:"Escribí un mensaje primero.",
+  bzFail:"No se pudo enviar. Probá de nuevo en un rato."
+});
+Object.assign(T.en,{
+  bzTitle:"Ideas or feedback?", bzIntro:"Suggest a new game or tell me what you think.", bzOpen:"Write",
+  bzTypeL:"Type", bzTypes:["Suggest a game","Comment","Something's broken"],
+  bzMsgL:"Message", bzMsgPh:"Tell me your idea…", bzWhoL:"Your name or email", bzWhoOpt:"(optional, if you'd like a reply)",
+  bzSend:"Send", bzSending:"Sending…", bzOk:"Thanks! Your message got through.", bzEmpty:"Write a message first.",
+  bzFail:"Couldn't send it. Please try again later."
+});
+const Buzon = (()=>{
+  // Después de activar FormSubmit se puede cambiar el mail por el código aleatorio que mandan, para no dejarlo a la vista
+  const ENDPOINT = "https://formsubmit.co/ajax/claudia@rodo.es";
+  let sending = false;
+  function texts(){
+    const t=T[lang];
+    ["bzTitle","bzIntro","bzOpen","bzTypeL","bzMsgL","bzWhoL","bzWhoOpt"].forEach(k=>$(k).textContent=t[k]);
+    [...$("bzType").options].forEach((o,i)=>o.textContent=t.bzTypes[i]);
+    $("bzMsg").placeholder=t.bzMsgPh;
+    $("bzSend").textContent = sending ? t.bzSending : t.bzSend;
+  }
+  function status(text,cls){ const m=$("bzStatus"); m.textContent=text; m.className="msg"+(cls?" "+cls:""); }
+  $("bzForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const t=T[lang], msg=$("bzMsg").value.trim();
+    if(sending) return;
+    if(!msg){ status(t.bzEmpty,"bad"); $("bzMsg").focus(); return; }
+    if($("bzHp").value) return; // trampa para robots
+    sending=true; $("bzSend").disabled=true; texts(); status("");
+    const sel=$("bzType");
+    try{
+      const res = await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({
+          _subject:`RODO ₿ Games: ${T.es.bzTypes[sel.selectedIndex]}`, _template:"table", _captcha:"false",
+          Tipo:T.es.bzTypes[sel.selectedIndex], Mensaje:msg, Contacto:$("bzWho").value.trim()||"(sin datos)",
+          Pantalla:view, Idioma:lang
+        })});
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || String(data.success)==="false") throw new Error(data.message||res.status);
+      $("bzForm").reset(); status(t.bzOk,"ok");
+    }catch(err){ console.warn("Buzón:",err); status(t.bzFail,"bad"); }
+    sending=false; $("bzSend").disabled=false; texts();
+  });
+  return {texts};
+})();
+
+// =====================================================================
 // MENÚ, IDIOMA Y RUTAS
 // =====================================================================
 const GAMES = { acrostico:Acro, ahorcado:Hang, sopa:Sopa, criptograma:Cripto, anagrama:Ana, semilla:Seed, esbip:IsBip, placa:Plate };
@@ -2234,7 +2326,7 @@ function applyTexts(){
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
-  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts();
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts();
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
 }
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
