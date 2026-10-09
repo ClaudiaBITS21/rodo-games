@@ -9,8 +9,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
+    // Administración: solo esta cuenta de Google (verificada) puede leer las fichas de todos
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'claudia@rodo.es'
+        && request.auth.token.email_verified == true;
+    }
     function validKey(k) {
-      return k.matches('^(acrostico|ahorcado|sopa|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
+      return k.matches('^(acrostico|ahorcado|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
     }
 
     // Contador por juego e idioma: solo sube de a uno, junto con la partida nueva
@@ -58,6 +64,18 @@ service cloud.firestore {
     // Lectura de todos los resultados de un juego (ranking general)
     match /{path=**}/players/{uid} {
       allow read: if true;
+    }
+
+    // Ficha de cada jugador (navegador): primera y última visita, partidas vistas y jugadas.
+    // Solo la lee y la escribe su dueño.
+    // (no se llama "players" para no mezclarse con los resultados, que se leen como grupo "players")
+    match /fichas/{uid} {
+      allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays'])
+        && request.resource.data.seen is map
+        && request.resource.data.plays is map;
+      allow delete: if false;
     }
 
     // Apodos para el ranking: cada uno edita el suyo

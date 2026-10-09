@@ -75,10 +75,37 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,.clues li:focus-visible{
 .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 18px}
 h2{font-size:1.3rem;margin:8px 0 8px;font-weight:800;letter-spacing:-.01em}
 footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
+.adminlink{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.admlogin{text-align:center;padding:24px 0}.admlogin .m{color:var(--bad,#D64545);min-height:1.2em}
+#view-admin .bar{gap:8px;flex-wrap:wrap}#view-admin .bar button{padding:7px 12px;font-size:.85rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
+.kpi{border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:10px 12px;background:var(--paper)}
+.kpi b{display:block;font:800 1.5rem "IBM Plex Mono",ui-monospace,monospace}.kpi span{color:var(--muted);font-size:.82rem}
+.atabw{overflow-x:auto;margin:0 0 18px}
+.atab{border-collapse:collapse;width:100%;font-size:.85rem}
+.atab th,.atab td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.atab th:first-child,.atab td:first-child{text-align:left}
+.atab th{color:var(--muted);font-weight:600}
+.bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin:0 0 4px;border-bottom:1px solid var(--line)}
+.bars div{flex:1;background:var(--btc);border-radius:3px 3px 0 0;min-height:1px}
+.barlbl{display:flex;justify-content:space-between;color:var(--muted);font-size:.75rem;margin:0 0 18px}
+#view-admin h2{font-size:1.05rem;margin:18px 0 8px}
+.privnote{margin:36px auto 8px;max-width:60ch;color:var(--muted);font-size:.72rem;line-height:1.4;text-align:center;opacity:.8}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 
 /* ---------- Cartel de victoria (compartido) ---------- */
-.win{display:none;text-align:center;padding:16px;border-radius:12px;background:var(--btc);color:#1A1E23;margin:4px 0 16px}
+.win{display:none;text-align:center;padding:18px 16px 16px;border-radius:14px;background:var(--btc);color:#1A1E23;margin:0;
+     position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;width:min(92vw,440px);max-height:88vh;overflow:auto;
+     box-shadow:0 0 0 100vmax rgba(0,0,0,.45),0 12px 32px rgba(0,0,0,.35)}
+.wclose{position:absolute;top:4px;right:6px;background:transparent!important;border:0!important;color:inherit!important;font-size:1.5rem;line-height:1;padding:4px 10px;cursor:pointer}
+.win.rkonly{background:var(--paper);color:var(--ink)}
+.win.rkonly>:not(.rank):not(.wclose){display:none!important}
+.win .rank{text-align:left;margin:14px 0 0;padding:10px 12px;font-size:.85rem;color:var(--ink)}
+.win .rank h3{font-size:.95rem;margin:0 0 6px}
+.win .rank li{padding:2px 0}
+.win .rtabs button{padding:4px 10px;font-size:.8rem}
+.win .rank .nick input{width:9em;padding:5px 8px}
+.win .rank .nick button{padding:5px 10px;background:var(--ink);color:var(--paper)}
 .win.lose{background:var(--bad-soft);color:var(--ink)}
 .win p{margin:0 0 4px;font-size:1.15rem;font-weight:600}
 .win .phrase{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700}
@@ -239,7 +266,13 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 
 /* ---------- Partidas numeradas y ranking ---------- */
 .pbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
-.pid{font:700 1.05rem "IBM Plex Mono",ui-monospace,monospace;background:var(--ink);color:var(--paper);padding:6px 12px;border-radius:8px;min-width:3.2em;text-align:center}
+.pid{font:700 .95rem "IBM Plex Mono",ui-monospace,monospace;background:var(--btc-soft);color:var(--ink);padding:5px 10px;border-radius:8px}
+.pjump{padding:6px 10px;font-size:.85rem}
+.pfind[hidden]{display:none}
+.ptime{margin-left:auto;font:700 1.15rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--muted);transition:color .4s}
+.ptime.warm{color:var(--btc)} .ptime.hot{color:#D64545}
+.opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.opts .rtabs{margin:0}
 .pfind{display:inline-flex;gap:6px}
 .pfind input{width:5.2em;font:600 1rem "IBM Plex Mono",ui-monospace,monospace;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--cell-bg);color:var(--ink)}
 .pfind input:focus{outline:none;border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
@@ -292,7 +325,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 @media (max-width:520px){ .tools{width:100%} }
 @media print{
   body{background:#fff;color:#000}
-  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
+  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick,.ptime,.pjump,.opts,.privnote{display:none!important}
   #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cell.key{border-width:3px}
@@ -430,6 +463,10 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
   <!-- ===== Sopa de letras ===== -->
   <section class="view" id="view-sopa">
     <div class="bar"><p class="meta" id="sMeta"></p><button class="primary" id="sNew"></button></div>
+    <div class="opts">
+      <div class="rtabs" id="sSize" role="group"><button data-s="chica"></button><button data-s="media"></button><button data-s="grande"></button></div>
+      <div class="rtabs" id="sModeSeg" role="group"><button data-m="w"></button><button data-m="c"></button></div>
+    </div>
     <div class="win" id="sWin" role="status">
       <p id="sWinLabel"></p>
       <div class="stats" id="sWinStats"></div>
@@ -438,7 +475,6 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
     </div>
     <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
     <div class="actions">
-      <button id="sMode"></button>
       <button id="sPrint"></button>
     </div>
     <h2 id="sListTitle"></h2>
@@ -545,6 +581,17 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
     <footer id="lFoot"></footer>
   </section>
 
+  <!-- ===== Administración (solo claudia@rodo.es; los datos los protegen las reglas de Firestore) ===== -->
+  <section class="view" id="view-admin">
+    <div class="bar"><p class="meta" id="admWho"></p><span><button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
+    <div id="admLogin" class="admlogin">
+      <p>Acceso restringido a la cuenta de administración.</p>
+      <button class="primary" id="admIn">Entrar con Google</button>
+      <p class="m" id="admErr"></p>
+    </div>
+    <div id="admBody"></div>
+  </section>
+
   <!-- ===== Buzón de sugerencias: fuera de las vistas, se ve siempre ===== -->
   <details class="buzon" id="buzon">
     <summary><b id="bzTitle"></b><span id="bzIntro"></span><i id="bzOpen"></i></summary>
@@ -574,6 +621,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
     </a>
   </div>
 
+  <p class="privnote" id="privNote"></p>
+  <p class="privnote"><a href="#admin" class="adminlink" id="adminLink"></a></p>
 </div>
 <script>
 // ================= Glosarios: [palabra, pista] =================
@@ -832,8 +881,13 @@ const PHRASES = {
 const BIP39 = { en:"abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo".split(' '), es:"ábaco abdomen abeja abierto abogado abono aborto abrazo abrir abuelo abuso acabar academia acceso acción aceite acelga acento aceptar ácido aclarar acné acoger acoso activo acto actriz actuar acudir acuerdo acusar adicto admitir adoptar adorno aduana adulto aéreo afectar afición afinar afirmar ágil agitar agonía agosto agotar agregar agrio agua agudo águila aguja ahogo ahorro aire aislar ajedrez ajeno ajuste alacrán alambre alarma alba álbum alcalde aldea alegre alejar alerta aleta alfiler alga algodón aliado aliento alivio alma almeja almíbar altar alteza altivo alto altura alumno alzar amable amante amapola amargo amasar ámbar ámbito ameno amigo amistad amor amparo amplio ancho anciano ancla andar andén anemia ángulo anillo ánimo anís anotar antena antiguo antojo anual anular anuncio añadir añejo año apagar aparato apetito apio aplicar apodo aporte apoyo aprender aprobar apuesta apuro arado araña arar árbitro árbol arbusto archivo arco arder ardilla arduo área árido aries armonía arnés aroma arpa arpón arreglo arroz arruga arte artista asa asado asalto ascenso asegurar aseo asesor asiento asilo asistir asno asombro áspero astilla astro astuto asumir asunto atajo ataque atar atento ateo ático atleta átomo atraer atroz atún audaz audio auge aula aumento ausente autor aval avance avaro ave avellana avena avestruz avión aviso ayer ayuda ayuno azafrán azar azote azúcar azufre azul baba babor bache bahía baile bajar balanza balcón balde bambú banco banda baño barba barco barniz barro báscula bastón basura batalla batería batir batuta baúl bazar bebé bebida bello besar beso bestia bicho bien bingo blanco bloque blusa boa bobina bobo boca bocina boda bodega boina bola bolero bolsa bomba bondad bonito bono bonsái borde borrar bosque bote botín bóveda bozal bravo brazo brecha breve brillo brinco brisa broca broma bronce brote bruja brusco bruto buceo bucle bueno buey bufanda bufón búho buitre bulto burbuja burla burro buscar butaca buzón caballo cabeza cabina cabra cacao cadáver cadena caer café caída caimán caja cajón cal calamar calcio caldo calidad calle calma calor calvo cama cambio camello camino campo cáncer candil canela canguro canica canto caña cañón caoba caos capaz capitán capote captar capucha cara carbón cárcel careta carga cariño carne carpeta carro carta casa casco casero caspa castor catorce catre caudal causa cazo cebolla ceder cedro celda célebre celoso célula cemento ceniza centro cerca cerdo cereza cero cerrar certeza césped cetro chacal chaleco champú chancla chapa charla chico chiste chivo choque choza chuleta chupar ciclón ciego cielo cien cierto cifra cigarro cima cinco cine cinta ciprés circo ciruela cisne cita ciudad clamor clan claro clase clave cliente clima clínica cobre cocción cochino cocina coco código codo cofre coger cohete cojín cojo cola colcha colegio colgar colina collar colmo columna combate comer comida cómodo compra conde conejo conga conocer consejo contar copa copia corazón corbata corcho cordón corona correr coser cosmos costa cráneo cráter crear crecer creído crema cría crimen cripta crisis cromo crónica croqueta crudo cruz cuadro cuarto cuatro cubo cubrir cuchara cuello cuento cuerda cuesta cueva cuidar culebra culpa culto cumbre cumplir cuna cuneta cuota cupón cúpula curar curioso curso curva cutis dama danza dar dardo dátil deber débil década decir dedo defensa definir dejar delfín delgado delito demora denso dental deporte derecho derrota desayuno deseo desfile desnudo destino desvío detalle detener deuda día diablo diadema diamante diana diario dibujo dictar diente dieta diez difícil digno dilema diluir dinero directo dirigir disco diseño disfraz diva divino doble doce dolor domingo don donar dorado dormir dorso dos dosis dragón droga ducha duda duelo dueño dulce dúo duque durar dureza duro ébano ebrio echar eco ecuador edad edición edificio editor educar efecto eficaz eje ejemplo elefante elegir elemento elevar elipse élite elixir elogio eludir embudo emitir emoción empate empeño empleo empresa enano encargo enchufe encía enemigo enero enfado enfermo engaño enigma enlace enorme enredo ensayo enseñar entero entrar envase envío época equipo erizo escala escena escolar escribir escudo esencia esfera esfuerzo espada espejo espía esposa espuma esquí estar este estilo estufa etapa eterno ética etnia evadir evaluar evento evitar exacto examen exceso excusa exento exigir exilio existir éxito experto explicar exponer extremo fábrica fábula fachada fácil factor faena faja falda fallo falso faltar fama familia famoso faraón farmacia farol farsa fase fatiga fauna favor fax febrero fecha feliz feo feria feroz fértil fervor festín fiable fianza fiar fibra ficción ficha fideo fiebre fiel fiera fiesta figura fijar fijo fila filete filial filtro fin finca fingir finito firma flaco flauta flecha flor flota fluir flujo flúor fobia foca fogata fogón folio folleto fondo forma forro fortuna forzar fosa foto fracaso frágil franja frase fraude freír freno fresa frío frito fruta fuego fuente fuerza fuga fumar función funda furgón furia fusil fútbol futuro gacela gafas gaita gajo gala galería gallo gamba ganar gancho ganga ganso garaje garza gasolina gastar gato gavilán gemelo gemir gen género genio gente geranio gerente germen gesto gigante gimnasio girar giro glaciar globo gloria gol golfo goloso golpe goma gordo gorila gorra gota goteo gozar grada gráfico grano grasa gratis grave grieta grillo gripe gris grito grosor grúa grueso grumo grupo guante guapo guardia guerra guía guiño guion guiso guitarra gusano gustar haber hábil hablar hacer hacha hada hallar hamaca harina haz hazaña hebilla hebra hecho helado helio hembra herir hermano héroe hervir hielo hierro hígado higiene hijo himno historia hocico hogar hoguera hoja hombre hongo honor honra hora hormiga horno hostil hoyo hueco huelga huerta hueso huevo huida huir humano húmedo humilde humo hundir huracán hurto icono ideal idioma ídolo iglesia iglú igual ilegal ilusión imagen imán imitar impar imperio imponer impulso incapaz índice inerte infiel informe ingenio inicio inmenso inmune innato insecto instante interés íntimo intuir inútil invierno ira iris ironía isla islote jabalí jabón jamón jarabe jardín jarra jaula jazmín jefe jeringa jinete jornada joroba joven joya juerga jueves juez jugador jugo juguete juicio junco jungla junio juntar júpiter jurar justo juvenil juzgar kilo koala labio lacio lacra lado ladrón lagarto lágrima laguna laico lamer lámina lámpara lana lancha langosta lanza lápiz largo larva lástima lata látex latir laurel lavar lazo leal lección leche lector leer legión legumbre lejano lengua lento leña león leopardo lesión letal letra leve leyenda libertad libro licor líder lidiar lienzo liga ligero lima límite limón limpio lince lindo línea lingote lino linterna líquido liso lista litera litio litro llaga llama llanto llave llegar llenar llevar llorar llover lluvia lobo loción loco locura lógica logro lombriz lomo lonja lote lucha lucir lugar lujo luna lunes lupa lustro luto luz maceta macho madera madre maduro maestro mafia magia mago maíz maldad maleta malla malo mamá mambo mamut manco mando manejar manga maniquí manjar mano manso manta mañana mapa máquina mar marco marea marfil margen marido mármol marrón martes marzo masa máscara masivo matar materia matiz matriz máximo mayor mazorca mecha medalla medio médula mejilla mejor melena melón memoria menor mensaje mente menú mercado merengue mérito mes mesón meta meter método metro mezcla miedo miel miembro miga mil milagro militar millón mimo mina minero mínimo minuto miope mirar misa miseria misil mismo mitad mito mochila moción moda modelo moho mojar molde moler molino momento momia monarca moneda monja monto moño morada morder moreno morir morro morsa mortal mosca mostrar motivo mover móvil mozo mucho mudar mueble muela muerte muestra mugre mujer mula muleta multa mundo muñeca mural muro músculo museo musgo música muslo nácar nación nadar naipe naranja nariz narrar nasal natal nativo natural náusea naval nave navidad necio néctar negar negocio negro neón nervio neto neutro nevar nevera nicho nido niebla nieto niñez niño nítido nivel nobleza noche nómina noria norma norte nota noticia novato novela novio nube nuca núcleo nudillo nudo nuera nueve nuez nulo número nutria oasis obeso obispo objeto obra obrero observar obtener obvio oca ocaso océano ochenta ocho ocio ocre octavo octubre oculto ocupar ocurrir odiar odio odisea oeste ofensa oferta oficio ofrecer ogro oído oír ojo ola oleada olfato olivo olla olmo olor olvido ombligo onda onza opaco opción ópera opinar oponer optar óptica opuesto oración orador oral órbita orca orden oreja órgano orgía orgullo oriente origen orilla oro orquesta oruga osadía oscuro osezno oso ostra otoño otro oveja óvulo óxido oxígeno oyente ozono pacto padre paella página pago país pájaro palabra palco paleta pálido palma paloma palpar pan panal pánico pantera pañuelo papá papel papilla paquete parar parcela pared parir paro párpado parque párrafo parte pasar paseo pasión paso pasta pata patio patria pausa pauta pavo payaso peatón pecado pecera pecho pedal pedir pegar peine pelar peldaño pelea peligro pellejo pelo peluca pena pensar peñón peón peor pepino pequeño pera percha perder pereza perfil perico perla permiso perro persona pesa pesca pésimo pestaña pétalo petróleo pez pezuña picar pichón pie piedra pierna pieza pijama pilar piloto pimienta pino pintor pinza piña piojo pipa pirata pisar piscina piso pista pitón pizca placa plan plata playa plaza pleito pleno plomo pluma plural pobre poco poder podio poema poesía poeta polen policía pollo polvo pomada pomelo pomo pompa poner porción portal posada poseer posible poste potencia potro pozo prado precoz pregunta premio prensa preso previo primo príncipe prisión privar proa probar proceso producto proeza profesor programa prole promesa pronto propio próximo prueba público puchero pudor pueblo puerta puesto pulga pulir pulmón pulpo pulso puma punto puñal puño pupa pupila puré quedar queja quemar querer queso quieto química quince quitar rábano rabia rabo ración radical raíz rama rampa rancho rango rapaz rápido rapto rasgo raspa rato rayo raza razón reacción realidad rebaño rebote recaer receta rechazo recoger recreo recto recurso red redondo reducir reflejo reforma refrán refugio regalo regir regla regreso rehén reino reír reja relato relevo relieve relleno reloj remar remedio remo rencor rendir renta reparto repetir reposo reptil res rescate resina respeto resto resumen retiro retorno retrato reunir revés revista rey rezar rico riego rienda riesgo rifa rígido rigor rincón riñón río riqueza risa ritmo rito rizo roble roce rociar rodar rodeo rodilla roer rojizo rojo romero romper ron ronco ronda ropa ropero rosa rosca rostro rotar rubí rubor rudo rueda rugir ruido ruina ruleta rulo rumbo rumor ruptura ruta rutina sábado saber sabio sable sacar sagaz sagrado sala saldo salero salir salmón salón salsa salto salud salvar samba sanción sandía sanear sangre sanidad sano santo sapo saque sardina sartén sastre satán sauna saxofón sección seco secreto secta sed seguir seis sello selva semana semilla senda sensor señal señor separar sepia sequía ser serie sermón servir sesenta sesión seta setenta severo sexo sexto sidra siesta siete siglo signo sílaba silbar silencio silla símbolo simio sirena sistema sitio situar sobre socio sodio sol solapa soldado soledad sólido soltar solución sombra sondeo sonido sonoro sonrisa sopa soplar soporte sordo sorpresa sorteo sostén sótano suave subir suceso sudor suegra suelo sueño suerte sufrir sujeto sultán sumar superar suplir suponer supremo sur surco sureño surgir susto sutil tabaco tabique tabla tabú taco tacto tajo talar talco talento talla talón tamaño tambor tango tanque tapa tapete tapia tapón taquilla tarde tarea tarifa tarjeta tarot tarro tarta tatuaje tauro taza tazón teatro techo tecla técnica tejado tejer tejido tela teléfono tema temor templo tenaz tender tener tenis tenso teoría terapia terco término ternura terror tesis tesoro testigo tetera texto tez tibio tiburón tiempo tienda tierra tieso tigre tijera tilde timbre tímido timo tinta tío típico tipo tira tirón titán títere título tiza toalla tobillo tocar tocino todo toga toldo tomar tono tonto topar tope toque tórax torero tormenta torneo toro torpedo torre torso tortuga tos tosco toser tóxico trabajo tractor traer tráfico trago traje tramo trance trato trauma trazar trébol tregua treinta tren trepar tres tribu trigo tripa triste triunfo trofeo trompa tronco tropa trote trozo truco trueno trufa tubería tubo tuerto tumba tumor túnel túnica turbina turismo turno tutor ubicar úlcera umbral unidad unir universo uno untar uña urbano urbe urgente urna usar usuario útil utopía uva vaca vacío vacuna vagar vago vaina vajilla vale válido valle valor válvula vampiro vara variar varón vaso vecino vector vehículo veinte vejez vela velero veloz vena vencer venda veneno vengar venir venta venus ver verano verbo verde vereda verja verso verter vía viaje vibrar vicio víctima vida vídeo vidrio viejo viernes vigor vil villa vinagre vino viñedo violín viral virgo virtud visor víspera vista vitamina viudo vivaz vivero vivir vivo volcán volumen volver voraz votar voto voz vuelo vulgar yacer yate yegua yema yerno yeso yodo yoga yogur zafiro zanja zapato zarza zona zorro zumo zurdo".split(' ') };
 // Promesa que resuelve el módulo de Firebase (ver final de la página)
 const FB_READY = new Promise(r=>{ window.__fbResolve = r; });
+const ADMIN_READY = new Promise(r=>{ window.__adminResolve = r; });
 
 // ================= Textos =================
+const PRIV = {
+  es:"Guardamos un identificador anónimo de este navegador para numerar tus partidas y armar el ranking. No pedimos datos personales ni usamos rastreo ni publicidad.",
+  en:"We store an anonymous identifier for this browser to number your games and build the leaderboard. We don't ask for personal data or use tracking or ads."
+};
 const T = {
   es:{
     menuTitle:"Juegos", menuBtn:"Menú",
@@ -862,7 +916,7 @@ const T = {
     hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
     // sopa
     sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
-    sModeWords:"Ver pistas en vez de palabras", sModeClues:"Ver palabras",
+    sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
     sWin:"¡Encontraste todas!", sStats:(n,t)=>`${n} términos en ${t}.`, sAgain:"Otra sopa",
     sFoot:"Arrastrá sobre las letras, o tocá la primera y después la última.",
     sCard:(n,t)=>`${n} términos en ${t}`
@@ -890,7 +944,7 @@ const T = {
     hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
     hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
     sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
-    sModeWords:"Show clues instead of words", sModeClues:"Show words",
+    sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
     sFoot:"Drag across the letters, or tap the first one and then the last.",
     sCard:(n,t)=>`${n} terms in ${t}`
@@ -905,7 +959,8 @@ const rand = a => a[Math.floor(Math.random()*a.length)];
 const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
 const $ = id => document.getElementById(id);
 const fmt = ms => { const s=Math.round(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
-const gloss = () => lang==="en" ? G_EN : G_ES;
+// cada entrada es [PALABRA, pista] o [PALABRA, [pista1, pista2, ...]]: si hay varias, se elige una al azar en cada partida
+const gloss = () => (lang==="en" ? G_EN : G_ES).map(([w,c])=>[w, Array.isArray(c) ? c[Math.floor(Math.random()*c.length)] : c]);
 const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
 
 let lang = store.get("rodo-lang")==="en" ? "en" : "es";
@@ -1266,7 +1321,9 @@ const Hang = (()=>{
 // SOPA DE LETRAS
 // =====================================================================
 const Sopa = (()=>{
-  const N=12, COUNT=9;
+  const SIZES={chica:{n:10,count:6}, media:{n:12,count:9}, grande:{n:15,count:12}};
+  let size=store.get("rodo-sopa-size")||"media"; if(!SIZES[size]) size="media";
+  let N=SIZES[size].n, COUNT=SIZES[size].count;
   const DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
   let grid=[], words=[], found=new Set(), start=0, elapsed=0, done=false, showClues=false;
   let anchor=null, dragging=false, dragStart=null, path=[];
@@ -1278,8 +1335,10 @@ const Sopa = (()=>{
   }
   function updateMode(){
     const t=T[lang];
-    $("sMode").textContent = showClues ? t.sModeClues : t.sModeWords;
     $("sListTitle").textContent = showClues ? t.sListClue : t.sList;
+    document.querySelectorAll("#sSize button").forEach(b=>{ b.textContent=t.sSize[b.dataset.s]; b.setAttribute("aria-pressed", b.dataset.s===size); });
+    document.querySelectorAll("#sModeSeg button").forEach(b=>{ b.textContent = b.dataset.m==="w" ? t.sList : t.sListClue; b.setAttribute("aria-pressed", (b.dataset.m==="c")===showClues); });
+    $("sSize").setAttribute("aria-label",t.sSizeL); $("sModeSeg").setAttribute("aria-label",t.sModeL);
   }
   function place(w){
     const L=[...w];
@@ -1298,6 +1357,7 @@ const Sopa = (()=>{
     return null;
   }
   function gen(){
+    N=SIZES[size].n; COUNT=SIZES[size].count;
     grid=Array.from({length:N},()=>Array(N).fill(""));
     words=[];
     const pool=shuffle(gloss().filter(([w])=>w.length>=4&&w.length<=10));
@@ -1309,17 +1369,18 @@ const Sopa = (()=>{
     const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!grid[r][c]) grid[r][c]=rand([...alpha]);
     words.sort((a,b)=>a.w.localeCompare(b.w));
-    return {grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
+    return {n:N, grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
   }
   function create(){ Reg.newGame("sopa"); }
   function load(d){
+    N=d.n||d.grid.length;
     grid=d.grid.map(r=>[...r]);
     words=d.words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(i=>[Math.floor(i/N),i%N])}));
     found=new Set(); done=false; anchor=null; start=Date.now();
     $("sWin").style.display="none"; render();
   }
   function render(){
-    const g=$("sGrid"); g.style.gridTemplateColumns=`repeat(${N}, var(--s))`;
+    const g=$("sGrid"); g.style.gridTemplateColumns=`repeat(${N}, var(--s))`; g.style.setProperty("--s",`clamp(20px,calc((100vw - 52px)/${N}),38px)`);
     g.innerHTML = grid.map((row,r)=>row.map((ch,c)=>`<div class="scell" data-r="${r}" data-c="${c}">${ch}</div>`).join("")).join("");
     words.forEach(o=>{ if(found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("found")); });
     renderList();
@@ -1405,10 +1466,11 @@ const Sopa = (()=>{
   }
   $("sNew").addEventListener("click",create);
   $("sAgain").addEventListener("click",create);
-  $("sMode").addEventListener("click",()=>{ showClues=!showClues; updateMode(); renderList(); });
+  $("sModeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; showClues = b.dataset.m==="c"; updateMode(); renderList(); });
+  $("sSize").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b||b.dataset.s===size) return; size=b.dataset.s; store.set("rodo-sopa-size",size); updateMode(); Reg.enter("sopa"); });
   $("sPrint").addEventListener("click",()=>window.print());
   $("sShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"wordsearch-rodo-games.png":"sopa-rodo-games.png", $("sNote"), $("sShare")));
-  return {texts, create, gen, load, started:()=>words.length>0};
+  return {texts, create, gen, load, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag:()=> size==="media" ? "" : ` (${T[lang].sSize[size].toLowerCase()})`};
 })();
 
 // =====================================================================
@@ -2027,6 +2089,7 @@ Object.assign(T.es,{
   rkNoPerm:"Tu acceso es de solo lectura: podés jugar los números que ya existen, pero no crear nuevos ni guardar resultados.",
   rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
   rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
+  rkPart:n=>`Partida #${n}`, rkJump:"Ir a otra partida", rkClose:"Cerrar",
   rkSaved:"Resultado guardado en el ranking.", rkFail:"No se pudo guardar el resultado.",
   rkFailNew:"No se pudo crear una partida numerada; esta queda sin número.", rkQuota:"La base de partidas está llena; esta queda sin número."
 });
@@ -2041,13 +2104,17 @@ Object.assign(T.en,{
   rkNoPerm:"You have read-only access: you can play existing numbers, but not create new ones or save results.",
   rkNotFound:n=>`There's no #${n} yet for this game and language.`,
   rkPlayed:"You already played this number: your first result is the one that counts.",
+  rkPart:n=>`Game #${n}`, rkJump:"Go to another game", rkClose:"Close",
   rkSaved:"Result saved to the leaderboard.", rkFail:"Couldn't save the result.",
   rkFailNew:"Couldn't create a numbered game; this one has no number.", rkQuota:"The game database is full; this one has no number."
 });
 
 const Reg = (()=>{
   const KEYS=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla","esbip","placa"];
-  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"";
+  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", seen={};
+  // clave de la partida: el juego, o una variante (la sopa tiene una numeración por tamaño)
+  const kid = g => GAMES[g].key ? GAMES[g].key() : g;
+  const tagOf = g => GAMES[g].tag ? GAMES[g].tag() : "";
   const cur={}, ui={}, subs={}, names={};
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -2055,25 +2122,38 @@ const Reg = (()=>{
   // Firebase se inicializa en el módulo del final de la página
   const ready=(async()=>{
     fb = await Promise.race([FB_READY, sleep(9000).then(()=>null)]);
-    if(fb) uid=fb.uid;
+    if(fb){
+      uid=fb.uid;
+      // ficha del jugador: primera y última visita, partidas vistas y jugadas
+      try{
+        const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
+        if(s.exists()){ seen=s.data().seen||{}; await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
+        else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}});
+      }catch(e){}
+    }
     KEYS.forEach(setPid);
   })();
 
-  const gameName = g => { const t=T[lang]; return {acrostico:t.acroName, ahorcado:t.hangName, sopa:t.sopaName, criptograma:t.cripName, anagrama:t.anaName, semilla:t.seedName, esbip:t.bipName, placa:t.plateName}[g]; };
+  const gameName = g => { const t=T[lang]; return ({acrostico:t.acroName, ahorcado:t.hangName, sopa:t.sopaName, criptograma:t.cripName, anagrama:t.anaName, semilla:t.seedName, esbip:t.bipName, placa:t.plateName}[g])+tagOf(g); };
   function mount(){
     KEYS.forEach(g=>{
       const sec=$("view-"+g); if(!sec) return;
       const bar=document.createElement("div"); bar.className="pbar";
-      bar.innerHTML=`<span class="pid"></span><span class="pfind"><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="pmsg" aria-live="polite"></span>`;
+      bar.innerHTML=`<span class="pid"></span><button class="pjump"></button><span class="pfind" hidden><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="ptime" aria-hidden="true"></span><span class="pmsg" aria-live="polite"></span>`;
       sec.insertBefore(bar, sec.firstChild);
+      // el ranking va dentro del cartel final, que se muestra como ventana emergente
+      const win=sec.querySelector(".win");
+      const x=document.createElement("button"); x.className="wclose"; x.textContent="×"; win.insertBefore(x, win.firstChild);
       const rk=document.createElement("div"); rk.className="rank"; rk.hidden=true;
       rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
-      sec.querySelector(".win").after(rk);
-      const u = ui[g] = {bar, rk, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind")};
+      win.appendChild(rk);
+      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime")};
+      x.addEventListener("click",()=>closeWin(g));
+      u.jump.addEventListener("click",()=>{ u.find.hidden=!u.find.hidden; if(!u.find.hidden) u.input.focus(); });
       const go=()=>{ const n=parseInt(u.input.value,10); if(n>0) open(g,n); };
       u.go.addEventListener("click",go);
       u.input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } });
-      u.rkBtn.addEventListener("click",()=>{ u.rk.hidden=!u.rk.hidden; renderRank(g); });
+      u.rkBtn.addEventListener("click",()=>{ if(u.win.style.display!=="block") u.win.classList.add("rkonly"); u.win.style.display="block"; u.rk.hidden=false; renderRank(g); });
       u.tabs=[...rk.querySelectorAll(".rtabs button")]; u.body=rk.querySelector(".rkbody");
       u.tabs.forEach(b=>b.addEventListener("click",()=>{ u.tab=b.dataset.t; renderRank(g); }));
       rk.addEventListener("click",e=>{ if(e.target.classList.contains("nicksave")) saveNick(g, rk.querySelector(".nickin").value); });
@@ -2082,15 +2162,34 @@ const Reg = (()=>{
   }
   function setPid(g){
     const u=ui[g]; if(!u) return; const c=cur[g], t=T[lang];
-    u.pid.textContent = c && c.n ? `#${c.n}` : (c && c.loading ? "…" : t.rkNoNum);
-    u.find.style.display = fb ? "" : "none";
+    u.pid.textContent = c && c.n ? t.rkPart(c.n) : (c && c.loading ? "…" : t.rkNoNum);
+    u.jump.style.display = fb ? "" : "none"; if(!fb) u.find.hidden=true;
     u.rkBtn.style.display = fb ? "" : "none";
+  }
+  function closeWin(g){ const u=ui[g]; if(!u) return; u.win.style.display="none"; u.win.classList.remove("rkonly"); }
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape" && ui[view] && ui[view].win.style.display==="block") closeWin(view); });
+  // cronómetro visible: arranca al cargar cada partida y se detiene al terminarla
+  function startT(g){ const c=cur[g]; if(c){ c.t0=Date.now(); c.t1=null; } tick(); }
+  function tick(){
+    const u=ui[view], c=cur[view]; if(!u) return;
+    if(!c||!c.t0){ u.time.textContent=""; return; }
+    const ms=(c.t1||Date.now())-c.t0;
+    u.time.textContent=fmt(ms);
+    u.time.classList.toggle("warm", !c.t1 && ms>=60000 && ms<180000);
+    u.time.classList.toggle("hot", !c.t1 && ms>=180000);
+  }
+  setInterval(tick,1000);
+  // partidas vistas por este jugador (cuentan apenas se abren, aunque no se terminen)
+  function markSeen(k,L,n){
+    const key=`${k}-${L}`, arr=seen[key]=seen[key]||[];
+    if(!arr.includes(n)) arr.push(n);
+    if(fb) fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), seen:{[key]:fb.arrayUnion(n)}},{merge:true}).catch(()=>{});
   }
   const msg=(g,s)=>{ if(ui[g]) ui[g].msg.textContent=s||""; };
   function texts(){
     const t=T[lang];
     KEYS.forEach(g=>{ const u=ui[g]; if(!u) return;
-      u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum);
+      u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum); u.jump.textContent=t.rkJump; u.x.setAttribute("aria-label",t.rkClose);
       setPid(g); renderRank(g); });
   }
   async function saveNick(g, v){
@@ -2099,55 +2198,62 @@ const Reg = (()=>{
     catch(e){ msg(g,T[lang].rkFail); }
   }
 
-  function localGame(g, note){ cur[g]={lang, n:null}; GAMES[g].load(GAMES[g].gen()); setPid(g); msg(g,note); }
+  function localGame(g, note){ cur[g]={lang, k:kid(g), n:null}; closeWin(g); GAMES[g].load(GAMES[g].gen()); setPid(g); startT(g); msg(g,note); }
 
   async function enter(g){
     const c=cur[g];
-    if(c && c.lang===lang) return;
-    cur[g]={lang, n:null, loading:true}; setPid(g); msg(g,"");
+    if(c && c.lang===lang && c.k===kid(g)) return;
+    cur[g]={lang, k:kid(g), n:null, loading:true}; setPid(g); msg(g,"");
     await ready;
     if(!fb) return localGame(g, T[lang].rkLocal);
+    await next(g);
+  }
+  // "Nuevo": la primera partida existente que este jugador todavía no vio; si las vio todas, una nueva
+  async function newGame(g){ if(busy) return; await ready; if(!fb) return localGame(g, T[lang].rkLocal); await next(g); }
+  async function next(g){
+    const k=kid(g), L=lang;
     try{
-      const s=await fb.getDoc(fb.doc(fb.db,"counters",`${g}-${lang}`));
-      const count = s.exists() ? (s.data().count||0) : 0;
-      if(count>0) await open(g,count); else await newGame(g);
+      const s=await fb.getDoc(fb.doc(fb.db,"counters",`${k}-${L}`));
+      const count = s.exists() ? (s.data().count||0) : 0, saw=new Set(seen[`${k}-${L}`]||[]);
+      for(let n=1;n<=count;n++) if(!saw.has(n)) return await open(g,n);
+      await fresh(g);
     }catch(e){ localGame(g, T[lang].rkLocal); }
   }
-  async function newGame(g){
+  async function fresh(g){
     if(busy) return; busy=true;
-    const L=lang, d=GAMES[g].gen(), key=`${g}-${L}`;
+    const L=lang, k=kid(g), d=GAMES[g].gen(), key=`${k}-${L}`;
     try{
       await ready;
-      if(!fb){ cur[g]={lang:L,n:null}; GAMES[g].load(d); setPid(g); msg(g,T[lang].rkLocal); return; }
-      cur[g]={lang:L, n:null, loading:true}; setPid(g); msg(g,"");
+      if(!fb){ cur[g]={lang:L,k,n:null}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g,T[lang].rkLocal); return; }
+      cur[g]={lang:L, k, n:null, loading:true}; setPid(g); msg(g,"");
       // transacción: el contador y la partida se escriben juntos, sin números repetidos
       const n = await fb.runTransaction(fb.db, async tx=>{
         const cref=fb.doc(fb.db,"counters",key);
         const s=await tx.get(cref);
         const n=(s.exists()?(s.data().count||0):0)+1;
         if(s.exists()) tx.update(cref,{count:n}); else tx.set(cref,{count:1});
-        tx.set(fb.doc(fb.db,"puzzles",`${key}-${n}`),{game:g, lang:L, n, data:d, by:uid, at:fb.serverTimestamp()});
+        tx.set(fb.doc(fb.db,"puzzles",`${key}-${n}`),{game:k, lang:L, n, data:d, by:uid, at:fb.serverTimestamp()});
         return n;
       });
-      cur[g]={lang:L, n}; GAMES[g].load(d); setPid(g); watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); markSeen(k,L,n); watch(g);
     }catch(e){
-      cur[g]={lang:L,n:null}; GAMES[g].load(d); setPid(g); msg(g, T[lang].rkFailNew);
+      cur[g]={lang:L,k,n:null}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g, T[lang].rkFailNew);
     } finally { busy=false; }
   }
   async function open(g,n){
     await ready; if(!fb) return;
-    const L=lang;
+    const L=lang, k=kid(g);
     try{
-      const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${g}-${L}-${n}`));
-      if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await newGame(g); return; }
+      const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${k}-${L}-${n}`));
+      if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await fresh(g); return; }
       const d=JSON.parse(JSON.stringify(s.data().data));
-      cur[g]={lang:L, n}; GAMES[g].load(d); setPid(g); msg(g,""); ui[g].input.value=""; watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n); watch(g);
     }catch(e){ msg(g, T[lang].rkNotFound(n)); }
   }
   function watch(g){
     if(subs[g]){ subs[g](); subs[g]=null; }
     const c=cur[g]; if(!fb||!c||!c.n) return;
-    const id=`${g}-${c.lang}-${c.n}`;
+    const id=`${c.k}-${c.lang}-${c.n}`;
     subs[g]=fb.onSnapshot(fb.collection(fb.db,"scores",id,"players"), qs=>{
       if(cur[g]!==c) return;
       const sc={}; qs.forEach(d=>sc[d.id]=d.data()); c.scores=sc;
@@ -2156,18 +2262,21 @@ const Reg = (()=>{
     }, ()=>{});
   }
   async function finish(g, rec){
-    const c=cur[g]; if(!fb||!c||!c.n||!uid) return;
-    const ref=fb.doc(fb.db,"scores",`${g}-${c.lang}-${c.n}`,"players",uid);
+    const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
+    if(ui[g]) ui[g].win.classList.remove("rkonly");
+    if(!fb||!c||!c.n||!uid) return;
+    const ref=fb.doc(fb.db,"scores",`${c.k}-${c.lang}-${c.n}`,"players",uid);
     try{
       const s=await fb.getDoc(ref);
       if(s.exists()) msg(g, T[lang].rkPlayed);
       else{
         c.justSaved=true; c.notified=true;
-        await fb.setDoc(ref,{g, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, ms:Math.round(rec.ms), at:fb.serverTimestamp()});
+        await fb.setDoc(ref,{g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, ms:Math.round(rec.ms), at:fb.serverTimestamp()});
+        fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), plays:{[`${c.k}-${c.lang}`]:fb.increment(1)}},{merge:true}).catch(()=>{});
         msg(g, T[lang].rkSaved);
       }
     }catch(e){ msg(g, T[lang].rkFail); }
-    delete gcache[g]; ui[g].rk.hidden=false; renderRank(g);
+    delete gcache[c.k]; ui[g].rk.hidden=false; renderRank(g);
   }
   async function loadNames(ids){
     const miss=ids.filter(i=>!(i in names));
@@ -2179,7 +2288,7 @@ const Reg = (()=>{
   const nickName=()=>nick;
   const nickHtml=()=>`<div class="nick"><label>${esc(T[lang].rkNick)} <input class="nickin" maxlength="24" value="${esc(nick)}"></label><button class="nicksave">${esc(T[lang].rkNickSave)}</button></div>`;
   async function fetchAll(g){
-    const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",g)));
+    const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",kid(g))));
     return qs.docs.map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
   }
   // ---------- Puntaje por partida (con tope) y ranking general por percentil ----------
@@ -2210,8 +2319,8 @@ const Reg = (()=>{
   }
   const gcache={};
   async function allResults(g){
-    const c=gcache[g]; if(c && Date.now()-c.at<60000) return c.entries;
-    const entries=await fetchAll(g); gcache[g]={at:Date.now(), entries}; return entries;
+    const k=kid(g), c=gcache[k]; if(c && Date.now()-c.at<60000) return c.entries;
+    const entries=await fetchAll(g); gcache[k]={at:Date.now(), entries}; return entries;
   }
   const nmOf=i=>{ const t=T[lang], nk=nickName(); return i===uid ? (nk ? `${nk} (${t.rkYou.toLowerCase()})` : t.rkYou) : (names[i]||t.rkSomeone); };
   async function renderRank(g){
@@ -2222,12 +2331,12 @@ const Reg = (()=>{
     if(!online()||!c||!c.n){ u.body.innerHTML=`<p class="m">${esc(t.rkLocal)}</p>`; return; }
     const sc=c.scores||{}, ids=Object.keys(sc);
     const ok=ids.filter(i=>sc[i].ok).sort((a,b)=>cmp(sc[a],sc[b]));
-    await loadNames(ok.slice(0,10));
+    await loadNames(ok.slice(0,5));
     if(cur[g]!==c || (u.tab||"p")!=="p") return;
     let h=`<h3>${esc(t.rkTitle(gameName(g), c.n))}</h3>`;
     if(!ok.length) h+=`<p class="m">${esc(t.rkEmpty)}</p>`;
-    else h+=`<ol>${ok.slice(0,10).map(i=>`<li class="${i===uid?"me":""}"><span>${esc(nmOf(i))}</span><span class="m">${esc(metric(g,sc[i]))}</span></li>`).join("")}</ol>`;
-    const p=ok.indexOf(uid); if(p>=10) h+=`<p class="m">${esc(t.rkYourPos(p+1, metric(g,sc[uid])))}</p>`;
+    else h+=`<ol>${ok.slice(0,5).map(i=>`<li class="${i===uid?"me":""}"><span>${esc(nmOf(i))}</span><span class="m">${esc(metric(g,sc[i]))}</span></li>`).join("")}</ol>`;
+    const p=ok.indexOf(uid); if(p>=5) h+=`<p class="m">${esc(t.rkYourPos(p+1, metric(g,sc[uid])))}</p>`;
     if(uid && sc[uid] && !sc[uid].ok) h+=`<p class="m">${esc(t.rkYouFailed)}</p>`;
     if(ids.length) h+=`<p class="m">${esc(t.rkPlayers(ids.length))}</p>`;
     h+=`<p class="m small">${esc(t.rkScoreHow)}</p>`+nickHtml();
@@ -2241,15 +2350,15 @@ const Reg = (()=>{
     try{ entries=await allResults(g); }catch(e){ u.body.innerHTML=`<p class="m">${esc(t.rkFail)}</p>`; return; }
     const acc=percentiles(entries);
     const rows=Object.entries(acc).filter(([,a])=>a.n>=MINP).map(([id,a])=>({id, avg:a.sum/a.n, n:a.n})).sort((a,b)=>(b.avg-a.avg)||(b.n-a.n));
-    await loadNames(rows.slice(0,10).map(r=>r.id));
+    await loadNames(rows.slice(0,5).map(r=>r.id));
     if((u.tab||"p")!=="g") return;
     let h=`<h3>${esc(t.rkGenTitle(gameName(g)))}</h3>`;
     if(!rows.length) h+=`<p class="m">${esc(t.rkGenEmpty(MINP))}</p>`;
-    else h+=`<ol>${rows.slice(0,10).map(r=>`<li class="${r.id===uid?"me":""}"><span>${esc(nmOf(r.id))}</span><span class="m">${esc(t.rkPct(Math.round(r.avg*100), r.n))}</span></li>`).join("")}</ol>`;
+    else h+=`<ol>${rows.slice(0,5).map(r=>`<li class="${r.id===uid?"me":""}"><span>${esc(nmOf(r.id))}</span><span class="m">${esc(t.rkPct(Math.round(r.avg*100), r.n))}</span></li>`).join("")}</ol>`;
     const mine=uid && acc[uid];
     if(mine){
       const pos=rows.findIndex(r=>r.id===uid);
-      if(pos>=10) h+=`<p class="m">${esc(t.rkYourPos(pos+1, t.rkPct(Math.round(rows[pos].avg*100), rows[pos].n)))}</p>`;
+      if(pos>=5) h+=`<p class="m">${esc(t.rkYourPos(pos+1, t.rkPct(Math.round(rows[pos].avg*100), rows[pos].n)))}</p>`;
       else if(pos<0) h+=`<p class="m">${esc(t.rkGenMissing(MINP-mine.n, mine.n?Math.round(mine.sum/mine.n*100):null))}</p>`;
     }
     h+=`<p class="m small">${esc(t.rkGenHow(MINP))}</p>`+nickHtml();
@@ -2336,26 +2445,153 @@ const Buzon = (()=>{
 // =====================================================================
 // MENÚ, IDIOMA Y RUTAS
 // =====================================================================
+T.es.privNote=PRIV.es; T.en.privNote=PRIV.en;
+T.es.adminLink="Entrar como administrador"; T.en.adminLink="Admin sign-in";
+
+// =====================================================================
+// ADMINISTRACIÓN: estadísticas de jugadores y partidas
+// La seguridad real está en las reglas de Firestore: solo claudia@rodo.es puede leer las fichas.
+// =====================================================================
+const Admin = (()=>{
+  const ADMIN_EMAIL="claudia@rodo.es";
+  let A=null, rows=[];
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const ms=x=> x&&x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
+  const DAY=86400000;
+  const hrs=t=>{ const m=Math.round(t/60000); return m<60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; };
+  const pct=(a,b)=> b ? Math.round(100*a/b)+"%" : "–";
+  const median=a=>{ if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), i=b.length>>1; return b.length%2?b[i]:(b[i-1]+b[i])/2; };
+  const dt=t=> t ? new Date(t).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "–";
+  const NAMES={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa mediana",sopachica:"Sopa chica",sopagrande:"Sopa grande",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"};
+  const gname=k=>NAMES[k]||k;
+  const table=(head,body)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+
+  async function show(){
+    setTitle("Administración");
+    $("admBody").innerHTML=""; $("admErr").textContent="";
+    A = await Promise.race([ADMIN_READY, new Promise(r=>setTimeout(()=>r(null),9000))]);
+    if(!A){ $("admLogin").style.display=""; $("admIn").disabled=true; $("admErr").textContent="La administración solo funciona en el sitio publicado."; return; }
+    A.onState(u=>{
+      const ok = u && u.email===ADMIN_EMAIL;
+      $("admLogin").style.display = ok ? "none" : "";
+      document.querySelectorAll("#view-admin .bar button").forEach(b=>b.style.display = ok ? "" : "none");
+      $("admWho").textContent = ok ? u.email : "";
+      if(u && !ok){ $("admErr").textContent=`${u.email} no tiene acceso.`; A.logout(); }
+      if(ok && view==="admin") load();
+    });
+  }
+  async function load(){
+    $("admBody").innerHTML=`<p class="m">Cargando datos…</p>`;
+    let F,S,C,N;
+    try{
+      [F,S,C,N]=await Promise.all([
+        A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
+        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names"))]);
+    }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
+    const now=Date.now(), names={}, fichas={};
+    N.forEach(d=>names[d.id]=d.data().name);
+    F.forEach(d=>{ const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}}; });
+    rows=[]; S.forEach(d=>{ const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
+      rows.push({u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, ms:x.ms||0, at:ms(x.at)}); });
+    const counters={}; C.forEach(d=>counters[d.id]=d.data().count||0);
+
+    // jugadores: los que tienen ficha más los que solo dejaron resultados (anteriores a la ficha)
+    const P={};
+    const pl=u=>P[u]=P[u]||{u, first:null, last:null, res:0, ok:0, time:0, games:new Set(), days:new Set(), seen:0};
+    Object.entries(fichas).forEach(([u,f])=>{ const p=pl(u); p.first=f.first; p.last=f.last; p.seen=Object.values(f.seen).reduce((a,v)=>a+(Array.isArray(v)?v.length:0),0); });
+    rows.forEach(r=>{ const p=pl(r.u); p.res++; if(r.ok) p.ok++; p.time+=Math.min(r.ms, 3*3600000); p.games.add(r.k);
+      if(r.at){ p.days.add(new Date(r.at).toDateString()); p.first=Math.min(p.first??r.at, r.at); p.last=Math.max(p.last??r.at, r.at); } });
+    const players=Object.values(P);
+    const since=d=>players.filter(p=>p.first && now-p.first<d*DAY).length;
+    const active=d=>players.filter(p=>p.last && now-p.last<d*DAY).length;
+    const totalTime=players.reduce((a,p)=>a+p.time,0);
+    const returning=players.filter(p=>p.days.size>=2).length;
+    const seenTot=players.reduce((a,p)=>a+p.seen,0);
+    const created=Object.values(counters).reduce((a,b)=>a+b,0);
+
+    let h=`<div class="kpis">
+      <div class="kpi"><b>${players.length}</b><span>jugadores (navegadores)</span></div>
+      <div class="kpi"><b>${active(1)}</b><span>activos hoy · ${active(7)} en 7 días</span></div>
+      <div class="kpi"><b>${since(7)}</b><span>nuevos en 7 días · ${since(30)} en 30</span></div>
+      <div class="kpi"><b>${returning}</b><span>volvieron otro día (${pct(returning,players.length)})</span></div>
+      <div class="kpi"><b>${rows.length}</b><span>partidas terminadas · ${pct(rows.filter(r=>r.ok).length,rows.length)} con éxito</span></div>
+      <div class="kpi"><b>${hrs(totalTime)}</b><span>de juego en total · ${players.length?hrs(totalTime/players.length):"–"} por jugador</span></div>
+      <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
+      <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
+    </div>`;
+
+    // por juego e idioma
+    const G={};
+    rows.forEach(r=>{ const key=`${r.k}-${r.L}`; (G[key]=G[key]||[]).push(r); });
+    Object.keys(counters).forEach(k=>G[k]=G[k]||[]);
+    const gl=Object.keys(G).sort();
+    h+=`<h2>Por juego</h2>`+table(["Juego","Idioma","Creadas","Terminadas","Jugadores","Éxito","Tiempo mediano","Sin ayudas","Ayudas/errores prom."],
+      gl.map(key=>{ const r=G[key], [k,L]=key.split("-"), okr=r.filter(x=>x.ok);
+        return [esc(gname(k)), L.toUpperCase(), counters[key]||0, r.length, new Set(r.map(x=>x.u)).size, pct(okr.length,r.length),
+          okr.length?fmt(median(okr.map(x=>x.ms))):"–", pct(r.filter(x=>!x.h).length,r.length), r.length?(r.reduce((a,x)=>a+x.h,0)/r.length).toFixed(1):"–"]; }));
+
+    // actividad: últimos 30 días
+    const days=[...Array(30)].map((_,i)=>{ const d=new Date(now-(29-i)*DAY); return d.toDateString(); });
+    const perDay=days.map(d=>rows.filter(r=>r.at && new Date(r.at).toDateString()===d).length), mx=Math.max(1,...perDay);
+    h+=`<h2>Partidas terminadas por día (últimos 30 días)</h2><div class="bars">${perDay.map((v,i)=>`<div style="height:${v/mx*100}%" title="${days[i]}: ${v}"></div>`).join("")}</div>
+      <div class="barlbl"><span>hace 30 días</span><span>máximo: ${mx===1&&!perDay.some(Boolean)?0:mx}</span><span>hoy</span></div>`;
+    // horario
+    const perH=[...Array(24)].map((_,i)=>rows.filter(r=>r.at && new Date(r.at).getHours()===i).length), mh=Math.max(1,...perH);
+    h+=`<h2>¿A qué hora juegan? (hora de Argentina de este navegador)</h2><div class="bars">${perH.map((v,i)=>`<div style="height:${v/mh*100}%" title="${i} h: ${v}"></div>`).join("")}</div>
+      <div class="barlbl"><span>0 h</span><span>12 h</span><span>23 h</span></div>`;
+
+    // jugadores más activos
+    const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
+    h+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Primera vez","Última vez"],
+      top.map(p=>[esc(names[p.u]||("anónimo "+p.u.slice(0,6))), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), dt(p.first), dt(p.last)]));
+
+    // partidas con más jugadores
+    const PZ={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (PZ[key]=PZ[key]||[]).push(r); });
+    const topz=Object.entries(PZ).sort((a,b)=>b[1].length-a[1].length).slice(0,10);
+    h+=`<h2>Partidas con más jugadores</h2>`+table(["Partida","Jugadores","Éxito","Mejor tiempo"],
+      topz.map(([key,r])=>{ const [k,L,n]=key.split("-"), okr=r.filter(x=>x.ok); return [`${esc(gname(k))} ${L.toUpperCase()} #${n}`, r.length, pct(okr.length,r.length), okr.length?fmt(Math.min(...okr.map(x=>x.ms))):"–"]; }));
+
+    // últimos resultados
+    const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);
+    h+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
+      last.map(r=>[dt(r.at), esc(names[r.u]||("anónimo "+r.u.slice(0,6))), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", fmt(r.ms), r.h]));
+    h+=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
+    $("admBody").innerHTML=h;
+  }
+  function csv(){
+    const head=["jugador","apodo","juego","idioma","partida","exito","aciertos","ayudas_errores","tiempo_seg","fecha"];
+    const lines=[head.join(",")].concat(rows.map(r=>[r.u,"",r.k,r.L,r.n,r.ok?1:0,r.s,r.h,Math.round(r.ms/1000),r.at?new Date(r.at).toISOString():""].join(",")));
+    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"})); a.download="rodo-games-resultados.csv"; a.click();
+  }
+  $("admIn").addEventListener("click",async()=>{ $("admErr").textContent=""; try{ await A.login(); }catch(e){ $("admErr").textContent="No se pudo entrar: "+(e.code||e.message); } });
+  $("admOut").addEventListener("click",()=>A&&A.logout());
+  $("admReload").addEventListener("click",()=>load());
+  $("admCsv").addEventListener("click",csv);
+  return {show};
+})();
 const GAMES = { acrostico:Acro, ahorcado:Hang, sopa:Sopa, criptograma:Cripto, anagrama:Ana, semilla:Seed, esbip:IsBip, placa:Plate };
 function applyTexts(){
   const t=T[lang];
   document.documentElement.lang=lang;
-  $("menuBtn").textContent=t.menuBtn; $("menuIntro").textContent=t.menuIntro;
+  $("menuBtn").textContent=t.menuBtn; $("menuIntro").textContent=t.menuIntro; $("privNote").textContent=t.privNote;
   $("cAcroName").textContent=t.acroName; $("cAcroDesc").textContent=t.acroDesc;
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
   Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts();
+  $("adminLink").textContent=t.adminLink;
+  if(view==="admin") return setTitle("Administración");
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
 }
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
 function route(){
   const h=location.hash.replace("#","");
-  view = GAMES[h] && !HIDDEN.has(h) ? h : "menu";
+  view = h==="admin" ? "admin" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
   $("menuBtn").style.display = view==="menu" ? "none" : "";
   applyTexts();
   if(GAMES[view]) Reg.enter(view);
+  if(view==="admin") Admin.show();
   window.scrollTo(0,0);
 }
 document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{
@@ -2371,23 +2607,31 @@ route();
 <script type="module">
 // Firebase: autenticación anónima + Firestore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 try {
   // Firebase Hosting publica la configuración del proyecto en esta ruta: no hace falta copiarla al código
   const res = await fetch("/__/firebase/init.json");
   if (!res.ok) throw new Error("Sin configuración de Firebase (¿no está publicado en Firebase Hosting?)");
-  const app = initializeApp(await res.json());
+  const cfg = await res.json();
+  const app = initializeApp(cfg);
+  // administración: app separada, para que entrar con Google no reemplace la identidad anónima del jugador
+  try{
+    const aapp = initializeApp(cfg, "admin"), aauth = getAuth(aapp), prov = new GoogleAuthProvider();
+    prov.setCustomParameters({ login_hint: "claudia@rodo.es", prompt: "select_account" });
+    window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs,
+      login: () => signInWithPopup(aauth, prov), logout: () => signOut(aauth), onState: cb => onAuthStateChanged(aauth, cb) });
+  }catch(e){ window.__adminResolve(null); }
   const auth = getAuth(app);
   const db = getFirestore(app);
   const user = await new Promise((resolve, reject) => {
     const off = onAuthStateChanged(auth, u => { if (u) { off(); resolve(u); } });
     signInAnonymously(auth).catch(reject);
   });
-  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp });
+  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment });
 } catch (e) {
   console.warn("RODO Games sin servidor:", e.message);
-  window.__fbResolve(null);
+  window.__fbResolve(null); window.__adminResolve && window.__adminResolve(null);
 }
 </script>
 </body>
