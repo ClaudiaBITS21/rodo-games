@@ -1,0 +1,36 @@
+name: Publicar en Firebase
+
+# Cada push a main publica la web (Hosting) y las reglas e índices de Firestore.
+# Autenticación sin claves: GitHub demuestra su identidad a Google (Workload Identity Federation)
+# y recibe un permiso temporal para actuar como github-deploy@rodo-games. No hay secretos guardados.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Autenticación con Google (sin claves)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/150328029178/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@rodo-games.iam.gserviceaccount.com
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Deploy
+        run: npx --yes firebase-tools@13 deploy --only hosting,firestore --project rodo-games --non-interactive

@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Juegos de palabras bitcoiners: acrósticos, ahorcado, sopa de letras, criptogramas, anagramas y la lista BIP39.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RODO ₿ Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EAEE; --paper:#F7F8F9; --ink:#1A1E23; --muted:#5B6672; --line:#B9C2CB;
+  --btc:#F7931A; --btc-soft:#FDE6C6; --ok:#2E7D4F; --bad:#C2362B; --bad-soft:#F6D5D1; --row:#E3ECF6; --cell-bg:#FFFFFF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171B; --paper:#1C2026; --ink:#E9ECEF; --muted:#98A3AE; --line:#3A424C;
+    --btc-soft:#4A3215; --ok:#5CC48A; --bad:#F07167; --bad-soft:#4A2320; --row:#232B36; --cell-bg:#11141A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171B; --paper:#1C2026; --ink:#E9ECEF; --muted:#98A3AE; --line:#3A424C;
+  --btc-soft:#4A3215; --ok:#5CC48A; --bad:#F07167; --bad-soft:#4A2320; --row:#232B36; --cell-bg:#11141A;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:28px 28px; background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:0;background:var(--bg);opacity:.86;z-index:-1}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{font-size:.95rem;color:var(--muted);font-weight:600;text-decoration:none}
+.brand b{color:var(--btc)}
+h1{margin:0;font-size:clamp(2.2rem,8.5vw,4.2rem);line-height:.95;font-weight:800;letter-spacing:-.03em}
+h1 .k{display:inline-block;background:var(--btc);color:#1A1E23;padding:0 .12em;border-radius:6px;margin-right:.02em}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--cell-bg)}
+.lang button{border:0;border-radius:0;padding:10px 12px;background:transparent}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+button,.btn{
+  font:inherit;font-weight:600;cursor:pointer;border-radius:10px;padding:10px 16px;
+  border:1px solid var(--line);background:var(--cell-bg);color:var(--ink);text-decoration:none;display:inline-block;
+}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+button:focus-visible,.btn:focus-visible,a:focus-visible,.clues li:focus-visible{outline:3px solid var(--btc);outline-offset:2px}
+.view{display:none}
+.view.on{display:block}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
+.meta{margin:4px 0 6px;color:var(--muted);font-size:.95rem}
+.current{color:var(--muted);margin:0 0 8px;min-height:1.5em}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 18px}
+h2{font-size:1.3rem;margin:8px 0 8px;font-weight:800;letter-spacing:-.01em}
+footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* ---------- Cartel de victoria (compartido) ---------- */
+.win{display:none;text-align:center;padding:16px;border-radius:12px;background:var(--btc);color:#1A1E23;margin:4px 0 16px}
+.win.lose{background:var(--bad-soft);color:var(--ink)}
+.win p{margin:0 0 4px;font-size:1.15rem;font-weight:600}
+.win .phrase{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700}
+.win .stats{font-size:.95rem;font-weight:400;margin-bottom:12px}
+.win .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.win button{background:#1A1E23;color:#fff;border-color:#1A1E23}
+.win.lose button{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.win .note{font-size:.85rem;margin:8px 0 0;font-weight:400}
+
+/* ---------- Menú ---------- */
+.intro{color:var(--muted);margin:0 0 18px;max-width:60ch}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{
+  display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:14px;
+  background:var(--paper);border:1px solid var(--line);color:var(--ink);text-decoration:none;
+  transition:border-color .15s, transform .15s;
+}
+.card:hover{border-color:var(--btc);transform:translateY(-2px)}
+.card[hidden]{display:none}
+.card h3{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.02em}
+.card p{margin:0;color:var(--muted);font-size:.95rem}
+.mini{display:grid;gap:3px;justify-content:start;min-height:96px;align-content:center}
+.t{width:22px;height:22px;border:1.5px solid var(--line);border-radius:4px;background:var(--cell-bg);
+   font:700 12px/19px "IBM Plex Mono",ui-monospace,monospace;text-align:center;color:var(--ink)}
+.t.o{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+.t.x{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.t.e{border-color:transparent;background:transparent}
+@media (prefers-reduced-motion: reduce){.card{transition:none}.card:hover{transform:none}}
+
+/* ---------- Acróstico ---------- */
+.gridbox{overflow-x:auto;padding:4px 2px 12px;-webkit-overflow-scrolling:touch}
+.grid{display:grid;gap:3px;width:max-content;margin:0 auto;--cell:clamp(28px,8.4vw,40px)}
+.gut{display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:.8rem;color:var(--muted);font-family:"IBM Plex Mono",ui-monospace,monospace}
+.gap{grid-column:1/-1;height:10px}
+.arrow{display:flex;justify-content:center;align-items:end;color:var(--btc);font-weight:800;font-size:1.1rem;height:22px}
+.rowclue{
+  grid-column:1/-1;width:0;min-width:100%;
+  background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);
+  border-radius:8px;padding:6px 10px;margin:6px 0 2px;font-size:.95rem;line-height:1.35;
+}
+.rowclue strong{margin-right:6px}
+.len{color:var(--muted);font-size:.85rem;white-space:nowrap}
+.cell{
+  width:var(--cell);height:var(--cell);text-align:center;padding:0;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;font-size:calc(var(--cell)*.5);
+  text-transform:uppercase;color:var(--ink);background:var(--cell-bg);
+  border:1.5px solid var(--line);border-radius:6px;caret-color:var(--btc);
+}
+.cell:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 2px var(--btc)}
+.cell.inrow{background:var(--row)}
+.cell.key{background:var(--btc-soft);border-color:var(--btc)}
+.cell.ok{color:var(--ok);border-color:var(--ok)}
+.cell.bad{color:var(--bad);border-color:var(--bad)}
+.cell.rev{font-style:italic;color:var(--muted)}
+.cell.given{background:var(--btc);color:#1A1E23}
+.clues{margin:0;padding-left:2.2em}
+.clues li{padding:6px 8px;border-radius:8px;cursor:pointer;max-width:70ch}
+.clues li.active{background:var(--row)}
+.clues li.wordbreak{margin-top:10px}
+
+/* ---------- Ahorcado ---------- */
+.blocks{display:block;margin:6px auto 4px;width:100%;max-width:520px;height:auto}
+.lives{text-align:center;color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.hclue{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);border-radius:8px;padding:10px 12px;margin:0 auto 16px;max-width:620px}
+.hword{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 20px}
+.hl{width:clamp(30px,9vw,44px);height:clamp(38px,11vw,54px);border-bottom:3px solid var(--ink);
+    font:700 clamp(20px,6vw,30px)/1 "IBM Plex Mono",ui-monospace,monospace;display:flex;align-items:center;justify-content:center}
+.hl.miss{color:var(--bad);border-color:var(--bad)}
+.keys{display:flex;flex-direction:column;gap:6px;align-items:center;max-width:620px;margin:0 auto}
+.krow{display:flex;gap:5px;justify-content:center;width:100%}
+.key{flex:1 1 0;max-width:46px;min-width:0;padding:12px 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;border-radius:8px}
+.key.hit{background:var(--ok);border-color:var(--ok);color:#fff}
+.key.miss{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* ---------- Sopa de letras ---------- */
+.sgrid{display:grid;gap:2px;width:max-content;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;
+       --s:clamp(24px,calc((100vw - 52px)/12),38px)}
+.scell{width:var(--s);height:var(--s);display:flex;align-items:center;justify-content:center;border-radius:5px;
+       background:var(--cell-bg);border:1px solid var(--line);cursor:pointer;
+       font:700 calc(var(--s)*.5)/1 "IBM Plex Mono",ui-monospace,monospace}
+.scell.found{background:var(--btc-soft);border-color:var(--btc)}
+.scell.sel{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+.scell.anchor{box-shadow:0 0 0 2px var(--ink) inset}
+.wlist{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
+.wlist.clue{grid-template-columns:1fr}
+.wlist li{padding:4px 8px;border-radius:6px}
+.wlist li.got{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--btc);text-decoration-thickness:2px}
+.wlist .w{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700}
+
+/* ---------- Mini tiles extra ---------- */
+.t.w{width:auto;padding:0 6px;font-weight:500}
+/* ---------- Semilla perdida ---------- */
+.intro2{max-width:560px;margin:0 auto 16px;text-align:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--cell-bg);margin:6px 0 14px}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seed{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:620px;margin:0 auto 16px}
+@media (min-width:620px){.seed{grid-template-columns:repeat(4,1fr)}}
+.slot{display:flex;gap:8px;align-items:center;background:var(--cell-bg);border:1.5px solid var(--line);border-radius:8px;
+      padding:8px 10px;min-height:44px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;overflow:hidden}
+.slot .i{color:var(--muted);font-size:.8rem;font-weight:500;min-width:1.6em}
+.slot.next{border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+.slot.filled{border-color:var(--ok)}
+.slot.miss{border-color:var(--bad);color:var(--bad)}
+.timerbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;max-width:620px;margin:0 auto 14px}
+.timerbar i{display:block;height:100%;background:var(--btc);width:100%;transition:width 1s linear}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:640px;margin:0 auto}
+.chip{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;padding:10px 12px}
+.chip.used{visibility:hidden}
+.chip.err{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.center{text-align:center}
+/* ---------- Criptograma ---------- */
+.cq{display:flex;flex-wrap:wrap;gap:16px 14px;justify-content:center;max-width:760px;margin:0 auto 14px;--cell:clamp(26px,7.6vw,36px)}
+.cw{display:flex;gap:3px}
+.cl{display:flex;flex-direction:column;align-items:center;gap:2px}
+.cl .code{font:600 .75rem/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
+.cl .punct{width:12px;height:var(--cell);display:flex;align-items:center;justify-content:center;font:700 1.1rem "IBM Plex Mono",monospace}
+.cauthor{text-align:center;color:var(--muted);margin:0 0 16px}
+/* ---------- Anagrama ---------- */
+.aclue{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);border-radius:8px;padding:10px 12px;margin:0 auto 18px;max-width:620px}
+.atiles,.aslots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 auto 14px;max-width:620px;--t:clamp(32px,9vw,46px)}
+.atile,.aslot{width:var(--t);height:var(--t);padding:0;border-radius:8px;font:700 calc(var(--t)*.48)/1 "IBM Plex Mono",ui-monospace,monospace}
+.atile{background:var(--btc);border-color:#C76F00;color:#1A1E23}
+.atile.used{visibility:hidden}
+.aslot{background:var(--cell-bg);border:1.5px dashed var(--line);color:var(--ink)}
+.aslot.full{border-style:solid;border-color:var(--ink)}
+.aslots.ok .aslot{border-color:var(--ok);color:var(--ok)}
+.aslots.bad{animation:shake .3s}
+.aslots.bad .aslot{border-color:var(--bad);color:var(--bad)}
+.aslots.skip .aslot{border-color:var(--muted);color:var(--muted)}
+.score{display:flex;gap:4px;justify-content:center;margin:0 0 14px}
+.score i{width:14px;height:14px;border-radius:3px;background:var(--line)}
+.score i.ok{background:var(--ok)} .score i.skip{background:var(--bad)} .score i.cur{background:var(--btc)}
+@media (prefers-reduced-motion: reduce){.chip.err,.aslots.bad{animation:none}.timerbar i{transition:none}}
+/* ---------- Menú en grupos ---------- */
+.group{margin:26px 0 12px}
+.group:first-of-type{margin-top:0}
+/* ---------- ¿Está en la lista? ---------- */
+.bigword{font:700 clamp(2rem,9vw,3.4rem)/1.1 "IBM Plex Mono",ui-monospace,monospace;text-align:center;margin:18px 0 6px;overflow-wrap:anywhere}
+.yesno{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0}
+.yesno button{min-width:150px;padding:14px 18px;font-size:1.05rem}
+.feedback{text-align:center;min-height:3em;margin:0 auto 10px;max-width:520px}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+/* ---------- Placa de acero ---------- */
+.plate{max-width:340px;margin:10px auto 18px;padding:26px 18px 22px;border-radius:10px;position:relative;display:flex;justify-content:center;gap:10px;
+       background:linear-gradient(135deg,#D3D7DB,#A3ABB3 50%,#CBD0D4);border:1px solid #7E868E}
+.plate::before,.plate::after{content:"";position:absolute;top:9px;width:9px;height:9px;border-radius:50%;background:#7E868E;box-shadow:inset 0 1px 1px rgba(0,0,0,.4)}
+.plate::before{left:9px} .plate::after{right:9px}
+.plate span{width:46px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:4px;
+            font:700 30px "IBM Plex Mono",ui-monospace,monospace;color:#353B42;text-shadow:0 1px 0 rgba(255,255,255,.65);
+            background:rgba(255,255,255,.12);border:1px solid rgba(0,0,0,.18)}
+.plate .pn{position:absolute;bottom:4px;left:12px;font:500 11px "IBM Plex Mono",monospace;color:#3d434a}
+.pinput{display:flex;gap:8px;justify-content:center;max-width:440px;margin:0 auto 10px}
+.pinput input{flex:1;min-width:0;font:600 1.15rem "IBM Plex Mono",ui-monospace,monospace;padding:12px;border:1.5px solid var(--line);
+              border-radius:10px;background:var(--cell-bg);color:var(--ink);text-transform:lowercase}
+.pinput input:focus{outline:none;border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+
+/* ---------- Partidas numeradas y ranking ---------- */
+.pbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.pid{font:700 1.05rem "IBM Plex Mono",ui-monospace,monospace;background:var(--ink);color:var(--paper);padding:6px 12px;border-radius:8px;min-width:3.2em;text-align:center}
+.pfind{display:inline-flex;gap:6px}
+.pfind input{width:5.2em;font:600 1rem "IBM Plex Mono",ui-monospace,monospace;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--cell-bg);color:var(--ink)}
+.pfind input:focus{outline:none;border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+.pmsg{flex-basis:100%;color:var(--muted);font-size:.9rem;min-height:0}
+.pmsg:empty{display:none}
+.rank{background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:12px 16px;margin:0 0 16px}
+.rank[hidden]{display:none}
+.rank h3{margin:0 0 8px;font-size:1.1rem;font-weight:800}
+.rank ol{margin:0 0 6px;padding-left:1.8em}
+.rank li{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.rank li:last-child{border-bottom:0}
+.rank li.me{font-weight:700}
+.rank .m{color:var(--muted);font-size:.9rem;margin:4px 0 0}
+.rank li .m{margin:0;white-space:nowrap}
+
+.rank .nick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+.rank .nick input{font:600 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink);width:12em}
+.rank .nick button{padding:7px 12px}
+.rtabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 10px}
+.rtabs button{border:0;border-radius:0;padding:7px 12px;background:transparent}
+.rtabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.rank .small{font-size:.82rem}
+@media (max-width:520px){ .tools{width:100%} }
+@media print{
+  body{background:#fff;color:#000}
+  body::before,.tools,.actions,.bar,.current,footer,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick{display:none!important}
+  #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
+  .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
+  .cell.key{border-width:3px}
+  .clues li.active{background:none}
+  .scell{background:#fff!important;border-color:#999;color:#000!important}
+  .wlist li.got{text-decoration:none;color:#000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="brand" href="#">RODO <b>₿</b> Games</a>
+      <h1 id="title"></h1>
+    </div>
+    <div class="tools">
+      <a class="btn" id="menuBtn" href="#"></a>
+      <div class="lang" role="group" aria-label="Idioma / Language">
+        <button data-lang="es" aria-pressed="true">ES</button>
+        <button data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Menú ===== -->
+  <section class="view" id="view-menu">
+    <p class="intro" id="menuIntro"></p>
+    <h2 class="group" id="menuG1" hidden></h2><h2 class="group" id="menuG2" hidden></h2>
+    <div class="games">
+      <a class="card" href="#acrostico">
+        <div class="mini" style="grid-template-columns:repeat(5,22px)">
+          <span class="t e"></span><span class="t">N</span><span class="t o">H</span><span class="t">D</span><span class="t">O</span>
+          <span class="t e"></span><span class="t e"></span><span class="t o">O</span><span class="t">R</span><span class="t">O</span>
+          <span class="t">N</span><span class="t">O</span><span class="t o">D</span><span class="t">O</span><span class="t e"></span>
+          <span class="t e"></span><span class="t">F</span><span class="t o">L</span><span class="t e"></span><span class="t e"></span>
+        </div>
+        <h3 id="cAcroName"></h3><p id="cAcroDesc"></p>
+      </a>
+      <a class="card" href="#ahorcado">
+        <div class="mini" style="grid-template-columns:repeat(6,22px)">
+          <span class="t">S</span><span class="t">A</span><span class="t e"></span><span class="t">S</span><span class="t e"></span><span class="t e"></span>
+          <span class="t e"></span><span class="t e"></span><span class="t e"></span><span class="t e"></span><span class="t e"></span><span class="t e"></span>
+          <span class="t o"></span><span class="t o"></span><span class="t o"></span><span class="t o"></span><span class="t x"></span><span class="t x"></span>
+        </div>
+        <h3 id="cHangName"></h3><p id="cHangDesc"></p>
+      </a>
+      <a class="card" href="#sopa">
+        <div class="mini" style="grid-template-columns:repeat(4,22px)">
+          <span class="t o">N</span><span class="t">Q</span><span class="t">L</span><span class="t">S</span>
+          <span class="t">K</span><span class="t o">O</span><span class="t">M</span><span class="t">A</span>
+          <span class="t">T</span><span class="t">P</span><span class="t o">D</span><span class="t">T</span>
+          <span class="t">B</span><span class="t">I</span><span class="t">R</span><span class="t o">O</span>
+        </div>
+        <h3 id="cSopaName"></h3><p id="cSopaDesc"></p>
+      </a>
+<a class="card" href="#criptograma">
+        <div class="mini" style="grid-template-columns:repeat(5,22px)">
+          <span class="t o">N</span><span class="t o">O</span><span class="t">D</span><span class="t o">O</span><span class="t e"></span>
+          <span class="t">Q</span><span class="t">X</span><span class="t">K</span><span class="t">X</span><span class="t e"></span>
+        </div>
+        <h3 id="cCripName"></h3><p id="cCripDesc"></p>
+      </a>
+      <a class="card" href="#anagrama">
+        <div class="mini" style="grid-template-columns:repeat(4,22px)">
+          <span class="t o">D</span><span class="t o">N</span><span class="t o">O</span><span class="t o">O</span>
+          <span class="t">N</span><span class="t">O</span><span class="t">D</span><span class="t">O</span>
+        </div>
+        <h3 id="cAnaName"></h3><p id="cAnaDesc"></p>
+      </a>
+      <a class="card" href="#semilla">
+        <div class="mini" style="grid-template-columns:repeat(3,auto)">
+          <span class="t w">1 able</span><span class="t w o">2 ····</span><span class="t w">3 zoo</span>
+          <span class="t w o">4 ····</span><span class="t w">5 echo</span><span class="t w o">6 ····</span>
+        </div>
+        <h3 id="cSeedName"></h3><p id="cSeedDesc"></p>
+      </a>
+            <a class="card" href="#esbip" hidden>
+        <div class="mini" style="grid-template-columns:repeat(2,auto)">
+          <span class="t w">abandon</span><span class="t w o">✓</span>
+          <span class="t w">bitcoin</span><span class="t w x">✕</span>
+          <span class="t w">zoo</span><span class="t w o">✓</span>
+        </div>
+        <h3 id="cBipName"></h3><p id="cBipDesc"></p>
+      </a>
+      <a class="card" href="#placa" hidden>
+        <div class="mini" style="grid-template-columns:repeat(4,22px)">
+          <span class="t">A</span><span class="t">B</span><span class="t">A</span><span class="t">N</span>
+          <span class="t o">D</span><span class="t o">O</span><span class="t o">N</span><span class="t e"></span>
+        </div>
+        <h3 id="cPlateName"></h3><p id="cPlateDesc"></p>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Acróstico ===== -->
+  <section class="view" id="view-acrostico">
+    <div class="bar"><p class="meta" id="meta"></p><button class="primary" id="newBtn"></button></div>
+    <div class="current" id="current" aria-live="polite"></div>
+    <div class="win" id="win" role="status">
+      <p><span id="winLabel"></span> <span class="phrase" id="winPhrase"></span></p>
+      <div class="stats" id="winStats"></div>
+      <div class="row"><button id="shareBtn"></button></div>
+      <p class="note" id="shareNote"></p>
+    </div>
+    <div class="gridbox"><div class="grid" id="grid"></div></div>
+    <div class="actions">
+      <button id="checkBtn"></button>
+      <button id="hintBtn"></button>
+      <button id="printBtn"></button>
+    </div>
+    <h2 id="cluesTitle"></h2>
+    <ol class="clues" id="clues"></ol>
+    <footer id="foot"></footer>
+  </section>
+
+  <!-- ===== Ahorcado ===== -->
+  <section class="view" id="view-ahorcado">
+    <div class="bar"><p class="meta" id="hMeta"></p><button class="primary" id="hNew"></button></div>
+    <div class="win" id="hWin" role="status">
+      <p><span id="hWinLabel"></span> <span class="phrase" id="hWinWord"></span></p>
+      <div class="stats" id="hWinStats"></div>
+      <div class="row"><button id="hAgain"></button><button id="hShare"></button></div>
+      <p class="note" id="hNote"></p>
+    </div>
+    <svg class="blocks" id="hBlocks" viewBox="0 0 520 80" aria-hidden="true"></svg>
+    <p class="lives" id="hLives" aria-live="polite"></p>
+    <div class="actions"><button id="hClueBtn"></button></div>
+    <div class="hclue" id="hClue"></div>
+    <div class="hword" id="hWord" aria-live="polite"></div>
+    <div class="keys" id="hKeys"></div>
+    <footer id="hFoot"></footer>
+  </section>
+
+  <!-- ===== Sopa de letras ===== -->
+  <section class="view" id="view-sopa">
+    <div class="bar"><p class="meta" id="sMeta"></p><button class="primary" id="sNew"></button></div>
+    <div class="win" id="sWin" role="status">
+      <p id="sWinLabel"></p>
+      <div class="stats" id="sWinStats"></div>
+      <div class="row"><button id="sAgain"></button><button id="sShare"></button></div>
+      <p class="note" id="sNote"></p>
+    </div>
+    <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
+    <div class="actions">
+      <button id="sMode"></button>
+      <button id="sPrint"></button>
+    </div>
+    <h2 id="sListTitle"></h2>
+    <ul class="wlist" id="sList"></ul>
+    <footer id="sFoot"></footer>
+  </section>
+  <!-- ===== Semilla perdida ===== -->
+  <section class="view" id="view-semilla">
+    <div class="bar"><p class="meta" id="pMeta"></p><button class="primary" id="pNew"></button></div>
+    <div class="win" id="pWin" role="status">
+      <p id="pWinLabel"></p>
+      <div class="stats" id="pWinStats"></div>
+      <div class="row"><button id="pAgain"></button><button id="pShare"></button></div>
+      <p class="note" id="pNote"></p>
+    </div>
+    <div id="pIntro" class="intro2">
+      <p id="pIntroText"></p>
+      <div class="seg" role="group" id="pSize">
+        <button data-n="12" aria-pressed="true"></button><button data-n="24" aria-pressed="false"></button>
+      </div><br>
+      <button class="primary" id="pStart"></button>
+    </div>
+    <div class="timerbar" id="pTimer"><i id="pTimerFill"></i></div>
+    <p class="current center" id="pStatus" aria-live="polite"></p>
+    <div class="seed" id="pSeed"></div>
+    <div class="actions" id="pMemoActions"><button class="primary" id="pReady"></button></div>
+    <div class="chips" id="pChips"></div>
+    <footer id="pFoot"></footer>
+  </section>
+
+  <!-- ===== Criptograma ===== -->
+  <section class="view" id="view-criptograma">
+    <div class="bar"><p class="meta" id="cMeta"></p><button class="primary" id="cNew"></button></div>
+    <div class="current" id="cStatus" aria-live="polite"></div>
+    <div class="win" id="cWin" role="status">
+      <p id="cWinLabel"></p>
+      <div class="stats" id="cWinStats"></div>
+      <div class="row"><button id="cAgain"></button><button id="cShare"></button></div>
+      <p class="note" id="cNote"></p>
+    </div>
+    <div class="cq" id="cQuote"></div>
+    <p class="cauthor" id="cAuthor"></p>
+    <div class="actions">
+      <button id="cCheck"></button><button id="cHint"></button><button id="cPrint"></button>
+    </div>
+    <footer id="cFoot"></footer>
+  </section>
+
+  <!-- ===== Anagrama ===== -->
+  <section class="view" id="view-anagrama">
+    <div class="bar"><p class="meta" id="aMeta"></p><button class="primary" id="aNew"></button></div>
+    <div class="win" id="aWin" role="status">
+      <p id="aWinLabel"></p>
+      <div class="stats" id="aWinStats"></div>
+      <div class="row"><button id="aAgain"></button><button id="aShare"></button></div>
+      <p class="note" id="aNote"></p>
+    </div>
+    <div id="aPlay">
+      <div class="score" id="aScore"></div>
+      <div class="aclue" id="aClue"></div>
+      <div class="aslots" id="aSlots"></div>
+      <div class="atiles" id="aTiles"></div>
+      <div class="actions">
+        <button id="aHint"></button><button id="aErase"></button><button id="aShuffle"></button><button id="aSkip"></button>
+      </div>
+    </div>
+    <footer id="aFoot"></footer>
+  </section>
+
+  <!-- ===== ¿Está en la lista? ===== -->
+  <section class="view" id="view-esbip">
+    <div class="bar"><p class="meta" id="bMeta"></p><button class="primary" id="bNew"></button></div>
+    <div class="win" id="bWin" role="status">
+      <p id="bWinLabel"></p>
+      <div class="stats" id="bWinStats"></div>
+      <div class="row"><button id="bAgain"></button><button id="bShare"></button></div>
+      <p class="note" id="bNote"></p>
+    </div>
+    <div id="bPlay">
+      <div class="score" id="bScore"></div>
+      <div class="bigword" id="bWord"></div>
+      <div class="yesno"><button class="primary" id="bYes"></button><button id="bNo"></button></div>
+      <p class="feedback" id="bFeedback" aria-live="polite"></p>
+    </div>
+    <footer id="bFoot"></footer>
+  </section>
+
+  <!-- ===== Placa de acero ===== -->
+  <section class="view" id="view-placa">
+    <div class="bar"><p class="meta" id="lMeta"></p><button class="primary" id="lNew"></button></div>
+    <div class="win" id="lWin" role="status">
+      <p id="lWinLabel"></p>
+      <div class="stats" id="lWinStats"></div>
+      <div class="row"><button id="lAgain"></button><button id="lShare"></button></div>
+      <p class="note" id="lNote"></p>
+    </div>
+    <div id="lPlay">
+      <div class="score" id="lScore"></div>
+      <div class="plate" id="lPlate"></div>
+      <div class="pinput"><input type="text" id="lInput" autocomplete="off" autocapitalize="none" spellcheck="false"><button class="primary" id="lCheck"></button></div>
+      <div class="actions"><button id="lSkip"></button></div>
+      <p class="feedback" id="lFeedback" aria-live="polite"></p>
+    </div>
+    <footer id="lFoot"></footer>
+  </section>
+
+</div>
+<script>
+// ================= Glosarios: [palabra, pista] =================
+const G_ES = [
+["BITCOIN","Red y moneda lanzada en 2009 por un seudónimo"],
+["SATOSHI","Unidad mínima de bitcoin, y nombre de pila de su creador"],
+["SATS","Forma abreviada de llamar a la unidad mínima"],
+["NAKAMOTO","Apellido del creador anónimo de Bitcoin"],
+["BLOQUE","Paquete de transacciones que se suma a la cadena cada unos 10 minutos"],
+["CADENA","Lo que forman los bloques enlazados por sus hashes"],
+["BLOCKCHAIN","Registro público y encadenado de transacciones (en inglés)"],
+["MINERO","Quien gasta energía buscando el próximo bloque"],
+["MINERIA","Proceso que asegura la red con prueba de trabajo"],
+["NODO","Computadora que valida por su cuenta las reglas de la red"],
+["HALVING","Evento que cada 210.000 bloques reduce a la mitad la recompensa"],
+["HASH","Huella digital de largo fijo que produce una función criptográfica"],
+["NONCE","Número que el minero cambia una y otra vez buscando un hash válido"],
+["BILLETERA","Software o dispositivo que administra tus claves"],
+["WALLET","Billetera, en inglés"],
+["SEMILLA","Lista de 12 o 24 palabras que respalda tu billetera"],
+["CLAVE","Si es privada, nunca la compartas"],
+["LLAVE","Otra forma de llamar a la clave privada"],
+["KEY","Clave o llave, en inglés"],
+["FIRMA","Prueba criptográfica de que autorizaste un gasto"],
+["MEMPOOL","Sala de espera de las transacciones sin confirmar"],
+["LIGHTNING","Red de segunda capa para pagos instantáneos"],
+["CANAL","En Lightning, lo que se abre entre dos nodos para pagar fuera de la cadena"],
+["TAPROOT","Actualización activada en 2021 que mejoró privacidad y scripts"],
+["SEGWIT","Soft fork de 2017 que separó las firmas del resto de la transacción"],
+["SCHNORR","Esquema de firmas que llegó con Taproot"],
+["MERKLE","Apellido del árbol que resume las transacciones de un bloque"],
+["GENESIS","Nombre del primer bloque, minado el 3 de enero de 2009"],
+["DIFICULTAD","Parámetro que se reajusta cada 2016 bloques"],
+["RECOMPENSA","Lo que cobra el minero por encontrar un bloque"],
+["COMISION","Lo que pagás para que un minero incluya tu transacción"],
+["UTXO","Salida de transacción no gastada (sigla)"],
+["TXID","Identificador único de una transacción (sigla)"],
+["ESCASEZ","Propiedad garantizada por el tope de 21 millones"],
+["CONSENSO","Acuerdo de los nodos sobre cuál es la cadena válida"],
+["SOFTFORK","Cambio de reglas compatible hacia atrás (todo junto, en inglés)"],
+["HARDFORK","Cambio de reglas que rompe la compatibilidad (todo junto, en inglés)"],
+["CRIPTOGRAFIA","Ciencia de cifrar sobre la que se apoya Bitcoin"],
+["PRIVACIDAD","Lo que el manifiesto cypherpunk considera necesario en una sociedad abierta"],
+["CYPHERPUNK","Activista que defiende la privacidad con criptografía"],
+["WHITEPAPER","Documento de nueve páginas publicado en octubre de 2008 (en inglés)"],
+["HODL","Error de tipeo de 2013 que se volvió filosofía: no vender"],
+["CUSTODIA","Si no tenés las claves, alguien más la tiene por vos"],
+["MULTIFIRMA","Esquema que exige varias firmas para gastar"],
+["MUSIG","Multifirma agregada basada en firmas Schnorr"],
+["XPUB","Clave pública extendida (abreviatura)"],
+["PSBT","Transacción parcialmente firmada (sigla en inglés)"],
+["DIRECCION","Lo que compartís para que te envíen bitcoin"],
+["TESTNET","Red de pruebas donde las monedas no valen nada"],
+["ASIC","Chip diseñado únicamente para minar"],
+["POOL","Grupo de mineros que suman poder de cómputo y reparten premios"],
+["CONFIRMACION","Cada bloque que se apila encima de tu transacción"],
+["ENERGIA","Lo que la prueba de trabajo convierte en seguridad"],
+["INFLACION","Pérdida de poder adquisitivo del dinero fiat"],
+["FIAT","Dinero que vale por decreto"],
+["ORO","Metal con el que suele compararse a Bitcoin"],
+["DINERO","Bitcoin aspira a ser el más sano de todos"],
+["SOBERANIA","Lo que ganás cuando controlás tus propias claves"],
+["FINNEY","Hal, quien recibió la primera transacción de Bitcoin"],
+["SZABO","Nick, el criptógrafo que propuso Bit Gold"],
+["HASHCASH","Sistema antispam de Adam Back que inspiró la prueba de trabajo"],
+["BITGOLD","Precursor de Bitcoin ideado por Nick Szabo (todo junto)"],
+["PIZZA","Comida comprada con 10.000 BTC en mayo de 2010"],
+["LASZLO","Nombre del programador que pagó esas pizzas"],
+["NOSTR","Protocolo de mensajes descentralizado muy usado por bitcoiners"],
+["ZAP","Propina en sats enviada por Lightning, típica en Nostr"],
+["COINJOIN","Técnica que combina pagos de varios usuarios en una transacción"],
+["PAYJOIN","Transacción en la que pagador y receptor aportan entradas"],
+["SCRIPT","Lenguaje sencillo que define las condiciones de gasto"],
+["TIMELOCK","Bloqueo que impide gastar hasta cierta fecha o altura"],
+["EXCHANGE","Casa de cambio donde se compra y vende bitcoin (en inglés)"],
+["KYC","Sigla del trámite de verificación de identidad en los exchanges"],
+["CONTRASEÑA","Palabra extra que algunas billeteras suman a la semilla"],
+["DUEÑO","Con autocustodia, sos el único de tus bitcoins"],
+["WATCHTOWER","Servicio que vigila tus canales Lightning (en inglés)"],
+["QR","Código que escaneás para pagar"],
+["SIDECHAIN","Cadena lateral anclada a Bitcoin (en inglés)"],
+["LIQUID","Sidechain federada lanzada por Blockstream"],
+["ORDINALS","Protocolo que numera cada satoshi"],
+["SELLO","Bitcoin funciona como un ___ de tiempo distribuido"],
+["LIBRO","Bitcoin es un ___ contable público"],
+["CONFIANZA","Lo que Bitcoin reemplaza por verificación"],
+["VERIFICAR","Lo que hacés en vez de confiar"],
+["EMISION","Calendario de nuevas monedas, fijo y predecible"],
+["VEINTIUNO","Los millones que habrá como máximo"],
+["MILLONES","Veintiún ___: el tope de emisión"],
+["BANCOS","Lo que el canciller estaba por rescatar según el bloque génesis"],
+["TIMES","Diario cuyo titular quedó grabado en el bloque génesis"],
+["CANCILLER","Cargo mencionado en el titular del bloque génesis"],
+["RESCATE","Lo que, según ese titular, estaba por darse a los bancos"],
+["EFECTIVO","Sistema de ___ electrónico, del título del whitepaper"],
+["ELECTRONICO","Sistema de efectivo ___, del título del whitepaper"],
+["PARES","Sistema de efectivo electrónico entre ___"],
+["BIP","Propuesta de mejora de Bitcoin (sigla)"],
+["PALABRAS","La semilla BIP39 se arma con 12 o 24 de estas"],
+["FRASE","___ semilla: nunca le saques foto"],
+["FRIO","Almacenamiento en ___: claves que nunca tocan internet"],
+["HARDWARE","Tipo de billetera física que guarda las claves offline"],
+["STACKEAR","Acumular sats de a poco, en spanglish bitcoiner"],
+["DCA","Estrategia de comprar montos fijos cada cierto tiempo (sigla)"],
+["ATH","Máximo histórico del precio (sigla en inglés)"],
+["FUD","Miedo, incertidumbre y duda (sigla en inglés)"],
+["PLEBS","Así se llaman a sí mismos los bitcoiners de a pie"],
+["HUMILDE","Mantenete ___ y acumulá sats"],
+["PREFERENCIA","Baja ___ temporal: valorar más el futuro"],
+["TICK","___ tock, next block"],
+["MAXI","Bitcoiner que solo confía en Bitcoin (abreviado)"],
+["ALTCOIN","Cualquier criptomoneda que no es bitcoin"],
+["OPRETURN","Instrucción que permite grabar datos en una transacción (todo junto)"],
+["LABITCONF","La conferencia de Bitcoin activa más antigua del mundo"],
+["OFERTA","___ limitada: nunca habrá más de 21 millones"],
+["VOLATILIDAD","Las subas y bajas bruscas del precio"],
+["DIVISIBLE","Bitcoin lo es hasta ocho decimales"],
+["FUNGIBLE","Cada unidad es intercambiable por otra igual: es ___"],
+["AUDITABLE","Con un nodo podés comprobar la oferta total: es ___"],
+["CENSURA","Resistencia a la ___: nadie puede bloquear tu transacción"],
+["PERMISO","Para usar Bitcoin no hace falta pedirlo"],
+["FRONTERAS","Bitcoin las cruza sin pedir autorización"],
+["HYPE","Euforia exagerada del mercado (en inglés)"],
+["CUANTICA","Computación que algunos temen que rompa las firmas actuales"]
+];
+
+const G_EN = [
+["BITCOIN","Network and money launched in 2009 by a pseudonymous creator"],
+["SATOSHI","Smallest unit of bitcoin, and its creator's first name"],
+["SATS","Short name for the smallest units"],
+["NAKAMOTO","Surname of Bitcoin's anonymous creator"],
+["BLOCK","Batch of transactions added roughly every ten minutes"],
+["CHAIN","What blocks form when linked by their hashes"],
+["BLOCKCHAIN","Public, linked ledger of every transaction"],
+["MINER","Spends energy searching for the next block"],
+["MINING","Securing the network through proof of work"],
+["NODE","Computer that independently enforces the rules"],
+["HALVING","Event every 210,000 blocks that cuts the subsidy in half"],
+["HASH","Fixed-length fingerprint produced by a cryptographic function"],
+["NONCE","Number a miner keeps changing in search of a valid hash"],
+["WALLET","Software or device that manages your keys"],
+["SEED","12 or 24 words that back up your wallet"],
+["KEY","If it's private, never share it"],
+["SIGNATURE","Cryptographic proof that you authorized a spend"],
+["MEMPOOL","Waiting room for unconfirmed transactions"],
+["LIGHTNING","Layer-two network for instant payments"],
+["CHANNEL","What two Lightning nodes open to transact off-chain"],
+["TAPROOT","2021 upgrade that improved privacy and scripting"],
+["SEGWIT","2017 soft fork that separated signatures from transaction data"],
+["SCHNORR","Signature scheme that arrived with Taproot"],
+["MERKLE","Surname of the tree that summarizes a block's transactions"],
+["GENESIS","Name of the first block, mined January 3, 2009"],
+["DIFFICULTY","Parameter that readjusts every 2016 blocks"],
+["SUBSIDY","Newly issued coins a miner earns per block"],
+["FEE","What you pay so a miner includes your transaction"],
+["UTXO","Unspent transaction output (acronym)"],
+["TXID","Unique identifier of a transaction (acronym)"],
+["SCARCITY","Property guaranteed by the 21 million cap"],
+["CONSENSUS","Agreement among nodes on which chain is valid"],
+["SOFTFORK","Backward-compatible rule change (one word)"],
+["HARDFORK","Rule change that breaks compatibility (one word)"],
+["CRYPTOGRAPHY","Science of codes that Bitcoin rests on"],
+["PRIVACY","The Cypherpunk Manifesto calls it necessary for an open society"],
+["CYPHERPUNK","Activist who defends privacy with cryptography"],
+["WHITEPAPER","Nine-page document published in October 2008"],
+["HODL","2013 typo that became a philosophy: don't sell"],
+["CUSTODY","If you don't hold the keys, someone else has this"],
+["MULTISIG","Setup that requires several signatures to spend"],
+["MUSIG","Aggregated multisignature scheme based on Schnorr"],
+["XPUB","Extended public key (short form)"],
+["PSBT","Partially signed Bitcoin transaction (acronym)"],
+["ADDRESS","What you share so someone can send you bitcoin"],
+["TESTNET","Test network where coins are worthless"],
+["ASIC","Chip built only for mining"],
+["POOL","Miners combining hashpower and splitting rewards"],
+["CONFIRMATION","Each block stacked on top of your transaction"],
+["ENERGY","What proof of work turns into security"],
+["INFLATION","Loss of purchasing power of fiat money"],
+["FIAT","Money by decree"],
+["GOLD","Metal Bitcoin is often compared to"],
+["MONEY","Bitcoin aims to be the soundest kind"],
+["SOVEREIGNTY","What you gain by controlling your own keys"],
+["FINNEY","Hal, who received the first Bitcoin transaction"],
+["SZABO","Nick, the cryptographer who proposed Bit Gold"],
+["HASHCASH","Adam Back's anti-spam system that inspired proof of work"],
+["BITGOLD","Nick Szabo's precursor to Bitcoin (one word)"],
+["PIZZA","Food bought for 10,000 BTC in May 2010"],
+["LASZLO","First name of the programmer who paid for it"],
+["NOSTR","Decentralized messaging protocol popular with bitcoiners"],
+["ZAP","Sats tip sent over Lightning, common on Nostr"],
+["COINJOIN","Technique that merges several users' payments into one transaction"],
+["PAYJOIN","Transaction where both payer and receiver contribute inputs"],
+["SCRIPT","Simple language that defines spending conditions"],
+["TIMELOCK","Lock that prevents spending until a time or block height"],
+["EXCHANGE","Marketplace to buy and sell bitcoin"],
+["KYC","Identity-check acronym that exchanges require"],
+["PASSPHRASE","Optional extra word added to a seed"],
+["WATCHTOWER","Service that monitors your Lightning channels for you"],
+["QR","Code you scan to pay"],
+["SIDECHAIN","Separate chain pegged to Bitcoin"],
+["LIQUID","Federated sidechain launched by Blockstream"],
+["ORDINALS","Protocol that numbers every satoshi"],
+["TIMESTAMP","Bitcoin works as a distributed ___ server"],
+["LEDGER","Bitcoin is a public one"],
+["TRUST","What Bitcoin replaces with verification"],
+["VERIFY","What you do instead of trusting"],
+["ISSUANCE","Fixed, predictable schedule of new coins"],
+["MILLION","Twenty-one ___: the supply cap"],
+["BANKS","Who the chancellor was about to bail out, per the genesis block"],
+["TIMES","Newspaper whose headline is embedded in the genesis block"],
+["CHANCELLOR","Office named in the genesis block headline"],
+["BAILOUT","The second one was on the brink, per that headline"],
+["CASH","Peer-to-peer electronic ___ system"],
+["ELECTRONIC","Peer-to-peer ___ cash system"],
+["PEER","___-to-___: the architecture in the whitepaper's title"],
+["BIP","Bitcoin Improvement Proposal (acronym)"],
+["WORDS","A BIP39 seed is made of 12 or 24 of these"],
+["COLD","___ storage: keys that never touch the internet"],
+["HARDWARE","Kind of wallet that keeps keys offline"],
+["STACK","To accumulate sats bit by bit"],
+["DCA","Strategy of buying fixed amounts on a schedule (acronym)"],
+["ATH","All-time high (acronym)"],
+["FUD","Fear, uncertainty and doubt (acronym)"],
+["PLEBS","What everyday bitcoiners call themselves"],
+["HUMBLE","Stay ___, stack sats"],
+["PREFERENCE","Low time ___: valuing the future more"],
+["TICK","___ tock, next block"],
+["MAXI","Bitcoiner who believes only in Bitcoin (short)"],
+["ALTCOIN","Any cryptocurrency that isn't bitcoin"],
+["OPRETURN","Opcode that lets you embed data in a transaction (one word)"],
+["LABITCONF","Oldest active Bitcoin conference in the world"],
+["SUPPLY","Fixed ___: never more than 21 million"],
+["VOLATILITY","Sharp swings in price"],
+["DIVISIBLE","Bitcoin is, down to eight decimal places"],
+["FUNGIBLE","Every unit is interchangeable with any other"],
+["AUDITABLE","Anyone running a node can check the total supply"],
+["CENSORSHIP","___ resistance: no one can block your transaction"],
+["PERMISSION","Using Bitcoin doesn't require asking for it"],
+["BORDERS","Bitcoin crosses them without authorization"],
+["HYPE","Exaggerated market euphoria"],
+["QUANTUM","Kind of computing some fear could break today's signatures"]
+];
+
+const PHRASES = {
+  es:["BITCOIN","SATOSHI NAKAMOTO","HODL","NO CONFIES VERIFICA","VEINTIUN MILLONES","PRUEBA DE TRABAJO",
+      "BLOQUE GENESIS","LIGHTNING","AUTOCUSTODIA","TODOS SOMOS SATOSHI","LABITCONF","DINERO SANO",
+      "HALVING","CYPHERPUNK","SIN PERMISO","TUS LLAVES TUS MONEDAS","EFECTIVO ELECTRONICO",
+      "CORRE UN NODO","ENTRE PARES","BAJA PREFERENCIA TEMPORAL","SOBERANIA","ESCASEZ DIGITAL"],
+  en:["BITCOIN","SATOSHI NAKAMOTO","HODL","DONT TRUST VERIFY","TICK TOCK NEXT BLOCK","STAY HUMBLE STACK SATS",
+      "TWENTY ONE MILLION","PROOF OF WORK","GENESIS BLOCK","LIGHTNING","SELF CUSTODY","WE ARE ALL SATOSHI",
+      "LABITCONF","SOUND MONEY","HALVING","CYPHERPUNK","PERMISSIONLESS","NOT YOUR KEYS NOT YOUR COINS",
+      "PEER TO PEER","RUN A NODE","LOW TIME PREFERENCE","CHANCELLOR ON BRINK","FIX THE MONEY"]
+};
+
+// Listas oficiales BIP39 (github.com/bitcoin/bips)
+const BIP39 = { en:"abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo".split(' '), es:"ábaco abdomen abeja abierto abogado abono aborto abrazo abrir abuelo abuso acabar academia acceso acción aceite acelga acento aceptar ácido aclarar acné acoger acoso activo acto actriz actuar acudir acuerdo acusar adicto admitir adoptar adorno aduana adulto aéreo afectar afición afinar afirmar ágil agitar agonía agosto agotar agregar agrio agua agudo águila aguja ahogo ahorro aire aislar ajedrez ajeno ajuste alacrán alambre alarma alba álbum alcalde aldea alegre alejar alerta aleta alfiler alga algodón aliado aliento alivio alma almeja almíbar altar alteza altivo alto altura alumno alzar amable amante amapola amargo amasar ámbar ámbito ameno amigo amistad amor amparo amplio ancho anciano ancla andar andén anemia ángulo anillo ánimo anís anotar antena antiguo antojo anual anular anuncio añadir añejo año apagar aparato apetito apio aplicar apodo aporte apoyo aprender aprobar apuesta apuro arado araña arar árbitro árbol arbusto archivo arco arder ardilla arduo área árido aries armonía arnés aroma arpa arpón arreglo arroz arruga arte artista asa asado asalto ascenso asegurar aseo asesor asiento asilo asistir asno asombro áspero astilla astro astuto asumir asunto atajo ataque atar atento ateo ático atleta átomo atraer atroz atún audaz audio auge aula aumento ausente autor aval avance avaro ave avellana avena avestruz avión aviso ayer ayuda ayuno azafrán azar azote azúcar azufre azul baba babor bache bahía baile bajar balanza balcón balde bambú banco banda baño barba barco barniz barro báscula bastón basura batalla batería batir batuta baúl bazar bebé bebida bello besar beso bestia bicho bien bingo blanco bloque blusa boa bobina bobo boca bocina boda bodega boina bola bolero bolsa bomba bondad bonito bono bonsái borde borrar bosque bote botín bóveda bozal bravo brazo brecha breve brillo brinco brisa broca broma bronce brote bruja brusco bruto buceo bucle bueno buey bufanda bufón búho buitre bulto burbuja burla burro buscar butaca buzón caballo cabeza cabina cabra cacao cadáver cadena caer café caída caimán caja cajón cal calamar calcio caldo calidad calle calma calor calvo cama cambio camello camino campo cáncer candil canela canguro canica canto caña cañón caoba caos capaz capitán capote captar capucha cara carbón cárcel careta carga cariño carne carpeta carro carta casa casco casero caspa castor catorce catre caudal causa cazo cebolla ceder cedro celda célebre celoso célula cemento ceniza centro cerca cerdo cereza cero cerrar certeza césped cetro chacal chaleco champú chancla chapa charla chico chiste chivo choque choza chuleta chupar ciclón ciego cielo cien cierto cifra cigarro cima cinco cine cinta ciprés circo ciruela cisne cita ciudad clamor clan claro clase clave cliente clima clínica cobre cocción cochino cocina coco código codo cofre coger cohete cojín cojo cola colcha colegio colgar colina collar colmo columna combate comer comida cómodo compra conde conejo conga conocer consejo contar copa copia corazón corbata corcho cordón corona correr coser cosmos costa cráneo cráter crear crecer creído crema cría crimen cripta crisis cromo crónica croqueta crudo cruz cuadro cuarto cuatro cubo cubrir cuchara cuello cuento cuerda cuesta cueva cuidar culebra culpa culto cumbre cumplir cuna cuneta cuota cupón cúpula curar curioso curso curva cutis dama danza dar dardo dátil deber débil década decir dedo defensa definir dejar delfín delgado delito demora denso dental deporte derecho derrota desayuno deseo desfile desnudo destino desvío detalle detener deuda día diablo diadema diamante diana diario dibujo dictar diente dieta diez difícil digno dilema diluir dinero directo dirigir disco diseño disfraz diva divino doble doce dolor domingo don donar dorado dormir dorso dos dosis dragón droga ducha duda duelo dueño dulce dúo duque durar dureza duro ébano ebrio echar eco ecuador edad edición edificio editor educar efecto eficaz eje ejemplo elefante elegir elemento elevar elipse élite elixir elogio eludir embudo emitir emoción empate empeño empleo empresa enano encargo enchufe encía enemigo enero enfado enfermo engaño enigma enlace enorme enredo ensayo enseñar entero entrar envase envío época equipo erizo escala escena escolar escribir escudo esencia esfera esfuerzo espada espejo espía esposa espuma esquí estar este estilo estufa etapa eterno ética etnia evadir evaluar evento evitar exacto examen exceso excusa exento exigir exilio existir éxito experto explicar exponer extremo fábrica fábula fachada fácil factor faena faja falda fallo falso faltar fama familia famoso faraón farmacia farol farsa fase fatiga fauna favor fax febrero fecha feliz feo feria feroz fértil fervor festín fiable fianza fiar fibra ficción ficha fideo fiebre fiel fiera fiesta figura fijar fijo fila filete filial filtro fin finca fingir finito firma flaco flauta flecha flor flota fluir flujo flúor fobia foca fogata fogón folio folleto fondo forma forro fortuna forzar fosa foto fracaso frágil franja frase fraude freír freno fresa frío frito fruta fuego fuente fuerza fuga fumar función funda furgón furia fusil fútbol futuro gacela gafas gaita gajo gala galería gallo gamba ganar gancho ganga ganso garaje garza gasolina gastar gato gavilán gemelo gemir gen género genio gente geranio gerente germen gesto gigante gimnasio girar giro glaciar globo gloria gol golfo goloso golpe goma gordo gorila gorra gota goteo gozar grada gráfico grano grasa gratis grave grieta grillo gripe gris grito grosor grúa grueso grumo grupo guante guapo guardia guerra guía guiño guion guiso guitarra gusano gustar haber hábil hablar hacer hacha hada hallar hamaca harina haz hazaña hebilla hebra hecho helado helio hembra herir hermano héroe hervir hielo hierro hígado higiene hijo himno historia hocico hogar hoguera hoja hombre hongo honor honra hora hormiga horno hostil hoyo hueco huelga huerta hueso huevo huida huir humano húmedo humilde humo hundir huracán hurto icono ideal idioma ídolo iglesia iglú igual ilegal ilusión imagen imán imitar impar imperio imponer impulso incapaz índice inerte infiel informe ingenio inicio inmenso inmune innato insecto instante interés íntimo intuir inútil invierno ira iris ironía isla islote jabalí jabón jamón jarabe jardín jarra jaula jazmín jefe jeringa jinete jornada joroba joven joya juerga jueves juez jugador jugo juguete juicio junco jungla junio juntar júpiter jurar justo juvenil juzgar kilo koala labio lacio lacra lado ladrón lagarto lágrima laguna laico lamer lámina lámpara lana lancha langosta lanza lápiz largo larva lástima lata látex latir laurel lavar lazo leal lección leche lector leer legión legumbre lejano lengua lento leña león leopardo lesión letal letra leve leyenda libertad libro licor líder lidiar lienzo liga ligero lima límite limón limpio lince lindo línea lingote lino linterna líquido liso lista litera litio litro llaga llama llanto llave llegar llenar llevar llorar llover lluvia lobo loción loco locura lógica logro lombriz lomo lonja lote lucha lucir lugar lujo luna lunes lupa lustro luto luz maceta macho madera madre maduro maestro mafia magia mago maíz maldad maleta malla malo mamá mambo mamut manco mando manejar manga maniquí manjar mano manso manta mañana mapa máquina mar marco marea marfil margen marido mármol marrón martes marzo masa máscara masivo matar materia matiz matriz máximo mayor mazorca mecha medalla medio médula mejilla mejor melena melón memoria menor mensaje mente menú mercado merengue mérito mes mesón meta meter método metro mezcla miedo miel miembro miga mil milagro militar millón mimo mina minero mínimo minuto miope mirar misa miseria misil mismo mitad mito mochila moción moda modelo moho mojar molde moler molino momento momia monarca moneda monja monto moño morada morder moreno morir morro morsa mortal mosca mostrar motivo mover móvil mozo mucho mudar mueble muela muerte muestra mugre mujer mula muleta multa mundo muñeca mural muro músculo museo musgo música muslo nácar nación nadar naipe naranja nariz narrar nasal natal nativo natural náusea naval nave navidad necio néctar negar negocio negro neón nervio neto neutro nevar nevera nicho nido niebla nieto niñez niño nítido nivel nobleza noche nómina noria norma norte nota noticia novato novela novio nube nuca núcleo nudillo nudo nuera nueve nuez nulo número nutria oasis obeso obispo objeto obra obrero observar obtener obvio oca ocaso océano ochenta ocho ocio ocre octavo octubre oculto ocupar ocurrir odiar odio odisea oeste ofensa oferta oficio ofrecer ogro oído oír ojo ola oleada olfato olivo olla olmo olor olvido ombligo onda onza opaco opción ópera opinar oponer optar óptica opuesto oración orador oral órbita orca orden oreja órgano orgía orgullo oriente origen orilla oro orquesta oruga osadía oscuro osezno oso ostra otoño otro oveja óvulo óxido oxígeno oyente ozono pacto padre paella página pago país pájaro palabra palco paleta pálido palma paloma palpar pan panal pánico pantera pañuelo papá papel papilla paquete parar parcela pared parir paro párpado parque párrafo parte pasar paseo pasión paso pasta pata patio patria pausa pauta pavo payaso peatón pecado pecera pecho pedal pedir pegar peine pelar peldaño pelea peligro pellejo pelo peluca pena pensar peñón peón peor pepino pequeño pera percha perder pereza perfil perico perla permiso perro persona pesa pesca pésimo pestaña pétalo petróleo pez pezuña picar pichón pie piedra pierna pieza pijama pilar piloto pimienta pino pintor pinza piña piojo pipa pirata pisar piscina piso pista pitón pizca placa plan plata playa plaza pleito pleno plomo pluma plural pobre poco poder podio poema poesía poeta polen policía pollo polvo pomada pomelo pomo pompa poner porción portal posada poseer posible poste potencia potro pozo prado precoz pregunta premio prensa preso previo primo príncipe prisión privar proa probar proceso producto proeza profesor programa prole promesa pronto propio próximo prueba público puchero pudor pueblo puerta puesto pulga pulir pulmón pulpo pulso puma punto puñal puño pupa pupila puré quedar queja quemar querer queso quieto química quince quitar rábano rabia rabo ración radical raíz rama rampa rancho rango rapaz rápido rapto rasgo raspa rato rayo raza razón reacción realidad rebaño rebote recaer receta rechazo recoger recreo recto recurso red redondo reducir reflejo reforma refrán refugio regalo regir regla regreso rehén reino reír reja relato relevo relieve relleno reloj remar remedio remo rencor rendir renta reparto repetir reposo reptil res rescate resina respeto resto resumen retiro retorno retrato reunir revés revista rey rezar rico riego rienda riesgo rifa rígido rigor rincón riñón río riqueza risa ritmo rito rizo roble roce rociar rodar rodeo rodilla roer rojizo rojo romero romper ron ronco ronda ropa ropero rosa rosca rostro rotar rubí rubor rudo rueda rugir ruido ruina ruleta rulo rumbo rumor ruptura ruta rutina sábado saber sabio sable sacar sagaz sagrado sala saldo salero salir salmón salón salsa salto salud salvar samba sanción sandía sanear sangre sanidad sano santo sapo saque sardina sartén sastre satán sauna saxofón sección seco secreto secta sed seguir seis sello selva semana semilla senda sensor señal señor separar sepia sequía ser serie sermón servir sesenta sesión seta setenta severo sexo sexto sidra siesta siete siglo signo sílaba silbar silencio silla símbolo simio sirena sistema sitio situar sobre socio sodio sol solapa soldado soledad sólido soltar solución sombra sondeo sonido sonoro sonrisa sopa soplar soporte sordo sorpresa sorteo sostén sótano suave subir suceso sudor suegra suelo sueño suerte sufrir sujeto sultán sumar superar suplir suponer supremo sur surco sureño surgir susto sutil tabaco tabique tabla tabú taco tacto tajo talar talco talento talla talón tamaño tambor tango tanque tapa tapete tapia tapón taquilla tarde tarea tarifa tarjeta tarot tarro tarta tatuaje tauro taza tazón teatro techo tecla técnica tejado tejer tejido tela teléfono tema temor templo tenaz tender tener tenis tenso teoría terapia terco término ternura terror tesis tesoro testigo tetera texto tez tibio tiburón tiempo tienda tierra tieso tigre tijera tilde timbre tímido timo tinta tío típico tipo tira tirón titán títere título tiza toalla tobillo tocar tocino todo toga toldo tomar tono tonto topar tope toque tórax torero tormenta torneo toro torpedo torre torso tortuga tos tosco toser tóxico trabajo tractor traer tráfico trago traje tramo trance trato trauma trazar trébol tregua treinta tren trepar tres tribu trigo tripa triste triunfo trofeo trompa tronco tropa trote trozo truco trueno trufa tubería tubo tuerto tumba tumor túnel túnica turbina turismo turno tutor ubicar úlcera umbral unidad unir universo uno untar uña urbano urbe urgente urna usar usuario útil utopía uva vaca vacío vacuna vagar vago vaina vajilla vale válido valle valor válvula vampiro vara variar varón vaso vecino vector vehículo veinte vejez vela velero veloz vena vencer venda veneno vengar venir venta venus ver verano verbo verde vereda verja verso verter vía viaje vibrar vicio víctima vida vídeo vidrio viejo viernes vigor vil villa vinagre vino viñedo violín viral virgo virtud visor víspera vista vitamina viudo vivaz vivero vivir vivo volcán volumen volver voraz votar voto voz vuelo vulgar yacer yate yegua yema yerno yeso yodo yoga yogur zafiro zanja zapato zarza zona zorro zumo zurdo".split(' ') };
+// Promesa que resuelve el módulo de Firebase (ver final de la página)
+const FB_READY = new Promise(r=>{ window.__fbResolve = r; });
+
+// ================= Textos =================
+const T = {
+  es:{
+    menuTitle:"Juegos", menuBtn:"Menú",
+    menuIntro:"Juegos de palabras bitcoiners. Elegí uno; cada partida se genera al azar.",
+    acroName:"Acróstico", acroDesc:"Completá las filas y descubrí la frase escondida en la columna naranja.",
+    hangName:"Ahorcado", hangDesc:"Adiviná la palabra bitcoiner antes de que se rompan los 6 bloques.",
+    sopaName:"Sopa de letras", sopaDesc:"Encontrá los términos escondidos en la grilla, en cualquier dirección.",
+    acroTitle:"Acrósticos", hangTitle:"Ahorcado", sopaTitle:"Sopa de letras",
+    // acróstico
+    newBtn:"Nuevo acróstico", check:"Comprobar", print:"Imprimir", clues:"Pistas",
+    hint:n=>`Revelar letra (${n})`,
+    foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Tenés 5 letras de ayuda por acróstico.",
+    metaP:(w,l)=>`Frase escondida: ${w} palabras, ${l} letras.`, metaW:l=>`Palabra escondida: ${l} letras.`,
+    wrong:n=>`Hay ${n} letra${n>1?"s":""} mal (en rojo).`, empty:n=>`Vas bien. Faltan ${n} casilla${n>1?"s":""}.`,
+    noHints:"Ya usaste las 5 letras de ayuda.", winLabel:"¡Resuelto! La frase era",
+    stats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin letras reveladas":h+" letra"+(h>1?"s":"")+" revelada"+(h>1?"s":"")}.`,
+    given:"Letra regalada", cellLabel:(r,k)=>`Fila ${r}, letra ${k}`,
+    imgSolved:"Resuelto en", imgHints:h=>h===0?"sin ayuda":`${h} letra${h>1?"s":""} revelada${h>1?"s":""}`,
+    // compartir
+    share:"Compartir imagen", shared:"Imagen lista.", shareFail:"No se pudo compartir la imagen.",
+    shareText:"Jugué a RODO ₿ Games",
+    // ahorcado
+    hNew:"Nueva palabra", hClueBtn:"Ver pista (rompe 1 bloque)", hMeta:l=>`${l} letras.`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
+    hWin:"¡Adivinaste!", hLose:"Se rompió la cadena. Era", hAgain:"Otra palabra",
+    hStats:(e,s)=>`${e} error${e===1?"":"es"}. Racha: ${s}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla.",
+    hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
+    // sopa
+    sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
+    sModeWords:"Ver pistas en vez de palabras", sModeClues:"Ver palabras",
+    sWin:"¡Encontraste todas!", sStats:(n,t)=>`${n} términos en ${t}.`, sAgain:"Otra sopa",
+    sFoot:"Arrastrá sobre las letras, o tocá la primera y después la última.",
+    sCard:(n,t)=>`${n} términos en ${t}`
+  },
+  en:{
+    menuTitle:"Games", menuBtn:"Menu",
+    menuIntro:"Bitcoin word games. Pick one; every round is generated at random.",
+    acroName:"Acrostic", acroDesc:"Fill in the rows and uncover the phrase hidden in the orange column.",
+    hangName:"Hangman", hangDesc:"Guess the Bitcoin word before all 6 blocks break.",
+    sopaName:"Word search", sopaDesc:"Find the terms hidden in the grid, in any direction.",
+    acroTitle:"Acrostics", hangTitle:"Hangman", sopaTitle:"Word search",
+    newBtn:"New acrostic", check:"Check", print:"Print", clues:"Clues",
+    hint:n=>`Reveal letter (${n})`,
+    foot:"Read top to bottom, the orange column spells the hidden phrase. You get 5 helper letters per acrostic.",
+    metaP:(w,l)=>`Hidden phrase: ${w} words, ${l} letters.`, metaW:l=>`Hidden word: ${l} letters.`,
+    wrong:n=>`${n} letter${n>1?"s are":" is"} wrong (in red).`, empty:n=>`Looking good. ${n} square${n>1?"s":""} to go.`,
+    noHints:"You've used all 5 helper letters.", winLabel:"Solved! The phrase was",
+    stats:(t,h)=>`Time ${t}. ${h===0?"No letters revealed":h+" letter"+(h>1?"s":"")+" revealed"}.`,
+    given:"Free letter", cellLabel:(r,k)=>`Row ${r}, letter ${k}`,
+    imgSolved:"Solved in", imgHints:h=>h===0?"no help":`${h} letter${h>1?"s":""} revealed`,
+    share:"Share image", shared:"Image ready.", shareFail:"Couldn't share the image.",
+    shareText:"I played RODO ₿ Games",
+    hNew:"New word", hClueBtn:"Show clue (breaks 1 block)", hMeta:l=>`${l} letters.`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
+    hWin:"You got it!", hLose:"The chain broke. It was", hAgain:"Another word",
+    hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
+    hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
+    sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
+    sModeWords:"Show clues instead of words", sModeClues:"Show words",
+    sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
+    sFoot:"Drag across the letters, or tap the first one and then the last.",
+    sCard:(n,t)=>`${n} terms in ${t}`
+  }
+};
+
+// ================= Utilidades =================
+const norm = s => s.toUpperCase().replace(/Ñ/g,"\u0001").normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"").replace(/\u0001/g,"Ñ");
+const clean = s => norm(s).replace(/[^A-ZÑ ]/g,"").replace(/\s+/g," ").trim();
+const rand = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const $ = id => document.getElementById(id);
+const fmt = ms => { const s=Math.round(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+const gloss = () => lang==="en" ? G_EN : G_ES;
+const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+
+let lang = store.get("rodo-lang")==="en" ? "en" : "es";
+let view = "menu";
+
+function setTitle(text){ $("title").innerHTML = `<span class="k">${text[0]}</span>${text.slice(1)}`; }
+
+// ================= Compartir (común) =================
+const SANS = "'Bricolage Grotesque', system-ui, sans-serif", MONO = "'IBM Plex Mono', ui-monospace, monospace";
+function canvasBase(W,H,gameTitle){
+  const S=2, cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
+  const x=cv.getContext("2d"); x.scale(S,S);
+  x.fillStyle="#F7F8F9"; x.fillRect(0,0,W,H);
+  x.fillStyle="#F7931A"; x.fillRect(0,0,W,8);
+  x.fillStyle="#5B6672"; x.font=`600 16px ${SANS}`; x.textBaseline="alphabetic"; x.textAlign="left";
+  x.fillText("RODO ₿ Games", 40, 50);
+  x.fillStyle="#1A1E23"; x.font=`800 40px ${SANS}`; x.fillText(gameTitle, 40, 92);
+  return {cv,x};
+}
+function wrapText(x, text, px, py, maxW, lh){
+  let line = "";
+  for (const w of text.split(" ")){
+    const test = line ? line+" "+w : w;
+    if (x.measureText(test).width > maxW && line){ x.fillText(line, px, py); line = w; py += lh; }
+    else line = test;
+  }
+  if (line) x.fillText(line, px, py);
+  return py;
+}
+function tile(x,cx,cy,size,ch,fill,stroke,color){
+  x.fillStyle=fill; x.strokeStyle=stroke; x.lineWidth=1.5;
+  x.beginPath(); x.roundRect ? x.roundRect(cx,cy,size,size,6) : x.rect(cx,cy,size,size); x.fill(); x.stroke();
+  if (ch){ x.fillStyle=color||"#1A1E23"; x.font=`700 ${Math.round(size*.5)}px ${MONO}`; x.textAlign="center"; x.textBaseline="middle";
+    x.fillText(ch, cx+size/2, cy+size/2+1); x.textAlign="left"; x.textBaseline="alphabetic"; }
+}
+async function shareBlob(blob, filename, noteEl, btn){
+  const t=T[lang]; noteEl.textContent=""; btn.disabled=true;
+  try{
+    const file = new File([blob], filename, {type:"image/png"});
+    try{
+      if (navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], text:t.shareText}); noteEl.textContent=t.shared; return;
+      }
+    }catch(e){ if (e && e.name==="AbortError") return; }
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000); noteEl.textContent=t.shared;
+  } finally { btn.disabled=false; }
+}
+const toBlob = cv => new Promise(res => cv.toBlob(res,"image/png"));
+
+// =====================================================================
+// ACRÓSTICO
+// =====================================================================
+const Acro = (()=>{
+  const MAX_HINTS = 5;
+  let P=null, active=-1, hintsUsed=0, startTime=0, elapsed=0, solved=false, lastPhrase="";
+  const rowClue = document.createElement("div");
+  rowClue.className="rowclue"; rowClue.setAttribute("aria-live","polite");
+
+  function attempt(phrase, G){
+    const exclude = new Set(phrase.split(" "));
+    const used = new Set(); const rows=[]; let repeats=0;
+    for (const ch of phrase){
+      if (ch===" "){ rows.push({gap:true}); continue; }
+      let c = G.filter(([w])=>w.includes(ch)&&!used.has(w)&&!exclude.has(w));
+      if (!c.length){ c = G.filter(([w])=>w.includes(ch)&&!exclude.has(w)); repeats++; }
+      if (!c.length){ rows.push({word:ch, clue:T[lang].given, pos:0, given:true}); continue; }
+      const [w,clue] = rand(c);
+      const idx=[...w].map((x,i)=>x===ch?i:-1).filter(i=>i>=0);
+      rows.push({word:w, clue, pos:rand(idx)}); used.add(w);
+    }
+    const real=rows.filter(r=>!r.gap);
+    const L=Math.max(...real.map(r=>r.pos));
+    const R=Math.max(...real.map(r=>[...r.word].length-r.pos));
+    return {phrase, rows, L, W:L+R, score:L+R+repeats*6};
+  }
+  function generate(phrase){
+    let best=null;
+    for(let i=0;i<80;i++){ const a=attempt(phrase, gloss()); if(!best||a.score<best.score) best=a; }
+    best.rows.forEach(r=>{ if(!r.gap) r.entry=Array([...r.word].length).fill(""); });
+    return best;
+  }
+  function texts(){
+    const t=T[lang];
+    $("newBtn").textContent=t.newBtn; $("checkBtn").textContent=t.check; $("printBtn").textContent=t.print;
+    $("cluesTitle").textContent=t.clues; $("foot").textContent=t.foot; $("shareBtn").textContent=t.share;
+    $("winLabel").textContent=t.winLabel; updateHintBtn();
+  }
+  function updateHintBtn(){
+    const left=MAX_HINTS-hintsUsed;
+    $("hintBtn").textContent=T[lang].hint(left);
+    $("hintBtn").disabled = left<=0 || solved; $("checkBtn").disabled = solved;
+  }
+  const realRows = () => P.rows.filter(r=>!r.gap);
+  const cellsOf = ri => [...document.querySelectorAll(`#grid .cell[data-r="${ri}"]`)];
+  const solOf = c => [...realRows()[+c.dataset.r].word][+c.dataset.k];
+
+  function render(){
+    const t=T[lang], grid=$("grid"); grid.innerHTML="";
+    grid.style.gridTemplateColumns=`28px repeat(${P.W}, var(--cell))`;
+    grid.appendChild(document.createElement("div"));
+    for(let c=0;c<P.W;c++){ const d=document.createElement("div"); d.className="arrow"; if(c===P.L) d.textContent="₿"; grid.appendChild(d); }
+    const clues=$("clues"); clues.innerHTML="";
+    let n=0, prevGap=false;
+    P.rows.forEach(r=>{
+      if (r.gap){ const g=document.createElement("div"); g.className="gap"; grid.appendChild(g); prevGap=true; return; }
+      const ri=n++; r.n=ri;
+      const gut=document.createElement("div"); gut.className="gut"; gut.textContent=ri+1; grid.appendChild(gut); r.gut=gut;
+      const off=P.L-r.pos, letters=[...r.word];
+      for(let c=0;c<P.W;c++){
+        const k=c-off;
+        if(k<0||k>=letters.length){ grid.appendChild(document.createElement("div")); continue; }
+        const inp=document.createElement("input");
+        inp.className="cell"+(c===P.L?" key":"");
+        inp.maxLength=2; inp.autocomplete="off"; inp.spellcheck=false;
+        inp.setAttribute("autocapitalize","characters");
+        inp.setAttribute("aria-label", t.cellLabel(ri+1,k+1));
+        inp.dataset.r=ri; inp.dataset.k=k;
+        if(r.given){ inp.value=letters[k]; inp.readOnly=true; inp.classList.add("given"); r.entry[k]=letters[k]; }
+        grid.appendChild(inp);
+      }
+      const li=document.createElement("li"); li.tabIndex=0; li.dataset.r=ri;
+      if(prevGap) li.classList.add("wordbreak");
+      li.innerHTML=`${r.clue} <span class="len">(${letters.length})</span>`;
+      li.addEventListener("click",()=>focusRow(ri));
+      li.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); focusRow(ri);} });
+      clues.appendChild(li); prevGap=false;
+    });
+    const words=P.phrase.split(" "), nl=P.phrase.replace(/ /g,"").length;
+    $("meta").textContent = words.length>1 ? t.metaP(words.length,nl) : t.metaW(nl);
+    $("win").style.display="none"; $("current").textContent="";
+    active=-1; setActive(0);
+  }
+  function setActive(ri){
+    active=ri;
+    document.querySelectorAll("#grid .cell.inrow").forEach(c=>c.classList.remove("inrow"));
+    document.querySelectorAll("#clues li.active").forEach(c=>c.classList.remove("active"));
+    cellsOf(ri).forEach(c=>c.classList.add("inrow"));
+    const li=document.querySelector(`#clues li[data-r="${ri}"]`); if(li) li.classList.add("active");
+    const r=realRows()[ri];
+    if(r && !solved){
+      rowClue.innerHTML=`<strong>${ri+1}.</strong>${r.clue} <span class="len">(${[...r.word].length})</span>`;
+      $("grid").insertBefore(rowClue, r.gut);
+    } else rowClue.remove();
+  }
+  function focusRow(ri){
+    const cells=cellsOf(ri).filter(c=>!c.readOnly);
+    const target=cells.find(c=>!c.value)||cells[0];
+    if(target){ target.focus(); target.scrollIntoView({block:"nearest",inline:"nearest"}); } else setActive(ri);
+  }
+  function move(t,d){
+    const cells=cellsOf(+t.dataset.r); let i=cells.indexOf(t)+d;
+    while(cells[i]&&cells[i].readOnly) i+=d;
+    if(cells[i]){ cells[i].focus(); return cells[i]; } return null;
+  }
+  function check(){
+    if(solved) return; let wrong=0, empty=0;
+    document.querySelectorAll("#grid .cell").forEach(c=>{
+      if(c.readOnly) return; c.classList.remove("ok","bad");
+      if(!c.value){ empty++; return; }
+      if(c.value===solOf(c)) c.classList.add("ok"); else { c.classList.add("bad"); wrong++; }
+    });
+    if(!checkWin()) $("current").textContent = wrong?T[lang].wrong(wrong):empty?T[lang].empty(empty):"";
+  }
+  function hint(){
+    if(solved) return;
+    if(hintsUsed>=MAX_HINTS){ $("current").textContent=T[lang].noHints; return; }
+    const needs=c=>!c.readOnly && c.value!==solOf(c);
+    let cell=document.activeElement;
+    if(!(cell&&cell.classList&&cell.classList.contains("cell")&&needs(cell)))
+      cell=cellsOf(Math.max(active,0)).find(needs)||[...document.querySelectorAll("#grid .cell")].find(needs);
+    if(!cell) return;
+    cell.value=solOf(cell); realRows()[+cell.dataset.r].entry[+cell.dataset.k]=cell.value;
+    cell.classList.remove("ok","bad"); cell.classList.add("rev");
+    hintsUsed++; updateHintBtn();
+    if(hintsUsed>=MAX_HINTS) $("current").textContent=T[lang].noHints;
+    if(!checkWin()) move(cell,1);
+  }
+  function checkWin(){
+    if(solved) return true;
+    if(!realRows().every(r=>r.entry.join("")===r.word)) return false;
+    solved=true; elapsed=Date.now()-startTime;
+    document.querySelectorAll("#grid .cell").forEach(c=>{ c.readOnly=true; if(!c.classList.contains("rev")&&!c.classList.contains("given")) c.classList.add("ok"); });
+    rowClue.remove(); $("current").textContent="";
+    $("winPhrase").textContent=P.phrase; $("winStats").textContent=T[lang].stats(fmt(elapsed),hintsUsed);
+    $("shareNote").textContent=""; $("win").style.display="block"; updateHintBtn();
+    $("win").scrollIntoView({block:"nearest",behavior:"smooth"});
+    Reg.finish("acrostico",{ok:true,s:0,h:hintsUsed,ms:elapsed});
+    return true;
+  }
+  async function image(){
+    try{ await document.fonts.ready; }catch(e){}
+    const t=T[lang], cell=44, gapC=4, gut=34, pad=40, head=120, gapRow=16;
+    const gridW=gut+P.W*(cell+gapC); let gridH=0;
+    P.rows.forEach(r=>gridH += r.gap?gapRow:cell+gapC);
+    const W=Math.max(gridW+pad*2,560), H=head+gridH+130+pad;
+    const {cv,x}=canvasBase(W,H,t.acroTitle);
+    const ox=(W-gridW)/2; let y=head;
+    P.rows.forEach(r=>{
+      if(r.gap){ y+=gapRow; return; }
+      x.fillStyle="#5B6672"; x.font=`500 13px ${MONO}`; x.textAlign="right"; x.textBaseline="middle";
+      x.fillText(String(r.n+1), ox+gut-8, y+cell/2); x.textAlign="left"; x.textBaseline="alphabetic";
+      const off=P.L-r.pos;
+      [...r.word].forEach((ch,k)=>{
+        const key=(off+k)===P.L;
+        tile(x, ox+gut+(off+k)*(cell+gapC), y, cell, ch, key?"#F7931A":"#FFFFFF", key?"#C76F00":"#B9C2CB");
+      });
+      y+=cell+gapC;
+    });
+    y+=40; x.fillStyle="#1A1E23"; x.font=`700 22px ${MONO}`;
+    wrapText(x,P.phrase,pad,y,W-pad*2,28);
+    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`;
+    x.fillText(`${t.imgSolved} ${fmt(elapsed)}, ${t.imgHints(hintsUsed)}`, pad, H-pad+6);
+    return toBlob(cv);
+  }
+  function gen(){
+    const pool=PHRASES[lang].filter(p=>p!==lastPhrase);
+    const phrase=rand(pool); lastPhrase=phrase;
+    const g=generate(phrase);
+    return {phrase:g.phrase, L:g.L, W:g.W, rows:g.rows.map(r=>r.gap?{gap:true}:{word:r.word,clue:r.clue,pos:r.pos,given:!!r.given})};
+  }
+  function load(d){
+    P=JSON.parse(JSON.stringify(d)); lastPhrase=P.phrase;
+    P.rows.forEach(r=>{ if(!r.gap) r.entry=Array([...r.word].length).fill(""); });
+    hintsUsed=0; solved=false; startTime=Date.now(); elapsed=0; updateHintBtn(); render();
+  }
+  function create(){ Reg.newGame("acrostico"); }
+  // eventos
+  const grid=$("grid");
+  grid.addEventListener("focusin",e=>{ const t=e.target; if(!t.classList.contains("cell")) return;
+    if(+t.dataset.r!==active) setActive(+t.dataset.r); t.select&&t.select(); });
+  grid.addEventListener("input",e=>{ const t=e.target; if(!t.classList.contains("cell")||solved) return;
+    t.value=clean(t.value).replace(/ /g,"").slice(-1); t.classList.remove("ok","bad","rev");
+    realRows()[+t.dataset.r].entry[+t.dataset.k]=t.value; if(t.value) move(t,1); checkWin(); });
+  grid.addEventListener("keydown",e=>{ const t=e.target; if(!t.classList.contains("cell")) return; const ri=+t.dataset.r;
+    if(e.key==="Backspace"&&!t.value){ e.preventDefault(); const p=move(t,-1); if(p&&!p.readOnly){ p.value=""; realRows()[ri].entry[+p.dataset.k]=""; } }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); move(t,1); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); move(t,-1); }
+    else if(e.key==="ArrowDown"||e.key==="Enter"){ e.preventDefault(); if(ri+1<realRows().length) focusRow(ri+1); }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); if(ri>0) focusRow(ri-1); } });
+  $("newBtn").addEventListener("click",create);
+  $("checkBtn").addEventListener("click",check);
+  $("hintBtn").addEventListener("mousedown",e=>e.preventDefault());
+  $("hintBtn").addEventListener("click",hint);
+  $("printBtn").addEventListener("click",()=>window.print());
+  $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
+  return {texts, create, gen, load, started:()=>!!P};
+})();
+
+// =====================================================================
+// AHORCADO
+// =====================================================================
+const Hang = (()=>{
+  const LIVES=6;
+  let word="", clue="", guessed=new Set(), wrong=0, over=false, recent=[], clueUsed=false;
+  const ROWS = { es:["QWERTYUIOP","ASDFGHJKLÑ","ZXCVBNM"], en:["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"] };
+
+  function texts(){
+    const t=T[lang];
+    $("hNew").textContent=t.hNew; $("hAgain").textContent=t.hAgain; $("hShare").textContent=t.share;
+    $("hFoot").textContent=t.hFoot; updClue();
+  }
+  const streak = () => +(store.get("rodo-hang-streak")||0);
+  function drawBlocks(){
+    const svg=$("hBlocks"); let h="";
+    const bw=64, gap=20, total=LIVES*bw+(LIVES-1)*gap, ox=(520-total)/2;
+    for(let i=0;i<LIVES;i++){
+      const x=ox+i*(bw+gap), broken = i >= LIVES-wrong;
+      if(i<LIVES-1){ const lx=x+bw, nb = (i+1) >= LIVES-wrong;
+        h+=`<line x1="${lx}" y1="40" x2="${lx+gap}" y2="40" stroke="${nb||broken?'var(--bad)':'var(--line)'}" stroke-width="4" ${nb?'stroke-dasharray="4 5"':''}/>`; }
+      h+=`<rect x="${x}" y="8" width="${bw}" height="64" rx="8" fill="${broken?'var(--bad-soft)':'var(--btc)'}" stroke="${broken?'var(--bad)':'#C76F00'}" stroke-width="2"/>`;
+      if(broken) h+=`<path d="M${x+18} 20 L${x+34} 38 L${x+26} 44 L${x+46} 62" fill="none" stroke="var(--bad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      else h+=`<text x="${x+bw/2}" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="20" fill="#1A1E23">₿</text>`;
+    }
+    svg.innerHTML=h;
+    $("hLives").textContent=T[lang].hLives(LIVES-wrong);
+    updClue();
+  }
+  function drawWord(){
+    $("hWord").innerHTML=[...word].map(ch=>{
+      const show=guessed.has(ch)||over, miss=over&&!guessed.has(ch);
+      return `<span class="hl${miss?' miss':''}">${show?ch:""}</span>`;
+    }).join("");
+  }
+  function drawKeys(){
+    $("hKeys").innerHTML=ROWS[lang].map(r=>`<div class="krow">${[...r].map(ch=>{
+      const cls = guessed.has(ch) ? (word.includes(ch)?" hit":" miss") : "";
+      return `<button class="key${cls}" data-k="${ch}" ${guessed.has(ch)||over?"disabled":""} aria-label="${ch}">${ch}</button>`;
+    }).join("")}</div>`).join("");
+  }
+  let hStart=0;
+  function gen(){
+    const pool=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
+    const [w,c]=rand(pool); recent.push(w); if(recent.length>25) recent.shift();
+    return {word:w, clue:c};
+  }
+  function create(){ Reg.newGame("ahorcado"); }
+  function load(d){
+    word=d.word; clue=d.clue; hStart=Date.now();
+    guessed=new Set(); wrong=0; over=false;
+    // letras fuera del teclado (por ejemplo Ñ en inglés) se regalan
+    [...word].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) guessed.add(ch); });
+    $("hClue").textContent=clue; $("hClue").style.display="none"; clueUsed=false; $("hMeta").textContent=T[lang].hMeta(word.length);
+    $("hWin").style.display="none"; $("hWin").classList.remove("lose");
+    drawBlocks(); drawWord(); drawKeys();
+  }
+  function guess(ch){
+    if(over||guessed.has(ch)||!word) return;
+    guessed.add(ch);
+    if(!word.includes(ch)) wrong++;
+    const won=[...word].every(c=>guessed.has(c)), lost=wrong>=LIVES;
+    if(won||lost) finish(won);
+    drawBlocks(); drawWord(); drawKeys();
+  }
+  function finish(won){
+    over=true; const t=T[lang];
+    const s = won ? streak()+1 : 0; store.set("rodo-hang-streak", s);
+    $("hWinLabel").textContent = won ? t.hWin : t.hLose;
+    $("hWinWord").textContent = word;
+    $("hWinStats").textContent = t.hStats(wrong, s);
+    $("hWin").classList.toggle("lose", !won);
+    $("hShare").style.display = won ? "" : "none";
+    $("hNote").textContent=""; $("hWin").style.display="block";
+    $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
+    Reg.finish("ahorcado",{ok:won,s:0,h:wrong,ms:Date.now()-hStart});
+  }
+  async function image(){
+    try{ await document.fonts.ready; }catch(e){}
+    const t=T[lang], size=44, g=6, n=word.length;
+    const W=Math.max(600, n*(size+g)+80), H=330;
+    const {cv,x}=canvasBase(W,H,t.hangTitle);
+    let ox=(W-(n*(size+g)-g))/2;
+    [...word].forEach((ch,i)=>tile(x, ox+i*(size+g), 130, size, ch, "#FFFFFF", "#B9C2CB"));
+    const bw=40, bg=14, tot=LIVES*bw+(LIVES-1)*bg; ox=(W-tot)/2;
+    for(let i=0;i<LIVES;i++) tile(x, ox+i*(bw+bg), 200, bw, i>=LIVES-wrong?"✕":"₿", i>=LIVES-wrong?"#F6D5D1":"#F7931A", i>=LIVES-wrong?"#C2362B":"#C76F00", i>=LIVES-wrong?"#C2362B":"#1A1E23");
+    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`;
+    x.fillText(`${t.hCardWin(wrong)}. ${t.hStreak(streak())}`, 40, H-36);
+    return toBlob(cv);
+  }
+  // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
+  function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
+  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; $("hClue").style.display=""; drawBlocks(); });
+  $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
+  document.addEventListener("keydown",e=>{
+    if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
+    if(e.target.tagName==="INPUT") return;
+    const k=norm(e.key);
+    if(k.length===1 && /[A-ZÑ]/.test(k)) guess(k);
+  });
+  $("hNew").addEventListener("click",create);
+  $("hAgain").addEventListener("click",create);
+  $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
+  return {texts, create, gen, load, started:()=>!!word, redrawLives:()=>{ if(word) $("hLives").textContent=T[lang].hLives(LIVES-wrong); }};
+})();
+
+// =====================================================================
+// SOPA DE LETRAS
+// =====================================================================
+const Sopa = (()=>{
+  const N=12, COUNT=9;
+  const DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
+  let grid=[], words=[], found=new Set(), start=0, elapsed=0, done=false, showClues=false;
+  let anchor=null, dragging=false, dragStart=null, path=[];
+
+  function texts(){
+    const t=T[lang];
+    $("sNew").textContent=t.sNew; $("sAgain").textContent=t.sAgain; $("sShare").textContent=t.share;
+    $("sPrint").textContent=t.print; $("sFoot").textContent=t.sFoot; updateMode();
+  }
+  function updateMode(){
+    const t=T[lang];
+    $("sMode").textContent = showClues ? t.sModeClues : t.sModeWords;
+    $("sListTitle").textContent = showClues ? t.sListClue : t.sList;
+  }
+  function place(w){
+    const L=[...w];
+    for(let tries=0;tries<300;tries++){
+      const [dr,dc]=rand(DIRS);
+      const r0=Math.floor(Math.random()*N), c0=Math.floor(Math.random()*N);
+      const r1=r0+dr*(L.length-1), c1=c0+dc*(L.length-1);
+      if(r1<0||r1>=N||c1<0||c1>=N) continue;
+      let ok=true;
+      for(let i=0;i<L.length;i++){ const g=grid[r0+dr*i][c0+dc*i]; if(g && g!==L[i]){ ok=false; break; } }
+      if(!ok) continue;
+      const cells=[];
+      for(let i=0;i<L.length;i++){ grid[r0+dr*i][c0+dc*i]=L[i]; cells.push([r0+dr*i,c0+dc*i]); }
+      return cells;
+    }
+    return null;
+  }
+  function gen(){
+    grid=Array.from({length:N},()=>Array(N).fill(""));
+    words=[];
+    const pool=shuffle(gloss().filter(([w])=>w.length>=4&&w.length<=10));
+    for(const [w,clue] of pool){
+      if(words.length>=COUNT) break;
+      if(words.some(x=>x.w.includes(w)||w.includes(x.w))) continue;
+      const cells=place(w); if(cells) words.push({w,clue,cells});
+    }
+    const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!grid[r][c]) grid[r][c]=rand([...alpha]);
+    words.sort((a,b)=>a.w.localeCompare(b.w));
+    return {grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
+  }
+  function create(){ Reg.newGame("sopa"); }
+  function load(d){
+    grid=d.grid.map(r=>[...r]);
+    words=d.words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(i=>[Math.floor(i/N),i%N])}));
+    found=new Set(); done=false; anchor=null; start=Date.now();
+    $("sWin").style.display="none"; render();
+  }
+  function render(){
+    const g=$("sGrid"); g.style.gridTemplateColumns=`repeat(${N}, var(--s))`;
+    g.innerHTML = grid.map((row,r)=>row.map((ch,c)=>`<div class="scell" data-r="${r}" data-c="${c}">${ch}</div>`).join("")).join("");
+    words.forEach(o=>{ if(found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("found")); });
+    renderList();
+  }
+  function renderList(){
+    const ul=$("sList"); ul.classList.toggle("clue", showClues);
+    ul.innerHTML = words.map(o=>`<li class="${found.has(o.w)?"got":""}">${
+      showClues ? (found.has(o.w)?`<span class="w">${o.w}</span> `:"")+`${o.clue} <span class="len">(${o.w.length})</span>`
+                : `<span class="w">${o.w}</span>`}</li>`).join("");
+    $("sMeta").textContent=T[lang].sMeta(found.size, words.length);
+  }
+  const cellAt=(r,c)=>document.querySelector(`#sGrid .scell[data-r="${r}"][data-c="${c}"]`);
+  function line(a,b){
+    const dr=b.r-a.r, dc=b.c-a.c;
+    if(!(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))) return null;
+    const n=Math.max(Math.abs(dr),Math.abs(dc)), sr=Math.sign(dr), sc=Math.sign(dc), out=[];
+    for(let i=0;i<=n;i++) out.push({r:a.r+sr*i, c:a.c+sc*i});
+    return out;
+  }
+  function paint(cells){
+    document.querySelectorAll("#sGrid .scell.sel").forEach(e=>e.classList.remove("sel"));
+    (cells||[]).forEach(p=>cellAt(p.r,p.c).classList.add("sel"));
+  }
+  function evaluate(cells){
+    paint(null);
+    if(!cells||cells.length<2) return;
+    const s=cells.map(p=>grid[p.r][p.c]).join(""), rev=[...s].reverse().join("");
+    const hit=words.find(o=>!found.has(o.w)&&(o.w===s||o.w===rev));
+    if(!hit) return;
+    found.add(hit.w);
+    cells.forEach(p=>cellAt(p.r,p.c).classList.add("found"));
+    renderList();
+    if(found.size===words.length) finish();
+  }
+  function finish(){
+    done=true; elapsed=Date.now()-start; const t=T[lang];
+    $("sWinLabel").textContent=t.sWin; $("sWinStats").textContent=t.sStats(words.length, fmt(elapsed));
+    $("sNote").textContent=""; $("sWin").style.display="block";
+    $("sWin").scrollIntoView({block:"nearest",behavior:"smooth"});
+    Reg.finish("sopa",{ok:true,s:0,h:0,ms:elapsed});
+  }
+  const posOf = el => el && el.classList && el.classList.contains("scell") ? {r:+el.dataset.r, c:+el.dataset.c} : null;
+  const sg=$("sGrid");
+  sg.addEventListener("pointerdown",e=>{
+    if(done) return;
+    const p=posOf(e.target); if(!p) return;
+    e.preventDefault();
+    if(anchor && (anchor.r!==p.r||anchor.c!==p.c)){
+      const cells=line(anchor,p); cellAt(anchor.r,anchor.c).classList.remove("anchor"); anchor=null;
+      evaluate(cells); return;
+    }
+    dragging=true; dragStart=p; path=[p]; paint(path);
+    try{ sg.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  sg.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const p=posOf(document.elementFromPoint(e.clientX,e.clientY)); if(!p) return;
+    const cells=line(dragStart,p); if(cells){ path=cells; paint(path); }
+  });
+  sg.addEventListener("pointerup",()=>{
+    if(!dragging) return; dragging=false;
+    if(path.length===1){
+      if(anchor){ cellAt(anchor.r,anchor.c).classList.remove("anchor"); paint(null); anchor=null; return; }
+      anchor=dragStart; paint(null); cellAt(anchor.r,anchor.c).classList.add("anchor"); return;
+    }
+    if(anchor){ cellAt(anchor.r,anchor.c).classList.remove("anchor"); anchor=null; }
+    evaluate(path);
+  });
+  sg.addEventListener("pointercancel",()=>{ dragging=false; paint(null); });
+
+  async function image(){
+    try{ await document.fonts.ready; }catch(e){}
+    const t=T[lang], size=30, g=3, gw=N*(size+g)-g, W=Math.max(600,gw+80), H=130+gw+110;
+    const {cv,x}=canvasBase(W,H,t.sopaTitle);
+    const ox=(W-gw)/2, isF=new Set(); words.forEach(o=>o.cells.forEach(([r,c])=>isF.add(r+","+c)));
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const f=isF.has(r+","+c);
+      tile(x, ox+c*(size+g), 120+r*(size+g), size, grid[r][c], f?"#FDE6C6":"#FFFFFF", f?"#F7931A":"#D5DBE1", f?"#1A1E23":"#9AA4AE");
+    }
+    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`;
+    x.fillText(t.sCard(words.length, fmt(elapsed)), 40, H-36);
+    return toBlob(cv);
+  }
+  $("sNew").addEventListener("click",create);
+  $("sAgain").addEventListener("click",create);
+  $("sMode").addEventListener("click",()=>{ showClues=!showClues; updateMode(); renderList(); });
+  $("sPrint").addEventListener("click",()=>window.print());
+  $("sShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"wordsearch-rodo-games.png":"sopa-rodo-games.png", $("sNote"), $("sShare")));
+  return {texts, create, gen, load, started:()=>words.length>0};
+})();
+
+// =====================================================================
+// PERSONAJES (se suman a los glosarios)
+// =====================================================================
+G_ES.push(
+["BACK","Adam, creador de Hashcash y citado en el whitepaper"],
+["ANTONOPOULOS","Andreas, autor de Mastering Bitcoin y gran divulgador"],
+["DAI","Wei, autor de la propuesta b-money"],
+["HUGHES","Eric, autor del Manifiesto Cypherpunk de 1993"],
+["MAY","Tim, autor del Manifiesto Criptoanarquista"],
+["CHAUM","David, pionero del dinero electrónico con DigiCash"],
+["ANDRESEN","Gavin, a quien Satoshi le dejó la conducción del proyecto"],
+["MAXWELL","Gregory, histórico desarrollador de Bitcoin Core"],
+["WUILLE","Pieter, coautor de SegWit y Taproot"],
+["POON","Joseph, coautor del paper de Lightning"],
+["DRYJA","Thaddeus, coautor del paper de Lightning"],
+["SAYLOR","Michael, que convirtió a su empresa en tesorería en bitcoin"],
+["AMMOUS","Saifedean, autor de El patrón bitcoin"],
+["DORSEY","Jack, cofundador de Twitter y promotor de Nostr"],
+["LOPP","Jameson, referente en seguridad y custodia"],
+["MALLERS","Jack, fundador de Strike"],
+["GLADSTEIN","Alex, que difunde Bitcoin desde la Human Rights Foundation"],
+["HAL","Nombre de pila de Finney, el primer receptor de bitcoin"],
+["RALPH","Nombre de pila de Merkle, el del árbol"]
+);
+G_EN.push(
+["BACK","Adam, creator of Hashcash, cited in the whitepaper"],
+["ANTONOPOULOS","Andreas, author of Mastering Bitcoin and tireless educator"],
+["DAI","Wei, author of the b-money proposal"],
+["HUGHES","Eric, author of A Cypherpunk's Manifesto (1993)"],
+["MAY","Tim, author of The Crypto Anarchist Manifesto"],
+["CHAUM","David, electronic cash pioneer behind DigiCash"],
+["ANDRESEN","Gavin, to whom Satoshi handed the project's lead"],
+["MAXWELL","Gregory, longtime Bitcoin Core developer"],
+["WUILLE","Pieter, co-author of SegWit and Taproot"],
+["POON","Joseph, co-author of the Lightning paper"],
+["DRYJA","Thaddeus, co-author of the Lightning paper"],
+["SAYLOR","Michael, who turned his company into a bitcoin treasury"],
+["AMMOUS","Saifedean, author of The Bitcoin Standard"],
+["DORSEY","Jack, Twitter co-founder and Nostr backer"],
+["LOPP","Jameson, go-to voice on security and custody"],
+["MALLERS","Jack, founder of Strike"],
+["GLADSTEIN","Alex, who champions Bitcoin at the Human Rights Foundation"],
+["HAL","Finney's first name, the first bitcoin recipient"],
+["RALPH","Merkle's first name, of tree fame"]
+);
+
+// =====================================================================
+// FRASES PARA EL CRIPTOGRAMA
+// =====================================================================
+const QUOTES = {
+  es:[
+   ["El problema de fondo del dinero convencional es toda la confianza que requiere para funcionar.","Satoshi Nakamoto, 2009"],
+   ["La privacidad es necesaria para una sociedad abierta en la era electrónica.","Eric Hughes, 1993"],
+   ["Debemos defender nuestra propia privacidad si esperamos tener alguna.","Eric Hughes, 1993"],
+   ["El canciller, al borde de un segundo rescate a los bancos.","The Times, 3 de enero de 2009"],
+   ["Las monedas perdidas solo hacen que las de los demás valgan un poco más.","Satoshi Nakamoto, 2010"],
+   ["Quizás tenga sentido conseguir algunos, por si la cosa prende.","Satoshi Nakamoto, 2009"],
+   ["Si no me creés o no lo entendés, no tengo tiempo para convencerte, perdón.","Satoshi Nakamoto, 2010"],
+   ["Una versión puramente entre pares del efectivo electrónico.","Whitepaper de Bitcoin, 2008"],
+   ["Lo que se necesita es un sistema de pago electrónico basado en prueba criptográfica en vez de confianza.","Whitepaper de Bitcoin, 2008"],
+   ["Los terceros de confianza son agujeros de seguridad.","Nick Szabo, 2001"],
+   ["Los cypherpunks escriben código.","Eric Hughes, 1993"],
+   ["Escribir una descripción de esto para el público general es dificilísimo.","Satoshi Nakamoto, 2010"],
+   ["No son tus llaves, no son tus monedas.","Dicho bitcoiner"],
+   ["No confíes, verificá.","Dicho bitcoiner"]
+  ],
+  en:[
+   ["The root problem with conventional currency is all the trust that's required to make it work.","Satoshi Nakamoto, 2009"],
+   ["Privacy is necessary for an open society in the electronic age.","Eric Hughes, 1993"],
+   ["We must defend our own privacy if we expect to have any.","Eric Hughes, 1993"],
+   ["Chancellor on brink of second bailout for banks.","The Times, January 3, 2009"],
+   ["Lost coins only make everyone else's coins worth slightly more.","Satoshi Nakamoto, 2010"],
+   ["It might make sense just to get some in case it catches on.","Satoshi Nakamoto, 2009"],
+   ["If you don't believe me or don't get it, I don't have time to try to convince you, sorry.","Satoshi Nakamoto, 2010"],
+   ["A purely peer-to-peer version of electronic cash.","Bitcoin whitepaper, 2008"],
+   ["What is needed is an electronic payment system based on cryptographic proof instead of trust.","Bitcoin whitepaper, 2008"],
+   ["Trusted third parties are security holes.","Nick Szabo, 2001"],
+   ["Cypherpunks write code.","Eric Hughes, 1993"],
+   ["Writing a description for this thing for general audiences is bloody hard.","Satoshi Nakamoto, 2010"],
+   ["Not your keys, not your coins.","Bitcoin saying"],
+   ["Don't trust, verify.","Bitcoin saying"]
+  ]
+};
+
+// =====================================================================
+// SEÑUELOS PARA "¿ESTÁ EN LA LISTA?" (se filtran contra la lista real)
+// =====================================================================
+const DECOYS = {
+  en:"apple house bread chair river mountain pencil window garden doctor teacher bottle button candle carpet castle cloud corner dinner dollar engine feather finger forest friend guitar hammer heart island jacket kitchen ladder lemon letter market mirror monkey needle orange pillow planet pocket potato rabbit rocket saddle shadow silver singer sister spider spoon stone sugar summer tiger tomato towel valley wallet water winter yellow zebra anchor blanket bridge butter cherry coffee cookie dragon eagle flower giant honey jungle kettle lizard magnet nephew ocean pepper puzzle quiet ribbon salmon temple turtle violin whale wizard yogurt coin block chain miner node hash bitcoin satoshi ledger crypto token money bank price trade seed phrase secret password vault wealth profit asset share stock bond gold copper diamond mine proof work mint halving market freedom privacy signal mother father brother daughter cousin pirate rainbow thunder storm sunset breeze meadow cabin barn fence tractor".split(" "),
+  es:"casa perro mesa silla ventana puerta ciudad escuela maestro doctor lápiz cuaderno montaña río bosque flor árbol manzana naranja limón azúcar café leche pan queso tomate papa cebolla ajo pollo pescado carne huevo mantequilla cuchara tenedor cuchillo plato vaso botella camisa pantalón zapato sombrero reloj espejo almohada cama cocina baño jardín calle coche tren avión barco bicicleta moneda billetera cadena bloque minero nodo clave semilla frase secreto contraseña banco dinero precio mercado oro plata cobre diamante mina prueba trabajo bitcoin satoshi cripto token ahorro riqueza guitarra violín tigre jirafa elefante conejo tortuga araña águila ballena delfín mariposa abeja hormiga gato caballo vaca oveja cerdo pato gallina león lobo zorro oso ratón sol luna estrella nube lluvia nieve viento fuego agua tierra piedra arena mar playa isla volcán desierto selva libertad privacidad hermano abuela primo".split(" ")
+};
+const bipSet = {}; ["en","es"].forEach(l=>bipSet[l]=new Map(BIP39[l].map((w,i)=>[norm(w),i])));
+const bipIndex = (l,w) => bipSet[l].get(norm(w));
+const decoysFor = l => [...new Set(DECOYS[l])].filter(w=>bipIndex(l,w)===undefined);
+
+// ================= Textos extra =================
+Object.assign(T.es,{
+  menuIntro:"Juegos de palabras bitcoiners. Elegí uno; cada partida se genera al azar.",
+  g1:"Palabras bitcoiners", g2:"BIP39, la lista de las semillas",
+  seedName:"Semilla perdida", seedDesc:"Memorizá 12 o 24 palabras de la lista BIP39 y reconstruí la semilla en orden.",
+  bipName:"¿Está en la lista?", bipDesc:"¿Está o no está entre las 2048 palabras oficiales? Veinte rondas rápidas.",
+  plateName:"Placa de acero", plateDesc:"En tu placa grabaste solo las primeras 4 letras. Recordá la palabra completa.",
+  cripName:"Criptograma", cripDesc:"Descifrá frases de Satoshi y los cypherpunks, letra por letra.",
+  anaName:"Anagrama", anaDesc:"Ordená las letras y encontrá términos y personajes de Bitcoin. Diez rondas.",
+  seedTitle:"Semilla perdida", bipTitle:"¿Está en la lista?", plateTitle:"Placa de acero", cripTitle:"Criptograma", anaTitle:"Anagrama",
+  // semilla
+  pNew:"Nueva semilla", pIntro:"Vas a ver las palabras durante un rato. Después se esconden y tenés que tocarlas en el orden correcto. Ojo: hay palabras de más que no son de tu semilla. Con 3 errores perdés los fondos.",
+  pSize:n=>`${n} palabras`, pStart:"Empezar", pReady:"Ya las memoricé",
+  pMemo:s=>`Memorizá. Quedan ${s}.`, pPlay:(i,e)=>`Tocá la palabra ${i}. Errores: ${e} de 3.`,
+  pWin:"¡Recuperaste tu semilla!", pLose:"Perdiste el acceso a tus fondos.",
+  pStats:(n,e,t)=>`${n} palabras, ${e} error${e===1?"":"es"}, ${t} para reconstruirla.`,
+  pAgain:"Otra semilla", pMeta:l=>l==="es"?"Lista BIP39 oficial en castellano.":"Lista BIP39 oficial en inglés.",
+  pFoot:"Las palabras salen al azar y no forman una semilla válida. Nunca escribas tu semilla real en ningún sitio web.",
+  pCard:(n,e,t)=>`Recuperé ${n} palabras con ${e} error${e===1?"":"es"} en ${t}`,
+  // ¿está en la lista?
+  bNew:"Nueva partida", bYes:"Está", bNo:"No está", bAgain:"Jugar de nuevo",
+  bMeta:(i,n,s)=>`Ronda ${i} de ${n}. Aciertos: ${s}.`,
+  bIsIn:(w,i)=>`“${w}” es la palabra número ${i} de la lista.`, bNotIn:w=>`“${w}” no está en la lista.`,
+  bRight:"Bien.", bWrong:"No.", bWin:(s,n)=>`${s} de ${n}`, bStats:t=>`Tiempo ${t}.`,
+  bFoot:"La lista se elige con el idioma: ES usa la lista oficial en castellano, EN la de inglés.",
+  bCard:(s,n,t)=>`${s} de ${n} aciertos en ${t}`,
+  // placa
+  lNew:"Nueva placa", lCheck:"Comprobar", lSkip:"Pasar", lAgain:"Otra ronda",
+  lMeta:(i,n,s)=>`Placa ${i} de ${n}. Aciertos: ${s}.`, lPlaceholder:"palabra completa",
+  lOk:(w,i)=>`Correcto: “${w}”, palabra número ${i}.`, lBad:"Esa no es. Probá otra vez o pasá.",
+  lSkipped:w=>`Era “${w}”.`, lNotBip:"Esa palabra no está en la lista BIP39.",
+  lWin:(s,n)=>`${s} de ${n} placas`, lStats:t=>`Tiempo ${t}.`,
+  lFoot:"En BIP39 las primeras 4 letras alcanzan para identificar cada palabra. Por eso muchas placas de acero graban solo eso.",
+  lCard:(s,n,t)=>`${s} de ${n} placas en ${t}`,
+  // criptograma
+  cNew:"Nuevo criptograma", cCheck:"Comprobar", cHint:n=>`Revelar letra (${n})`, cNoHints:"Ya usaste las 3 letras de ayuda.",
+  cMeta:"Cada letra fue reemplazada por otra. Escribí arriba la letra real; se completa en todas las casillas iguales.",
+  cWrong:n=>`Hay ${n} letra${n>1?"s":""} mal.`, cEmpty:n=>`Vas bien. Faltan ${n} letra${n>1?"s":""} distintas.`,
+  cWin:"¡Descifrado!", cStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin ayuda":h+" letra"+(h>1?"s":"")+" revelada"+(h>1?"s":"")}.`,
+  cAgain:"Otro criptograma", cFoot:"Las frases en inglés están traducidas al castellano.",
+  cCard:(t,h)=>`Descifrado en ${t}${h?`, con ${h} ayuda${h>1?"s":""}`:", sin ayuda"}`,
+  // anagrama
+  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar", aHint:n=>n?`Ver pista (usadas: ${n})`:"Ver pista", aAgain:"Jugar de nuevo",
+  aMeta:(i,n,s)=>`Ronda ${i} de ${n}. Aciertos: ${s}.`, aWin:(s,n)=>`${s} de ${n}`, aStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin pistas":h+" pista"+(h>1?"s":"")}.`,
+  aFoot:"Tocá las letras en orden, o escribilas con el teclado. Tocá una casilla de arriba para devolver la letra. Las pistas son libres, pero cuentan para el ranking.",
+  aCard:(s,n,t)=>`${s} de ${n} anagramas en ${t}`
+});
+Object.assign(T.en,{
+  menuIntro:"Bitcoin word games. Pick one; every round is generated at random.",
+  g1:"Bitcoin words", g2:"BIP39, the seed word list",
+  seedName:"Lost seed", seedDesc:"Memorize 12 or 24 BIP39 words, then rebuild the seed in order.",
+  bipName:"Is it on the list?", bipDesc:"Is it one of the 2048 official words or not? Twenty quick rounds.",
+  plateName:"Steel plate", plateDesc:"You only stamped the first 4 letters. Recall the full word.",
+  cripName:"Cryptogram", cripDesc:"Decode quotes from Satoshi and the cypherpunks, letter by letter.",
+  anaName:"Anagram", anaDesc:"Unscramble Bitcoin terms and names. Ten rounds.",
+  seedTitle:"Lost seed", bipTitle:"Is it on the list?", plateTitle:"Steel plate", cripTitle:"Cryptogram", anaTitle:"Anagram",
+  pNew:"New seed", pIntro:"You'll see the words for a while. Then they hide and you tap them in the right order. Careful: some extra words aren't part of your seed. Three mistakes and your funds are gone.",
+  pSize:n=>`${n} words`, pStart:"Start", pReady:"I've got them",
+  pMemo:s=>`Memorize. ${s} left.`, pPlay:(i,e)=>`Tap word ${i}. Mistakes: ${e} of 3.`,
+  pWin:"You recovered your seed!", pLose:"You lost access to your funds.",
+  pStats:(n,e,t)=>`${n} words, ${e} mistake${e===1?"":"s"}, ${t} to rebuild it.`,
+  pAgain:"Another seed", pMeta:l=>l==="es"?"Official Spanish BIP39 list.":"Official English BIP39 list.",
+  pFoot:"Words are random and don't form a valid seed. Never type your real seed into any website.",
+  pCard:(n,e,t)=>`Recovered ${n} words with ${e} mistake${e===1?"":"s"} in ${t}`,
+  bNew:"New game", bYes:"On the list", bNo:"Not on it", bAgain:"Play again",
+  bMeta:(i,n,s)=>`Round ${i} of ${n}. Score: ${s}.`,
+  bIsIn:(w,i)=>`“${w}” is word number ${i} on the list.`, bNotIn:w=>`“${w}” is not on the list.`,
+  bRight:"Right.", bWrong:"Nope.", bWin:(s,n)=>`${s} of ${n}`, bStats:t=>`Time ${t}.`,
+  bFoot:"The list follows the language: EN uses the official English list, ES the Spanish one.",
+  bCard:(s,n,t)=>`${s} of ${n} correct in ${t}`,
+  lNew:"New plate", lCheck:"Check", lSkip:"Skip", lAgain:"Another round",
+  lMeta:(i,n,s)=>`Plate ${i} of ${n}. Score: ${s}.`, lPlaceholder:"full word",
+  lOk:(w,i)=>`Correct: “${w}”, word number ${i}.`, lBad:"Not that one. Try again or skip.",
+  lSkipped:w=>`It was “${w}”.`, lNotBip:"That word isn't on the BIP39 list.",
+  lWin:(s,n)=>`${s} of ${n} plates`, lStats:t=>`Time ${t}.`,
+  lFoot:"In BIP39 the first 4 letters are enough to identify every word. That's why many steel plates only stamp those.",
+  lCard:(s,n,t)=>`${s} of ${n} plates in ${t}`,
+  cNew:"New cryptogram", cCheck:"Check", cHint:n=>`Reveal letter (${n})`, cNoHints:"You've used all 3 helper letters.",
+  cMeta:"Every letter was swapped for another. Type the real letter on top; it fills every matching square.",
+  cWrong:n=>`${n} letter${n>1?"s are":" is"} wrong.`, cEmpty:n=>`Looking good. ${n} distinct letter${n>1?"s":""} to go.`,
+  cWin:"Decoded!", cStats:(t,h)=>`Time ${t}. ${h===0?"No help":h+" letter"+(h>1?"s":"")+" revealed"}.`,
+  cAgain:"Another cryptogram", cFoot:"Original quotes in English.",
+  cCard:(t,h)=>`Decoded in ${t}${h?`, with ${h} hint${h>1?"s":""}`:", no help"}`,
+  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip", aHint:n=>n?`Show clue (used: ${n})`:"Show clue", aAgain:"Play again",
+  aMeta:(i,n,s)=>`Round ${i} of ${n}. Score: ${s}.`, aWin:(s,n)=>`${s} of ${n}`, aStats:(t,h)=>`Time ${t}. ${h===0?"No clues":h+" clue"+(h>1?"s":"")}.`,
+  aFoot:"Tap the letters in order, or type them. Tap a filled square to send the letter back. Clues are unlimited, but they count in the leaderboard.",
+  aCard:(s,n,t)=>`${s} of ${n} anagrams in ${t}`
+});
+
+function scoreDots(el, n, results, cur){
+  el.innerHTML = Array.from({length:n},(_,i)=>`<i class="${results[i]||(i===cur?"cur":"")}"></i>`).join("");
+}
+function showWin(prefix, label, stats, lose){
+  $(prefix+"WinLabel").textContent=label; $(prefix+"WinStats").textContent=stats;
+  $(prefix+"Note").textContent=""; const w=$(prefix+"Win"); w.classList.toggle("lose",!!lose); w.style.display="block";
+  w.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+function cardImage(title, big, line, results){
+  const W=600, H=results?330:290;
+  const {cv,x}=canvasBase(W,H,title);
+  x.fillStyle="#1A1E23"; x.font=`700 30px ${MONO}`; x.fillText(big, 40, 150);
+  if(results){ const s=26,g=6; results.forEach((r,i)=>tile(x,40+i*(s+g),180,s,"",r==="ok"?"#2E7D4F":r==="skip"?"#F6D5D1":"#E6EAEE",r==="ok"?"#2E7D4F":r==="skip"?"#C2362B":"#B9C2CB")); }
+  x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`; x.fillText(line, 40, H-36);
+  return toBlob(cv);
+}
+
+// =====================================================================
+// SEMILLA PERDIDA
+// =====================================================================
+const Seed = (()=>{
+  const MAXERR=3;
+  let n=12, pz=null, words=[], stage="", next=0, errors=0, playStart=0, elapsed=0, timer=null, left=0;
+  function texts(){
+    const t=T[lang];
+    $("pNew").textContent=t.pNew; $("pIntroText").textContent=t.pIntro; $("pStart").textContent=t.pStart;
+    $("pReady").textContent=t.pReady; $("pAgain").textContent=t.pAgain; $("pShare").textContent=t.share; $("pFoot").textContent=t.pFoot;
+    document.querySelectorAll("#pSize button").forEach(b=>{ b.textContent=t.pSize(+b.dataset.n); b.setAttribute("aria-pressed", +b.dataset.n===(pz?pz.n:n)); });
+    $("pMeta").textContent=t.pMeta(lang); status();
+  }
+  function status(){
+    const t=T[lang];
+    $("pStatus").textContent = stage==="memo" ? t.pMemo(fmt(left*1000)) : stage==="play" ? t.pPlay(next+1, errors) : (stage==="intro"&&pz) ? t.pPz(pz.n) : "";
+  }
+  function show(id,on){ $(id).style.display = on ? "" : "none"; }
+  function gen(){
+    const all=shuffle(BIP39[lang]).slice(0, n + Math.round(n/3));
+    return {n, words:all.slice(0,n), decoys:all.slice(n)};
+  }
+  function create(){ Reg.newGame("semilla"); }
+  function load(d){
+    pz=JSON.parse(JSON.stringify(d)); texts();
+    clearInterval(timer); stage="intro"; next=0; errors=0;
+    $("pWin").style.display="none"; $("pSeed").innerHTML=""; $("pChips").innerHTML="";
+    show("pIntro",true); show("pTimer",false); show("pMemoActions",false); status();
+  }
+  function start(){
+    if(!pz) return;
+    words=[...pz.words]; Seed._decoys=[...pz.decoys];
+    stage="memo"; left = words.length*5; show("pIntro",false); show("pTimer",true); show("pMemoActions",true);
+    $("pSeed").innerHTML = words.map((w,i)=>`<div class="slot"><span class="i">${i+1}</span>${w}</div>`).join("");
+    const total=left; $("pTimerFill").style.width="100%";
+    status();
+    timer=setInterval(()=>{ left--; $("pTimerFill").style.width=(left/total*100)+"%"; status(); if(left<=0) play(); },1000);
+  }
+  function play(){
+    clearInterval(timer); stage="play"; next=0; errors=0; playStart=Date.now();
+    show("pTimer",false); show("pMemoActions",false);
+    $("pSeed").innerHTML = words.map((w,i)=>`<div class="slot${i===0?" next":""}" data-i="${i}"><span class="i">${i+1}</span><span class="v"></span></div>`).join("");
+    $("pChips").innerHTML = shuffle([...words, ...Seed._decoys]).map(w=>`<button class="chip" data-w="${w}">${w}</button>`).join("");
+    status();
+  }
+  function pick(b){
+    if(stage!=="play"||b.classList.contains("used")) return;
+    if(b.dataset.w===words[next]){
+      b.classList.add("used");
+      const s=document.querySelector(`#pSeed .slot[data-i="${next}"]`);
+      s.classList.remove("next"); s.classList.add("filled"); s.querySelector(".v").textContent=words[next];
+      next++;
+      if(next>=words.length) return finish(true);
+      document.querySelector(`#pSeed .slot[data-i="${next}"]`).classList.add("next");
+    } else {
+      errors++; b.classList.remove("err"); void b.offsetWidth; b.classList.add("err");
+      setTimeout(()=>b.classList.remove("err"),450);
+      if(errors>=MAXERR) return finish(false);
+    }
+    status();
+  }
+  function finish(won){
+    stage="end"; elapsed=Date.now()-playStart; const t=T[lang];
+    if(!won) words.forEach((w,i)=>{ if(i>=next){ const s=document.querySelector(`#pSeed .slot[data-i="${i}"]`); s.classList.remove("next"); s.classList.add("miss"); s.querySelector(".v").textContent=w; }});
+    $("pChips").innerHTML=""; status();
+    $("pShare").style.display = won ? "" : "none";
+    showWin("p", won?t.pWin:t.pLose, t.pStats(words.length, errors, fmt(elapsed)), !won);
+    Reg.finish("semilla",{ok:won,s:0,h:errors,ms:elapsed});
+  }
+  $("pChips").addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(b) pick(b); });
+  $("pSize").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; n=+b.dataset.n; if(!pz||pz.n!==n||stage!=="intro") create(); else texts(); });
+  $("pStart").addEventListener("click",start);
+  $("pReady").addEventListener("click",play);
+  $("pNew").addEventListener("click",create);
+  $("pAgain").addEventListener("click",create);
+  $("pShare").addEventListener("click",async()=>{ const t=T[lang];
+    shareBlob(await cardImage(t.seedTitle, t.pSize(words.length), t.pCard(words.length,errors,fmt(elapsed)), null), lang==="en"?"lost-seed-rodo-games.png":"semilla-rodo-games.png", $("pNote"), $("pShare")); });
+  return {texts, create, gen, load, started:()=>!!pz};
+})();
+
+// =====================================================================
+// ¿ESTÁ EN LA LISTA?
+// =====================================================================
+const IsBip = (()=>{
+  const ROUNDS=20;
+  let items=[], i=0, score=0, results=[], start=0, elapsed=0, locked=false;
+  function texts(){
+    const t=T[lang];
+    $("bNew").textContent=t.bNew; $("bYes").textContent=t.bYes; $("bNo").textContent=t.bNo;
+    $("bAgain").textContent=t.bAgain; $("bShare").textContent=t.share; $("bFoot").textContent=t.bFoot; meta();
+  }
+  const meta=()=>{ if(items.length) $("bMeta").textContent=T[lang].bMeta(Math.min(i+1,ROUNDS),ROUNDS,score); };
+  function gen(){
+    const real=shuffle(BIP39[lang]).slice(0,ROUNDS/2).map(w=>({w,inList:true}));
+    const fake=shuffle(decoysFor(lang)).slice(0,ROUNDS/2).map(w=>({w,inList:false}));
+    return {items:shuffle([...real,...fake])};
+  }
+  function create(){ Reg.newGame("esbip"); }
+  function load(d){
+    items=d.items.map(x=>({...x})); i=0; score=0; results=[]; start=Date.now(); locked=false;
+    $("bWin").style.display="none"; $("bPlay").style.display=""; round();
+  }
+  function round(){
+    $("bWord").textContent=items[i].w; $("bFeedback").textContent=""; $("bFeedback").className="feedback";
+    $("bYes").disabled=$("bNo").disabled=false; locked=false;
+    scoreDots($("bScore"),ROUNDS,results,i); meta();
+  }
+  function answer(yes){
+    if(locked) return; locked=true; $("bYes").disabled=$("bNo").disabled=true;
+    const it=items[i], ok=(yes===it.inList), t=T[lang];
+    if(ok) score++; results[i]= ok?"ok":"skip";
+    const fb=$("bFeedback");
+    fb.className="feedback "+(ok?"ok":"bad");
+    fb.textContent=`${ok?t.bRight:t.bWrong} ${it.inList?t.bIsIn(it.w,bipIndex(lang,it.w)+1):t.bNotIn(it.w)}`;
+    scoreDots($("bScore"),ROUNDS,results,-1); meta();
+    setTimeout(()=>{ i++; if(i>=ROUNDS) finish(); else round(); }, ok?1100:1900);
+  }
+  function finish(){
+    elapsed=Date.now()-start; const t=T[lang];
+    $("bPlay").style.display="none"; $("bMeta").textContent="";
+    showWin("b", t.bWin(score,ROUNDS), t.bStats(fmt(elapsed)));
+    Reg.finish("esbip",{ok:true,s:score,h:0,ms:elapsed});
+  }
+  $("bYes").addEventListener("click",()=>answer(true));
+  $("bNo").addEventListener("click",()=>answer(false));
+  document.addEventListener("keydown",e=>{ if(view!=="esbip"||e.target.tagName==="INPUT") return;
+    if(e.key==="ArrowLeft") answer(true); else if(e.key==="ArrowRight") answer(false); });
+  $("bNew").addEventListener("click",create); $("bAgain").addEventListener("click",create);
+  $("bShare").addEventListener("click",async()=>{ const t=T[lang];
+    shareBlob(await cardImage(t.bipTitle, t.bWin(score,ROUNDS), t.bCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"bip39-rodo-games.png":"bip39-rodo-games.png", $("bNote"), $("bShare")); });
+  return {texts, create, gen, load, started:()=>items.length>0};
+})();
+
+// =====================================================================
+// PLACA DE ACERO
+// =====================================================================
+const Plate = (()=>{
+  const ROUNDS=10;
+  let items=[], i=0, score=0, results=[], start=0, elapsed=0, locked=false;
+  function texts(){
+    const t=T[lang];
+    $("lNew").textContent=t.lNew; $("lCheck").textContent=t.lCheck; $("lSkip").textContent=t.lSkip;
+    $("lAgain").textContent=t.lAgain; $("lShare").textContent=t.share; $("lFoot").textContent=t.lFoot;
+    $("lInput").placeholder=t.lPlaceholder; meta();
+  }
+  const meta=()=>{ if(items.length) $("lMeta").textContent=T[lang].lMeta(Math.min(i+1,ROUNDS),ROUNDS,score); };
+  function gen(){ return {items:shuffle(BIP39[lang].filter(w=>norm(w).length>=5)).slice(0,ROUNDS)}; }
+  function create(){ Reg.newGame("placa"); }
+  function load(d){
+    items=[...d.items];
+    i=0; score=0; results=[]; start=Date.now();
+    $("lWin").style.display="none"; $("lPlay").style.display=""; round();
+  }
+  function round(){
+    locked=false; const w=items[i];
+    $("lPlate").innerHTML=[...norm(w).slice(0,4)].map(c=>`<span>${c}</span>`).join("")+`<span class="pn" id="lNum"></span>`;
+    $("lInput").value=""; $("lInput").disabled=false; $("lFeedback").textContent=""; $("lFeedback").className="feedback";
+    scoreDots($("lScore"),ROUNDS,results,i); meta();
+    if(view==="placa") $("lInput").focus();
+  }
+  function check(){
+    if(locked) return;
+    const v=norm($("lInput").value.trim()); if(!v) return;
+    const w=items[i], t=T[lang], fb=$("lFeedback");
+    if(v===norm(w)){
+      locked=true; score++; results[i]="ok"; fb.className="feedback ok";
+      fb.textContent=t.lOk(w, bipIndex(lang,w)+1); $("lNum").textContent="#"+(bipIndex(lang,w)+1);
+      $("lInput").disabled=true; scoreDots($("lScore"),ROUNDS,results,-1); meta();
+      setTimeout(advance,1200);
+    } else {
+      fb.className="feedback bad"; fb.textContent = bipIndex(lang,v)===undefined ? t.lNotBip : t.lBad;
+    }
+  }
+  function skip(){
+    if(locked) return; locked=true; results[i]="skip";
+    const fb=$("lFeedback"); fb.className="feedback bad"; fb.textContent=T[lang].lSkipped(items[i]);
+    $("lInput").disabled=true; scoreDots($("lScore"),ROUNDS,results,-1);
+    setTimeout(advance,1600);
+  }
+  function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
+  function finish(){
+    elapsed=Date.now()-start; const t=T[lang];
+    $("lPlay").style.display="none"; $("lMeta").textContent="";
+    showWin("l", t.lWin(score,ROUNDS), t.lStats(fmt(elapsed)));
+    Reg.finish("placa",{ok:true,s:score,h:0,ms:elapsed});
+  }
+  $("lCheck").addEventListener("click",check);
+  $("lInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); check(); } });
+  $("lSkip").addEventListener("click",skip);
+  $("lNew").addEventListener("click",create); $("lAgain").addEventListener("click",create);
+  $("lShare").addEventListener("click",async()=>{ const t=T[lang];
+    shareBlob(await cardImage(t.plateTitle, t.lWin(score,ROUNDS), t.lCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"steel-plate-rodo-games.png":"placa-rodo-games.png", $("lNote"), $("lShare")); });
+  return {texts, create, gen, load, started:()=>items.length>0};
+})();
+
+// =====================================================================
+// CRIPTOGRAMA
+// =====================================================================
+const Cripto = (()=>{
+  const MAX_HINTS=3;
+  let q=null, map={}, cells=[], hints=0, start=0, elapsed=0, solved=false, lastQ="", focusC=null;
+  const alpha = () => [...(lang==="es"?"ABCDEFGHIJKLMNÑOPQRSTUVWXYZ":"ABCDEFGHIJKLMNOPQRSTUVWXYZ")];
+  function texts(){
+    const t=T[lang];
+    $("cNew").textContent=t.cNew; $("cCheck").textContent=t.cCheck; $("cPrint").textContent=t.print;
+    $("cAgain").textContent=t.cAgain; $("cShare").textContent=t.share; $("cFoot").textContent=t.cFoot; $("cMeta").textContent=t.cMeta;
+    updateHint();
+  }
+  function updateHint(){ $("cHint").textContent=T[lang].cHint(MAX_HINTS-hints); $("cHint").disabled = hints>=MAX_HINTS||solved; $("cCheck").disabled=solved; }
+  function gen(){
+    const pool=QUOTES[lang].filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
+    const A=alpha(); let perm;
+    do { perm=shuffle(A); } while (perm.some((c,i)=>c===A[i]));
+    const m={}; A.forEach((c,i)=>m[c]=perm[i]);
+    return {q:qq, map:m};
+  }
+  function create(){ Reg.newGame("criptograma"); }
+  function load(d){
+    q=[...d.q]; lastQ=q[0]; map={...d.map};
+    hints=0; solved=false; start=Date.now(); cells=[];
+    const text=norm(q[0]);
+    const box=$("cQuote"); box.innerHTML="";
+    text.split(" ").forEach(word=>{
+      const wd=document.createElement("div"); wd.className="cw";
+      for(const ch of word){
+        const cl=document.createElement("div"); cl.className="cl";
+        if(map[ch]){
+          const inp=document.createElement("input");
+          inp.className="cell"; inp.maxLength=2; inp.autocomplete="off"; inp.spellcheck=false;
+          inp.setAttribute("autocapitalize","characters"); inp.setAttribute("aria-label",map[ch]);
+          inp.dataset.i=cells.length;
+          cells.push({el:inp, p:ch, c:map[ch]});
+          const code=document.createElement("span"); code.className="code"; code.textContent=map[ch];
+          cl.append(inp,code);
+        } else { const s=document.createElement("span"); s.className="punct"; s.textContent=ch; cl.appendChild(s); }
+        wd.appendChild(cl);
+      }
+      box.appendChild(wd);
+    });
+    $("cAuthor").textContent="— "+q[1];
+    $("cWin").style.display="none"; $("cStatus").textContent=""; updateHint();
+  }
+  const group = c => cells.filter(x=>x.c===c);
+  function setGroup(c, v, cls){
+    group(c).forEach(x=>{ x.el.value=v; x.el.classList.remove("ok","bad","rev"); if(cls) x.el.classList.add(cls); });
+  }
+  function highlight(c){
+    focusC=c; cells.forEach(x=>x.el.classList.toggle("inrow", x.c===c));
+  }
+  function nextEmpty(from){
+    for(let k=1;k<=cells.length;k++){ const x=cells[(from+k)%cells.length]; if(!x.el.value) return x; }
+    return null;
+  }
+  function checkWin(){
+    if(solved) return true;
+    if(!cells.every(x=>x.el.value===x.p)) return false;
+    solved=true; elapsed=Date.now()-start; const t=T[lang];
+    cells.forEach(x=>{ x.el.readOnly=true; x.el.classList.remove("inrow","bad"); if(!x.el.classList.contains("rev")) x.el.classList.add("ok"); });
+    $("cStatus").textContent=""; updateHint();
+    showWin("c", t.cWin, t.cStats(fmt(elapsed),hints));
+    Reg.finish("criptograma",{ok:true,s:0,h:hints,ms:elapsed});
+    return true;
+  }
+  const box=$("cQuote");
+  box.addEventListener("focusin",e=>{ const x=cells[+e.target.dataset.i]; if(x){ highlight(x.c); e.target.select&&e.target.select(); } });
+  box.addEventListener("input",e=>{
+    const x=cells[+e.target.dataset.i]; if(!x||solved) return;
+    const v=clean(e.target.value).replace(/ /g,"").slice(-1);
+    setGroup(x.c, v);
+    if(v && !checkWin()){ const n=nextEmpty(+e.target.dataset.i); if(n) n.el.focus(); }
+  });
+  box.addEventListener("keydown",e=>{
+    const x=cells[+e.target.dataset.i]; if(!x) return; const i=+e.target.dataset.i;
+    if(e.key==="Backspace" && !x.el.value){ e.preventDefault(); const p=cells[i-1]; if(p && !p.el.readOnly){ p.el.focus(); setGroup(p.c,""); } }
+    else if(e.key==="ArrowRight"){ e.preventDefault(); cells[i+1]&&cells[i+1].el.focus(); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); cells[i-1]&&cells[i-1].el.focus(); }
+  });
+  $("cCheck").addEventListener("click",()=>{
+    if(solved) return; let wrong=0; const pending=new Set();
+    cells.forEach(x=>{ if(x.el.readOnly) return; x.el.classList.remove("ok","bad");
+      if(!x.el.value){ pending.add(x.c); return; }
+      if(x.el.value===x.p) x.el.classList.add("ok"); else { x.el.classList.add("bad"); wrong++; } });
+    const wrongGroups=new Set(cells.filter(x=>x.el.classList.contains("bad")).map(x=>x.c)).size;
+    if(!checkWin()) $("cStatus").textContent = wrongGroups ? T[lang].cWrong(wrongGroups) : pending.size ? T[lang].cEmpty(pending.size) : "";
+  });
+  $("cHint").addEventListener("mousedown",e=>e.preventDefault());
+  $("cHint").addEventListener("click",()=>{
+    if(solved) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
+    const needs=c=>group(c).some(x=>x.el.value!==x.p);
+    const c = (focusC && needs(focusC)) ? focusC : (cells.find(x=>x.el.value!==x.p)||{}).c;
+    if(!c) return;
+    const p=group(c)[0].p; setGroup(c,p,"rev"); group(c).forEach(x=>x.el.readOnly=true);
+    hints++; updateHint(); if(hints>=MAX_HINTS) $("cStatus").textContent=T[lang].cNoHints;
+    checkWin();
+  });
+  async function image(){
+    try{ await document.fonts.ready; }catch(e){}
+    const t=T[lang], W=640, cv0=document.createElement("canvas").getContext("2d");
+    cv0.font=`700 24px ${MONO}`;
+    let lines=1, line=""; for(const w of norm(q[0]).split(" ")){ const tt=line?line+" "+w:w; if(cv0.measureText(tt).width>W-80&&line){lines++;line=w;} else line=tt; }
+    const H=150+lines*32+110;
+    const {cv,x}=canvasBase(W,H,t.cripTitle);
+    x.fillStyle="#1A1E23"; x.font=`700 24px ${MONO}`;
+    const y=wrapText(x, norm(q[0]), 40, 150, W-80, 32);
+    x.fillStyle="#C76F00"; x.font=`600 18px ${SANS}`; x.fillText("— "+q[1], 40, y+40);
+    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`; x.fillText(t.cCard(fmt(elapsed),hints), 40, H-30);
+    return toBlob(cv);
+  }
+  $("cNew").addEventListener("click",create); $("cAgain").addEventListener("click",create);
+  $("cPrint").addEventListener("click",()=>window.print());
+  $("cShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"cryptogram-rodo-games.png":"criptograma-rodo-games.png", $("cNote"), $("cShare")));
+  return {texts, create, gen, load, started:()=>!!q};
+})();
+
+// =====================================================================
+// ANAGRAMA
+// =====================================================================
+const Ana = (()=>{
+  const ROUNDS=10;
+  let list=[], i=0, tiles=[], picks=[], results=[], score=0, start=0, elapsed=0, locked=false, hints=0, shown=false;
+  const MAXH=3;
+  const ACR=/sigla|acronym|abreviatura|short form|\(short\)|abreviado/i;
+  function texts(){
+    const t=T[lang];
+    $("aNew").textContent=t.aNew; $("aErase").textContent=t.aErase; $("aShuffle").textContent=t.aShuffle;
+    $("aSkip").textContent=t.aSkip; updHint(); $("aAgain").textContent=t.aAgain; $("aShare").textContent=t.share; $("aFoot").textContent=t.aFoot; meta();
+  }
+  const meta=()=>{ if(list.length && i<ROUNDS) $("aMeta").textContent=T[lang].aMeta(i+1,ROUNDS,score); };
+  const word=()=>list[i][0];
+  function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length; }
+  function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
+  function gen(){ return {list:shuffle(gloss().filter(([w,c])=>w.length>=4&&w.length<=10&&!ACR.test(c))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
+  function create(){ Reg.newGame("anagrama"); }
+  function load(d){
+    list=d.list.map(o=>[o.w,o.c]); hints=0;
+    i=0; results=[]; score=0; start=Date.now();
+    $("aWin").style.display="none"; $("aPlay").style.display=""; round();
+  }
+  function round(){
+    locked=false; tiles=scramble(word()); picks=[];
+    shown=false; $("aClue").textContent=list[i][1]; $("aClue").style.display="none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
+  }
+  function draw(cls){
+    const w=word();
+    $("aSlots").className="aslots"+(cls?" "+cls:"");
+    $("aSlots").innerHTML=[...w].map((_,j)=>{ const k=picks[j]; return `<button class="aslot${k!==undefined?" full":""}" data-j="${j}" aria-label="${j+1}">${k!==undefined?tiles[k]:""}</button>`; }).join("");
+    $("aTiles").innerHTML=tiles.map((c,k)=>`<button class="atile${picks.includes(k)?" used":""}" data-k="${k}">${c}</button>`).join("");
+  }
+  function tap(k){
+    if(locked||picks.includes(k)) return;
+    picks.push(k); draw();
+    if(picks.length===tiles.length) evaluate();
+  }
+  function evaluate(){
+    const g=picks.map(k=>tiles[k]).join("");
+    if(g===word()){
+      locked=true; score++; results[i]="ok"; draw("ok"); scoreDots($("aScore"),ROUNDS,results,-1); meta();
+      setTimeout(advance,800);
+    } else { draw("bad"); setTimeout(()=>{ if(!locked) draw(); },400); }
+  }
+  function skip(){
+    if(locked) return; locked=true; results[i]="skip";
+    const w=word(); tiles=[...w]; picks=tiles.map((_,k)=>k); draw("skip"); scoreDots($("aScore"),ROUNDS,results,-1);
+    setTimeout(advance,1500);
+  }
+  function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
+  function finish(){
+    elapsed=Date.now()-start; const t=T[lang];
+    $("aPlay").style.display="none"; $("aMeta").textContent="";
+    showWin("a", t.aWin(score,ROUNDS), t.aStats(fmt(elapsed),hints));
+    Reg.finish("anagrama",{ok:true,s:score,h:hints,ms:elapsed});
+  }
+  $("aTiles").addEventListener("click",e=>{ const b=e.target.closest(".atile"); if(b) tap(+b.dataset.k); });
+  $("aSlots").addEventListener("click",e=>{ const b=e.target.closest(".aslot"); if(!b||locked) return; const j=+b.dataset.j; if(picks[j]===undefined) return; picks.splice(j,1); draw(); });
+  $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
+  $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
+  $("aSkip").addEventListener("click",skip);
+  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; $("aClue").style.display=""; updHint(); });
+  document.addEventListener("keydown",e=>{
+    if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
+    if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
+    const k=norm(e.key); if(k.length!==1||!/[A-ZÑ]/.test(k)) return;
+    const idx=tiles.findIndex((c,j)=>c===k&&!picks.includes(j)); if(idx>=0) tap(idx);
+  });
+  $("aNew").addEventListener("click",create); $("aAgain").addEventListener("click",create);
+  $("aShare").addEventListener("click",async()=>{ const t=T[lang];
+    shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
+  return {texts, create, gen, load, started:()=>list.length>0};
+})();
+
+function applyTexts2(){
+  const t=T[lang];
+  $("menuG1").textContent=t.g1; $("menuG2").textContent=t.g2;
+  $("cSeedName").textContent=t.seedName; $("cSeedDesc").textContent=t.seedDesc;
+  $("cBipName").textContent=t.bipName; $("cBipDesc").textContent=t.bipDesc;
+  $("cPlateName").textContent=t.plateName; $("cPlateDesc").textContent=t.plateDesc;
+  $("cCripName").textContent=t.cripName; $("cCripDesc").textContent=t.cripDesc;
+  $("cAnaName").textContent=t.anaName; $("cAnaDesc").textContent=t.anaDesc;
+  Seed.texts(); IsBip.texts(); Plate.texts(); Cripto.texts(); Ana.texts();
+}
+
+// =====================================================================
+// REGISTRO: partidas numeradas y ranking compartido
+// =====================================================================
+Object.assign(T.es,{
+  pPz:n=>`Esta semilla tiene ${n} palabras.`,
+  rkBtn:"Ranking", rkGo:"Jugar", rkNum:"Número de partida",
+  rkTitle:(g,n)=>`Ranking de ${g} #${n}`, rkEmpty:"Todavía nadie lo completó. Podés ser el primero.",
+  rkYou:"Vos", rkSomeone:"Jugador", rkPlayers:n=>n===1?"1 jugador lo intentó.":`${n} jugadores lo intentaron.`,
+  rkHelp:h=>h===0?"sin ayuda":`${h} ayuda${h>1?"s":""}`, rkErr:h=>`${h} error${h===1?"":"es"}`,
+  rkYourPos:(p,m)=>`Tu puesto: ${p}, ${m}.`, rkYouFailed:"Tu intento no llegó a completarse.",
+  rkNoNum:"Sin número", rkLocal:"Sin conexión con el servidor: esta partida no tiene número ni ranking.", rkNick:"Tu apodo en el ranking:", rkNickSave:"Guardar", rkNickSaved:"Apodo guardado.",
+  rkNoPerm:"Tu acceso es de solo lectura: podés jugar los números que ya existen, pero no crear nuevos ni guardar resultados.",
+  rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
+  rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
+  rkSaved:"Resultado guardado en el ranking.", rkFail:"No se pudo guardar el resultado.",
+  rkFailNew:"No se pudo crear una partida numerada; esta queda sin número.", rkQuota:"La base de partidas está llena; esta queda sin número."
+});
+Object.assign(T.en,{
+  pPz:n=>`This seed has ${n} words.`,
+  rkBtn:"Leaderboard", rkGo:"Play", rkNum:"Game number",
+  rkTitle:(g,n)=>`${g} #${n} leaderboard`, rkEmpty:"Nobody has finished it yet. You could be first.",
+  rkYou:"You", rkSomeone:"Player", rkPlayers:n=>`${n} player${n===1?"":"s"} tried it.`,
+  rkHelp:h=>h===0?"no help":`${h} hint${h>1?"s":""}`, rkErr:h=>`${h} mistake${h===1?"":"s"}`,
+  rkYourPos:(p,m)=>`Your rank: ${p}, ${m}.`, rkYouFailed:"Your attempt wasn't completed.",
+  rkNoNum:"No number", rkLocal:"No connection to the server: this game has no number or leaderboard.", rkNick:"Your leaderboard nickname:", rkNickSave:"Save", rkNickSaved:"Nickname saved.",
+  rkNoPerm:"You have read-only access: you can play existing numbers, but not create new ones or save results.",
+  rkNotFound:n=>`There's no #${n} yet for this game and language.`,
+  rkPlayed:"You already played this number: your first result is the one that counts.",
+  rkSaved:"Result saved to the leaderboard.", rkFail:"Couldn't save the result.",
+  rkFailNew:"Couldn't create a numbered game; this one has no number.", rkQuota:"The game database is full; this one has no number."
+});
+
+const Reg = (()=>{
+  const KEYS=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla","esbip","placa"];
+  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"";
+  const cur={}, ui={}, subs={}, names={};
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // Firebase se inicializa en el módulo del final de la página
+  const ready=(async()=>{
+    fb = await Promise.race([FB_READY, sleep(9000).then(()=>null)]);
+    if(fb) uid=fb.uid;
+    KEYS.forEach(setPid);
+  })();
+
+  const gameName = g => { const t=T[lang]; return {acrostico:t.acroName, ahorcado:t.hangName, sopa:t.sopaName, criptograma:t.cripName, anagrama:t.anaName, semilla:t.seedName, esbip:t.bipName, placa:t.plateName}[g]; };
+  function mount(){
+    KEYS.forEach(g=>{
+      const sec=$("view-"+g); if(!sec) return;
+      const bar=document.createElement("div"); bar.className="pbar";
+      bar.innerHTML=`<span class="pid"></span><span class="pfind"><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="pmsg" aria-live="polite"></span>`;
+      sec.insertBefore(bar, sec.firstChild);
+      const rk=document.createElement("div"); rk.className="rank"; rk.hidden=true;
+      rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
+      sec.querySelector(".win").after(rk);
+      const u = ui[g] = {bar, rk, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind")};
+      const go=()=>{ const n=parseInt(u.input.value,10); if(n>0) open(g,n); };
+      u.go.addEventListener("click",go);
+      u.input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } });
+      u.rkBtn.addEventListener("click",()=>{ u.rk.hidden=!u.rk.hidden; renderRank(g); });
+      u.tabs=[...rk.querySelectorAll(".rtabs button")]; u.body=rk.querySelector(".rkbody");
+      u.tabs.forEach(b=>b.addEventListener("click",()=>{ u.tab=b.dataset.t; renderRank(g); }));
+      rk.addEventListener("click",e=>{ if(e.target.classList.contains("nicksave")) saveNick(g, rk.querySelector(".nickin").value); });
+      rk.addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.classList.contains("nickin")){ e.preventDefault(); saveNick(g, e.target.value); } });
+    });
+  }
+  function setPid(g){
+    const u=ui[g]; if(!u) return; const c=cur[g], t=T[lang];
+    u.pid.textContent = c && c.n ? `#${c.n}` : (c && c.loading ? "…" : t.rkNoNum);
+    u.find.style.display = fb ? "" : "none";
+    u.rkBtn.style.display = fb ? "" : "none";
+  }
+  const msg=(g,s)=>{ if(ui[g]) ui[g].msg.textContent=s||""; };
+  function texts(){
+    const t=T[lang];
+    KEYS.forEach(g=>{ const u=ui[g]; if(!u) return;
+      u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum);
+      setPid(g); renderRank(g); });
+  }
+  async function saveNick(g, v){
+    v=String(v||"").trim().slice(0,24); if(!v||!fb) return;
+    try{ await fb.setDoc(fb.doc(fb.db,"names",uid),{name:v}); nick=v; names[uid]=v; store.set("rodo-nick",v); msg(g,T[lang].rkNickSaved); KEYS.forEach(renderRank); }
+    catch(e){ msg(g,T[lang].rkFail); }
+  }
+
+  function localGame(g, note){ cur[g]={lang, n:null}; GAMES[g].load(GAMES[g].gen()); setPid(g); msg(g,note); }
+
+  async function enter(g){
+    const c=cur[g];
+    if(c && c.lang===lang) return;
+    cur[g]={lang, n:null, loading:true}; setPid(g); msg(g,"");
+    await ready;
+    if(!fb) return localGame(g, T[lang].rkLocal);
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,"counters",`${g}-${lang}`));
+      const count = s.exists() ? (s.data().count||0) : 0;
+      if(count>0) await open(g,count); else await newGame(g);
+    }catch(e){ localGame(g, T[lang].rkLocal); }
+  }
+  async function newGame(g){
+    if(busy) return; busy=true;
+    const L=lang, d=GAMES[g].gen(), key=`${g}-${L}`;
+    try{
+      await ready;
+      if(!fb){ cur[g]={lang:L,n:null}; GAMES[g].load(d); setPid(g); msg(g,T[lang].rkLocal); return; }
+      cur[g]={lang:L, n:null, loading:true}; setPid(g); msg(g,"");
+      // transacción: el contador y la partida se escriben juntos, sin números repetidos
+      const n = await fb.runTransaction(fb.db, async tx=>{
+        const cref=fb.doc(fb.db,"counters",key);
+        const s=await tx.get(cref);
+        const n=(s.exists()?(s.data().count||0):0)+1;
+        if(s.exists()) tx.update(cref,{count:n}); else tx.set(cref,{count:1});
+        tx.set(fb.doc(fb.db,"puzzles",`${key}-${n}`),{game:g, lang:L, n, data:d, by:uid, at:fb.serverTimestamp()});
+        return n;
+      });
+      cur[g]={lang:L, n}; GAMES[g].load(d); setPid(g); watch(g);
+    }catch(e){
+      cur[g]={lang:L,n:null}; GAMES[g].load(d); setPid(g); msg(g, T[lang].rkFailNew);
+    } finally { busy=false; }
+  }
+  async function open(g,n){
+    await ready; if(!fb) return;
+    const L=lang;
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${g}-${L}-${n}`));
+      if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await newGame(g); return; }
+      const d=JSON.parse(JSON.stringify(s.data().data));
+      cur[g]={lang:L, n}; GAMES[g].load(d); setPid(g); msg(g,""); ui[g].input.value=""; watch(g);
+    }catch(e){ msg(g, T[lang].rkNotFound(n)); }
+  }
+  function watch(g){
+    if(subs[g]){ subs[g](); subs[g]=null; }
+    const c=cur[g]; if(!fb||!c||!c.n) return;
+    const id=`${g}-${c.lang}-${c.n}`;
+    subs[g]=fb.onSnapshot(fb.collection(fb.db,"scores",id,"players"), qs=>{
+      if(cur[g]!==c) return;
+      const sc={}; qs.forEach(d=>sc[d.id]=d.data()); c.scores=sc;
+      if(uid && sc[uid] && !c.notified){ c.notified=true; if(!c.justSaved) msg(g, T[lang].rkPlayed); }
+      renderRank(g);
+    }, ()=>{});
+  }
+  async function finish(g, rec){
+    const c=cur[g]; if(!fb||!c||!c.n||!uid) return;
+    const ref=fb.doc(fb.db,"scores",`${g}-${c.lang}-${c.n}`,"players",uid);
+    try{
+      const s=await fb.getDoc(ref);
+      if(s.exists()) msg(g, T[lang].rkPlayed);
+      else{
+        c.justSaved=true; c.notified=true;
+        await fb.setDoc(ref,{g, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, ms:Math.round(rec.ms), at:fb.serverTimestamp()});
+        msg(g, T[lang].rkSaved);
+      }
+    }catch(e){ msg(g, T[lang].rkFail); }
+    delete gcache[g]; ui[g].rk.hidden=false; renderRank(g);
+  }
+  async function loadNames(ids){
+    const miss=ids.filter(i=>!(i in names));
+    await Promise.all(miss.map(async i=>{
+      try{ const s=await fb.getDoc(fb.doc(fb.db,"names",i)); names[i]= s.exists() ? s.data().name : ""; }catch(e){ names[i]=""; }
+    }));
+  }
+  const online=()=>!!fb;
+  const nickName=()=>nick;
+  const nickHtml=()=>`<div class="nick"><label>${esc(T[lang].rkNick)} <input class="nickin" maxlength="24" value="${esc(nick)}"></label><button class="nicksave">${esc(T[lang].rkNickSave)}</button></div>`;
+  async function fetchAll(g){
+    const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",g)));
+    return qs.docs.map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
+  }
+  // ---------- Puntaje por partida (con tope) y ranking general por percentil ----------
+  const CAP=15*60*1000;              // tope de tiempo y costo de cada ayuda o error: 15 minutos
+  const MINP=10;                     // partidas comparables necesarias para el ranking general
+  const pts=r=>Math.min(r.ms,CAP)+CAP*(r.h||0);
+  // más aciertos primero; después menor puntaje (tiempo con tope + 15 min por ayuda o error)
+  const cmp=(x,y)=>((y.ok?1:0)-(x.ok?1:0))||((y.s||0)-(x.s||0))||(pts(x)-pts(y));
+  function metric(g,r){
+    const t=T[lang], total=fmt(pts(r)), base=fmt(Math.min(r.ms,CAP));
+    const pen = r.h ? ` + ${(g==="ahorcado"||g==="semilla")?t.rkErr(r.h):t.rkHelp(r.h)}` : "";
+    const sc = (g==="anagrama"||g==="placa") ? `${r.s}/10, ` : g==="esbip" ? `${r.s}/20, ` : "";
+    return r.h ? `${sc}${total} (${base}${pen})` : `${sc}${total}`;
+  }
+  // entries: [{p: partida, u: jugador, r: resultado}] → por jugador: partidas jugadas, comparables y suma de percentiles
+  function percentiles(entries){
+    const byP={}, acc={};
+    entries.forEach(e=>{ (byP[e.p]=byP[e.p]||[]).push(e); (acc[e.u]=acc[e.u]||{played:0,n:0,sum:0}).played++; });
+    Object.values(byP).forEach(list=>{
+      const N=list.length; if(N<2) return;
+      list.forEach(e=>{
+        let beat=0, tie=0;
+        list.forEach(o=>{ if(o===e) return; const c=cmp(e.r,o.r); if(c<0) beat++; else if(c===0) tie++; });
+        acc[e.u].n++; acc[e.u].sum += (beat+0.5*tie)/(N-1);
+      });
+    });
+    return acc;
+  }
+  const gcache={};
+  async function allResults(g){
+    const c=gcache[g]; if(c && Date.now()-c.at<60000) return c.entries;
+    const entries=await fetchAll(g); gcache[g]={at:Date.now(), entries}; return entries;
+  }
+  const nmOf=i=>{ const t=T[lang], nk=nickName(); return i===uid ? (nk ? `${nk} (${t.rkYou.toLowerCase()})` : t.rkYou) : (names[i]||t.rkSomeone); };
+  async function renderRank(g){
+    const u=ui[g], c=cur[g], t=T[lang]; if(!u||u.rk.hidden) return;
+    const tab=u.tab||"p";
+    u.tabs.forEach(b=>{ b.textContent = b.dataset.t==="g" ? t.rkTabG : t.rkTabP; b.setAttribute("aria-pressed", b.dataset.t===tab); });
+    if(tab==="g") return renderGlobal(g);
+    if(!online()||!c||!c.n){ u.body.innerHTML=`<p class="m">${esc(t.rkLocal)}</p>`; return; }
+    const sc=c.scores||{}, ids=Object.keys(sc);
+    const ok=ids.filter(i=>sc[i].ok).sort((a,b)=>cmp(sc[a],sc[b]));
+    await loadNames(ok.slice(0,10));
+    if(cur[g]!==c || (u.tab||"p")!=="p") return;
+    let h=`<h3>${esc(t.rkTitle(gameName(g), c.n))}</h3>`;
+    if(!ok.length) h+=`<p class="m">${esc(t.rkEmpty)}</p>`;
+    else h+=`<ol>${ok.slice(0,10).map(i=>`<li class="${i===uid?"me":""}"><span>${esc(nmOf(i))}</span><span class="m">${esc(metric(g,sc[i]))}</span></li>`).join("")}</ol>`;
+    const p=ok.indexOf(uid); if(p>=10) h+=`<p class="m">${esc(t.rkYourPos(p+1, metric(g,sc[uid])))}</p>`;
+    if(uid && sc[uid] && !sc[uid].ok) h+=`<p class="m">${esc(t.rkYouFailed)}</p>`;
+    if(ids.length) h+=`<p class="m">${esc(t.rkPlayers(ids.length))}</p>`;
+    h+=`<p class="m small">${esc(t.rkScoreHow)}</p>`+nickHtml();
+    u.body.innerHTML=h;
+  }
+  async function renderGlobal(g){
+    const u=ui[g], t=T[lang];
+    if(!online()){ u.body.innerHTML=`<p class="m">${esc(t.rkLocal)}</p>`; return; }
+    u.body.innerHTML=`<p class="m">${esc(t.rkLoading)}</p>`;
+    let entries;
+    try{ entries=await allResults(g); }catch(e){ u.body.innerHTML=`<p class="m">${esc(t.rkFail)}</p>`; return; }
+    const acc=percentiles(entries);
+    const rows=Object.entries(acc).filter(([,a])=>a.n>=MINP).map(([id,a])=>({id, avg:a.sum/a.n, n:a.n})).sort((a,b)=>(b.avg-a.avg)||(b.n-a.n));
+    await loadNames(rows.slice(0,10).map(r=>r.id));
+    if((u.tab||"p")!=="g") return;
+    let h=`<h3>${esc(t.rkGenTitle(gameName(g)))}</h3>`;
+    if(!rows.length) h+=`<p class="m">${esc(t.rkGenEmpty(MINP))}</p>`;
+    else h+=`<ol>${rows.slice(0,10).map(r=>`<li class="${r.id===uid?"me":""}"><span>${esc(nmOf(r.id))}</span><span class="m">${esc(t.rkPct(Math.round(r.avg*100), r.n))}</span></li>`).join("")}</ol>`;
+    const mine=uid && acc[uid];
+    if(mine){
+      const pos=rows.findIndex(r=>r.id===uid);
+      if(pos>=10) h+=`<p class="m">${esc(t.rkYourPos(pos+1, t.rkPct(Math.round(rows[pos].avg*100), rows[pos].n)))}</p>`;
+      else if(pos<0) h+=`<p class="m">${esc(t.rkGenMissing(MINP-mine.n, mine.n?Math.round(mine.sum/mine.n*100):null))}</p>`;
+    }
+    h+=`<p class="m small">${esc(t.rkGenHow(MINP))}</p>`+nickHtml();
+    u.body.innerHTML=h;
+  }
+  mount();
+  return {enter, newGame, open, finish, texts};
+})();
+
+Object.assign(T.es,{
+  rkTabP:"Esta partida", rkTabG:"General", rkLoading:"Cargando…",
+  rkScoreHow:"Puntaje: el tiempo, con tope de 15 minutos, más 15 minutos por cada ayuda o error. Gana el menor; en los juegos de rondas, primero cuentan los aciertos.",
+  rkGenTitle:g=>`Ranking general de ${g}`,
+  rkGenEmpty:m=>`Todavía nadie llegó a ${m} partidas comparables.`,
+  rkPct:(p,n)=>`mejor que el ${p}%, ${n} partidas`,
+  rkGenMissing:(k,p)=>`Te falta${k===1?"":"n"} ${k} partida${k===1?"":"s"} comparable${k===1?"":"s"} para entrar.${p!==null?` Por ahora, mejor que el ${p}% de tus rivales.`:""}`,
+  rkGenHow:m=>`En cada partida con al menos 2 jugadores se calcula a qué porcentaje del resto superaste, y se promedia. Para aparecer hacen falta ${m} partidas comparables del mismo juego.`
+});
+Object.assign(T.en,{
+  rkTabP:"This game", rkTabG:"Overall", rkLoading:"Loading…",
+  rkScoreHow:"Score: your time, capped at 15 minutes, plus 15 minutes per hint or mistake. Lowest wins; in round-based games, correct answers count first.",
+  rkGenTitle:g=>`${g} overall leaderboard`,
+  rkGenEmpty:m=>`Nobody has reached ${m} comparable games yet.`,
+  rkPct:(p,n)=>`better than ${p}%, ${n} games`,
+  rkGenMissing:(k,p)=>`${k} more comparable game${k===1?"":"s"} to qualify.${p!==null?` So far, better than ${p}% of your rivals.`:""}`,
+  rkGenHow:m=>`In every game with at least 2 players we compute what share of the others you beat, then average it. You need ${m} comparable games of the same kind to appear.`
+});
+
+// =====================================================================
+// MENÚ, IDIOMA Y RUTAS
+// =====================================================================
+const GAMES = { acrostico:Acro, ahorcado:Hang, sopa:Sopa, criptograma:Cripto, anagrama:Ana, semilla:Seed, esbip:IsBip, placa:Plate };
+function applyTexts(){
+  const t=T[lang];
+  document.documentElement.lang=lang;
+  $("menuBtn").textContent=t.menuBtn; $("menuIntro").textContent=t.menuIntro;
+  $("cAcroName").textContent=t.acroName; $("cAcroDesc").textContent=t.acroDesc;
+  $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
+  $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts();
+  setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
+}
+const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
+function route(){
+  const h=location.hash.replace("#","");
+  view = GAMES[h] && !HIDDEN.has(h) ? h : "menu";
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
+  $("menuBtn").style.display = view==="menu" ? "none" : "";
+  applyTexts();
+  if(GAMES[view]) Reg.enter(view);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.lang===lang) return;
+  lang=b.dataset.lang; store.set("rodo-lang",lang);
+  applyTexts();
+  // el juego abierto pasa al último número del nuevo idioma; los demás, al abrirlos
+  if(GAMES[view]) Reg.enter(view);
+}));
+window.addEventListener("hashchange",route);
+route();
+</script>
+<script type="module">
+// Firebase: autenticación anónima + Firestore
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+try {
+  // Firebase Hosting publica la configuración del proyecto en esta ruta: no hace falta copiarla al código
+  const res = await fetch("/__/firebase/init.json");
+  if (!res.ok) throw new Error("Sin configuración de Firebase (¿no está publicado en Firebase Hosting?)");
+  const app = initializeApp(await res.json());
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const user = await new Promise((resolve, reject) => {
+    const off = onAuthStateChanged(auth, u => { if (u) { off(); resolve(u); } });
+    signInAnonymously(auth).catch(reject);
+  });
+  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp });
+} catch (e) {
+  console.warn("RODO Games sin servidor:", e.message);
+  window.__fbResolve(null);
+}
+</script>
+</body>
+</html>

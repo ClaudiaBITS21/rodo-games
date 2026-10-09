@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// Reglas de RODO ₿ Games
+// - Cualquiera puede leer partidas y rankings.
+// - Para crear partidas o guardar resultados hay que estar autenticado (anónimo alcanza).
+// - Las partidas y los resultados no se pueden modificar ni borrar desde la web.
+// - Cada persona guarda un solo resultado por partida: el primero.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function validKey(k) {
+      return k.matches('^(acrostico|ahorcado|sopa|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
+    }
+
+    // Contador por juego e idioma: solo sube de a uno, junto con la partida nueva
+    match /counters/{key} {
+      allow read: if true;
+      allow create: if signedIn() && validKey(key)
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1
+        && existsAfter(/databases/$(database)/documents/puzzles/$(key + '-1'));
+      allow update: if signedIn()
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == resource.data.count + 1
+        && existsAfter(/databases/$(database)/documents/puzzles/$(key + '-' + string(request.resource.data.count)));
+      allow delete: if false;
+    }
+
+    // Partidas numeradas: se crean una vez y quedan fijas
+    match /puzzles/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['game', 'lang', 'n', 'data', 'by', 'at'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.n is int
+        && validKey(request.resource.data.game + '-' + request.resource.data.lang)
+        && id == request.resource.data.game + '-' + request.resource.data.lang + '-' + string(request.resource.data.n)
+        && getAfter(/databases/$(database)/documents/counters/$(request.resource.data.game + '-' + request.resource.data.lang)).data.count == request.resource.data.n;
+      allow update, delete: if false;
+    }
+
+    // Resultados: un documento por jugador y partida, solo el propio y solo una vez
+    match /scores/{id}/players/{uid} {
+      allow read: if true;
+      allow create: if signedIn() && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/puzzles/$(id))
+        && request.resource.data.keys().hasOnly(['g', 'ok', 's', 'h', 'ms', 'at'])
+        && request.resource.data.g == id.split('-')[0]
+        && request.resource.data.ok is bool
+        && request.resource.data.s is int && request.resource.data.s >= 0 && request.resource.data.s <= 20
+        && request.resource.data.h is int && request.resource.data.h >= 0
+        && request.resource.data.ms is int && request.resource.data.ms >= 1000
+        && request.resource.data.at == request.time;
+      allow update, delete: if false;
+    }
+
+    // Lectura de todos los resultados de un juego (ranking general)
+    match /{path=**}/players/{uid} {
+      allow read: if true;
+    }
+
+    // Apodos para el ranking: cada uno edita el suyo
+    match /names/{uid} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 24;
+    }
+  }
+}
