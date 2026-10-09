@@ -271,6 +271,16 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .pfind[hidden]{display:none}
 .ptime{margin-left:auto;font:700 1.15rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--muted);transition:color .4s}
 .ptime.warm{color:var(--btc)} .ptime.hot{color:#D64545}
+/* Botón "Iniciar": la partida se precarga difuminada y el cronómetro arranca recién al tocarlo */
+.gate{display:none}
+.view.locked>:not(.pbar):not(.bar):not(.opts):not(.win):not(.gate):not(footer){filter:blur(7px);opacity:.5;pointer-events:none;user-select:none;-webkit-user-select:none}
+.view.locked .gate{display:block;position:relative;height:0;z-index:5}
+.view.locked .gate+*{min-height:210px}
+.gatecard{position:absolute;left:50%;top:clamp(12px,5vh,56px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
+  background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 10px 30px rgba(0,0,0,.18);width:min(100%,340px)}
+.gatecard button{font-size:1.3rem;padding:14px 44px;border-radius:12px;width:100%;max-width:260px}
+.gatecard p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.35}
+@media (max-width:520px){.gatecard{padding:16px}.gatecard button{font-size:1.15rem;padding:13px 20px}}
 .opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
 .opts .rtabs{margin:0}
 .pfind{display:inline-flex;gap:6px}
@@ -325,7 +335,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 @media (max-width:520px){ .tools{width:100%} }
 @media print{
   body{background:#fff;color:#000}
-  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.rowclue,.pfind,.prk,.pmsg,.rank,.nick,.ptime,.pjump,.opts,.privnote{display:none!important}
+  .view.locked>*{filter:none!important;opacity:1!important}
+  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.gate,.rowclue,.pfind,.prk,.pmsg,.rank,.nick,.ptime,.pjump,.opts,.privnote{display:none!important}
   #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cell.key{border-width:3px}
@@ -1143,7 +1154,7 @@ const Acro = (()=>{
   function checkWin(){
     if(solved) return true;
     if(!realRows().every(r=>r.entry.join("")===r.word)) return false;
-    solved=true; elapsed=Date.now()-startTime;
+    solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
     document.querySelectorAll("#grid .cell").forEach(c=>{ c.readOnly=true; if(!c.classList.contains("rev")&&!c.classList.contains("given")) c.classList.add("ok"); });
     rowClue.remove(); $("current").textContent="";
     $("winPhrase").textContent=P.phrase; $("winStats").textContent=T[lang].stats(fmt(elapsed),hintsUsed);
@@ -1286,7 +1297,7 @@ const Hang = (()=>{
     $("hShare").style.display = won ? "" : "none";
     $("hNote").textContent=""; $("hWin").style.display="block";
     $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
-    Reg.finish("ahorcado",{ok:won,s:0,h:wrong,ms:Date.now()-hStart});
+    Reg.finish("ahorcado",{ok:won,s:0,h:wrong,ms:Date.now()-hStart-Reg.wait("ahorcado")});
   }
   async function image(){
     try{ await document.fonts.ready; }catch(e){}
@@ -1416,7 +1427,7 @@ const Sopa = (()=>{
     if(found.size===words.length) finish();
   }
   function finish(){
-    done=true; elapsed=Date.now()-start; const t=T[lang];
+    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
     $("sWinLabel").textContent=t.sWin; $("sWinStats").textContent=t.sStats(words.length, fmt(elapsed));
     $("sNote").textContent=""; $("sWin").style.display="block";
     $("sWin").scrollIntoView({block:"nearest",behavior:"smooth"});
@@ -1792,7 +1803,7 @@ const IsBip = (()=>{
     setTimeout(()=>{ i++; if(i>=ROUNDS) finish(); else round(); }, ok?1100:1900);
   }
   function finish(){
-    elapsed=Date.now()-start; const t=T[lang];
+    elapsed=Date.now()-start-Reg.wait("esbip"); const t=T[lang];
     $("bPlay").style.display="none"; $("bMeta").textContent="";
     showWin("b", t.bWin(score,ROUNDS), t.bStats(fmt(elapsed)));
     Reg.finish("esbip",{ok:true,s:score,h:0,ms:elapsed});
@@ -1855,7 +1866,7 @@ const Plate = (()=>{
   }
   function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
   function finish(){
-    elapsed=Date.now()-start; const t=T[lang];
+    elapsed=Date.now()-start-Reg.wait("placa"); const t=T[lang];
     $("lPlay").style.display="none"; $("lMeta").textContent="";
     showWin("l", t.lWin(score,ROUNDS), t.lStats(fmt(elapsed)));
     Reg.finish("placa",{ok:true,s:score,h:0,ms:elapsed});
@@ -1930,7 +1941,7 @@ const Cripto = (()=>{
   function checkWin(){
     if(solved) return true;
     if(!cells.every(x=>x.el.value===x.p)) return false;
-    solved=true; elapsed=Date.now()-start; const t=T[lang];
+    solved=true; elapsed=Date.now()-start-Reg.wait("criptograma"); const t=T[lang];
     cells.forEach(x=>{ x.el.readOnly=true; x.el.classList.remove("inrow","bad"); if(!x.el.classList.contains("rev")) x.el.classList.add("ok"); });
     $("cStatus").textContent=""; updateHint();
     showWin("c", t.cWin, t.cStats(fmt(elapsed),hints));
@@ -2041,7 +2052,7 @@ const Ana = (()=>{
   }
   function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
   function finish(){
-    elapsed=Date.now()-start; const t=T[lang];
+    elapsed=Date.now()-start-Reg.wait("anagrama"); const t=T[lang];
     $("aPlay").style.display="none"; $("aMeta").textContent="";
     showWin("a", t.aWin(score,ROUNDS), t.aStats(fmt(elapsed),hints));
     Reg.finish("anagrama",{ok:true,s:score,h:hints,ms:elapsed});
@@ -2090,6 +2101,7 @@ Object.assign(T.es,{
   rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
   rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
   rkPart:n=>`Partida #${n}`, rkJump:"Ir a otra partida", rkClose:"Cerrar",
+  gateGo:"Iniciar", gateNote:"El cronómetro arranca cuando tocás Iniciar.",
   rkSaved:"Resultado guardado en el ranking.", rkFail:"No se pudo guardar el resultado.",
   rkFailNew:"No se pudo crear una partida numerada; esta queda sin número.", rkQuota:"La base de partidas está llena; esta queda sin número."
 });
@@ -2105,6 +2117,7 @@ Object.assign(T.en,{
   rkNotFound:n=>`There's no #${n} yet for this game and language.`,
   rkPlayed:"You already played this number: your first result is the one that counts.",
   rkPart:n=>`Game #${n}`, rkJump:"Go to another game", rkClose:"Close",
+  gateGo:"Start", gateNote:"The timer starts when you tap Start.",
   rkSaved:"Result saved to the leaderboard.", rkFail:"Couldn't save the result.",
   rkFailNew:"Couldn't create a numbered game; this one has no number.", rkQuota:"The game database is full; this one has no number."
 });
@@ -2148,6 +2161,16 @@ const Reg = (()=>{
       rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
       win.appendChild(rk);
       const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime")};
+      // la semilla ya tiene su propio paso previo (memorizar), así que no lleva botón Iniciar
+      if(g!=="semilla"){
+        const gate=document.createElement("div"); gate.className="gate";
+        gate.innerHTML=`<div class="gatecard"><button class="primary"></button><p></p></div>`;
+        // va justo antes del área de juego, para no tapar la barra ni las opciones
+        const first=[...sec.children].find(el=>!el.matches(".pbar,.bar,.opts,.win"));
+        sec.insertBefore(gate, first||null);
+        u.gate=gate; u.gateBtn=gate.querySelector("button"); u.gateNote=gate.querySelector("p");
+        u.gateBtn.addEventListener("click",()=>unlock(g));
+      }
       x.addEventListener("click",()=>closeWin(g));
       u.jump.addEventListener("click",()=>{ u.find.hidden=!u.find.hidden; if(!u.find.hidden) u.input.focus(); });
       const go=()=>{ const n=parseInt(u.input.value,10); if(n>0) open(g,n); };
@@ -2168,8 +2191,34 @@ const Reg = (()=>{
   }
   function closeWin(g){ const u=ui[g]; if(!u) return; u.win.style.display="none"; u.win.classList.remove("rkonly"); }
   document.addEventListener("keydown",e=>{ if(e.key==="Escape" && ui[view] && ui[view].win.style.display==="block") closeWin(view); });
-  // cronómetro visible: arranca al cargar cada partida y se detiene al terminarla
-  function startT(g){ const c=cur[g]; if(c){ c.t0=Date.now(); c.t1=null; } tick(); }
+  // cronómetro visible: con botón Iniciar arranca al tocarlo; si no, al cargar la partida. Se detiene al terminarla
+  function startT(g){
+    const c=cur[g], u=ui[g]; if(!c) return tick();
+    c.load=Date.now(); c.t1=null; c.wait=0;
+    if(u && u.gate){ c.t0=null; lock(g,true); } else c.t0=c.load;
+    tick();
+  }
+  function lock(g,on){
+    const u=ui[g], sec=$("view-"+g); if(!u||!u.gate) return;
+    sec.classList.toggle("locked",on);
+    [...sec.children].forEach(el=>{ if(!el.matches(".pbar,.bar,.opts,.win,.gate,footer")) el.inert=on; });
+    if(on && view===g) u.gateBtn.focus({preventScroll:true});
+  }
+  function unlock(g){
+    const c=cur[g]; if(!c||c.t0) return lock(g,false);
+    c.t0=Date.now(); c.wait=c.t0-c.load; lock(g,false); tick();
+  }
+  const locked=g=>!!(ui[g] && ui[g].gate && $("view-"+g).classList.contains("locked"));
+  // tiempo que la partida estuvo esperando el botón Iniciar (los juegos lo descuentan de su tiempo)
+  const wait=g=>(cur[g]&&cur[g].wait)||0;
+  // mientras está bloqueada, el teclado no juega (Enter o espacio la inician)
+  window.addEventListener("keydown",e=>{
+    if(!locked(view)) return;
+    const tg=e.target, tag=tg.tagName;
+    if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||(tag==="BUTTON"&&tg!==document.body)) return;
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); unlock(view); }
+    e.stopImmediatePropagation();
+  },true);
   function tick(){
     const u=ui[view], c=cur[view]; if(!u) return;
     if(!c||!c.t0){ u.time.textContent=""; return; }
@@ -2189,6 +2238,7 @@ const Reg = (()=>{
   function texts(){
     const t=T[lang];
     KEYS.forEach(g=>{ const u=ui[g]; if(!u) return;
+      if(u.gate){ u.gateBtn.textContent=t.gateGo; u.gateNote.textContent=t.gateNote; }
       u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum); u.jump.textContent=t.rkJump; u.x.setAttribute("aria-label",t.rkClose);
       setPid(g); renderRank(g); });
   }
@@ -2365,7 +2415,7 @@ const Reg = (()=>{
     u.body.innerHTML=h;
   }
   mount();
-  return {enter, newGame, open, finish, texts};
+  return {enter, newGame, open, finish, texts, wait};
 })();
 
 Object.assign(T.es,{
