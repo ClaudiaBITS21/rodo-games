@@ -34,3 +34,21 @@ jobs:
 
       - name: Deploy
         run: npx --yes firebase-tools@13 deploy --only hosting,firestore --project rodo-games --non-interactive
+
+      # Verifica que el sitio publicado responda y sea exactamente la versión de este commit
+      - name: Verificar el sitio publicado
+        run: |
+          want=$(sha256sum public/index.html | cut -d' ' -f1)
+          for url in https://games.rodo.es/ https://rodo-games.web.app/; do
+            ok=""
+            for i in $(seq 1 12); do
+              got=$(curl -fsS --compressed -H 'Cache-Control: no-cache' "$url?v=$GITHUB_SHA" | sha256sum | cut -d' ' -f1) || got=""
+              if [ "$got" = "$want" ]; then ok=1; break; fi
+              sleep 5
+            done
+            if [ -z "$ok" ]; then echo "::error::$url no sirve la versión de este commit"; exit 1; fi
+            echo "✔ $url responde con la versión de este commit"
+          done
+          curl -fsS https://games.rodo.es/__/firebase/init.json | grep -q '"projectId": *"rodo-games"' \
+            && echo "✔ configuración de Firebase disponible" \
+            || { echo "::error::no responde /__/firebase/init.json"; exit 1; }

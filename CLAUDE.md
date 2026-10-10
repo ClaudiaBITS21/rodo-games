@@ -45,7 +45,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - No aflojar `firestore.rules` sin pedido explícito.
 - El HTML publicado no puede usar `window.claude` ni nada de los artefactos de claude.ai. Hay una vista previa vieja en un artefacto: no se copia al repo.
 - Antes de cada push, verificar que los scripts de `index.html` compilen (extraer cada `<script>` y correr `node --check`; el segundo es `type="module"`, usar extensión `.mjs`).
-- Después de cada push, seguir el run de Actions hasta que termine y confirmar que games.rodo.es responda. Cerrar con una línea: commit, resultado del deploy y qué cambió.
+- Después de cada push, seguir el run de Actions hasta que termine y confirmar que games.rodo.es responda. El último paso del workflow ("Verificar el sitio publicado") lo comprueba solo: baja games.rodo.es y rodo-games.web.app, exige que sean idénticos al `public/index.html` del commit y que responda `/__/firebase/init.json`. La red del entorno de Claude en la nube no llega al sitio, así que ese paso es la confirmación. Cerrar con una línea: commit, resultado del deploy y qué cambió.
 - Si un push o el deploy falla por permisos, avisar. No reintentar a ciegas.
 - Para probar reglas o funciones en tiempo real sin tocar producción: emulador de Firestore + Auth (`firebase emulators:exec`, proyecto `demo-rodo`) y Playwright con dos navegadores. La librería de Firebase se sirve desde el paquete npm `firebase` porque gstatic puede estar bloqueado.
 - Nada de secretos en el repo.
