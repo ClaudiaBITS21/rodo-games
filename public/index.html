@@ -102,6 +102,11 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivdlg .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .ivgames{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .ivgames button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ivsopa{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px}
+.ivsopa[hidden]{display:none}
+.ivsopa .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ivsopa .seg button{border:0;border-radius:0;padding:7px 12px;background:transparent;font-size:.9rem}
+.ivsopa .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 .ivnick{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:.92rem}
 .ivnick input{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink);width:11em}
 .ivnick[hidden]{display:none}
@@ -114,6 +119,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivoff{margin-top:12px;background:transparent;border:0;color:var(--muted);font-size:.8rem;font-weight:400;text-decoration:underline;padding:4px}
 .testbadge{display:none;position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:50;background:#7B3FE4;color:#fff;font:700 .72rem "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;padding:4px 8px;border-radius:6px;pointer-events:none}
 body.tester .testbadge{display:block}
+.pcost{margin:-4px 0 10px;font-size:.8rem;color:var(--muted)}
+.pcost:empty{display:none}
 .ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
 .ppen.show{animation:penflash 1.6s ease-out}
 @keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -690,6 +697,7 @@ body.tester .testbadge{display:block}
   <h3 id="ivOutT"></h3>
   <div id="ivPick">
     <div class="ivgames" id="ivGames"></div>
+    <div class="ivsopa" id="ivSopa" hidden></div>
     <label class="ivnick" id="ivNickRow"><span id="ivNickL"></span> <input id="ivNick" maxlength="24" autocomplete="nickname"></label>
     <div class="row"><button class="primary" id="ivSend"></button></div>
   </div>
@@ -986,8 +994,8 @@ const T = {
     sopaName:"Sopa de letras", sopaDesc:"Encontrá los términos escondidos en la grilla, en cualquier dirección.",
     acroTitle:"Acrósticos", hangTitle:"Ahorcado", sopaTitle:"Sopa de letras",
     // acróstico
-    newBtn:"Nuevo acróstico", check:"Comprobar", print:"Imprimir", clues:"Pistas",
-    hint:n=>`Revelar letra (${n})`,
+    newBtn:"Nuevo acróstico", check:"Comprobar +5 s", print:"Imprimir", clues:"Pistas",
+    hint:n=>`Revelar letra +60 s (quedan ${n})`,
     foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Tenés 5 letras de ayuda por acróstico.",
     metaP:(w,l)=>`Frase escondida: ${w} palabras, ${l} letras.`, metaW:l=>`Palabra escondida: ${l} letras.`,
     wrong:n=>`Hay ${n} letra${n>1?"s":""} mal (en rojo).`, empty:n=>`Vas bien. Faltan ${n} casilla${n>1?"s":""}.`,
@@ -999,7 +1007,7 @@ const T = {
     share:"Compartir imagen", shared:"Imagen lista.", shareFail:"No se pudo compartir la imagen.",
     shareText:"Jugué a RODO ₿ Games",
     // ahorcado
-    hNew:"Nueva palabra", hClueBtn:"Ver pista (rompe 1 bloque)", hMeta:l=>`${l} letras.`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
+    hNew:"Nueva palabra", hClueBtn:"Ver pista +60 s (rompe 1 bloque)", hMeta:l=>`${l} letras.`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
     hWin:"¡Adivinaste!", hLose:"Se rompió la cadena. Era", hAgain:"Otra palabra",
     hStats:(e,s)=>`${e} error${e===1?"":"es"}. Racha: ${s}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla.",
     hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
@@ -1017,8 +1025,8 @@ const T = {
     hangName:"Hangman", hangDesc:"Guess the Bitcoin word before all 6 blocks break.",
     sopaName:"Word search", sopaDesc:"Find the terms hidden in the grid, in any direction.",
     acroTitle:"Acrostics", hangTitle:"Hangman", sopaTitle:"Word search",
-    newBtn:"New acrostic", check:"Check", print:"Print", clues:"Clues",
-    hint:n=>`Reveal letter (${n})`,
+    newBtn:"New acrostic", check:"Check +5s", print:"Print", clues:"Clues",
+    hint:n=>`Reveal letter +60s (${n} left)`,
     foot:"Read top to bottom, the orange column spells the hidden phrase. You get 5 helper letters per acrostic.",
     metaP:(w,l)=>`Hidden phrase: ${w} words, ${l} letters.`, metaW:l=>`Hidden word: ${l} letters.`,
     wrong:n=>`${n} letter${n>1?"s are":" is"} wrong (in red).`, empty:n=>`Looking good. ${n} square${n>1?"s":""} to go.`,
@@ -1028,7 +1036,7 @@ const T = {
     imgSolved:"Solved in", imgHints:h=>h===0?"no help":`${h} letter${h>1?"s":""} revealed`,
     share:"Share image", shared:"Image ready.", shareFail:"Couldn't share the image.",
     shareText:"I played RODO ₿ Games",
-    hNew:"New word", hClueBtn:"Show clue (breaks 1 block)", hMeta:l=>`${l} letters.`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
+    hNew:"New word", hClueBtn:"Show clue +60s (breaks 1 block)", hMeta:l=>`${l} letters.`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
     hWin:"You got it!", hLose:"The chain broke. It was", hAgain:"Another word",
     hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
     hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
@@ -1210,6 +1218,7 @@ const Acro = (()=>{
   let badSeen=new Set();
   function check(){
     if(solved) return; let wrong=0, empty=0;
+    Reg.pen("acrostico","c");
     document.querySelectorAll("#grid .cell").forEach(c=>{
       if(c.readOnly) return; c.classList.remove("ok","bad");
       if(!c.value){ empty++; return; }
@@ -1219,7 +1228,7 @@ const Acro = (()=>{
     if(!checkWin()) $("current").textContent = wrong?T[lang].wrong(wrong):empty?T[lang].empty(empty):"";
   }
   function hint(){
-    if(solved) return;
+    if(solved || !Reg.canHelp("acrostico")) return;
     if(hintsUsed>=MAX_HINTS){ $("current").textContent=T[lang].noHints; return; }
     const needs=c=>!c.readOnly && c.value!==solOf(c);
     let cell=document.activeElement;
@@ -1395,7 +1404,7 @@ const Hang = (()=>{
   }
   // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
   function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
-  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
+  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1||!Reg.canHelp("ahorcado")) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
   $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
   document.addEventListener("keydown",e=>{
     if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
@@ -1417,7 +1426,7 @@ const Sopa = (()=>{
   let size=store.get("rodo-sopa-size")||"media"; if(!SIZES[size]) size="media";
   let N=SIZES[size].n, COUNT=SIZES[size].count;
   const DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
-  let grid=[], words=[], found=new Set(), start=0, elapsed=0, done=false, showClues=false;
+  let grid=[], words=[], found=new Set(), start=0, elapsed=0, done=false, showClues=store.get("rodo-sopa-mode")==="c";
   let anchor=null, dragging=false, dragStart=null, path=[];
 
   function texts(){
@@ -1448,8 +1457,10 @@ const Sopa = (()=>{
     }
     return null;
   }
-  function gen(){
-    N=SIZES[size].n; COUNT=SIZES[size].count;
+  // s: tamaño (por defecto el elegido). No toca la sopa que esté abierta: guarda y restaura su estado
+  function gen(s){
+    const keep=[N,COUNT,grid,words];
+    N=SIZES[s||size].n; COUNT=SIZES[s||size].count;
     grid=Array.from({length:N},()=>Array(N).fill(""));
     words=[];
     const pool=shuffle(gloss().filter(([w])=>w.length>=4&&w.length<=10));
@@ -1461,7 +1472,9 @@ const Sopa = (()=>{
     const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!grid[r][c]) grid[r][c]=rand([...alpha]);
     words.sort((a,b)=>a.w.localeCompare(b.w));
-    return {n:N, grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
+    const out={n:N, grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
+    [N,COUNT,grid,words]=keep;
+    return out;
   }
   function create(){ Reg.newGame("sopa"); }
   function load(d){
@@ -1558,13 +1571,18 @@ const Sopa = (()=>{
   }
   $("sNew").addEventListener("click",create);
   $("sAgain").addEventListener("click",create);
-  $("sModeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; showClues = b.dataset.m==="c"; updateMode(); renderList(); });
+  $("sModeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+    // el modo se elige antes de empezar: cambiarlo a mitad de partida sería hacer trampa
+    if(Reg.playing("sopa") && !done){ Reg.say("sopa", T[lang].sModeLocked); return; }
+    setMode(b.dataset.m); });
+  function setMode(m){ showClues = m==="c"; store.set("rodo-sopa-mode", m); updateMode(); renderList(); }
   $("sSize").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b||b.dataset.s===size) return; size=b.dataset.s; store.set("rodo-sopa-size",size); updateMode(); Reg.enter("sopa"); });
   $("sPrint").addEventListener("click",()=>window.print());
   $("sShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"wordsearch-rodo-games.png":"sopa-rodo-games.png", $("sNote"), $("sShare")));
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
-  return {texts, create, gen, load, setKey, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag:()=> size==="media" ? "" : ` (${T[lang].sSize[size].toLowerCase()})`};
+  const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
+  return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
 })();
 
 // =====================================================================
@@ -1689,7 +1707,7 @@ Object.assign(T.es,{
   bFoot:"La lista se elige con el idioma: ES usa la lista oficial en castellano, EN la de inglés.",
   bCard:(s,n,t)=>`${s} de ${n} aciertos en ${t}`,
   // placa
-  lNew:"Nueva placa", lCheck:"Comprobar", lSkip:"Pasar", lAgain:"Otra ronda",
+  lNew:"Nueva placa", lCheck:"Comprobar", lSkip:"Pasar +90 s", lAgain:"Otra ronda",
   lMeta:(i,n,s)=>`Placa ${i} de ${n}. Aciertos: ${s}.`, lPlaceholder:"palabra completa",
   lOk:(w,i)=>`Correcto: “${w}”, palabra número ${i}.`, lBad:"Esa no es. Probá otra vez o pasá.",
   lSkipped:w=>`Era “${w}”.`, lNotBip:"Esa palabra no está en la lista BIP39.",
@@ -1697,14 +1715,14 @@ Object.assign(T.es,{
   lFoot:"En BIP39 las primeras 4 letras alcanzan para identificar cada palabra. Por eso muchas placas de acero graban solo eso.",
   lCard:(s,n,t)=>`${s} de ${n} placas en ${t}`,
   // criptograma
-  cNew:"Nuevo criptograma", cCheck:"Comprobar", cHint:n=>`Revelar letra (${n})`, cNoHints:"Ya usaste las 3 letras de ayuda.",
+  cNew:"Nuevo criptograma", cCheck:"Comprobar +5 s", cHint:n=>`Revelar letra +60 s (quedan ${n})`, cNoHints:"Ya usaste las 3 letras de ayuda.",
   cMeta:"Cada letra fue reemplazada por otra. Escribí arriba la letra real; se completa en todas las casillas iguales.",
   cWrong:n=>`Hay ${n} letra${n>1?"s":""} mal.`, cEmpty:n=>`Vas bien. Faltan ${n} letra${n>1?"s":""} distintas.`,
   cWin:"¡Descifrado!", cStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin ayuda":h+" letra"+(h>1?"s":"")+" revelada"+(h>1?"s":"")}.`,
   cAgain:"Otro criptograma", cFoot:"Las frases en inglés están traducidas al castellano.",
   cCard:(t,h)=>`Descifrado en ${t}${h?`, con ${h} ayuda${h>1?"s":""}`:", sin ayuda"}`,
   // anagrama
-  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar", aHint:n=>n?`Ver pista (usadas: ${n})`:"Ver pista", aAgain:"Jugar de nuevo",
+  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar +90 s", aHint:n=>n?`Ver pista +60 s (usadas: ${n})`:"Ver pista +60 s", aAgain:"Jugar de nuevo",
   aMeta:(i,n,s)=>`Ronda ${i} de ${n}. Aciertos: ${s}.`, aWin:(s,n)=>`${s} de ${n}`, aStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin pistas":h+" pista"+(h>1?"s":"")}.`,
   aFoot:"Tocá las letras en orden, o escribilas con el teclado. Tocá una casilla de arriba para devolver la letra. Las pistas son libres, pero cuentan para el ranking.",
   aCard:(s,n,t)=>`${s} de ${n} anagramas en ${t}`
@@ -1732,20 +1750,20 @@ Object.assign(T.en,{
   bRight:"Right.", bWrong:"Nope.", bWin:(s,n)=>`${s} of ${n}`, bStats:t=>`Time ${t}.`,
   bFoot:"The list follows the language: EN uses the official English list, ES the Spanish one.",
   bCard:(s,n,t)=>`${s} of ${n} correct in ${t}`,
-  lNew:"New plate", lCheck:"Check", lSkip:"Skip", lAgain:"Another round",
+  lNew:"New plate", lCheck:"Check", lSkip:"Skip +90s", lAgain:"Another round",
   lMeta:(i,n,s)=>`Plate ${i} of ${n}. Score: ${s}.`, lPlaceholder:"full word",
   lOk:(w,i)=>`Correct: “${w}”, word number ${i}.`, lBad:"Not that one. Try again or skip.",
   lSkipped:w=>`It was “${w}”.`, lNotBip:"That word isn't on the BIP39 list.",
   lWin:(s,n)=>`${s} of ${n} plates`, lStats:t=>`Time ${t}.`,
   lFoot:"In BIP39 the first 4 letters are enough to identify every word. That's why many steel plates only stamp those.",
   lCard:(s,n,t)=>`${s} of ${n} plates in ${t}`,
-  cNew:"New cryptogram", cCheck:"Check", cHint:n=>`Reveal letter (${n})`, cNoHints:"You've used all 3 helper letters.",
+  cNew:"New cryptogram", cCheck:"Check +5s", cHint:n=>`Reveal letter +60s (${n} left)`, cNoHints:"You've used all 3 helper letters.",
   cMeta:"Every letter was swapped for another. Type the real letter on top; it fills every matching square.",
   cWrong:n=>`${n} letter${n>1?"s are":" is"} wrong.`, cEmpty:n=>`Looking good. ${n} distinct letter${n>1?"s":""} to go.`,
   cWin:"Decoded!", cStats:(t,h)=>`Time ${t}. ${h===0?"No help":h+" letter"+(h>1?"s":"")+" revealed"}.`,
   cAgain:"Another cryptogram", cFoot:"Original quotes in English.",
   cCard:(t,h)=>`Decoded in ${t}${h?`, with ${h} hint${h>1?"s":""}`:", no help"}`,
-  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip", aHint:n=>n?`Show clue (used: ${n})`:"Show clue", aAgain:"Play again",
+  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip +90s", aHint:n=>n?`Show clue +60s (used: ${n})`:"Show clue +60s", aAgain:"Play again",
   aMeta:(i,n,s)=>`Round ${i} of ${n}. Score: ${s}.`, aWin:(s,n)=>`${s} of ${n}`, aStats:(t,h)=>`Time ${t}. ${h===0?"No clues":h+" clue"+(h>1?"s":"")}.`,
   aFoot:"Tap the letters in order, or type them. Tap a filled square to send the letter back. Clues are unlimited, but they count in the leaderboard.",
   aCard:(s,n,t)=>`${s} of ${n} anagrams in ${t}`
@@ -1812,7 +1830,7 @@ const Seed = (()=>{
   // invitación: congela la cuenta regresiva de memorizar (el tiempo de juego lo descuenta Reg.wait)
   function pause(on){ if(stage!=="memo") return; if(on) clearInterval(timer); else memo(); }
   function play(){
-    clearInterval(timer); stage="play"; next=0; errors=0; playStart=Date.now(); playWait=Reg.wait("semilla");
+    clearInterval(timer); stage="play"; next=0; errors=0; Reg.restartClock("semilla"); playStart=Date.now(); playWait=Reg.wait("semilla");
     show("pTimer",false); show("pMemoActions",false);
     $("pSeed").innerHTML = words.map((w,i)=>`<div class="slot${i===0?" next":""}" data-i="${i}"><span class="i">${i+1}</span><span class="v"></span></div>`).join("");
     $("pChips").innerHTML = shuffle([...words, ...Seed._decoys]).map(w=>`<button class="chip" data-w="${w}">${w}</button>`).join("");
@@ -1850,7 +1868,7 @@ const Seed = (()=>{
   $("pAgain").addEventListener("click",create);
   $("pShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.seedTitle, t.pSize(words.length), t.pCard(words.length,errors,fmt(elapsed)), null), lang==="en"?"lost-seed-rodo-games.png":"semilla-rodo-games.png", $("pNote"), $("pShare")); });
-  return {texts, create, gen, load, pause, started:()=>!!pz};
+  return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end"};
 })();
 
 // =====================================================================
@@ -2052,6 +2070,7 @@ const Cripto = (()=>{
   });
   $("cCheck").addEventListener("click",()=>{
     if(solved) return; let wrong=0; const pending=new Set();
+    Reg.pen("criptograma","c");
     cells.forEach(x=>{ if(x.el.readOnly) return; x.el.classList.remove("ok","bad");
       if(!x.el.value){ pending.add(x.c); return; }
       if(x.el.value===x.p) x.el.classList.add("ok");
@@ -2061,7 +2080,7 @@ const Cripto = (()=>{
   });
   $("cHint").addEventListener("mousedown",e=>e.preventDefault());
   $("cHint").addEventListener("click",()=>{
-    if(solved) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
+    if(solved || !Reg.canHelp("criptograma")) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
     const needs=c=>group(c).some(x=>x.el.value!==x.p);
     const c = (focusC && needs(focusC)) ? focusC : (cells.find(x=>x.el.value!==x.p)||{}).c;
     if(!c) return;
@@ -2151,7 +2170,7 @@ const Ana = (()=>{
   $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
   $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
   $("aSkip").addEventListener("click",skip);
-  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
+  $("aHint").addEventListener("click",()=>{ if(locked||shown||!Reg.canHelp("anagrama")) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
   document.addEventListener("keydown",e=>{
     if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
     if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
@@ -2212,18 +2231,23 @@ Object.assign(T.en,{
 });
 
 // =====================================================================
-// PUNTAJE: tiempo ajustado = tiempo + 10 s por error + 60 s por ayuda + (15 min / rondas) por ronda fallada.
+// PUNTAJE: tiempo ajustado = tiempo + 10 s por error (20 s en el ahorcado) + 60 s por ayuda + 5 s por cada "Comprobar"
+// + (15 min / rondas) por ronda fallada.
 // Puntos = 100 por resolverla + (900 − segundos ajustados, mínimo 0). Sin resolver: 0.
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
-const SCORE={ERR:10, HINT:60, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20}};
+const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, HELP_LOCK:7*60000, ROUNDS:{anagrama:10, placa:10, esbip:20}};
+const errCost=k=> k==="ahorcado" ? 20 : SCORE.ERR;
+const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
+// segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas
+const penSecs=(k,e,h,c,r)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*roundCost(k);
 function scoreOf(k, r){
   let e=r.e, h=r.h||0;
   if(e===undefined){ if(k==="ahorcado"||k==="semilla"){ e=h; h=0; } else e=0; }
   const R=SCORE.ROUNDS[k], fails=R ? Math.max(0, R-(r.s||0)) : 0;
-  const pen=e*SCORE.ERR + h*SCORE.HINT + fails*(R ? SCORE.CAP/R : 0);
+  const pen=penSecs(k, e, h, r.c||0, fails);
   const adj=(r.ms||0)/1000 + pen, ok=R ? (r.s||0)>0 : !!r.ok;
-  return {e, h, fails, pen, adj, ok, pts: ok ? SCORE.BONUS + Math.max(0, Math.round(SCORE.CAP-adj)) : 0};
+  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? SCORE.BONUS + Math.max(0, Math.round(SCORE.CAP-adj)) : 0};
 }
 // Duelo: quién ganó una partida. a y b son los resultados de cada uno (o undefined si no terminó).
 // timedOut: pasaron más de 15 minutos desde que se creó la partida. Devuelve "a", "b", "tie", "void" o null (en juego).
@@ -2274,13 +2298,14 @@ const Reg = (()=>{
       const bar=document.createElement("div"); bar.className="pbar";
       bar.innerHTML=`<span class="pid"></span><button class="pjump"></button><span class="pfind" hidden><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="ptime" aria-hidden="true"></span><span class="ppen" aria-hidden="true"></span><span class="pmsg" aria-live="polite"></span>`;
       sec.insertBefore(bar, sec.firstChild);
+      const cost=document.createElement("p"); cost.className="pcost"; bar.after(cost);
       // el ranking va dentro del cartel final, que se muestra como ventana emergente
       const win=sec.querySelector(".win");
       const x=document.createElement("button"); x.className="wclose"; x.textContent="×"; win.insertBefore(x, win.firstChild);
       const rk=document.createElement("div"); rk.className="rank"; rk.hidden=true;
       rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
       win.appendChild(rk);
-      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime"), pen:bar.querySelector(".ppen")};
+      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime"), pen:bar.querySelector(".ppen"), cost};
       // la semilla ya tiene su propio paso previo (memorizar), así que no lleva botón Iniciar
       if(g!=="semilla"){
         const gate=document.createElement("div"); gate.className="gate";
@@ -2314,7 +2339,7 @@ const Reg = (()=>{
   // cronómetro visible: con botón Iniciar arranca al tocarlo; si no, al cargar la partida. Se detiene al terminarla
   function startT(g){
     const c=cur[g], u=ui[g]; if(!c) return tick();
-    c.load=Date.now(); c.t1=null; c.wait=0; c.e=0; c.h=0; c.r=0;
+    c.load=Date.now(); c.t1=null; c.wait=0; c.e=0; c.h=0; c.c=0; c.r=0;
     if(u && u.gate){ c.t0=null; lock(g,true); } else c.t0=c.load;
     tick();
   }
@@ -2341,7 +2366,7 @@ const Reg = (()=>{
   },true);
   function tick(){
     const u=ui[view], c=cur[view]; if(!u) return;
-    if(!c||!c.t0){ u.time.textContent=""; return; }
+    if(!c||!c.t0||(GAMES[view].clockOff && GAMES[view].clockOff())){ u.time.textContent=""; return; }
     const ms=(c.t1||c.fz||Date.now())-c.t0+penOf(view)*1000;
     u.time.textContent=fmt(ms);
     u.time.classList.toggle("frozen", !!c.fz);
@@ -2350,11 +2375,11 @@ const Reg = (()=>{
   }
   setInterval(tick,1000);
   // penalidades en vivo: el reloj suma 10 s por error, 60 s por ayuda y lo que vale cada ronda fallada
-  const penOf=g=>{ const c=cur[g], R=SCORE.ROUNDS[kid(g)]; return c ? (c.e||0)*SCORE.ERR+(c.h||0)*SCORE.HINT+(c.r||0)*(R?SCORE.CAP/R:0) : 0; };
+  const penOf=g=>{ const c=cur[g]; return c ? penSecs(kid(g), c.e||0, c.h||0, c.c||0, c.r||0) : 0; };
   function pen(g, kind){
     const c=cur[g], u=ui[g]; if(!c || c.t1) return;
     c[kind]=(c[kind]||0)+1;
-    if(u){ const R=SCORE.ROUNDS[kid(g)], s=kind==="e"?SCORE.ERR:kind==="h"?SCORE.HINT:Math.round(SCORE.CAP/(R||1));
+    if(u){ const k=kid(g), s=Math.round(kind==="e"?errCost(k):kind==="h"?SCORE.HINT:kind==="c"?SCORE.CHECK:roundCost(k));
       u.pen.textContent=`+${s} s`; u.pen.classList.remove("show"); void u.pen.offsetWidth; u.pen.classList.add("show"); }
     tick();
   }
@@ -2366,6 +2391,23 @@ const Reg = (()=>{
     const t=Date.now(), list=KEYS.filter(g=>going(g) && !cur[g].fz);
     list.forEach(g=>{ cur[g].fz=t; if(GAMES[g].pause) GAMES[g].pause(true); });
     tick(); return list;
+  }
+  // el reloj arranca de nuevo (Semilla: memorizar no cuenta, el tiempo corre desde que se arma la frase)
+  function restartClock(g){
+    const c=cur[g]; if(!c) return;
+    c.t0=c.load=Date.now(); c.wait=0; c.fz=null; c.e=c.h=c.c=c.r=0; tick();
+  }
+  // en duelo, las ayudas se habilitan a los 7 minutos de juego
+  function canHelp(g){
+    const c=cur[g]; if(!c || !c.duel) return true;
+    const t=c.t0 ? (c.fz||Date.now())-c.t0 : 0;
+    if(t>=SCORE.HELP_LOCK) return true;
+    msg(g, T[lang].duHelpLock(fmt(SCORE.HELP_LOCK-t))); return false;
+  }
+  // línea con lo que cuesta cada cosa en este juego (y el aviso de duelo)
+  function setCost(g){
+    const u=ui[g]; if(!u) return; const t=T[lang], c=cur[g];
+    u.cost.textContent=(t.cost[g]||"")+(c && c.duel && t.costDuel[g] ? " "+t.costDuel[g] : "");
   }
   function thaw(g){
     const c=cur[g]; if(!c || !c.fz) return;
@@ -2386,7 +2428,7 @@ const Reg = (()=>{
     KEYS.forEach(g=>{ const u=ui[g]; if(!u) return;
       if(u.gate){ u.gateBtn.textContent=t.gateGo; u.gateNote.textContent=t.gateNote; }
       u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum); u.jump.textContent=t.rkJump; u.x.setAttribute("aria-label",t.rkClose);
-      setPid(g); renderRank(g); });
+      setPid(g); setCost(g); renderRank(g); });
   }
   // apodos únicos: nicks/{apodo en minúsculas} guarda de quién es; se escribe junto con names/{uid}
   const nickKey=v=>v.toLowerCase();
@@ -2470,18 +2512,22 @@ const Reg = (()=>{
     });
   }
   // partida nueva para una invitación: se crea sin abrirla (se abre cuando el otro acepta)
-  async function inviteGame(g){
+  // opt (sopa): {s: tamaño, m: modo}
+  async function inviteGame(g, opt={}){
     await ready; if(!fb) throw new Error("offline");
-    const k=kid(g), L=lang;
-    return {g, k, lang:L, n: await mkPuzzle(k, L, GAMES[g].gen())};
+    const k=opt.s ? (opt.s==="media" ? "sopa" : "sopa"+opt.s) : kid(g), L=lang;
+    const r={g, k, lang:L, n: await mkPuzzle(k, L, GAMES[g].gen(opt.s))};
+    if(opt.m) r.m=opt.m;
+    return r;
   }
   // abrir la partida de una invitación; duel: el duelo al que pertenece
-  async function playInvite(g, k, n, duel){
+  async function playInvite(g, k, n, duel, m){
     if(GAMES[g].setKey) GAMES[g].setKey(k);
+    if(m && GAMES[g].setMode) GAMES[g].setMode(m);
     cur[g]={lang, k, n:null, loading:true}; setPid(g);
     if(location.hash!=="#"+g) location.hash=g;
     await open(g, n);
-    if(cur[g] && cur[g].n===n && duel) cur[g].duel=duel;
+    if(cur[g] && cur[g].n===n && duel){ cur[g].duel=duel; setCost(g); }
   }
   // un lugar propio dentro del cartel final (duelo, retomar partida)
   function slot(g, cls){
@@ -2496,7 +2542,7 @@ const Reg = (()=>{
       const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${k}-${L}-${n}`));
       if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await fresh(g); return; }
       const d=JSON.parse(JSON.stringify(s.data().data));
-      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n); watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); setCost(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n); watch(g);
     }catch(e){ msg(g, T[lang].rkNotFound(n)); }
   }
   function watch(g){
@@ -2512,7 +2558,8 @@ const Reg = (()=>{
   }
   async function finish(g, rec){
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
-    if(c){ rec.e=c.e||0; rec.h=c.h||0; }
+    if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; }
+    if(GAMES[g].mode) rec.m=GAMES[g].mode();
     if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); }
     showBack(g);
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
@@ -2524,12 +2571,14 @@ const Reg = (()=>{
       if(s.exists()) msg(g, T[lang].rkPlayed);
       else{
         c.justSaved=true; c.notified=true;
-        await fb.setDoc(ref,{g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, e:rec.e||0, ms:Math.max(1000,Math.round(rec.ms)), at:fb.serverTimestamp()});
+        const doc1={g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, e:rec.e||0, c:rec.c||0, ms:Math.max(1000,Math.round(rec.ms)), at:fb.serverTimestamp()};
+        if(rec.m) doc1.m=rec.m;
+        await fb.setDoc(ref,doc1);
         fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), plays:{[`${c.k}-${c.lang}`]:fb.increment(1)}},{merge:true}).catch(()=>{});
         msg(g, T[lang].rkSaved);
       }
     }catch(e){ msg(g, T[lang].rkFail); }
-    delete gcache[c.k]; ui[g].rk.hidden=false; renderRank(g);
+    Object.keys(gcache).forEach(x=>{ if(x.startsWith(c.k)) delete gcache[x]; }); ui[g].rk.hidden=false; renderRank(g);
   }
   function showPts(g, rec){
     const u=ui[g], t=T[lang], c=cur[g], sc=scoreOf(c?c.k:g, rec);
@@ -2555,7 +2604,9 @@ const Reg = (()=>{
   const nickHtml=()=>`<div class="nick"><label>${esc(T[lang].rkNick)} <input class="nickin" maxlength="24" value="${esc(nick)}"></label><button class="nicksave">${esc(T[lang].rkNickSave)}</button></div>`;
   async function fetchAll(g){
     const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",kid(g))));
-    return qs.docs.filter(d=>!testers.has(d.id)).map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
+    // en la sopa, cada modo (palabras o pistas) tiene su propio ranking
+    const md=GAMES[g].mode ? GAMES[g].mode() : null;
+    return qs.docs.filter(d=>!testers.has(d.id) && (!md || (d.data().m||"w")===md)).map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
   }
   // ---------- Puntaje por partida (con tope) y ranking general por percentil ----------
   const MINP=10;                     // partidas comparables necesarias para el ranking general
@@ -2581,7 +2632,7 @@ const Reg = (()=>{
   }
   const gcache={};
   async function allResults(g){
-    const k=kid(g), c=gcache[k]; if(c && Date.now()-c.at<60000) return c.entries;
+    const k=kid(g)+(GAMES[g].mode?GAMES[g].mode():""), c=gcache[k]; if(c && Date.now()-c.at<60000) return c.entries;
     const entries=await fetchAll(g); gcache[k]={at:Date.now(), entries}; return entries;
   }
   const nmOf=i=>{ const t=T[lang], nk=nickName(); return i===uid ? (nk ? `${nk} (${t.rkYou.toLowerCase()})` : t.rkYou) : (names[i]||t.rkSomeone); };
@@ -2591,7 +2642,8 @@ const Reg = (()=>{
     u.tabs.forEach(b=>{ b.textContent = b.dataset.t==="g" ? t.rkTabG : t.rkTabP; b.setAttribute("aria-pressed", b.dataset.t===tab); });
     if(tab==="g") return renderGlobal(g);
     if(!online()||!c||!c.n){ u.body.innerHTML=`<p class="m">${esc(t.rkLocal)}</p>`; return; }
-    const sc=c.scores||{}, ids=Object.keys(sc).filter(counts);
+    const md=GAMES[g].mode ? GAMES[g].mode() : null;
+    const sc=c.scores||{}, ids=Object.keys(sc).filter(counts).filter(i=>!md || (sc[i].m||"w")===md);
     const ok=ids.filter(i=>sc[i].ok).sort((a,b)=>cmp(sc[a],sc[b]));
     await loadNames(ok.slice(0,5));
     if(cur[g]!==c || (u.tab||"p")!=="p") return;
@@ -2629,13 +2681,24 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
   rkTabP:"Esta partida", rkTabG:"General", rkLoading:"Cargando…",
-  rkScoreHow:"Puntos: 100 por resolverla más 1 por cada segundo antes de los 15 minutos. Cada error suma 10 segundos al reloj y cada ayuda 60; en los juegos de rondas, cada ronda fallada suma su parte de los 15 minutos. Gana quien tiene más puntos.",
+  rkScoreHow:"Puntos: 100 por resolverla más 1 por cada segundo antes de los 15 minutos. Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
+  cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
+    ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s.",
+    sopa:"Gana el tiempo. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
+    criptograma:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
+    anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar +90 s.",
+    semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
+    esbip:"Cada respuesta equivocada suma 45 s al reloj.", placa:"Cada intento equivocado suma 10 s al reloj · Pasar +90 s."},
+  costDuel:{acrostico:"En duelo, las ayudas se habilitan a los 7 minutos.", ahorcado:"En duelo, la pista se habilita a los 7 minutos.",
+    criptograma:"En duelo, las ayudas se habilitan a los 7 minutos.", anagrama:"En duelo, las pistas se habilitan a los 7 minutos."},
+  duHelpLock:t=>`En duelo, las ayudas se habilitan a los 7 minutos. Faltan ${t}.`,
+  sModeLocked:"El modo se elige antes de empezar. Terminá esta sopa o pedí una nueva para cambiarlo.", sModeTag:"con pistas",
   ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`,
   rkGenTitle:g=>`Ranking general de ${g}`,
   rkGenEmpty:m=>`Todavía nadie llegó a ${m} partidas comparables.`,
@@ -2645,8 +2708,19 @@ Object.assign(T.es,{
 });
 Object.assign(T.en,{
   rkTabP:"This game", rkTabG:"Overall", rkLoading:"Loading…",
-  rkScoreHow:"Points: 100 for solving it plus 1 for every second under 15 minutes. Each mistake adds 10 seconds to the clock and each hint 60; in round-based games, each missed round adds its share of the 15 minutes. Most points wins.",
+  rkScoreHow:"Points: 100 for solving it plus 1 for every second under 15 minutes. Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
+  cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
+    ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s.",
+    sopa:"Time wins. Pick the mode (words or clues) before you start; each has its own leaderboard.",
+    criptograma:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
+    anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skip +90s.",
+    semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
+    esbip:"Each wrong answer adds 45s to the clock.", placa:"Each wrong try adds 10s to the clock · Skip +90s."},
+  costDuel:{acrostico:"In a duel, help unlocks at 7 minutes.", ahorcado:"In a duel, the clue unlocks at 7 minutes.",
+    criptograma:"In a duel, help unlocks at 7 minutes.", anagrama:"In a duel, clues unlock at 7 minutes."},
+  duHelpLock:t=>`In a duel, help unlocks at 7 minutes. ${t} to go.`,
+  sModeLocked:"Pick the mode before you start. Finish this one or start a new one to change it.", sModeTag:"with clues",
   ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`,
   rkGenTitle:g=>`${g} overall leaderboard`,
   rkGenEmpty:m=>`Nobody has reached ${m} comparable games yet.`,
@@ -2708,7 +2782,7 @@ const Live = (()=>{
   const PICK=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla"];
   let fb=null, uid=null, off=0, synced=false, sentLang=null;
   let want=store.get("rodo-inv")!=="0";
-  let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null;
+  let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null, pickS="media", pickM="w";
   const now=()=>Date.now()+off;            // hora del servidor, estimada
   const dOut=$("ivOut"), dIn=$("ivIn");
   const anyOpen=()=>dOut.open||dIn.open;
@@ -2745,13 +2819,19 @@ const Live = (()=>{
   function renderPick(){
     const games=PICK.filter(g=>!HIDDEN.has(g));
     if(!games.includes(pickG)) pickG=games[0];
-    $("ivGames").innerHTML=games.map(g=>`<button data-g="${g}" aria-pressed="${g===pickG}">${Reg.gameName(g)}</button>`).join("");
+    $("ivGames").innerHTML=games.map(g=>`<button data-g="${g}" aria-pressed="${g===pickG}">${g==="sopa"?T[lang].sopaName:Reg.gameName(g)}</button>`).join("");
+    // sopa: quien invita elige tamaño y modo, y la otra persona juega igual
+    const T0=t(), so=$("ivSopa"); so.hidden=pickG!=="sopa";
+    if(pickG==="sopa") so.innerHTML=
+      `<div class="seg" role="group" aria-label="${T0.sSizeL}">${["chica","media","grande"].map(s=>`<button data-s="${s}" aria-pressed="${s===pickS}">${T0.sSize[s]}</button>`).join("")}</div>`+
+      `<div class="seg" role="group" aria-label="${T0.sModeL}">${["w","c"].map(m=>`<button data-m="${m}" aria-pressed="${m===pickM}">${m==="w"?T0.sList:T0.sListClue}</button>`).join("")}</div>`;
     $("ivNickRow").hidden=!!Reg.nick();
   }
   // dir: revancha con alguien en particular {to, who, d}
   function openOut(dir){
     if(!fb || anyOpen()) return;
     direct=dir&&dir.to ? dir : null;
+    pickS=GAMES.sopa.size(); pickM=GAMES.sopa.mode();
     game=null; tried=new Set(); msgOut(""); stage("pick"); renderPick(); $("ivSend").disabled=false;
     dOut.showModal();
   }
@@ -2776,11 +2856,12 @@ const Live = (()=>{
       const g=game ? game.g : pickG, to=await candidate(g);
       if(!to){ msgOut(direct ? t().ivAway(direct.who) : t().ivNobody); stage(game?"done":"pick"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
-      if(!game) game=await Reg.inviteGame(g);
+      if(!game) game=await Reg.inviteGame(g, g==="sopa" ? {s:pickS, m:pickM} : {});
       const ns=direct ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
       const who=direct ? direct.who : (ns && ns.exists() && ns.data().name) || t().ivSomeone;
       const inv={to, name:Reg.nick(), g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"};
       if(direct) inv.d=direct.d;
+      if(game.m) inv.m=game.m;
       await fb.setDoc(fb.doc(fb.db,"invites",uid),inv);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
       tried.add(to);
@@ -2817,7 +2898,7 @@ const Live = (()=>{
           }
           watchDuel(id);
         }catch(e){ id=null; }
-        setTimeout(()=>{ if(dOut.open) dOut.close(); Reg.playInvite(gm.g, gm.k, gm.n, id); }, 700);
+        setTimeout(()=>{ if(dOut.open) dOut.close(); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m); }, 700);
       })();
       return;
     }
@@ -2829,7 +2910,7 @@ const Live = (()=>{
     if(out){ fb.updateDoc(fb.doc(fb.db,"invites",uid),{st:"cancelled"}).catch(()=>{}); stopOut(); }
     if(dOut.open) dOut.close();
   }
-  function solo(){ const gm=game; game=null; dOut.close(); if(gm) Reg.playInvite(gm.g, gm.k, gm.n, null); }
+  function solo(){ const gm=game; game=null; dOut.close(); if(gm) Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m); }
   $("ivAgain").hidden=false;
 
   // ---------- quien recibe ----------
@@ -2883,7 +2964,7 @@ const Live = (()=>{
     catch(e){ inc.answering=false; return late(); }
     const duel=d.d || `${id}_${d.k}-${d.lang}-${d.n}`;
     endIn(false); watchDuel(duel);
-    Reg.playInvite(d.g, d.k, d.n, duel);
+    Reg.playInvite(d.g, d.k, d.n, duel, d.m);
   }
   function decline(){
     if(!inc || inc.answering) return;
@@ -2944,7 +3025,8 @@ const Live = (()=>{
   // ---------- eventos ----------
   $("ivBtn").addEventListener("click",()=>openOut());
   $("ivRecv").addEventListener("change",e=>setWant(e.target.checked));
-  $("ivGames").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; pickG=b.dataset.g; renderPick(); });
+  $("ivGames").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; pickG=b.dataset.g; game=null; renderPick(); });
+  $("ivSopa").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; if(b.dataset.s) pickS=b.dataset.s; if(b.dataset.m) pickM=b.dataset.m; game=null; renderPick(); });
   $("ivSend").addEventListener("click",send);
   $("ivNick").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); send(); } });
   $("ivAgain").addEventListener("click",send);
@@ -3097,7 +3179,7 @@ const Admin = (()=>{
     N.forEach(d=>names[d.id]=d.data().name);
     F.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}, inv:x.inv||0}; });
     rows=[]; S.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
-      const r={u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, e:x.e, ms:x.ms||0, at:ms(x.at)};
+      const r={u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, e:x.e, c:x.c||0, m:x.m, ms:x.ms||0, at:ms(x.at)};
       r.sc=scoreOf(r.k, r); rows.push(r); });
     const counters={}; C.forEach(d=>counters[d.id]=d.data().count||0);
 

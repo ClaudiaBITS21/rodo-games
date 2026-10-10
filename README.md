@@ -62,7 +62,7 @@ No usa claves ni secretos: se autentica con **Workload Identity Federation**. En
 
 **Por partida.** Cada juego tiene numeración propia por idioma (`acrostico-es-12`, `sopa-en-3`). La partida guarda su contenido exacto, así que el #12 es idéntico para todos. Cada jugador guarda **un solo resultado por partida** (el primero); las reglas impiden modificarlo o borrarlo.
 
-Cada error suma 10 segundos al reloj y cada ayuda 60 (en los juegos de rondas, cada ronda fallada suma su parte de los 15 minutos). Los puntos son `100 por resolverla + (900 − segundos ajustados)`, con mínimo 0, y gana quien tiene más. Si no se resuelve, son 0.
+Cada error suma 10 segundos al reloj (20 en el ahorcado), cada ayuda 60 y cada "Comprobar" 5; en los juegos de rondas, cada ronda fallada suma su parte de los 15 minutos. En la Semilla el reloj corre desde que se empieza a armar la frase. En la sopa, cada modo (palabras o pistas) tiene su propio ranking. En los duelos, las ayudas se habilitan a los 7 minutos. Los puntos son `100 por resolverla + (900 − segundos ajustados)`, con mínimo 0, y gana quien tiene más. Si no se resuelve, son 0.
 
 **Duelos.** Cuando alguien acepta una invitación se abre un duelo entre los dos. Cada partida la gana quien saca más puntos y la revancha la elige, por turno, quien no eligió la anterior.
 
