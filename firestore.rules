@@ -119,9 +119,10 @@ service cloud.firestore {
         || isAdmin();
     }
 
-    // "¿Aprendiste alguna palabra nueva?": una respuesta por jugador y partida, que puede cambiar. Solo la lee la administración
+    // "¿Aprendiste alguna palabra nueva?": una respuesta por jugador y partida, que puede cambiar.
     match /learned/{id} {
-      allow read: if isAdmin();
+      // la administración ve todas; cada jugador, las suyas (para sus estadísticas)
+      allow read: if isAdmin() || (signedIn() && resource.data.u == request.auth.uid);
       allow create, update: if signedIn()
         && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at'])
         && request.resource.data.u == request.auth.uid

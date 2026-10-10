@@ -51,6 +51,8 @@ body{
 }
 body::before{content:"";position:fixed;inset:0;background:var(--bg);opacity:.86;z-index:-1}
 .wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+/* celulares: los navegadores con barra flotante arriba (Safari, el de WhatsApp) tapaban los botones del encabezado */
+@media (max-width:640px){ .wrap{padding-top:64px} header .tools{gap:8px 6px} }
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
 .brand{font-size:.95rem;color:var(--muted);font-weight:600;text-decoration:none}
 .brand b{color:var(--btc)}
@@ -136,6 +138,13 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 body.tester .testbadge{display:block}
 .pcost{margin:-4px 0 10px;font-size:.8rem;color:var(--muted)}
 .pcost:empty{display:none}
+.statsbtn{padding:9px 11px;line-height:1}
+.nudge p{margin:0 0 6px;color:var(--muted)}
+.nudge .row{margin-top:10px}
+.sthello{font-size:1.3rem;font-weight:800;margin:0 0 14px}
+.stanon{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line);margin:0 0 16px}
+.stanon p{margin:0;color:var(--muted)}
+#view-stats h2{font-size:1.1rem;margin:22px 0 10px}
 .userbtn{max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .userbtn.set{background:var(--paper)}
 .userdlg .utabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 12px}
@@ -445,6 +454,7 @@ body.tester .testbadge{display:block}
     <div class="tools">
       <a class="btn" id="menuBtn" href="#"></a>
       <button class="userbtn" id="userBtn"></button>
+      <button class="statsbtn" id="statsBtn">📊</button>
       <div class="lang" role="group" aria-label="Idioma / Language">
         <button data-lang="es" aria-pressed="true">ES</button>
         <button data-lang="en" aria-pressed="false">EN</button>
@@ -688,6 +698,11 @@ body.tester .testbadge{display:block}
   </section>
 
   <!-- ===== Administración (solo claudia@rodo.es; los datos los protegen las reglas de Firestore) ===== -->
+  <section class="view" id="view-stats">
+    <div id="stHead"></div>
+    <div id="stBody"></div>
+  </section>
+
   <section class="view" id="view-admin">
     <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
     <div id="admLogin" class="admlogin">
@@ -733,6 +748,14 @@ body.tester .testbadge{display:block}
 
 <div class="testbadge" aria-hidden="true">PRUEBA</div>
 <div class="newver" id="newVer" hidden role="status"><span id="newVerT"></span> <button id="newVerB"></button></div>
+
+<!-- ===== Invitación a crear usuario (jugador recurrente) ===== -->
+<dialog class="ivdlg nudge" id="nudgeDlg" aria-labelledby="ndT">
+  <h3 id="ndT"></h3>
+  <p id="ndP"></p>
+  <div class="row"><button class="primary" id="ndGo"></button></div>
+  <div class="row"><button id="ndLater"></button><button id="ndNo"></button></div>
+</dialog>
 
 <!-- ===== Usuario con PIN ===== -->
 <dialog class="ivdlg userdlg" id="userDlg" aria-labelledby="uT">
@@ -2520,7 +2543,7 @@ function duelWinner(k, a, b, timedOut){
 }
 const Reg = (()=>{
   const KEYS=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla","esbip","placa"];
-  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", myAv=store.get("rodo-av")||"", seen={};
+  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", myAv=store.get("rodo-av")||"", seen={}, ficha=null;
   // clave de la partida: el juego, o una variante (la sopa tiene una numeración por tamaño)
   const kid = g => GAMES[g].key ? GAMES[g].key() : g;
   const tagOf = g => GAMES[g].tag ? GAMES[g].tag() : "";
@@ -2538,7 +2561,7 @@ const Reg = (()=>{
       // ficha del jugador: primera y última visita, partidas vistas y jugadas
       try{
         const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
-        if(s.exists()){ seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
+        if(s.exists()){ ficha=s.data(); seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
           await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
         else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}});
       }catch(e){}
@@ -2971,7 +2994,7 @@ const Reg = (()=>{
   }
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
-    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, isTester:()=>testers.has(uid),
+    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
     setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
@@ -3612,6 +3635,130 @@ const User = (()=>{
 })();
 
 // =====================================================================
+// MIS ESTADÍSTICAS (#stats) y la invitación a crear usuario para jugadores recurrentes
+// Los resultados propios se buscan por las partidas que el jugador abrió (fichas.seen), así no se leen los de todos.
+// =====================================================================
+Object.assign(T.es,{
+  stTitle:"Mis estadísticas", stBtn:"Mis estadísticas", stLoading:"Cargando tus partidas…", stOffline:"Sin conexión con el servidor: no se pueden mostrar tus estadísticas.",
+  stAnon:"Estás jugando sin usuario: estas estadísticas viven solo en este navegador.", stCreate:"Crear mi usuario",
+  stPlayed:"partidas terminadas", stSolved:n=>`resueltas (${n})`, stPoints:"puntos en total", stBest:"mejor puntaje", stTime:"de juego", stDays:"días jugados",
+  stByGame:"Por juego", stCols:["Juego","Jugadas","Resueltas","Mejor","Promedio","Mejor tiempo"],
+  stDuels:"Competencias", stDuelK:["duelos","partidas en duelo","ganadas","perdidas","empates","invitaciones mandadas"],
+  stNoDuels:"Todavía no jugaste duelos. Desde la portada, \"Invitar a jugar\" te junta con alguien conectado.", stLast:"Últimas partidas", stLastCols:["Cuándo","Juego","Resultado","Puntos","Tiempo"], stNone:"Todavía no terminaste ninguna partida.",
+  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`,
+  ndT:"Armá tu usuario en menos de 30 segundos", ndP:"Creá un alias, elegí un PIN y usalo en cualquier dispositivo. Además vas a poder seguir tu rendimiento.",
+  ndGo:"Crear mi usuario", ndLater:"Recordar más tarde", ndNo:"Cancelar"
+});
+Object.assign(T.en,{
+  stTitle:"My stats", stBtn:"My stats", stLoading:"Loading your games…", stOffline:"No connection to the server: your stats can't be shown.",
+  stAnon:"You're playing without a username: these stats only live in this browser.", stCreate:"Create my username",
+  stPlayed:"games finished", stSolved:n=>`solved (${n})`, stPoints:"total points", stBest:"best score", stTime:"played", stDays:"days played",
+  stByGame:"By game", stCols:["Game","Played","Solved","Best","Average","Best time"],
+  stDuels:"Competitions", stDuelK:["duels","duel games","won","lost","ties","invitations sent"],
+  stNoDuels:"No duels yet. From the home page, \"Invite to play\" matches you with someone online.", stLast:"Recent games", stLastCols:["When","Game","Result","Points","Time"], stNone:"You haven't finished a game yet.",
+  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`,
+  ndT:"Set up your username in under 30 seconds", ndP:"Create an alias, pick a PIN and use it on any device. You'll also be able to track your performance.",
+  ndGo:"Create my username", ndLater:"Remind me later", ndNo:"Cancel"
+});
+const Stats = (()=>{
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const t=()=>T[lang];
+  const ms=x=> x&&x.toMillis ? x.toMillis() : null;
+  // nombre de cada clave de partida: "sopagrande" → "Sopa de letras (grande)"
+  const kName=k=>{ const T0=t(); if(k.startsWith("sopa")){ const s=k==="sopa"?"media":k.slice(4); return T0.gName.sopa+(s==="media"?"":` (${T0.sSize[s].toLowerCase()})`); } return T0.gName[k]||k; };
+  const hrs=v=>{ const m=Math.round(v/60000); return m<60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; };
+  const when=v=> v ? new Date(v).toLocaleString(lang==="en"?"en-US":"es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "–";
+  const table=(head,rows)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  async function pool(items, n, fn){ const out=[]; let i=0; await Promise.all([...Array(n)].map(async()=>{ while(i<items.length){ const j=i++; out[j]=await fn(items[j]); } })); return out; }
+
+  async function show(){
+    const T0=t(), box=$("stBody");
+    $("stHead").innerHTML="";
+    box.innerHTML=`<p class="m">${esc(T0.stLoading)}</p>`;
+    await Reg.ready; const fb=Reg.fb(), uid=Reg.uid();
+    if(!fb){ box.innerHTML=`<p class="m">${esc(T0.stOffline)}</p>`; return; }
+    const nick=Reg.nick();
+    $("stHead").innerHTML = nick ? `<p class="sthello">${esc((Reg.av()||"🙂")+" "+nick)}</p>`
+      : `<div class="stanon"><p>${esc(T0.stAnon)}</p><button class="primary" id="stCreate">${esc(T0.stCreate)}</button></div>`;
+    if(!nick) $("stCreate").addEventListener("click",()=>User.open());
+    // resultados propios: una lectura por partida abierta
+    const seen=Reg.seenMap(), pids=[];
+    Object.entries(seen).forEach(([key,ns])=>(ns||[]).forEach(n=>pids.push(`${key}-${n}`)));
+    const res=(await pool(pids, 12, async pid=>{
+      try{ const s=await fb.getDoc(fb.doc(fb.db,"scores",pid,"players",uid)); if(!s.exists()) return null;
+        const r=s.data(), [k,L]=pid.split("-"); return {pid, k, L, r, sc:scoreOf(r.g||k, r), at:ms(r.at)}; }catch(e){ return null; }
+    })).filter(Boolean);
+    // duelos: los de este jugador, con los resultados de las dos puntas
+    let duels=[], dg={w:0,l:0,t:0,n:0};
+    try{
+      const qs=await fb.getDocs(fb.query(fb.collection(fb.db,"duels"), fb.where("p","array-contains",uid)));
+      duels=qs.docs.map(d=>d.data());
+      const games=[]; duels.forEach(d=>(d.games||[]).forEach(pid=>games.push({pid, opp:d.p.find(x=>x!==uid)})));
+      await pool(games, 8, async g=>{
+        try{
+          const s=await fb.getDocs(fb.collection(fb.db,"scores",g.pid,"players")), R={}; s.forEach(d=>R[d.id]=d.data());
+          const w=duelWinner(g.pid.split("-")[0], R[uid], R[g.opp], true);
+          if(w==="void") return; dg.n++; if(w==="a") dg.w++; else if(w==="b") dg.l++; else dg.t++;
+        }catch(e){}
+      });
+    }catch(e){}
+    let inv=0, learned=0;
+    try{ const f=await fb.getDoc(fb.doc(fb.db,"fichas",uid)); inv=(f.exists()&&f.data().inv)||0; }catch(e){}
+    try{ learned=(await fb.getDocs(fb.query(fb.collection(fb.db,"learned"), fb.where("u","==",uid)))).docs.filter(d=>d.data().yes).length; }catch(e){}
+    render(res, duels.length, dg, inv, learned);
+  }
+  function render(res, nDuels, dg, inv, learned){
+    const T0=t(), box=$("stBody");
+    const solved=res.filter(x=>x.sc.ok), pts=res.reduce((a,x)=>a+x.sc.pts,0), best=res.reduce((a,x)=>Math.max(a,x.sc.pts),0);
+    const time=res.reduce((a,x)=>a+Math.min(x.r.ms||0, 3*3600000),0), days=new Set(res.filter(x=>x.at).map(x=>new Date(x.at).toDateString())).size;
+    const pct=(a,b)=> b ? Math.round(100*a/b)+"%" : "–";
+    let h=`<div class="kpis">
+      <div class="kpi"><b>${res.length}</b><span>${esc(T0.stPlayed)}</span></div>
+      <div class="kpi"><b>${solved.length}</b><span>${esc(T0.stSolved(pct(solved.length,res.length)))}</span></div>
+      <div class="kpi"><b>${pts.toLocaleString(lang==="en"?"en-US":"es-AR")}</b><span>${esc(T0.stPoints)}</span></div>
+      <div class="kpi"><b>${best}</b><span>${esc(T0.stBest)}</span></div>
+      <div class="kpi"><b>${hrs(time)}</b><span>${esc(T0.stTime)}</span></div>
+      <div class="kpi"><b>${days}</b><span>${esc(T0.stDays)}</span></div>
+    </div>`;
+    if(!res.length){ box.innerHTML=h+`<p class="m">${esc(T0.stNone)}</p>`; return; }
+    const G={}; res.forEach(x=>(G[x.k]=G[x.k]||[]).push(x));
+    h+=`<h2>${esc(T0.stByGame)}</h2>`+table(T0.stCols, Object.entries(G).sort((a,b)=>b[1].length-a[1].length).map(([k,r])=>{
+      const ok=r.filter(x=>x.sc.ok);
+      return [esc(kName(k)), r.length, `${ok.length} (${pct(ok.length,r.length)})`, Math.max(...r.map(x=>x.sc.pts)), Math.round(r.reduce((a,x)=>a+x.sc.pts,0)/r.length), ok.length?fmt(Math.min(...ok.map(x=>x.r.ms))):"–"]; }));
+    h+=`<h2>${esc(T0.stDuels)}</h2>`+(nDuels||inv ? `<div class="kpis">${[nDuels, dg.n, dg.w, dg.l, dg.t, inv].map((v,i)=>`<div class="kpi"><b>${v}</b><span>${esc(T0.stDuelK[i])}</span></div>`).join("")}</div>`
+      : `<p class="m">${esc(T0.stNoDuels)}</p>`);
+    const last=[...res].sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,10);
+    h+=`<h2>${esc(T0.stLast)}</h2>`+table(T0.stLastCols, last.map(x=>[when(x.at), `${esc(kName(x.k))} ${x.L.toUpperCase()} #${x.pid.split("-")[2]}`, x.sc.ok?"✓":"✗", x.sc.pts, fmt(x.r.ms||0)+(x.sc.pen?` + ${fmt(x.sc.pen*1000)}`:"")]));
+    if(learned) h+=`<p class="m">${esc(T0.stLearned(learned))}</p>`;
+    box.innerHTML=h;
+  }
+  $("statsBtn").addEventListener("click",()=>{ location.hash="stats"; });
+  return {show, texts:()=>{ $("statsBtn").setAttribute("aria-label",T[lang].stBtn); $("statsBtn").title=T[lang].stBtn; }};
+})();
+
+// Jugador recurrente sin usuario: una ventanita para invitarlo a crearlo (una vez por visita, en la portada)
+const Nudge = (()=>{
+  const dlg=$("nudgeDlg"), KEY="rodo-nudge";
+  const snoozed=()=>{ const v=store.get(KEY); return v==="never" || (v && +v>Date.now()); };
+  async function maybe(){
+    await Reg.ready; if(!Reg.fb() || Reg.nick() || snoozed() || shown) return;
+    const f=Reg.ficha()||{}, plays=Object.values(f.plays||{}).reduce((a,b)=>a+(b||0),0);
+    const seen=Object.values(f.seen||{}).reduce((a,v)=>a+(Array.isArray(v)?v.length:0),0);
+    const first=f.first && f.first.toMillis ? f.first.toMillis() : Date.now();
+    // recurrente: ya terminó 3 partidas, o volvió otro día y abrió al menos 2
+    if(!(plays>=3 || (Date.now()-first>20*3600000 && seen>=2))) return;
+    setTimeout(()=>{ if(view!=="menu" || document.querySelector("dialog[open]") || Reg.nick()) return; shown=true; texts(); dlg.showModal(); }, 1500);
+  }
+  let shown=false;
+  function texts(){ const T0=T[lang]; $("ndT").textContent=T0.ndT; $("ndP").textContent=T0.ndP; $("ndGo").textContent=T0.ndGo; $("ndLater").textContent=T0.ndLater; $("ndNo").textContent=T0.ndNo; }
+  $("ndGo").addEventListener("click",()=>{ dlg.close(); User.open(); });
+  $("ndLater").addEventListener("click",()=>{ store.set(KEY, String(Date.now()+3*86400000)); dlg.close(); });
+  $("ndNo").addEventListener("click",()=>{ store.set(KEY,"never"); dlg.close(); });
+  dlg.addEventListener("cancel",e=>{ e.preventDefault(); store.set(KEY, String(Date.now()+3*86400000)); dlg.close(); });
+  return {maybe};
+})();
+
+// =====================================================================
 // BUZÓN DE SUGERENCIAS: llega por mail a través de FormSubmit
 // =====================================================================
 Object.assign(T.es,{
@@ -3862,20 +4009,23 @@ function applyTexts(){
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
-  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts();
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts(); Stats.texts();
   $("adminLink").textContent=t.adminLink;
   if(view==="admin") return setTitle("Administración");
+  if(view==="stats") return setTitle(t.stTitle);
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
 }
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
 function route(){
   const h=location.hash.replace("#","");
-  view = h==="admin" ? "admin" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
+  view = h==="admin" ? "admin" : h==="stats" ? "stats" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
   $("menuBtn").style.display = view==="menu" ? "none" : "";
   applyTexts();
   if(GAMES[view]) Reg.enter(view);
   if(view==="admin") Admin.show();
+  if(view==="stats") Stats.show();
+  if(view==="menu") Nudge.maybe();
   window.scrollTo(0,0);
 }
 document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{
@@ -3884,6 +4034,7 @@ document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",
   applyTexts();
   // el juego abierto pasa al último número del nuevo idioma; los demás, al abrirlos
   if(GAMES[view]) Reg.enter(view, true);
+  if(view==="stats") Stats.show();
 }));
 // cambio de idioma por una invitación: no reemplaza las partidas en curso ni las congeladas
 function setLang(L){
