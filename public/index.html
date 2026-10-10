@@ -112,10 +112,24 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivfz{margin:0 0 10px;padding:8px 10px;border-radius:10px;background:var(--row);font-size:.92rem}
 .ivfz:empty{display:none}
 .ivoff{margin-top:12px;background:transparent;border:0;color:var(--muted);font-size:.8rem;font-weight:400;text-decoration:underline;padding:4px}
+.testbadge{display:none;position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:50;background:#7B3FE4;color:#fff;font:700 .72rem "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;padding:4px 8px;border-radius:6px;pointer-events:none}
+body.tester .testbadge{display:block}
+.ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
+.ppen.show{animation:penflash 1.6s ease-out}
+@keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+.wpts{margin:2px 0 10px}
+.wpts b{display:block;font-size:1.45rem;line-height:1.1;font-weight:800}
+.wpts span{font-size:.85rem;opacity:.85}
 .ptime.frozen{color:#4A90D9}
 .ptime.frozen::before{content:"❄ "}
-.wback{margin-top:10px}
-.wback[hidden]{display:none}
+.wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
+.wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
+.wback button,.wduel button{padding:7px 12px;font-size:.88rem}
+.wback[hidden],.wduel[hidden]{display:none}
+.wduel{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);text-align:center}
+.wduel .sc{display:block;font:700 1.15rem "IBM Plex Mono",ui-monospace,monospace}
+.wduel p{font-size:.85rem!important;font-weight:400!important;margin:2px 0 6px!important}
+.win.lose .wduel,.win.lose .wback{background:var(--paper)}
 .privnote{margin:36px auto 8px;max-width:60ch;color:var(--muted);font-size:.72rem;line-height:1.4;text-align:center;opacity:.8}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 
@@ -130,6 +144,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .win .rank h3{font-size:.95rem;margin:0 0 6px}
 .win .rank li{padding:2px 0}
 .win .rtabs button{padding:4px 10px;font-size:.8rem}
+.win .rtabs button[aria-pressed="false"]{background:transparent;color:var(--ink);border-color:transparent}
 .win .rank .nick input{width:9em;padding:5px 8px}
 .win .rank .nick button{padding:5px 10px;background:var(--ink);color:var(--paper)}
 .win.lose{background:var(--bad-soft);color:var(--ink)}
@@ -625,7 +640,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 
   <!-- ===== Administración (solo claudia@rodo.es; los datos los protegen las reglas de Firestore) ===== -->
   <section class="view" id="view-admin">
-    <div class="bar"><p class="meta" id="admWho"></p><span><button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
+    <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
     <div id="admLogin" class="admlogin">
       <p>Acceso restringido a la cuenta de administración.</p>
       <button class="primary" id="admIn">Entrar con Google</button>
@@ -666,6 +681,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
   <p class="privnote" id="privNote"></p>
   <p class="privnote"><a href="#admin" class="adminlink" id="adminLink"></a></p>
 </div>
+
+<div class="testbadge" aria-hidden="true">PRUEBA</div>
 
 <!-- ===== Invitaciones: quien invita ===== -->
 <dialog class="ivdlg" id="ivOut" aria-labelledby="ivOutT">
@@ -1189,12 +1206,15 @@ const Acro = (()=>{
     while(cells[i]&&cells[i].readOnly) i+=d;
     if(cells[i]){ cells[i].focus(); return cells[i]; } return null;
   }
+  // cada letra equivocada cuenta una sola vez como error, aunque se compruebe varias veces
+  let badSeen=new Set();
   function check(){
     if(solved) return; let wrong=0, empty=0;
     document.querySelectorAll("#grid .cell").forEach(c=>{
       if(c.readOnly) return; c.classList.remove("ok","bad");
       if(!c.value){ empty++; return; }
-      if(c.value===solOf(c)) c.classList.add("ok"); else { c.classList.add("bad"); wrong++; }
+      if(c.value===solOf(c)) c.classList.add("ok");
+      else { c.classList.add("bad"); wrong++; const key=`${c.dataset.r}-${c.dataset.k}:${c.value}`; if(!badSeen.has(key)){ badSeen.add(key); Reg.pen("acrostico","e"); } }
     });
     if(!checkWin()) $("current").textContent = wrong?T[lang].wrong(wrong):empty?T[lang].empty(empty):"";
   }
@@ -1208,7 +1228,7 @@ const Acro = (()=>{
     if(!cell) return;
     cell.value=solOf(cell); realRows()[+cell.dataset.r].entry[+cell.dataset.k]=cell.value;
     cell.classList.remove("ok","bad"); cell.classList.add("rev");
-    hintsUsed++; updateHintBtn();
+    hintsUsed++; updateHintBtn(); Reg.pen("acrostico","h");
     if(hintsUsed>=MAX_HINTS) $("current").textContent=T[lang].noHints;
     if(!checkWin()) move(cell,1);
   }
@@ -1258,7 +1278,7 @@ const Acro = (()=>{
   function load(d){
     P=JSON.parse(JSON.stringify(d)); lastPhrase=P.phrase;
     P.rows.forEach(r=>{ if(!r.gap) r.entry=Array([...r.word].length).fill(""); });
-    hintsUsed=0; solved=false; startTime=Date.now(); elapsed=0; updateHintBtn(); render();
+    hintsUsed=0; solved=false; badSeen=new Set(); startTime=Date.now(); elapsed=0; updateHintBtn(); render();
   }
   function create(){ Reg.newGame("acrostico"); }
   // eventos
@@ -1343,7 +1363,7 @@ const Hang = (()=>{
   function guess(ch){
     if(over||guessed.has(ch)||!word) return;
     guessed.add(ch);
-    if(!word.includes(ch)) wrong++;
+    if(!word.includes(ch)){ wrong++; Reg.pen("ahorcado","e"); }
     const won=[...word].every(c=>guessed.has(c)), lost=wrong>=LIVES;
     if(won||lost) finish(won);
     drawBlocks(); drawWord(); drawKeys();
@@ -1375,7 +1395,7 @@ const Hang = (()=>{
   }
   // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
   function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
-  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; $("hClue").style.display=""; drawBlocks(); });
+  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
   $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
   document.addEventListener("keydown",e=>{
     if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
@@ -1808,7 +1828,7 @@ const Seed = (()=>{
       if(next>=words.length) return finish(true);
       document.querySelector(`#pSeed .slot[data-i="${next}"]`).classList.add("next");
     } else {
-      errors++; b.classList.remove("err"); void b.offsetWidth; b.classList.add("err");
+      errors++; Reg.pen("semilla","e"); b.classList.remove("err"); void b.offsetWidth; b.classList.add("err");
       setTimeout(()=>b.classList.remove("err"),450);
       if(errors>=MAXERR) return finish(false);
     }
@@ -1863,7 +1883,7 @@ const IsBip = (()=>{
   function answer(yes){
     if(locked) return; locked=true; $("bYes").disabled=$("bNo").disabled=true;
     const it=items[i], ok=(yes===it.inList), t=T[lang];
-    if(ok) score++; results[i]= ok?"ok":"skip";
+    if(ok) score++; else Reg.pen("esbip","r"); results[i]= ok?"ok":"skip";
     const fb=$("bFeedback");
     fb.className="feedback "+(ok?"ok":"bad");
     fb.textContent=`${ok?t.bRight:t.bWrong} ${it.inList?t.bIsIn(it.w,bipIndex(lang,it.w)+1):t.bNotIn(it.w)}`;
@@ -1923,11 +1943,11 @@ const Plate = (()=>{
       $("lInput").disabled=true; scoreDots($("lScore"),ROUNDS,results,-1); meta();
       setTimeout(advance,1200);
     } else {
-      fb.className="feedback bad"; fb.textContent = bipIndex(lang,v)===undefined ? t.lNotBip : t.lBad;
+      fb.className="feedback bad"; fb.textContent = bipIndex(lang,v)===undefined ? t.lNotBip : t.lBad; Reg.pen("placa","e");
     }
   }
   function skip(){
-    if(locked) return; locked=true; results[i]="skip";
+    if(locked) return; locked=true; results[i]="skip"; Reg.pen("placa","r");
     const fb=$("lFeedback"); fb.className="feedback bad"; fb.textContent=T[lang].lSkipped(items[i]);
     $("lInput").disabled=true; scoreDots($("lScore"),ROUNDS,results,-1);
     setTimeout(advance,1600);
@@ -1953,7 +1973,7 @@ const Plate = (()=>{
 // =====================================================================
 const Cripto = (()=>{
   const MAX_HINTS=3;
-  let q=null, map={}, cells=[], hints=0, start=0, elapsed=0, solved=false, lastQ="", focusC=null;
+  let q=null, map={}, cells=[], hints=0, start=0, elapsed=0, solved=false, lastQ="", focusC=null, cBad=new Set();
   const alpha = () => [...(lang==="es"?"ABCDEFGHIJKLMNÑOPQRSTUVWXYZ":"ABCDEFGHIJKLMNOPQRSTUVWXYZ")];
   function texts(){
     const t=T[lang];
@@ -1972,7 +1992,7 @@ const Cripto = (()=>{
   function create(){ Reg.newGame("criptograma"); }
   function load(d){
     q=[...d.q]; lastQ=q[0]; map={...d.map};
-    hints=0; solved=false; start=Date.now(); cells=[];
+    hints=0; solved=false; start=Date.now(); cells=[]; cBad=new Set();
     const text=norm(q[0]);
     const box=$("cQuote"); box.innerHTML="";
     text.split(" ").forEach(word=>{
@@ -2034,7 +2054,8 @@ const Cripto = (()=>{
     if(solved) return; let wrong=0; const pending=new Set();
     cells.forEach(x=>{ if(x.el.readOnly) return; x.el.classList.remove("ok","bad");
       if(!x.el.value){ pending.add(x.c); return; }
-      if(x.el.value===x.p) x.el.classList.add("ok"); else { x.el.classList.add("bad"); wrong++; } });
+      if(x.el.value===x.p) x.el.classList.add("ok");
+      else { x.el.classList.add("bad"); wrong++; const key=`${x.c}:${x.el.value}`; if(!cBad.has(key)){ cBad.add(key); Reg.pen("criptograma","e"); } } });
     const wrongGroups=new Set(cells.filter(x=>x.el.classList.contains("bad")).map(x=>x.c)).size;
     if(!checkWin()) $("cStatus").textContent = wrongGroups ? T[lang].cWrong(wrongGroups) : pending.size ? T[lang].cEmpty(pending.size) : "";
   });
@@ -2045,7 +2066,7 @@ const Cripto = (()=>{
     const c = (focusC && needs(focusC)) ? focusC : (cells.find(x=>x.el.value!==x.p)||{}).c;
     if(!c) return;
     const p=group(c)[0].p; setGroup(c,p,"rev"); group(c).forEach(x=>x.el.readOnly=true);
-    hints++; updateHint(); if(hints>=MAX_HINTS) $("cStatus").textContent=T[lang].cNoHints;
+    hints++; updateHint(); Reg.pen("criptograma","h"); if(hints>=MAX_HINTS) $("cStatus").textContent=T[lang].cNoHints;
     checkWin();
   });
   async function image(){
@@ -2111,10 +2132,10 @@ const Ana = (()=>{
     if(g===word()){
       locked=true; score++; results[i]="ok"; draw("ok"); scoreDots($("aScore"),ROUNDS,results,-1); meta();
       setTimeout(advance,800);
-    } else { draw("bad"); setTimeout(()=>{ if(!locked) draw(); },400); }
+    } else { draw("bad"); Reg.pen("anagrama","e"); setTimeout(()=>{ if(!locked) draw(); },400); }
   }
   function skip(){
-    if(locked) return; locked=true; results[i]="skip";
+    if(locked) return; locked=true; results[i]="skip"; Reg.pen("anagrama","r");
     const w=word(); tiles=[...w]; picks=tiles.map((_,k)=>k); draw("skip"); scoreDots($("aScore"),ROUNDS,results,-1);
     setTimeout(advance,1500);
   }
@@ -2130,7 +2151,7 @@ const Ana = (()=>{
   $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
   $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
   $("aSkip").addEventListener("click",skip);
-  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; $("aClue").style.display=""; updHint(); });
+  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
   document.addEventListener("keydown",e=>{
     if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
     if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
@@ -2164,7 +2185,7 @@ Object.assign(T.es,{
   rkYou:"Vos", rkSomeone:"Jugador", rkPlayers:n=>n===1?"1 jugador lo intentó.":`${n} jugadores lo intentaron.`,
   rkHelp:h=>h===0?"sin ayuda":`${h} ayuda${h>1?"s":""}`, rkErr:h=>`${h} error${h===1?"":"es"}`,
   rkYourPos:(p,m)=>`Tu puesto: ${p}, ${m}.`, rkYouFailed:"Tu intento no llegó a completarse.",
-  rkNoNum:"Sin número", rkLocal:"Sin conexión con el servidor: esta partida no tiene número ni ranking.", rkNick:"Tu apodo en el ranking:", rkNickSave:"Guardar", rkNickSaved:"Apodo guardado.",
+  rkNoNum:"Sin número", rkLocal:"Sin conexión con el servidor: esta partida no tiene número ni ranking.", rkNick:"Tu apodo en el ranking:", rkNickSave:"Guardar", rkNickSaved:"Apodo guardado.", rkNickTaken:"Ese apodo ya lo usa otra persona. Probá con otro.", rkNickBad:"Ese apodo no sirve: sin barras ni espacios al principio o al final.",
   rkNoPerm:"Tu acceso es de solo lectura: podés jugar los números que ya existen, pero no crear nuevos ni guardar resultados.",
   rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
   rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
@@ -2180,7 +2201,7 @@ Object.assign(T.en,{
   rkYou:"You", rkSomeone:"Player", rkPlayers:n=>`${n} player${n===1?"":"s"} tried it.`,
   rkHelp:h=>h===0?"no help":`${h} hint${h>1?"s":""}`, rkErr:h=>`${h} mistake${h===1?"":"s"}`,
   rkYourPos:(p,m)=>`Your rank: ${p}, ${m}.`, rkYouFailed:"Your attempt wasn't completed.",
-  rkNoNum:"No number", rkLocal:"No connection to the server: this game has no number or leaderboard.", rkNick:"Your leaderboard nickname:", rkNickSave:"Save", rkNickSaved:"Nickname saved.",
+  rkNoNum:"No number", rkLocal:"No connection to the server: this game has no number or leaderboard.", rkNick:"Your leaderboard nickname:", rkNickSave:"Save", rkNickSaved:"Nickname saved.", rkNickTaken:"Someone else already uses that nickname. Try another one.", rkNickBad:"That nickname won't work: no slashes or leading/trailing spaces.",
   rkNoPerm:"You have read-only access: you can play existing numbers, but not create new ones or save results.",
   rkNotFound:n=>`There's no #${n} yet for this game and language.`,
   rkPlayed:"You already played this number: your first result is the one that counts.",
@@ -2190,6 +2211,32 @@ Object.assign(T.en,{
   rkFailNew:"Couldn't create a numbered game; this one has no number.", rkQuota:"The game database is full; this one has no number."
 });
 
+// =====================================================================
+// PUNTAJE: tiempo ajustado = tiempo + 10 s por error + 60 s por ayuda + (15 min / rondas) por ronda fallada.
+// Puntos = 100 por resolverla + (900 − segundos ajustados, mínimo 0). Sin resolver: 0.
+// Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
+// =====================================================================
+const SCORE={ERR:10, HINT:60, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20}};
+function scoreOf(k, r){
+  let e=r.e, h=r.h||0;
+  if(e===undefined){ if(k==="ahorcado"||k==="semilla"){ e=h; h=0; } else e=0; }
+  const R=SCORE.ROUNDS[k], fails=R ? Math.max(0, R-(r.s||0)) : 0;
+  const pen=e*SCORE.ERR + h*SCORE.HINT + fails*(R ? SCORE.CAP/R : 0);
+  const adj=(r.ms||0)/1000 + pen, ok=R ? (r.s||0)>0 : !!r.ok;
+  return {e, h, fails, pen, adj, ok, pts: ok ? SCORE.BONUS + Math.max(0, Math.round(SCORE.CAP-adj)) : 0};
+}
+// Duelo: quién ganó una partida. a y b son los resultados de cada uno (o undefined si no terminó).
+// timedOut: pasaron más de 15 minutos desde que se creó la partida. Devuelve "a", "b", "tie", "void" o null (en juego).
+function duelWinner(k, a, b, timedOut){
+  if(a && b){
+    const x=scoreOf(k,a), y=scoreOf(k,b);
+    if(!x.ok && !y.ok) return "tie";
+    const d=((x.ok?1:0)-(y.ok?1:0))||(x.pts-y.pts)||(y.adj-x.adj);
+    return d>0 ? "a" : d<0 ? "b" : "tie";
+  }
+  if(!timedOut) return null;
+  return a ? "a" : b ? "b" : "void";
+}
 const Reg = (()=>{
   const KEYS=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla","esbip","placa"];
   let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", seen={};
@@ -2197,6 +2244,8 @@ const Reg = (()=>{
   const kid = g => GAMES[g].key ? GAMES[g].key() : g;
   const tagOf = g => GAMES[g].tag ? GAMES[g].tag() : "";
   const cur={}, ui={}, subs={}, names={};
+  let testers=new Set();     // navegadores de prueba: no aparecen en los rankings (salvo para sí mismos)
+  const counts=u=>u===uid || !testers.has(u);
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -2211,6 +2260,9 @@ const Reg = (()=>{
         if(s.exists()){ seen=s.data().seen||{}; await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
         else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}});
       }catch(e){}
+      await loadNick();
+      try{ (await fb.getDocs(fb.collection(fb.db,"testers"))).forEach(d=>testers.add(d.id)); }catch(e){}
+      document.body.classList.toggle("tester", testers.has(uid));
     }
     KEYS.forEach(setPid);
   })();
@@ -2220,7 +2272,7 @@ const Reg = (()=>{
     KEYS.forEach(g=>{
       const sec=$("view-"+g); if(!sec) return;
       const bar=document.createElement("div"); bar.className="pbar";
-      bar.innerHTML=`<span class="pid"></span><button class="pjump"></button><span class="pfind" hidden><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="ptime" aria-hidden="true"></span><span class="pmsg" aria-live="polite"></span>`;
+      bar.innerHTML=`<span class="pid"></span><button class="pjump"></button><span class="pfind" hidden><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="ptime" aria-hidden="true"></span><span class="ppen" aria-hidden="true"></span><span class="pmsg" aria-live="polite"></span>`;
       sec.insertBefore(bar, sec.firstChild);
       // el ranking va dentro del cartel final, que se muestra como ventana emergente
       const win=sec.querySelector(".win");
@@ -2228,7 +2280,7 @@ const Reg = (()=>{
       const rk=document.createElement("div"); rk.className="rank"; rk.hidden=true;
       rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
       win.appendChild(rk);
-      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime")};
+      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime"), pen:bar.querySelector(".ppen")};
       // la semilla ya tiene su propio paso previo (memorizar), así que no lleva botón Iniciar
       if(g!=="semilla"){
         const gate=document.createElement("div"); gate.className="gate";
@@ -2262,7 +2314,7 @@ const Reg = (()=>{
   // cronómetro visible: con botón Iniciar arranca al tocarlo; si no, al cargar la partida. Se detiene al terminarla
   function startT(g){
     const c=cur[g], u=ui[g]; if(!c) return tick();
-    c.load=Date.now(); c.t1=null; c.wait=0;
+    c.load=Date.now(); c.t1=null; c.wait=0; c.e=0; c.h=0; c.r=0;
     if(u && u.gate){ c.t0=null; lock(g,true); } else c.t0=c.load;
     tick();
   }
@@ -2290,13 +2342,22 @@ const Reg = (()=>{
   function tick(){
     const u=ui[view], c=cur[view]; if(!u) return;
     if(!c||!c.t0){ u.time.textContent=""; return; }
-    const ms=(c.t1||c.fz||Date.now())-c.t0;
+    const ms=(c.t1||c.fz||Date.now())-c.t0+penOf(view)*1000;
     u.time.textContent=fmt(ms);
     u.time.classList.toggle("frozen", !!c.fz);
     u.time.classList.toggle("warm", !c.t1 && !c.fz && ms>=60000 && ms<180000);
     u.time.classList.toggle("hot", !c.t1 && !c.fz && ms>=180000);
   }
   setInterval(tick,1000);
+  // penalidades en vivo: el reloj suma 10 s por error, 60 s por ayuda y lo que vale cada ronda fallada
+  const penOf=g=>{ const c=cur[g], R=SCORE.ROUNDS[kid(g)]; return c ? (c.e||0)*SCORE.ERR+(c.h||0)*SCORE.HINT+(c.r||0)*(R?SCORE.CAP/R:0) : 0; };
+  function pen(g, kind){
+    const c=cur[g], u=ui[g]; if(!c || c.t1) return;
+    c[kind]=(c[kind]||0)+1;
+    if(u){ const R=SCORE.ROUNDS[kid(g)], s=kind==="e"?SCORE.ERR:kind==="h"?SCORE.HINT:Math.round(SCORE.CAP/(R||1));
+      u.pen.textContent=`+${s} s`; u.pen.classList.remove("show"); void u.pen.offsetWidth; u.pen.classList.add("show"); }
+    tick();
+  }
   // partidas en curso: empezadas y sin terminar
   const going=g=>{ const c=cur[g]; return !!(c && c.t0 && !c.t1); };
   const busyList=()=>KEYS.filter(going);
@@ -2327,14 +2388,39 @@ const Reg = (()=>{
       u.go.textContent=t.rkGo; u.rkBtn.textContent=t.rkBtn; u.input.setAttribute("aria-label",t.rkNum); u.jump.textContent=t.rkJump; u.x.setAttribute("aria-label",t.rkClose);
       setPid(g); renderRank(g); });
   }
+  // apodos únicos: nicks/{apodo en minúsculas} guarda de quién es; se escribe junto con names/{uid}
+  const nickKey=v=>v.toLowerCase();
   async function setNick(v){
-    v=String(v||"").trim().slice(0,24); if(!v||!fb) return false;
-    try{ await fb.setDoc(fb.doc(fb.db,"names",uid),{name:v}); nick=v; names[uid]=v; store.set("rodo-nick",v); KEYS.forEach(renderRank); return true; }
-    catch(e){ return false; }
+    v=String(v||"").trim().replace(/\s+/g," ").slice(0,24).trim(); if(!v||!fb) return "fail";
+    if(v.includes("/")||/^\.+$/.test(v)||/^__.*__$/.test(v)) return "bad";
+    const key=nickKey(v), ref=fb.doc(fb.db,"nicks",key);
+    try{
+      const s=await fb.getDoc(ref);
+      if(s.exists() && s.data().uid!==uid) return "taken";
+      const b=fb.writeBatch(fb.db);
+      b.set(fb.doc(fb.db,"names",uid),{name:v});
+      if(!s.exists()) b.set(ref,{uid});
+      // libera el apodo anterior, si era suyo
+      if(nick && nickKey(nick)!==key){
+        const o=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick)));
+        if(o.exists() && o.data().uid===uid) b.delete(o.ref);
+      }
+      await b.commit();
+      nick=v; names[uid]=v; store.set("rodo-nick",v); KEYS.forEach(renderRank); return "ok";
+    }catch(e){ return "fail"; }
   }
+  const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]||T[lang].rkFail);
   async function saveNick(g, v){
     if(!String(v||"").trim()) return;
-    msg(g, await setNick(v) ? T[lang].rkNickSaved : T[lang].rkFail);
+    msg(g, nickMsg(await setNick(v)));
+  }
+  // el apodo guardado manda sobre el del navegador; si todavía no estaba reservado, se reserva
+  async function loadNick(){
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,"names",uid));
+      nick = s.exists() ? s.data().name : ""; store.set("rodo-nick",nick); if(nick) names[uid]=nick;
+      if(nick){ const r=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick))); if(!r.exists()) await setNick(nick); }
+    }catch(e){}
   }
 
   function localGame(g, note){ cur[g]={lang, k:kid(g), n:null}; closeWin(g); GAMES[g].load(GAMES[g].gen()); setPid(g); startT(g); msg(g,note); }
@@ -2389,15 +2475,20 @@ const Reg = (()=>{
     const k=kid(g), L=lang;
     return {g, k, lang:L, n: await mkPuzzle(k, L, GAMES[g].gen())};
   }
-  // abrir la partida de una invitación; back: el juego al que se vuelve al terminar
-  async function playInvite(g, k, n, back){
+  // abrir la partida de una invitación; duel: el duelo al que pertenece
+  async function playInvite(g, k, n, duel){
     if(GAMES[g].setKey) GAMES[g].setKey(k);
     cur[g]={lang, k, n:null, loading:true}; setPid(g);
-    backTo = back && back!==g ? {g, back} : null;
     if(location.hash!=="#"+g) location.hash=g;
     await open(g, n);
+    if(cur[g] && cur[g].n===n && duel) cur[g].duel=duel;
   }
-  let backTo=null;
+  // un lugar propio dentro del cartel final (duelo, retomar partida)
+  function slot(g, cls){
+    const u=ui[g]; let el=u.win.querySelector("."+cls);
+    if(!el){ el=document.createElement("div"); el.className=cls; u.win.insertBefore(el, u.rk); }
+    return el;
+  }
   async function open(g,n){
     await ready; if(!fb) return;
     const L=lang, k=kid(g);
@@ -2421,8 +2512,11 @@ const Reg = (()=>{
   }
   async function finish(g, rec){
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
-    if(ui[g]) ui[g].win.classList.remove("rkonly");
+    if(c){ rec.e=c.e||0; rec.h=c.h||0; }
+    if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); }
     showBack(g);
+    if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
+    else if(ui[g]){ const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; }
     if(!fb||!c||!c.n||!uid) return;
     const ref=fb.doc(fb.db,"scores",`${c.k}-${c.lang}-${c.n}`,"players",uid);
     try{
@@ -2430,23 +2524,25 @@ const Reg = (()=>{
       if(s.exists()) msg(g, T[lang].rkPlayed);
       else{
         c.justSaved=true; c.notified=true;
-        await fb.setDoc(ref,{g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, ms:Math.round(rec.ms), at:fb.serverTimestamp()});
+        await fb.setDoc(ref,{g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, e:rec.e||0, ms:Math.max(1000,Math.round(rec.ms)), at:fb.serverTimestamp()});
         fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), plays:{[`${c.k}-${c.lang}`]:fb.increment(1)}},{merge:true}).catch(()=>{});
         msg(g, T[lang].rkSaved);
       }
     }catch(e){ msg(g, T[lang].rkFail); }
     delete gcache[c.k]; ui[g].rk.hidden=false; renderRank(g);
   }
+  function showPts(g, rec){
+    const u=ui[g], t=T[lang], c=cur[g], sc=scoreOf(c?c.k:g, rec);
+    if(!u.pts){ u.pts=document.createElement("div"); u.pts.className="wpts"; const st=u.win.querySelector(".stats"); u.win.insertBefore(u.pts, st?st.nextSibling:u.rk); }
+    u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), sc.pen?fmt(sc.pen*1000):""))}</span>`;
+  }
+  // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
     const u=ui[g]; if(!u) return;
-    if(!u.back){
-      u.back=document.createElement("button"); u.back.className="wback";
-      u.back.addEventListener("click",()=>{ const b=u.back.dataset.g; closeWin(g); u.back.hidden=true; location.hash=b; });
-      u.win.insertBefore(u.back, u.rk);
-    }
-    const b=backTo && backTo.g===g ? backTo.back : null;
-    u.back.hidden=!b; if(!b) return;
-    u.back.dataset.g=b; u.back.textContent=T[lang].ivBack(gameName(b)); backTo=null;
+    const el=slot(g,"wback"), b=KEYS.find(x=>x!==g && cur[x] && cur[x].fz);
+    el.hidden=!b; if(!b) return;
+    el.innerHTML=`<p>${esc(T[lang].ivBackQ(gameName(b)))}</p><button>${esc(T[lang].ivBackGo)}</button>`;
+    el.querySelector("button").addEventListener("click",()=>{ closeWin(g); el.hidden=true; location.hash=b; });
   }
   async function loadNames(ids){
     const miss=ids.filter(i=>!(i in names));
@@ -2459,19 +2555,15 @@ const Reg = (()=>{
   const nickHtml=()=>`<div class="nick"><label>${esc(T[lang].rkNick)} <input class="nickin" maxlength="24" value="${esc(nick)}"></label><button class="nicksave">${esc(T[lang].rkNickSave)}</button></div>`;
   async function fetchAll(g){
     const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",kid(g))));
-    return qs.docs.map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
+    return qs.docs.filter(d=>!testers.has(d.id)).map(d=>({p:d.ref.parent.parent.id, u:d.id, r:d.data()}));
   }
   // ---------- Puntaje por partida (con tope) y ranking general por percentil ----------
-  const CAP=15*60*1000;              // tope de tiempo y costo de cada ayuda o error: 15 minutos
   const MINP=10;                     // partidas comparables necesarias para el ranking general
-  const pts=r=>Math.min(r.ms,CAP)+CAP*(r.h||0);
-  // más aciertos primero; después menor puntaje (tiempo con tope + 15 min por ayuda o error)
-  const cmp=(x,y)=>((y.ok?1:0)-(x.ok?1:0))||((y.s||0)-(x.s||0))||(pts(x)-pts(y));
+  // más puntos gana; con los mismos puntos, menos tiempo ajustado
+  const cmp=(x,y)=>{ const a=scoreOf(x.g,x), b=scoreOf(y.g,y); return ((b.ok?1:0)-(a.ok?1:0))||(b.pts-a.pts)||(a.adj-b.adj); };
   function metric(g,r){
-    const t=T[lang], total=fmt(pts(r)), base=fmt(Math.min(r.ms,CAP));
-    const pen = r.h ? ` + ${(g==="ahorcado"||g==="semilla")?t.rkErr(r.h):t.rkHelp(r.h)}` : "";
-    const sc = (g==="anagrama"||g==="placa") ? `${r.s}/10, ` : g==="esbip" ? `${r.s}/20, ` : "";
-    return r.h ? `${sc}${total} (${base}${pen})` : `${sc}${total}`;
+    const t=T[lang], sc=scoreOf(r.g||kid(g), r), R=SCORE.ROUNDS[r.g||kid(g)];
+    return `${t.ptsShort(sc.pts)} · ${R?`${r.s}/${R}, `:""}${fmt(r.ms)}${sc.pen?` + ${fmt(sc.pen*1000)}`:""}`;
   }
   // entries: [{p: partida, u: jugador, r: resultado}] → por jugador: partidas jugadas, comparables y suma de percentiles
   function percentiles(entries){
@@ -2499,7 +2591,7 @@ const Reg = (()=>{
     u.tabs.forEach(b=>{ b.textContent = b.dataset.t==="g" ? t.rkTabG : t.rkTabP; b.setAttribute("aria-pressed", b.dataset.t===tab); });
     if(tab==="g") return renderGlobal(g);
     if(!online()||!c||!c.n){ u.body.innerHTML=`<p class="m">${esc(t.rkLocal)}</p>`; return; }
-    const sc=c.scores||{}, ids=Object.keys(sc);
+    const sc=c.scores||{}, ids=Object.keys(sc).filter(counts);
     const ok=ids.filter(i=>sc[i].ok).sort((a,b)=>cmp(sc[a],sc[b]));
     await loadNames(ok.slice(0,5));
     if(cur[g]!==c || (u.tab||"p")!=="p") return;
@@ -2535,13 +2627,16 @@ const Reg = (()=>{
     u.body.innerHTML=h;
   }
   mount();
-  return {enter, newGame, open, finish, texts, wait,
-    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, setNick, gameName, busyList, freeze, thaw, inviteGame, playInvite};
+  return {enter, newGame, open, finish, texts, wait, pen,
+    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, isTester:()=>testers.has(uid),
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
   rkTabP:"Esta partida", rkTabG:"General", rkLoading:"Cargando…",
-  rkScoreHow:"Puntaje: el tiempo, con tope de 15 minutos, más 15 minutos por cada ayuda o error. Gana el menor; en los juegos de rondas, primero cuentan los aciertos.",
+  rkScoreHow:"Puntos: 100 por resolverla más 1 por cada segundo antes de los 15 minutos. Cada error suma 10 segundos al reloj y cada ayuda 60; en los juegos de rondas, cada ronda fallada suma su parte de los 15 minutos. Gana quien tiene más puntos.",
+  ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
+  ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`,
   rkGenTitle:g=>`Ranking general de ${g}`,
   rkGenEmpty:m=>`Todavía nadie llegó a ${m} partidas comparables.`,
   rkPct:(p,n)=>`mejor que el ${p}%, ${n} partidas`,
@@ -2550,7 +2645,9 @@ Object.assign(T.es,{
 });
 Object.assign(T.en,{
   rkTabP:"This game", rkTabG:"Overall", rkLoading:"Loading…",
-  rkScoreHow:"Score: your time, capped at 15 minutes, plus 15 minutes per hint or mistake. Lowest wins; in round-based games, correct answers count first.",
+  rkScoreHow:"Points: 100 for solving it plus 1 for every second under 15 minutes. Each mistake adds 10 seconds to the clock and each hint 60; in round-based games, each missed round adds its share of the 15 minutes. Most points wins.",
+  ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
+  ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`,
   rkGenTitle:g=>`${g} overall leaderboard`,
   rkGenEmpty:m=>`Nobody has reached ${m} comparable games yet.`,
   rkPct:(p,n)=>`better than ${p}%, ${n} games`,
@@ -2577,7 +2674,13 @@ Object.assign(T.es,{
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
   ivFz:"Tu cronómetro quedó congelado. Si aceptás, al terminar podés volver a tu partida.",
   ivYes:"Aceptar", ivNo:"No, gracias", ivOff:"No quiero recibir invitaciones", ivLate:"La invitación ya venció.",
-  ivBack:g=>`Volver a tu partida de ${g}`
+  ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
+  ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
+  ivAway:who=>`${cap(who)} no está disponible ahora.`,
+  duTitle:who=>`Duelo con ${who}`, duScore:(w,l,who)=>`Vos ${w} – ${l} ${who}`, duTies:n=>` · ${n} empate${n>1?"s":""}`,
+  duPlayed:n=>`${n} partida${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} todavía está jugando…`,
+  duWon:"¡Ganaste esta!", duLost:who=>`Esta la ganó ${who}.`, duTie:"Esta terminó empatada.", duVoid:"Esta no contó.",
+  duRematch:"Revancha: elegí el juego", duTheirPick:who=>`Le toca elegir la revancha a ${who}.`
 });
 Object.assign(T.en,{
   liveN:n=> n<=1 ? "Just you for now" : `${n} online now`,
@@ -2592,14 +2695,20 @@ Object.assign(T.en,{
   ivInT:(who,g)=>`${who} invites you to play ${g}`,
   ivFz:"Your timer is frozen. If you accept, you can go back to your game when you finish.",
   ivYes:"Accept", ivNo:"No, thanks", ivOff:"I don't want invitations", ivLate:"The invitation has expired.",
-  ivBack:g=>`Back to your ${g} game`
+  ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
+  ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
+  ivAway:who=>`${cap(who)} isn't available right now.`,
+  duTitle:who=>`Duel with ${who}`, duScore:(w,l,who)=>`You ${w} – ${l} ${who}`, duTies:n=>` · ${n} tie${n>1?"s":""}`,
+  duPlayed:n=>`${n} game${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} is still playing…`,
+  duWon:"You won this one!", duLost:who=>`${cap(who)} won this one.`, duTie:"This one was a tie.", duVoid:"This one didn't count.",
+  duRematch:"Rematch: pick the game", duTheirPick:who=>`It's ${who}'s turn to pick the rematch.`
 });
 const Live = (()=>{
   const WIN=60000, BEAT=60000, FRESH=150000, COUNT=30000;
   const PICK=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla"];
   let fb=null, uid=null, off=0, synced=false, sentLang=null;
   let want=store.get("rodo-inv")!=="0";
-  let pickG=null, game=null, tried=new Set(), out=null, inc=null;
+  let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null;
   const now=()=>Date.now()+off;            // hora del servidor, estimada
   const dOut=$("ivOut"), dIn=$("ivIn");
   const anyOpen=()=>dOut.open||dIn.open;
@@ -2630,7 +2739,8 @@ const Live = (()=>{
   const msgOut=s=>{ $("ivOutMsg").textContent=s||""; };
   function stage(s){
     $("ivPick").hidden=s!=="pick"; $("ivWait").hidden=s!=="wait"; $("ivDone").hidden=s!=="done";
-    $("ivOutT").textContent = s==="pick" ? t().ivOutT : Reg.gameName(game ? game.g : pickG);
+    $("ivOutT").textContent = s==="pick" ? (direct ? t().ivRematchT(direct.who) : t().ivOutT) : Reg.gameName(game ? game.g : pickG);
+    $("ivAgain").hidden=!!direct;
   }
   function renderPick(){
     const games=PICK.filter(g=>!HIDDEN.has(g));
@@ -2638,12 +2748,18 @@ const Live = (()=>{
     $("ivGames").innerHTML=games.map(g=>`<button data-g="${g}" aria-pressed="${g===pickG}">${Reg.gameName(g)}</button>`).join("");
     $("ivNickRow").hidden=!!Reg.nick();
   }
-  function openOut(){
+  // dir: revancha con alguien en particular {to, who, d}
+  function openOut(dir){
     if(!fb || anyOpen()) return;
+    direct=dir&&dir.to ? dir : null;
     game=null; tried=new Set(); msgOut(""); stage("pick"); renderPick(); $("ivSend").disabled=false;
     dOut.showModal();
   }
   async function candidate(g){
+    if(direct){
+      const s=await fb.getDoc(fb.doc(fb.db,"online",direct.to)), x=s.exists()&&s.data();
+      return x && x.at && x.at.toMillis()>now()-FRESH && x.inv && x.lang===lang && !(x.busy||[]).includes(g) ? direct.to : null;
+    }
     const s=await fb.getDocs(fresh());
     const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && x.lang===lang && !(x.busy||[]).includes(g) && !tried.has(d.id); }).map(d=>d.id);
     return list.length ? list[Math.floor(Math.random()*list.length)] : null;
@@ -2653,19 +2769,22 @@ const Live = (()=>{
     if(!Reg.nick()){
       const v=$("ivNick").value.trim();
       if(!v){ msgOut(t().ivNeedNick); $("ivNick").focus(); return; }
-      if(!await Reg.setNick(v)){ msgOut(t().ivFail); return; }
+      const r=await Reg.setNick(v); if(r!=="ok"){ msgOut(Reg.nickMsg(r)); return; }
     }
     $("ivSend").disabled=true; $("ivAgain").disabled=true; msgOut(t().ivSearching);
     try{
       const g=game ? game.g : pickG, to=await candidate(g);
-      if(!to){ msgOut(t().ivNobody); stage(game?"done":"pick"); return; }
+      if(!to){ msgOut(direct ? t().ivAway(direct.who) : t().ivNobody); stage(game?"done":"pick"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
       if(!game) game=await Reg.inviteGame(g);
-      const ns=await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
-      const who=(ns && ns.exists() && ns.data().name) || t().ivSomeone;
-      await fb.setDoc(fb.doc(fb.db,"invites",uid),{to, name:Reg.nick(), g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"});
+      const ns=direct ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
+      const who=direct ? direct.who : (ns && ns.exists() && ns.data().name) || t().ivSomeone;
+      const inv={to, name:Reg.nick(), g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"};
+      if(direct) inv.d=direct.d;
+      await fb.setDoc(fb.doc(fb.db,"invites",uid),inv);
+      fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
       tried.add(to);
-      out={who, end:Date.now()+WIN};
+      out={who, to, d:direct?direct.d:null, end:Date.now()+WIN};
       out.unsub=fb.onSnapshot(fb.doc(fb.db,"invites",uid), s=>{ const st=s.exists()&&s.data().st; if(out && st && st!=="pending") answered(st); }, ()=>{});
       out.timer=setInterval(tickOut,1000);
       msgOut(""); $("ivWaitT").textContent=t().ivWaitT(who); stage("wait"); tickOut(); beat();
@@ -2684,7 +2803,22 @@ const Live = (()=>{
     const o=stopOut(); if(!o) return;
     if(st==="accepted"){
       msgOut(t().ivYesOut(o.who)); const gm=game; game=null;
-      setTimeout(()=>{ if(dOut.open) dOut.close(); Reg.playInvite(gm.g, gm.k, gm.n, null); }, 900);
+      const pid=`${gm.k}-${gm.lang}-${gm.n}`;
+      (async()=>{
+        // el duelo: se crea con la primera partida, o se le suma la revancha
+        let id=o.d;
+        try{
+          if(id){
+            const s=await fb.getDoc(fb.doc(fb.db,"duels",id));
+            await fb.updateDoc(s.ref,{games:[...s.data().games, pid], last:uid});
+          } else {
+            id=`${uid}_${pid}`;
+            await fb.setDoc(fb.doc(fb.db,"duels",id),{p:[uid,o.to], games:[pid], last:uid, at:fb.serverTimestamp()});
+          }
+          watchDuel(id);
+        }catch(e){ id=null; }
+        setTimeout(()=>{ if(dOut.open) dOut.close(); Reg.playInvite(gm.g, gm.k, gm.n, id); }, 700);
+      })();
       return;
     }
     if(st==="cancelled") return;
@@ -2696,6 +2830,7 @@ const Live = (()=>{
     if(dOut.open) dOut.close();
   }
   function solo(){ const gm=game; game=null; dOut.close(); if(gm) Reg.playInvite(gm.g, gm.k, gm.n, null); }
+  $("ivAgain").hidden=false;
 
   // ---------- quien recibe ----------
   function listen(){
@@ -2716,7 +2851,7 @@ const Live = (()=>{
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
     inc.frozen=Reg.freeze();
-    $("ivInT").textContent=t().ivInT(d.name, Reg.gameName(d.g));
+    $("ivInT").textContent=(d.d ? t().ivRematchIn : t().ivInT)(d.name, Reg.gameName(d.g));
     $("ivInFz").textContent=playing ? t().ivFz : "";
     $("ivYes").disabled=$("ivNo").disabled=false;
     dIn.showModal(); $("ivYes").focus();
@@ -2746,9 +2881,9 @@ const Live = (()=>{
     inc.answering=true; const {id,d}=inc;
     try{ await fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"accepted"}); }
     catch(e){ inc.answering=false; return late(); }
-    const busy=Reg.busyList(), back=busy.includes(view) ? view : (busy[0]||null);
-    endIn(false);
-    Reg.playInvite(d.g, d.k, d.n, back);
+    const duel=d.d || `${id}_${d.k}-${d.lang}-${d.n}`;
+    endIn(false); watchDuel(duel);
+    Reg.playInvite(d.g, d.k, d.n, duel);
   }
   function decline(){
     if(!inc || inc.answering) return;
@@ -2758,8 +2893,56 @@ const Live = (()=>{
   }
   function setWant(v){ want=v; store.set("rodo-inv", v?"1":"0"); $("ivRecv").checked=v; beat(); }
 
+  // ---------- duelos ----------
+  // D[id] = {doc, scores:{partida:{uid:resultado}}, at:{partida:ms}, opp, who}
+  const D={}, shown={};
+  function watchDuel(id, tries=0){
+    if(!fb || !id || (D[id] && D[id].doc)) return;
+    const x=D[id]=D[id]||{scores:{}, at:{}, subs:{}};
+    // el duelo puede no existir todavía (lo crea quien invitó): se reintenta unos segundos
+    x.unsub=fb.onSnapshot(fb.doc(fb.db,"duels",id), s=>{
+      if(!s.exists()) return;
+      x.doc=s.data(); x.opp=x.doc.p.find(u=>u!==uid);
+      // el apodo del rival se relee con cada cambio del duelo (puede ponérselo recién en la revancha)
+      fb.getDoc(fb.doc(fb.db,"names",x.opp)).then(n=>{ x.who=(n.exists()&&n.data().name)||t().ivSomeone; redraw(id); }).catch(()=>{});
+      x.doc.games.forEach(pid=>{
+        if(x.subs[pid]) return;
+        x.subs[pid]=fb.onSnapshot(fb.collection(fb.db,"scores",pid,"players"), qs=>{ const sc={}; qs.forEach(d=>sc[d.id]=d.data()); x.scores[pid]=sc; redraw(id); }, ()=>{});
+        fb.getDoc(fb.doc(fb.db,"puzzles",pid)).then(p=>{ const a=p.exists()&&p.data().at; x.at[pid]=a&&a.toMillis?a.toMillis():now(); redraw(id); }).catch(()=>{});
+      });
+      redraw(id);
+    }, ()=>{ delete D[id]; if(tries<8) setTimeout(()=>watchDuel(id, tries+1), 1500); });
+  }
+  function outcome(x, pid){
+    const S=x.scores[pid]||{}, k=pid.split("-")[0], late=x.at[pid] ? now()-x.at[pid] > 16*60000 : false;
+    const w=duelWinner(k, S[uid], S[x.opp], late);
+    return w==="a" ? "me" : w==="b" ? "op" : w;
+  }
+  function redraw(id){ Object.entries(shown).forEach(([g,s])=>{ if(s.id===id) drawDuel(g); }); }
+  function drawDuel(g){
+    const s=shown[g], x=s && D[s.id], c=Reg.cur(g);
+    if(!x || !x.doc || !c || `${c.k}-${c.lang}-${c.n}`!==s.pid) return;
+    const T0=t(), who=x.who||T0.ivSomeone, el=Reg.slot(g,"wduel");
+    let w=0, l=0, ti=0;
+    x.doc.games.forEach(pid=>{ const r=outcome(x,pid); if(r==="me") w++; else if(r==="op") l++; else if(r==="tie") ti++; });
+    const r=outcome(x, s.pid);
+    const now1 = r==="me" ? T0.duWon : r==="op" ? T0.duLost(who) : r==="tie" ? T0.duTie : r==="void" ? T0.duVoid : T0.duWaitOpp(who);
+    const mine=x.doc.last!==uid;
+    el.hidden=false;
+    el.innerHTML=`<span class="sc">${esc(T0.duScore(w,l,who))}</span>`+
+      `<p>${esc(T0.duPlayed(x.doc.games.length)+(ti?T0.duTies(ti):"")+" · "+now1)}</p>`+
+      (mine ? `<button class="duRe">${esc(T0.duRematch)}</button>` : `<p>${esc(T0.duTheirPick(who))}</p>`);
+    el.setAttribute("aria-label", T0.duTitle(who));
+    const b=el.querySelector(".duRe");
+    if(b) b.addEventListener("click",()=>openOut({to:x.opp, who, d:s.id}));
+  }
+  Reg.onDuel=(g, id, pid)=>{ shown[g]={id, pid}; watchDuel(id); drawDuel(g); };
+  // el resultado "esperando al otro" vence a los 16 minutos: se redibuja cada tanto
+  setInterval(()=>Object.values(shown).forEach(s=>redraw(s.id)), 30000);
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
   // ---------- eventos ----------
-  $("ivBtn").addEventListener("click",openOut);
+  $("ivBtn").addEventListener("click",()=>openOut());
   $("ivRecv").addEventListener("change",e=>setWant(e.target.checked));
   $("ivGames").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; pickG=b.dataset.g; renderPick(); });
   $("ivSend").addEventListener("click",send);
@@ -2866,7 +3049,7 @@ T.es.adminLink="Entrar como administrador"; T.en.adminLink="Admin sign-in";
 // =====================================================================
 const Admin = (()=>{
   const ADMIN_EMAIL="claudia@rodo.es";
-  let A=null, rows=[];
+  let A=null, rows=[], names={};
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const ms=x=> x&&x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
   const DAY=86400000;
@@ -2890,30 +3073,48 @@ const Admin = (()=>{
       $("admWho").textContent = ok ? u.email : "";
       if(u && !ok){ $("admErr").textContent=`${u.email} no tiene acceso.`; A.logout(); }
       if(ok && view==="admin") load();
+      testBtn();
     });
   }
+  // "este navegador es de prueba": marca al jugador anónimo de este mismo navegador
+  function testBtn(){ $("admTest").textContent = Reg.isTester() ? "Navegador de prueba: SÍ" : "Marcar este navegador como de prueba"; }
+  $("admTest").addEventListener("click",async()=>{
+    await Reg.ready; const u=Reg.uid(); if(!A||!u) return;
+    const on=!Reg.isTester(), ref=A.doc(A.db,"testers",u);
+    try{ if(on) await A.setDoc(ref,{at:A.serverTimestamp()}); else await A.deleteDoc(ref); Reg.setTester(on); testBtn(); load(); }
+    catch(e){ $("admErr").textContent="No se pudo cambiar el modo prueba: "+(e.code||e.message); }
+  });
   async function load(){
     $("admBody").innerHTML=`<p class="m">Cargando datos…</p>`;
-    let F,S,C,N;
+    let F,S,C,N,X,DU;
     try{
-      [F,S,C,N]=await Promise.all([
+      [F,S,C,N,X,DU]=await Promise.all([
         A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
-        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names"))]);
+        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
-    const now=Date.now(), names={}, fichas={};
+    const now=Date.now(), fichas={}, testers=new Set(); names={};
+    X.forEach(d=>testers.add(d.id));
     N.forEach(d=>names[d.id]=d.data().name);
-    F.forEach(d=>{ const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}}; });
-    rows=[]; S.forEach(d=>{ const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
-      rows.push({u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, ms:x.ms||0, at:ms(x.at)}); });
+    F.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}, inv:x.inv||0}; });
+    rows=[]; S.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
+      const r={u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, e:x.e, ms:x.ms||0, at:ms(x.at)};
+      r.sc=scoreOf(r.k, r); rows.push(r); });
     const counters={}; C.forEach(d=>counters[d.id]=d.data().count||0);
 
     // jugadores: los que tienen ficha más los que solo dejaron resultados (anteriores a la ficha)
     const P={};
-    const pl=u=>P[u]=P[u]||{u, first:null, last:null, res:0, ok:0, time:0, games:new Set(), days:new Set(), seen:0};
-    Object.entries(fichas).forEach(([u,f])=>{ const p=pl(u); p.first=f.first; p.last=f.last; p.seen=Object.values(f.seen).reduce((a,v)=>a+(Array.isArray(v)?v.length:0),0); });
+    const pl=u=>P[u]=P[u]||{u, first:null, last:null, res:0, ok:0, time:0, games:new Set(), days:new Set(), seen:0, inv:0, dj:0, dg:0};
+    Object.entries(fichas).forEach(([u,f])=>{ const p=pl(u); p.first=f.first; p.last=f.last; p.inv=f.inv; p.seen=Object.values(f.seen).reduce((a,v)=>a+(Array.isArray(v)?v.length:0),0); });
     rows.forEach(r=>{ const p=pl(r.u); p.res++; if(r.ok) p.ok++; p.time+=Math.min(r.ms, 3*3600000); p.games.add(r.k);
       if(r.at){ p.days.add(new Date(r.at).toDateString()); p.first=Math.min(p.first??r.at, r.at); p.last=Math.max(p.last??r.at, r.at); } });
+    // duelos: cada partida la gana quien sacó más puntos (o quien la terminó, si el otro no)
+    const byPid={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (byPid[key]=byPid[key]||{})[r.u]=r; });
+    let duels=0, duelGames=0;
+    DU.forEach(d=>{ const x=d.data(), [a,b]=x.p||[]; if(!a||!b||testers.has(a)||testers.has(b)) return; duels++;
+      (x.games||[]).forEach(pid=>{ const R=byPid[pid]||{}, w=duelWinner(pid.split("-")[0], R[a], R[b], true); if(w==="void") return;
+        duelGames++; pl(a).dj++; pl(b).dj++; if(w==="a") pl(a).dg++; if(w==="b") pl(b).dg++; }); });
     const players=Object.values(P);
+    const inviters=players.filter(p=>p.inv>0).length, invTot=players.reduce((a,p)=>a+p.inv,0);
     const since=d=>players.filter(p=>p.first && now-p.first<d*DAY).length;
     const active=d=>players.filter(p=>p.last && now-p.last<d*DAY).length;
     const totalTime=players.reduce((a,p)=>a+p.time,0);
@@ -2928,6 +3129,9 @@ const Admin = (()=>{
       <div class="kpi"><b>${returning}</b><span>volvieron otro día (${pct(returning,players.length)})</span></div>
       <div class="kpi"><b>${rows.length}</b><span>partidas terminadas · ${pct(rows.filter(r=>r.ok).length,rows.length)} con éxito</span></div>
       <div class="kpi"><b>${hrs(totalTime)}</b><span>de juego en total · ${players.length?hrs(totalTime/players.length):"–"} por jugador</span></div>
+      ${testers.size?`<div class="kpi"><b>${testers.size}</b><span>navegador${testers.size>1?"es":""} de prueba, fuera de estas cuentas</span></div>`:""}
+      <div class="kpi"><b>${invTot}</b><span>invitaciones a jugar · de ${inviters} jugador${inviters===1?"":"es"}</span></div>
+      <div class="kpi"><b>${duels}</b><span>duelos · ${duelGames} partidas en duelo</span></div>
       <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
@@ -2937,10 +3141,10 @@ const Admin = (()=>{
     rows.forEach(r=>{ const key=`${r.k}-${r.L}`; (G[key]=G[key]||[]).push(r); });
     Object.keys(counters).forEach(k=>G[k]=G[k]||[]);
     const gl=Object.keys(G).sort();
-    h+=`<h2>Por juego</h2>`+table(["Juego","Idioma","Creadas","Terminadas","Jugadores","Éxito","Tiempo mediano","Sin ayudas","Ayudas/errores prom."],
+    h+=`<h2>Por juego</h2>`+table(["Juego","Idioma","Creadas","Terminadas","Jugadores","Éxito","Tiempo mediano","Puntos mediana","Sin errores ni ayudas"],
       gl.map(key=>{ const r=G[key], [k,L]=key.split("-"), okr=r.filter(x=>x.ok);
         return [esc(gname(k)), L.toUpperCase(), counters[key]||0, r.length, new Set(r.map(x=>x.u)).size, pct(okr.length,r.length),
-          okr.length?fmt(median(okr.map(x=>x.ms))):"–", pct(r.filter(x=>!x.h).length,r.length), r.length?(r.reduce((a,x)=>a+x.h,0)/r.length).toFixed(1):"–"]; }));
+          okr.length?fmt(median(okr.map(x=>x.ms))):"–", r.length?Math.round(median(r.map(x=>x.sc.pts))):"–", pct(r.filter(x=>!x.sc.pen).length,r.length)]; }));
 
     // actividad: últimos 30 días
     const days=[...Array(30)].map((_,i)=>{ const d=new Date(now-(29-i)*DAY); return d.toDateString(); });
@@ -2954,8 +3158,8 @@ const Admin = (()=>{
 
     // jugadores más activos
     const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
-    h+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Primera vez","Última vez"],
-      top.map(p=>[esc(names[p.u]||("anónimo "+p.u.slice(0,6))), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), dt(p.first), dt(p.last)]));
+    h+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
+      top.map(p=>[esc(names[p.u]||("anónimo "+p.u.slice(0,6))), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), p.inv||"–", p.dj?`${p.dj} / ${p.dg}`:"–", dt(p.first), dt(p.last)]));
 
     // partidas con más jugadores
     const PZ={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (PZ[key]=PZ[key]||[]).push(r); });
@@ -2971,8 +3175,9 @@ const Admin = (()=>{
     $("admBody").innerHTML=h;
   }
   function csv(){
-    const head=["jugador","apodo","juego","idioma","partida","exito","aciertos","ayudas_errores","tiempo_seg","fecha"];
-    const lines=[head.join(",")].concat(rows.map(r=>[r.u,"",r.k,r.L,r.n,r.ok?1:0,r.s,r.h,Math.round(r.ms/1000),r.at?new Date(r.at).toISOString():""].join(",")));
+    const head=["jugador","apodo","juego","idioma","partida","exito","aciertos","ayudas","errores","tiempo_seg","penalidad_seg","puntos","fecha"];
+    const q=s=>`"${String(s||"").replace(/"/g,'""')}"`;
+    const lines=[head.join(",")].concat(rows.map(r=>[r.u,q(names[r.u]),r.k,r.L,r.n,r.ok?1:0,r.s,r.sc.h,r.sc.e,Math.round(r.ms/1000),Math.round(r.sc.pen),r.sc.pts,r.at?new Date(r.at).toISOString():""].join(",")));
     const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"})); a.download="rodo-games-resultados.csv"; a.click();
   }
   $("admIn").addEventListener("click",async()=>{ $("admErr").textContent=""; try{ await A.login(); }catch(e){ $("admErr").textContent="No se pudo entrar: "+(e.code||e.message); } });
@@ -3020,7 +3225,7 @@ route();
 // Firebase: autenticación anónima + Firestore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 try {
   // Firebase Hosting publica la configuración del proyecto en esta ruta: no hace falta copiarla al código
   const res = await fetch("/__/firebase/init.json");
@@ -3031,7 +3236,7 @@ try {
   try{
     const aapp = initializeApp(cfg, "admin"), aauth = getAuth(aapp), prov = new GoogleAuthProvider();
     prov.setCustomParameters({ login_hint: "claudia@rodo.es", prompt: "select_account" });
-    window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs,
+    window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs, doc, setDoc, deleteDoc, serverTimestamp,
       login: () => signInWithPopup(aauth, prov), logout: () => signOut(aauth), onState: cb => onAuthStateChanged(aauth, cb) });
   }catch(e){ window.__adminResolve(null); }
   const auth = getAuth(app);
@@ -3040,7 +3245,7 @@ try {
     const off = onAuthStateChanged(auth, u => { if (u) { off(); resolve(u); } });
     signInAnonymously(auth).catch(reject);
   });
-  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp });
+  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp, writeBatch });
 } catch (e) {
   console.warn("RODO Games sin servidor:", e.message);
   window.__fbResolve(null); window.__adminResolve && window.__adminResolve(null);

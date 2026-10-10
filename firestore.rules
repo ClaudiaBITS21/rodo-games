@@ -51,7 +51,9 @@ service cloud.firestore {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/puzzles/$(id))
-        && request.resource.data.keys().hasOnly(['g', 'ok', 's', 'h', 'ms', 'at'])
+        && request.resource.data.keys().hasOnly(['g', 'ok', 's', 'h', 'e', 'ms', 'at'])
+        // e: errores (desde el puntaje por tiempo ajustado; los resultados viejos no lo tienen)
+        && (!('e' in request.resource.data) || (request.resource.data.e is int && request.resource.data.e >= 0))
         && request.resource.data.g == id.split('-')[0]
         && request.resource.data.ok is bool
         && request.resource.data.s is int && request.resource.data.s >= 0 && request.resource.data.s <= 20
@@ -72,20 +74,45 @@ service cloud.firestore {
     match /fichas/{uid} {
       allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays'])
+        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays', 'inv'])
+        // inv: cuántas invitaciones a jugar mandó
+        && (!('inv' in request.resource.data) || request.resource.data.inv is int)
         && request.resource.data.seen is map
         && request.resource.data.plays is map;
       allow delete: if false;
     }
 
-    // Apodos para el ranking: cada uno edita el suyo
+    // Apodos para el ranking: cada uno edita el suyo, y tiene que tenerlo reservado en nicks (son únicos)
+    function validNick(n) {
+      return n is string && n.size() > 0 && n.size() <= 24
+        && n.matches('^[^/\\s]([^/]*[^/\\s])?$') && !n.matches('^[.]+$') && !n.matches('^__.*__$');
+    }
     match /names/{uid} {
       allow read: if true;
       allow write: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['name'])
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 24;
+        && validNick(request.resource.data.name)
+        && getAfter(/databases/$(database)/documents/nicks/$(request.resource.data.name.lower())).data.uid == uid;
+    }
+    // Reserva de apodos: la clave es el apodo en minúsculas y guarda de quién es.
+    // Se crea junto con el apodo propio y se libera al cambiarlo; no se puede pisar la de otro.
+    match /nicks/{key} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/names/$(request.auth.uid)).data.name.lower() == key;
+      allow update: if false;
+      allow delete: if (signedIn() && resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/names/$(request.auth.uid)).data.name.lower() != key)
+        || isAdmin();
+    }
+
+    // Navegadores de prueba (los marca la administración): sus resultados no cuentan en rankings ni estadísticas
+    match /testers/{uid} {
+      allow read: if true;
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time;
+      allow delete: if isAdmin();
+      allow update: if false;
     }
 
     // Conectados: cada navegador avisa "estoy acá" cada minuto mientras la pestaña está a la vista.
@@ -105,7 +132,9 @@ service cloud.firestore {
     // Vencen a los 60 segundos (65 de margen). Solo las leen quien invita y quien es invitado.
     function newInvite(from) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st'])
+      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd'])
+        // d: el duelo, cuando es una revancha
+        && (!('d' in d) || (d.d is string && d.d.size() <= 300))
         && d.to is string && d.to != from && d.to.size() > 0 && d.to.size() <= 128
         && d.g in ['acrostico', 'ahorcado', 'sopa', 'criptograma', 'anagrama', 'semilla', 'esbip', 'placa']
         && d.k is string && d.lang is string && validKey(d.k + '-' + d.lang)
@@ -133,6 +162,38 @@ service cloud.firestore {
         // quien es invitado responde, dentro del plazo
         || (request.auth.uid == resource.data.to && onlySt() && resource.data.st == 'pending' && live()
             && request.resource.data.st in ['accepted', 'declined', 'busy']));
+      allow delete: if false;
+    }
+
+    // Duelos: la serie de partidas entre dos personas que empezó con una invitación aceptada.
+    // id = uid de quien invitó + '_' + primera partida. games: partidas jugadas; last: quién eligió la última.
+    // Los resultados no se guardan acá: se calculan con los de cada partida, que no se pueden tocar.
+    function invPid(inv) { return inv.k + '-' + inv.lang + '-' + string(inv.n); }
+    match /duels/{id} {
+      allow read: if signedIn() && (request.auth.uid in resource.data.p || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['p', 'games', 'last', 'at'])
+        && request.resource.data.p is list && request.resource.data.p.size() == 2
+        && request.resource.data.p[0] == request.auth.uid
+        && request.resource.data.games is list && request.resource.data.games.size() == 1
+        && request.resource.data.last == request.auth.uid
+        && request.resource.data.at == request.time
+        && id == request.auth.uid + '_' + request.resource.data.games[0]
+        // nace de una invitación propia que la otra persona aceptó, con esa misma partida
+        && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.st == 'accepted'
+        && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.to == request.resource.data.p[1]
+        && invPid(get(/databases/$(database)/documents/invites/$(request.auth.uid)).data) == request.resource.data.games[0];
+      // revancha: la elige quien no eligió la anterior, y se suma una partida al final
+      allow update: if signedIn() && request.auth.uid in resource.data.p
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['games', 'last'])
+        && request.resource.data.last == request.auth.uid && resource.data.last != request.auth.uid
+        && request.resource.data.games.size() == resource.data.games.size() + 1
+        && request.resource.data.games.size() <= 60
+        && request.resource.data.games[0:resource.data.games.size()] == resource.data.games
+        && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.st == 'accepted'
+        && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.get('d', '') == id
+        && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.to in resource.data.p
+        && invPid(get(/databases/$(database)/documents/invites/$(request.auth.uid)).data) == request.resource.data.games[resource.data.games.size()];
       allow delete: if false;
     }
   }

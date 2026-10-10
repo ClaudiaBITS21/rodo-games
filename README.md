@@ -62,11 +62,17 @@ No usa claves ni secretos: se autentica con **Workload Identity Federation**. En
 
 **Por partida.** Cada juego tiene numeración propia por idioma (`acrostico-es-12`, `sopa-en-3`). La partida guarda su contenido exacto, así que el #12 es idéntico para todos. Cada jugador guarda **un solo resultado por partida** (el primero); las reglas impiden modificarlo o borrarlo.
 
-El puntaje es `tiempo (con tope de 15 min) + 15 min × (ayudas o errores)`, y gana el menor. Como nadie sin ayudas puede superar los 15 minutos y cada ayuda suma 15, quien no usó ayudas siempre le gana a quien usó alguna. En los juegos de rondas (anagrama, ¿Está en la lista?, Placa de acero) primero cuentan los aciertos.
+Cada error suma 10 segundos al reloj y cada ayuda 60 (en los juegos de rondas, cada ronda fallada suma su parte de los 15 minutos). Los puntos son `100 por resolverla + (900 − segundos ajustados)`, con mínimo 0, y gana quien tiene más. Si no se resuelve, son 0.
+
+**Duelos.** Cuando alguien acepta una invitación se abre un duelo entre los dos. Cada partida la gana quien saca más puntos y la revancha la elige, por turno, quien no eligió la anterior.
 
 **General, por juego.** En cada partida con al menos 2 jugadores se calcula qué porcentaje del resto superó cada uno (los empates cuentan medio). El ranking general promedia esos percentiles y solo muestra a quien tiene **10 partidas comparables** del mismo juego, sumando castellano e inglés. Se calcula en el navegador leyendo todos los resultados del juego; con mucho volumen conviene precalcularlo con una Cloud Function.
 
 **Limitación conocida:** el tiempo se mide en el navegador, así que alguien con conocimientos técnicos podría falsear su marca. Para premios con valor real, la validación tiene que hacerse en el servidor (Cloud Functions), que requiere el plan Blaze.
+
+## Colecciones de Firestore
+
+`puzzles`, `counters`, `scores/{partida}/players` (resultados), `fichas` (actividad de cada navegador, privada), `names` y `nicks` (apodos únicos), `online` (conectados), `invites` (invitaciones), `duels` (duelos) y `testers` (navegadores de prueba, los marca la administración).
 
 ## Juegos ocultos
 
