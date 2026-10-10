@@ -3056,7 +3056,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3141,6 +3141,13 @@ Object.assign(T.es,{
   duPlayed:n=>`${n} partida${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} todavía está jugando…`,
   duWon:"¡Ganaste esta!", duLost:who=>`Esta la ganó ${who}.`, duTie:"Esta terminó empatada.", duVoid:"Esta no contó.",
   duStartIn:s=>`Empieza en ${s}…`, duSyncNote:"Duelo: los dos arrancan a la vez.", duOppPlaying:who=>`${cap(who)} está jugando…`, duOppDone:(who,p)=>`⚡ ${cap(who)} ya terminó: ${p} puntos`,
+  duBeatIn:(who,p,tm)=>`⚡ ${cap(who)} ya terminó: ${p} puntos. Para ganarle tenés que terminar en menos de ${tm} (cada error o ayuda te lo acorta).`,
+  duOppWon:(who,p)=>`${cap(who)} ya ganó esta: terminó con ${p} puntos y ya no la alcanzás. Igual podés terminarla.`,
+  duOppFailed:who=>`${cap(who)} no la resolvió: si la resolvés, ganás.`,
+  duCanLose:(who,tm)=>`${cap(who)} todavía puede ganarte si termina en menos de ${tm} con menos errores y ayudas que vos.`,
+  duCanLoseS:who=>`${cap(who)} todavía puede ganarte si arma la frase más rápido o con menos errores y ayudas que vos.`,
+  duSafe:who=>`¡Ganaste esta! ${cap(who)} ya no te alcanza aunque termine ahora.`,
+  duNeedSolve:who=>`${cap(who)} todavía está jugando: si la resuelve, gana.`,
   duRematch:"Revancha: elegí el juego", duTheirPick:who=>`Le toca elegir la revancha a ${who}.`
 });
 Object.assign(T.en,{
@@ -3174,6 +3181,13 @@ Object.assign(T.en,{
   duPlayed:n=>`${n} game${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} is still playing…`,
   duWon:"You won this one!", duLost:who=>`${cap(who)} won this one.`, duTie:"This one was a tie.", duVoid:"This one didn't count.",
   duStartIn:s=>`Starts in ${s}…`, duSyncNote:"Duel: you both start at the same time.", duOppPlaying:who=>`${cap(who)} is playing…`, duOppDone:(who,p)=>`⚡ ${cap(who)} already finished: ${p} points`,
+  duBeatIn:(who,p,tm)=>`⚡ ${cap(who)} already finished: ${p} points. To beat them you must finish in under ${tm} (each mistake or hint shortens it).`,
+  duOppWon:(who,p)=>`${cap(who)} already won this one: they finished with ${p} points and you can't catch up. You can still finish it.`,
+  duOppFailed:who=>`${cap(who)} didn't solve it: solve it and you win.`,
+  duCanLose:(who,tm)=>`${cap(who)} can still beat you if they finish in under ${tm} with fewer mistakes and hints than you.`,
+  duCanLoseS:who=>`${cap(who)} can still beat you if they rebuild the phrase faster or with fewer mistakes and hints than you.`,
+  duSafe:who=>`You won this one! ${cap(who)} can't catch up even if they finish now.`,
+  duNeedSolve:who=>`${cap(who)} is still playing: if they solve it, they win.`,
   duRematch:"Rematch: pick the game", duTheirPick:who=>`It's ${who}'s turn to pick the rematch.`
 });
 const Live = (()=>{
@@ -3409,7 +3423,7 @@ const Live = (()=>{
     const left=WIN-(now()-(d.at ? d.at.toMillis() : now()));
     if(left<=2000) return;
     if(d.r && iDeclined()) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"declined"}).catch(()=>{});
-    if(inc || out || anyOpen() || !want || Reg.busyList().includes(d.g))
+    if(inc || out || anyOpen() || !want || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
@@ -3505,8 +3519,26 @@ const Live = (()=>{
       const c=Reg.cur(g); if(!c || c.duel!==id || !c.n) return;
       const pid=`${c.k}-${c.lang}-${c.n}`, r=(x.scores[pid]||{})[x.opp], who=x.who||t().ivSomeone;
       if(c.t1){ Reg.duelNote(g,""); return; }
-      Reg.duelNote(g, r ? t().duOppDone(who, scoreOf(c.k, r).pts) : t().duOppPlaying(who));
+      Reg.duelNote(g, r ? chase(g, c, r, who) : t().duOppPlaying(who));
     });
+  }
+  // el rival ya terminó y yo sigo: ¿todavía le gano? Gana el de menos segundos ajustados (tiempo + penalidades)
+  function chase(g, c, r, who){
+    const T0=t(), o=scoreOf(c.k, r), a=Reg.adjNow(g);
+    if(!o.ok) return T0.duOppFailed(who);
+    if(a===null) return T0.duOppDone(who, o.pts);
+    const left=o.adj-a;
+    return left>0 ? T0.duBeatIn(who, o.pts, fmt(left*1000)) : T0.duOppWon(who, o.pts);
+  }
+  // ya terminé y el rival sigue: ¿todavía me puede ganar? Arrancamos juntos, así que lleva jugando lo mismo que mi reloj
+  function pending(x, pid, c, who){
+    const T0=t(), mine=(x.scores[pid]||{})[uid];
+    if(!mine) return T0.duWaitOpp(who);
+    const m=scoreOf(c.k, mine);
+    if(!m.ok) return T0.duNeedSolve(who);
+    if(c.k==="semilla" || !c.t0) return T0.duCanLoseS(who);
+    const left=m.adj-((Date.now()-c.t0)/1000-2);   // 2 s de margen por la diferencia de relojes
+    return left>0 ? T0.duCanLose(who, fmt(left*1000)) : T0.duSafe(who);
   }
   function drawDuel(g){
     const s=shown[g], x=s && D[s.id], c=Reg.cur(g);
@@ -3515,11 +3547,11 @@ const Live = (()=>{
     let w=0, l=0, ti=0;
     x.doc.games.forEach(pid=>{ const r=outcome(x,pid); if(r==="me") w++; else if(r==="op") l++; else if(r==="tie") ti++; });
     const r=outcome(x, s.pid);
-    const now1 = r==="me" ? T0.duWon : r==="op" ? T0.duLost(who) : r==="tie" ? T0.duTie : r==="void" ? T0.duVoid : T0.duWaitOpp(who);
+    const now1 = r==="me" ? T0.duWon : r==="op" ? T0.duLost(who) : r==="tie" ? T0.duTie : r==="void" ? T0.duVoid : pending(x, s.pid, c, who);
     const mine=x.doc.last!==uid;
     el.hidden=false;
     el.innerHTML=`<span class="sc">${esc(T0.duScore(w,l,who))}</span>`+
-      `<p>${esc(T0.duPlayed(x.doc.games.length)+(ti?T0.duTies(ti):"")+" · "+now1)}</p>`+
+      `<p>${esc(T0.duPlayed(x.doc.games.length)+(ti?T0.duTies(ti):"")+" · ")}<span class="dunow">${esc(now1)}</span></p>`+
       (mine ? `<button class="duRe">${esc(T0.duRematch)}</button>` : `<p>${esc(T0.duTheirPick(who))}</p>`);
     el.setAttribute("aria-label", T0.duTitle(who));
     const b=el.querySelector(".duRe");
@@ -3529,6 +3561,12 @@ const Live = (()=>{
   Reg.onDuel=(g, id, pid)=>{ shown[g]={id, pid}; watchDuel(id); drawDuel(g); };
   // el resultado "esperando al otro" vence a los 16 minutos: se redibuja cada tanto
   setInterval(()=>Object.values(shown).forEach(s=>redraw(s.id)), 30000);
+  // cuenta regresiva de "todavía te puede ganar" / "tenés X para ganarle": solo texto, sin lecturas
+  setInterval(()=>{
+    Object.entries(shown).forEach(([g,s])=>{ const x=D[s.id], c=Reg.cur(g), el=Reg.slot(g,"wduel").querySelector(".dunow");
+      if(x && x.doc && c && el && `${c.k}-${c.lang}-${c.n}`===s.pid && !outcome(x, s.pid)) el.textContent=pending(x, s.pid, c, x.who||t().ivSomeone); });
+    Object.keys(D).forEach(liveNote);
+  }, 1000);
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
   // ---------- eventos ----------
