@@ -42,6 +42,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - Panel de admin: estadísticas de jugadores, actividad, rendimiento por juego (con puntos), invitaciones y duelos, exportación CSV (con puntos, errores y ayudas), botón "Ir a los juegos" y botón de modo prueba. Acceso exclusivo para `claudia@rodo.es` con login de Google, en una app de Firebase separada (`initializeApp(cfg, "admin")`) para no pisar la sesión anónima. Protegido por `firestore.rules` (`isAdmin()` exige email verificado).
 
 ## Reglas de trabajo
+- **Preferencia de la dueña (vale para todo):** si hay una forma de hacer algo sin que ella intervenga, hacerlo directamente y después avisarle: "hice tal cosa para no pedirte que hicieras X". Pedirle intervención solo cuando no haya alternativa.
 - No aflojar `firestore.rules` sin pedido explícito.
 - El HTML publicado no puede usar `window.claude` ni nada de los artefactos de claude.ai. Hay una vista previa vieja en un artefacto: no se copia al repo.
 - Antes de cada push, verificar que los scripts de `index.html` compilen (extraer cada `<script>` y correr `node --check`; el segundo es `type="module"`, usar extensión `.mjs`).
