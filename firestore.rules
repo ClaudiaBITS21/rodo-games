@@ -12,8 +12,8 @@ service cloud.firestore {
     // Administración: solo esta cuenta de Google (verificada) puede leer las fichas de todos
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'claudia@rodo.es'
-        && request.auth.token.email_verified == true;
+        && request.auth.token.get('email', '') == 'claudia@rodo.es'
+        && request.auth.token.get('email_verified', false) == true;
     }
     function validKey(k) {
       return k.matches('^(acrostico|ahorcado|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
@@ -279,8 +279,8 @@ service cloud.firestore {
     // tourneys/{tid}: la configuración y el estado. Lo crea la administración; lo manejan ella y los organizadores (orgs).
     // st: draft (borrador) → open (inscripción) → checkin (confirmar presencia) → live (rondas) → done.
     function isOrg(tid) {
-      return isAdmin() || (request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.email in get(/databases/$(database)/documents/tourneys/$(tid)).data.get('orgs', []));
+      return isAdmin() || (request.auth != null && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') in get(/databases/$(database)/documents/tourneys/$(tid)).data.get('orgs', []));
     }
     function tour(tid) { return get(/databases/$(database)/documents/tourneys/$(tid)).data; }
     function validTour(d) {
@@ -336,10 +336,11 @@ service cloud.firestore {
       match /rounds/{r} {
         allow read: if true;
         allow write: if isOrg(tid);
-        // La partida de la ronda: secreta hasta que arranca
+        // La partida de la ronda: secreta hasta que arranca (por la hora, o porque el organizador ya la puso en juego)
         match /data/{x} {
-          allow read: if isOrg(tid) || (get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go != null
-            && request.time >= get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go);
+          allow read: if isOrg(tid) || get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.st == 'live'
+            || (get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go != null
+              && request.time >= get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go);
           allow write: if isOrg(tid);
         }
         // Resultado y avance de cada jugador. El tiempo lo pone el servidor (at - go). Errores, ayudas, comprobaciones y
