@@ -274,5 +274,99 @@ service cloud.firestore {
         && invPid(get(/databases/$(database)/documents/invites/$(request.auth.uid)).data) == request.resource.data.games[resource.data.games.size()];
       allow delete: if false;
     }
+
+    // ================= Torneos en vivo =================
+    // tourneys/{tid}: la configuración y el estado. Lo crea la administración; lo manejan ella y los organizadores (orgs).
+    // st: draft (borrador) → open (inscripción) → checkin (confirmar presencia) → live (rondas) → done.
+    function isOrg(tid) {
+      return isAdmin() || (request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email in get(/databases/$(database)/documents/tourneys/$(tid)).data.get('orgs', []));
+    }
+    function tour(tid) { return get(/databases/$(database)/documents/tourneys/$(tid)).data; }
+    function validTour(d) {
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.st in ['draft', 'open', 'checkin', 'live', 'done']
+        && d.cap is int && d.cap >= 2 && d.cap <= 64
+        && d.orgs is list && d.orgs.size() <= 10
+        && d.rounds is list && d.rounds.size() <= 8;
+    }
+    match /tourneys/{tid} {
+      allow read: if true;
+      allow create: if isAdmin() && validTour(request.resource.data);
+      allow update: if isOrg(tid) && validTour(request.resource.data)
+        // la lista de organizadores la cambia solo la administración
+        && (isAdmin() || request.resource.data.orgs == resource.data.orgs);
+      allow delete: if isAdmin();
+
+      // Inscriptos (público: apodo y avatar). Hace falta usuario (apodo registrado). Cada uno se anota y confirma su presencia;
+      // el organizador marca quién aportó al pozo (paid) y puede descalificar (out).
+      match /ins/{uid} {
+        allow read: if true;
+        allow create: if signedIn() && request.auth.uid == uid
+          && tour(tid).st in ['open', 'checkin']
+          && request.resource.data.keys().hasOnly(['nm', 'av', 'at', 'ck', 'paid', 'out'])
+          && request.resource.data.nm == get(/databases/$(database)/documents/names/$(uid)).data.name
+          && request.resource.data.get('av', '') == get(/databases/$(database)/documents/names/$(uid)).data.get('av', '')
+          && request.resource.data.at == request.time
+          && request.resource.data.ck == null && request.resource.data.paid == false && request.resource.data.out == false;
+        // check-in: una sola vez, con la hora del servidor, mientras está abierto
+        allow update: if (signedIn() && request.auth.uid == uid && tour(tid).st == 'checkin' && resource.data.ck == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ck'])
+            && request.resource.data.ck == request.time)
+          || (isOrg(tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'out'])
+            && request.resource.data.paid is bool && request.resource.data.out is bool);
+        // borrarse: antes de que arranque
+        allow delete: if (signedIn() && request.auth.uid == uid && tour(tid).st in ['open', 'checkin']) || isOrg(tid);
+      }
+      // Datos de contacto para avisar que arranca la ronda: solo los ven el dueño y los organizadores
+      match /priv/{uid} {
+        allow read: if (signedIn() && request.auth.uid == uid) || isOrg(tid);
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['mail', 'tel', 'ok', 'at'])
+          && request.resource.data.mail is string && request.resource.data.mail.size() <= 120 && request.resource.data.mail.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+          && request.resource.data.tel is string && request.resource.data.tel.size() >= 6 && request.resource.data.tel.size() <= 30
+          // ok: aceptó las bases y condiciones
+          && request.resource.data.ok == true
+          && request.resource.data.at == request.time;
+        allow delete: if (signedIn() && request.auth.uid == uid) || isOrg(tid);
+      }
+
+      // Rondas: las crea y maneja el organizador. pl: quienes compiten; adv: cuántos pasan; go/end: arranque y fin (hora del servidor).
+      match /rounds/{r} {
+        allow read: if true;
+        allow write: if isOrg(tid);
+        // La partida de la ronda: secreta hasta que arranca
+        match /data/{x} {
+          allow read: if isOrg(tid) || (get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go != null
+            && request.time >= get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go);
+          allow write: if isOrg(tid);
+        }
+        // Resultado y avance de cada jugador. El tiempo lo pone el servidor (at - go). Errores, ayudas, comprobaciones y
+        // rondas falladas nunca bajan; una vez terminada (done) no se toca. x: juega sin competir (no está en pl).
+        match /res/{uid} {
+          allow read: if true;
+          allow create, update: if signedIn() && request.auth.uid == uid && resOk(tid, r, uid);
+          allow delete: if isOrg(tid);
+        }
+      }
+    }
+    function resOk(tid, r, uid) {
+      let R = get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data;
+      let d = request.resource.data;
+      let o = resource == null ? {'p': 0, 's': 0, 'e': 0, 'h': 0, 'c': 0, 'f': 0, 'done': false} : resource.data;
+      return R.st in ['sched', 'live'] && R.go != null && request.time >= R.go
+        && (R.end == null || request.time <= R.end + duration.value(20, 's'))
+        && d.keys().hasOnly(['p', 's', 'e', 'h', 'c', 'f', 'ok', 'done', 'at', 'x'])
+        && d.keys().hasAll(['p', 's', 'e', 'h', 'c', 'f', 'ok', 'done', 'at', 'x'])
+        && d.at == request.time
+        && d.p is number && d.p >= 0 && d.p <= 1
+        && d.s is int && d.s >= o.s && d.s <= 20
+        && d.e is int && d.e >= o.e && d.h is int && d.h >= o.h
+        && d.c is int && d.c >= o.c && d.f is int && d.f >= o.f && d.f <= 20
+        && d.ok is bool && d.done is bool && (!d.ok || d.done)
+        && o.done == false
+        && d.x == !(uid in R.pl);
+    }
   }
 }
