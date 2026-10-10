@@ -97,6 +97,13 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .live .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent)}
 .live #liveN{font-weight:600}
 .live .ivopt input{accent-color:var(--btc);width:18px;height:18px}
+.live .livemore{padding:5px 10px;font-size:.85rem;background:transparent}
+.live .livemore[hidden]{display:none}
+.livelist{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.livelist[hidden]{display:none}
+.livelist .liveu{padding:6px 10px;font-size:.9rem}
+.livelist .liveu span{color:var(--btc);font-weight:700;margin-left:4px}
+.livelist p{margin:0;color:var(--muted);font-size:.85rem}
 .live .ivopt{margin-left:auto;font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
 .ivdlg{border:0;border-radius:16px;padding:22px 20px 18px;width:min(420px,calc(100vw - 32px));background:var(--paper);color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
 .ivdlg::backdrop{background:rgba(10,12,15,.55)}
@@ -166,6 +173,9 @@ body.tester .testbadge{display:block}
 .userdlg .unote:empty{display:none}
 .userdlg #uOut[hidden],.userdlg #uGo[hidden],.userdlg #uSkip[hidden]{display:none}
 @media (max-width:420px){ .userdlg .uavs{grid-template-columns:repeat(5,1fr)} }
+.cell.miss,.scell.miss{color:var(--bad);background:var(--bad-soft)}
+.giveup{color:var(--bad)}
+.giveup:disabled{color:inherit}
 .ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
 .ppen.show{animation:penflash 1.6s ease-out}
 @keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -469,8 +479,10 @@ body.tester .testbadge{display:block}
     <p class="intro" id="menuIntro"></p>
     <div class="live" id="live" hidden>
       <span class="dot" aria-hidden="true"></span><span id="liveN" aria-live="polite"></span>
+      <button class="livemore" id="liveMore" aria-expanded="false"></button>
       <button class="primary" id="ivBtn"></button>
       <label class="ivopt"><input type="checkbox" id="ivRecv"> <span id="ivRecvL"></span></label>
+      <div class="livelist" id="liveList" hidden></div>
     </div>
     <h2 class="group" id="menuG1" hidden></h2><h2 class="group" id="menuG2" hidden></h2>
     <div class="games">
@@ -553,6 +565,7 @@ body.tester .testbadge{display:block}
     <div class="actions">
       <button id="checkBtn"></button>
       <button id="hintBtn"></button>
+      <button class="giveup" id="acroGiveUp"></button>
       <button id="printBtn"></button>
     </div>
     <h2 id="cluesTitle"></h2>
@@ -593,6 +606,7 @@ body.tester .testbadge{display:block}
     </div>
     <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
     <div class="actions">
+      <button class="giveup" id="sGiveUp"></button>
       <button id="sPrint"></button>
     </div>
     <h2 id="sListTitle"></h2>
@@ -636,7 +650,7 @@ body.tester .testbadge{display:block}
     <div class="cq" id="cQuote"></div>
     <p class="cauthor" id="cAuthor"></p>
     <div class="actions">
-      <button id="cCheck"></button><button id="cHint"></button><button id="cPrint"></button>
+      <button id="cCheck"></button><button id="cHint"></button><button class="giveup" id="cGiveUp"></button><button id="cPrint"></button>
     </div>
     <footer id="cFoot"></footer>
   </section>
@@ -1468,12 +1482,12 @@ const Acro = (()=>{
     const t=T[lang];
     $("newBtn").textContent=t.newBtn; $("acroNext").textContent=t.acroNext; $("checkBtn").textContent=t.check; $("printBtn").textContent=t.print;
     $("cluesTitle").textContent=t.clues; $("foot").textContent=t.foot; $("shareBtn").textContent=t.share;
-    $("winLabel").textContent=t.winLabel; updateHintBtn();
+    $("winLabel").textContent=t.winLabel; $("acroGiveUp").textContent=t.giveUp; updateHintBtn();
   }
   function updateHintBtn(){
     const left=MAX_HINTS-hintsUsed;
     $("hintBtn").textContent=T[lang].hint(left);
-    $("hintBtn").disabled = left<=0 || solved; $("checkBtn").disabled = solved;
+    $("hintBtn").disabled = left<=0 || solved; $("checkBtn").disabled = solved; $("acroGiveUp").disabled = solved;
   }
   const realRows = () => P.rows.filter(r=>!r.gap);
   const cellsOf = ri => [...document.querySelectorAll(`#grid .cell[data-r="${ri}"]`)];
@@ -1564,10 +1578,22 @@ const Acro = (()=>{
     if(hintsUsed>=MAX_HINTS) $("current").textContent=T[lang].noHints;
     if(!checkWin()) move(cell,1);
   }
+  // "Me rindo": muestra la solución y la partida queda como no resuelta
+  function giveUp(){
+    if(solved || !P || !confirm(T[lang].giveUpQ)) return;
+    solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
+    document.querySelectorAll("#grid .cell").forEach(c=>{ if(!c.readOnly && c.value!==solOf(c)){ c.value=solOf(c); c.classList.remove("ok","bad"); c.classList.add("miss"); } c.readOnly=true; });
+    rowClue.remove(); $("current").textContent="";
+    $("winLabel").textContent=T[lang].giveUpAcro; $("winPhrase").textContent=P.phrase; $("winStats").textContent=T[lang].giveUpStats(fmt(elapsed));
+    $("shareNote").textContent=""; $("win").classList.add("lose"); $("win").style.display="block"; updateHintBtn();
+    $("win").scrollIntoView({block:"nearest",behavior:"smooth"});
+    Reg.finish("acrostico",{ok:false,s:0,h:hintsUsed,ms:elapsed});
+  }
   function checkWin(){
     if(solved) return true;
     if(!realRows().every(r=>r.entry.join("")===r.word)) return false;
     solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
+    $("win").classList.remove("lose"); $("winLabel").textContent=T[lang].winLabel;
     document.querySelectorAll("#grid .cell").forEach(c=>{ c.readOnly=true; if(!c.classList.contains("rev")&&!c.classList.contains("given")) c.classList.add("ok"); });
     rowClue.remove(); $("current").textContent="";
     $("winPhrase").textContent=P.phrase; $("winStats").textContent=T[lang].stats(fmt(elapsed),hintsUsed);
@@ -1628,6 +1654,7 @@ const Acro = (()=>{
     else if(e.key==="ArrowUp"){ e.preventDefault(); if(ri>0) focusRow(ri-1); } });
   $("newBtn").addEventListener("click",create);
   $("acroNext").addEventListener("click",create);
+  $("acroGiveUp").addEventListener("click",giveUp);
   $("checkBtn").addEventListener("click",check);
   $("hintBtn").addEventListener("mousedown",e=>e.preventDefault());
   $("hintBtn").addEventListener("click",hint);
@@ -1756,7 +1783,7 @@ const Sopa = (()=>{
   function texts(){
     const t=T[lang];
     $("sNew").textContent=t.sNew; $("sAgain").textContent=t.sAgain; $("sShare").textContent=t.share;
-    $("sPrint").textContent=t.print; $("sFoot").textContent=t.sFoot; updateMode();
+    $("sPrint").textContent=t.print; $("sGiveUp").textContent=t.giveUp; $("sFoot").textContent=t.sFoot; updateMode();
   }
   function updateMode(){
     const t=T[lang];
@@ -1844,9 +1871,17 @@ const Sopa = (()=>{
     renderList();
     if(found.size===words.length) finish();
   }
+  function giveUp(){
+    if(done || !words.length || !confirm(T[lang].giveUpQ)) return;
+    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
+    words.forEach(o=>{ if(!found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("miss")); });
+    showWin("s", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
+    Reg.finish("sopa",{ok:false,s:0,h:0,ms:elapsed});
+  }
+  $("sGiveUp").addEventListener("click",giveUp);
   function finish(){
     done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
-    $("sWinLabel").textContent=t.sWin; $("sWinStats").textContent=t.sStats(words.length, fmt(elapsed));
+    $("sWin").classList.remove("lose"); $("sWinLabel").textContent=t.sWin; $("sWinStats").textContent=t.sStats(words.length, fmt(elapsed));
     $("sNote").textContent=""; $("sWin").style.display="block";
     $("sWin").scrollIntoView({block:"nearest",behavior:"smooth"});
     Reg.finish("sopa",{ok:true,s:0,h:0,ms:elapsed});
@@ -2275,11 +2310,19 @@ const Cripto = (()=>{
   const alpha = () => [...(lang==="es"?"ABCDEFGHIJKLMNÑOPQRSTUVWXYZ":"ABCDEFGHIJKLMNOPQRSTUVWXYZ")];
   function texts(){
     const t=T[lang];
-    $("cNew").textContent=t.cNew; $("cCheck").textContent=t.cCheck; $("cPrint").textContent=t.print;
+    $("cNew").textContent=t.cNew; $("cCheck").textContent=t.cCheck; $("cPrint").textContent=t.print; $("cGiveUp").textContent=t.giveUp;
     $("cAgain").textContent=t.cAgain; $("cShare").textContent=t.share; $("cFoot").textContent=t.cFoot; $("cMeta").textContent=t.cMeta;
     updateHint();
   }
-  function updateHint(){ $("cHint").textContent=T[lang].cHint(MAX_HINTS-hints); $("cHint").disabled = hints>=MAX_HINTS||solved; $("cCheck").disabled=solved; }
+  function updateHint(){ $("cHint").textContent=T[lang].cHint(MAX_HINTS-hints); $("cHint").disabled = hints>=MAX_HINTS||solved; $("cCheck").disabled=solved; $("cGiveUp").disabled=solved; }
+  function giveUp(){
+    if(solved || !q || !confirm(T[lang].giveUpQ)) return;
+    solved=true; elapsed=Date.now()-start-Reg.wait("criptograma"); const t=T[lang];
+    cells.forEach(x=>{ if(x.el.value!==x.p){ x.el.value=x.p; x.el.classList.remove("ok","bad"); x.el.classList.add("miss"); } x.el.readOnly=true; x.el.classList.remove("inrow"); });
+    $("cStatus").textContent=""; updateHint();
+    showWin("c", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
+    Reg.finish("criptograma",{ok:false,s:0,h:hints,ms:elapsed});
+  }
   function gen(){
     const pool=QUOTES[lang].filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
     const A=alpha(); let perm;
@@ -2359,6 +2402,7 @@ const Cripto = (()=>{
     if(!checkWin()) $("cStatus").textContent = wrongGroups ? T[lang].cWrong(wrongGroups) : pending.size ? T[lang].cEmpty(pending.size) : "";
   });
   $("cHint").addEventListener("mousedown",e=>e.preventDefault());
+  $("cGiveUp").addEventListener("click",giveUp);
   $("cHint").addEventListener("click",()=>{
     if(solved || !Reg.canHelp("criptograma")) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
     const needs=c=>group(c).some(x=>x.el.value!==x.p);
@@ -3067,7 +3111,8 @@ Object.assign(T.en,{
 // =====================================================================
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 Object.assign(T.es,{
-  liveN:n=> n<=1 ? "Solo vos por ahora" : `${n} conectados ahora`,
+  liveN:n=> n===0 ? "Nadie disponible para jugar ahora" : n===1 ? "1 disponible para jugar" : `${n} disponibles para jugar`,
+  liveMore:"Ver quiénes ▾", liveLess:"Ocultar ▴", liveAnon:n=>`y ${n} sin usuario`, liveNoNamed:"Nadie con usuario disponible ahora.", liveInv:"Invitar",
   ivBtn:"Invitar a jugar", ivRecv:"Recibir invitaciones", ivClose:"Cerrar",
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
@@ -3087,6 +3132,8 @@ Object.assign(T.es,{
   ivWordsL:"Palabras", ivSize:n=>`de ${n}×${n}`, ivWithClues:"con pistas", ivWithWords:"viendo las palabras", ivWords:n=>`de ${n} palabras`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Elegir otro juego",
   learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
+  giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
+  giveUpAcro:"Te rendiste. La frase era", giveUpOther:"Te rendiste. Esta era la solución.", giveUpStats:t=>`Lo dejaste a los ${t}.`,
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
   ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
   ivAway:who=>`${cap(who)} no está disponible ahora.`,
@@ -3097,7 +3144,8 @@ Object.assign(T.es,{
   duRematch:"Revancha: elegí el juego", duTheirPick:who=>`Le toca elegir la revancha a ${who}.`
 });
 Object.assign(T.en,{
-  liveN:n=> n<=1 ? "Just you for now" : `${n} online now`,
+  liveN:n=> n===0 ? "Nobody available to play right now" : n===1 ? "1 available to play" : `${n} available to play`,
+  liveMore:"See who ▾", liveLess:"Hide ▴", liveAnon:n=>`and ${n} without a username`, liveNoNamed:"Nobody with a username is available right now.", liveInv:"Invite",
   ivBtn:"Invite to play", ivRecv:"Receive invitations", ivClose:"Close",
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
@@ -3117,6 +3165,8 @@ Object.assign(T.en,{
   ivWordsL:"Words", ivSize:n=>`${n}×${n}`, ivWithClues:"with clues", ivWithWords:"showing the words", ivWords:n=>`with ${n} words`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Pick another game",
   learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
+  giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
+  giveUpAcro:"You gave up. The phrase was", giveUpOther:"You gave up. Here's the solution.", giveUpStats:t=>`You stopped at ${t}.`,
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
   ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
   ivAway:who=>`${cap(who)} isn't available right now.`,
@@ -3152,7 +3202,7 @@ const Live = (()=>{
     if(document.visibilityState!=="visible"){ fb.deleteDoc(ref).catch(()=>{}); return; }
     try{
       sentLang=lang;
-      const me={at:fb.serverTimestamp(), lang, inv:avail(), busy:Reg.busyList()};
+      const me={at:fb.serverTimestamp(), lang, inv:avail(), busy:Reg.busyList()}; meAvail=me.inv;
       if(Reg.nick()){ me.nm=Reg.nick(); if(Reg.av()) me.av=Reg.av(); }
       await fb.setDoc(ref,me);
       if(!synced){ const s=await fb.getDoc(ref), at=s.data().at; if(at){ off=at.toMillis()-Date.now(); synced=true; } }
@@ -3160,11 +3210,20 @@ const Live = (()=>{
   }
   async function count(){
     if(!fb || view!=="menu" || document.visibilityState!=="visible") return;
+    let n=null;
     try{
-      const n=(await fb.getCountFromServer(fresh())).data().count;
-      $("liveN").textContent=t().liveN(Math.max(1,n)); $("live").hidden=false;
-    }catch(e){}
+      // los que aceptan invitaciones, sin contarme a mí (usa el índice inv + at)
+      const q=fb.query(fb.collection(fb.db,"online"), fb.where("inv","==",true), fb.where("at",">",fb.Timestamp.fromMillis(now()-FRESH)));
+      n=(await fb.getCountFromServer(q)).data().count - (meAvail?1:0);
+    }catch(e){
+      // mientras se arma el índice: todos los conectados menos yo
+      try{ n=(await fb.getCountFromServer(fresh())).data().count - 1; }catch(e2){}
+    }
+    if(n===null) return;
+    avN=Math.max(0,n); $("liveN").textContent=t().liveN(avN); $("live").hidden=false;
+    $("liveMore").hidden=avN===0 && !panel;
   }
+  let avN=0, meAvail=false, panel=false;
 
   // ---------- quien invita ----------
   const msgOut=s=>{ $("ivOutMsg").textContent=s||""; };
@@ -3203,7 +3262,10 @@ const Live = (()=>{
   // dir: revancha con alguien en particular {to, who, d}
   function openOut(dir){
     if(!fb || anyOpen()) return;
-    direct=dir&&dir.to ? dir : null; whoMode="rnd"; pickTo=null; onlAt=0; $("ivName").value=""; watchOnline(false);
+    direct=dir&&dir.to ? dir : null; whoMode="rnd"; pickTo=null; onlAt=0; $("ivName").value="";
+    // invitar a alguien elegido de la lista de la portada: queda como "Por nombre" con esa persona
+    if(dir && dir.pick){ direct=null; whoMode="name"; pickTo=dir.pick; $("ivName").value=dir.pick.who; }
+    rewatch();
     pickS=GAMES.sopa.size(); pickM=GAMES.sopa.mode(); pickL=lang; pickW=12;
     game=null; tried=new Set(); msgOut(""); stage("pick"); renderPick(); $("ivSend").disabled=false;
     dOut.showModal();
@@ -3211,11 +3273,21 @@ const Live = (()=>{
   // conectados con usuario que aceptan invitaciones: en vivo mientras se busca por nombre
   // (la consulta se renueva cada minuto para que se caigan los que se fueron sin avisar)
   let onlUnsub=null, onlTimer=null;
-  const toOnl=qs=>qs.docs.filter(d=>d.id!==uid && d.data().inv && d.data().nm).map(d=>({to:d.id, who:d.data().nm, av:d.data().av||"", busy:d.data().busy||[]}));
+  let onlAnon=0;
+  const toOnl=qs=>{ onlAnon=qs.docs.filter(d=>d.id!==uid && d.data().inv && !d.data().nm).length;
+    return qs.docs.filter(d=>d.id!==uid && d.data().inv && d.data().nm).map(d=>({to:d.id, who:d.data().nm, av:d.data().av||"", busy:d.data().busy||[]})); };
+  // la suscripción en vivo se mantiene mientras la necesite el panel de la portada o la búsqueda por nombre
+  const rewatch=()=>watchOnline(panel || (dOut.open && whoMode==="name"));
+  function renderPanel(){
+    const T0=t(), box=$("liveList"); if(!panel) return;
+    const list=[...onl].sort((a,b)=>a.who.localeCompare(b.who));
+    box.innerHTML=(list.length ? list.map(x=>`<button class="liveu" data-to="${esc(x.to)}">${esc((x.av?x.av+" ":"")+x.who)} <span>${esc(T0.liveInv)}</span></button>`).join("") : `<p>${esc(T0.liveNoNamed)}</p>`)
+      +(onlAnon ? `<p>${esc(T0.liveAnon(onlAnon))}</p>` : "");
+  }
   function watchOnline(on){
     if(onlUnsub){ onlUnsub(); onlUnsub=null; } clearInterval(onlTimer); onlTimer=null;
     if(!on || !fb) return;
-    const sub=()=>{ if(onlUnsub) onlUnsub(); onlUnsub=fb.onSnapshot(fresh(), qs=>{ onl=toOnl(qs); onlAt=Date.now(); if(dOut.open && whoMode==="name") suggest(); }, ()=>{}); };
+    const sub=()=>{ if(onlUnsub) onlUnsub(); onlUnsub=fb.onSnapshot(fresh(), qs=>{ onl=toOnl(qs); onlAt=Date.now(); renderPanel(); if(dOut.open && whoMode==="name") suggest(); }, ()=>{}); };
     sub(); onlTimer=setInterval(sub, 60000);
   }
   async function loadOnline(force){
@@ -3467,7 +3539,7 @@ const Live = (()=>{
     if(d.s) pickS=d.s; if(d.m) pickM=d.m; if(d.l) pickL=d.l; if(d.w) pickW=+d.w; game=null; tried=new Set(); renderOpts(); stage("opts"); });
   $("ivBackPick").addEventListener("click",()=>{ game=null; msgOut(""); stage("pick"); });
   $("ivWhoSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; whoMode=b.dataset.who; pickTo=null; game=null; tried=new Set(); msgOut(""); renderOpts();
-    watchOnline(whoMode==="name");
+    rewatch();
     if(whoMode==="name"){ loadOnline(true).then(suggest); $("ivName").focus(); } });
   $("ivName").addEventListener("input",()=>{ pickTo=null; game=null; suggest(); });
   $("ivName").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const b=$("ivSugg").querySelector("button"); if(b && !pickTo) b.click(); else send(); } });
@@ -3484,7 +3556,10 @@ const Live = (()=>{
   $("ivCancel").addEventListener("click",cancelOut);
   $("ivOutX").addEventListener("click",cancelOut);
   dOut.addEventListener("cancel",e=>{ e.preventDefault(); cancelOut(); });
-  dOut.addEventListener("close",()=>watchOnline(false));
+  dOut.addEventListener("close",rewatch);
+  $("liveMore").addEventListener("click",()=>{ panel=!panel; $("liveList").hidden=!panel; $("liveMore").setAttribute("aria-expanded",panel);
+    $("liveMore").textContent=panel ? t().liveLess : t().liveMore; rewatch(); renderPanel(); });
+  $("liveList").addEventListener("click",e=>{ const b=e.target.closest(".liveu"); if(!b) return; const x=onl.find(o=>o.to===b.dataset.to); if(x) openOut({pick:x}); });
   $("ivYes").addEventListener("click",accept);
   $("ivNo").addEventListener("click",decline);
   $("ivOff").addEventListener("click",()=>{ decline(); setWant(false); });
@@ -3503,7 +3578,7 @@ const Live = (()=>{
 
   function texts(){
     const T0=t();
-    $("ivBtn").textContent=T0.ivBtn; $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
+    $("ivBtn").textContent=T0.ivBtn; $("liveMore").textContent=panel ? T0.liveLess : T0.liveMore; renderPanel(); $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
     if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=direct ? T0.ivRematchT(direct.who) : T0.ivOutT;
     else if(!$("ivOpts").hidden) $("ivOutT").textContent=cap(describe(curOpts()));
     $("ivNickBtn").textContent=T0.ivNickBtn; $("ivSend").textContent=T0.ivSend;
