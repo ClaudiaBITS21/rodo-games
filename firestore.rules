@@ -184,7 +184,10 @@ service cloud.firestore {
     match /online/{uid} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['at', 'lang', 'inv', 'busy'])
+        && request.resource.data.keys().hasOnly(['at', 'lang', 'inv', 'busy', 'nm', 'av'])
+        // nm y av: nombre y avatar, para buscar por nombre a quién invitar; tienen que ser los registrados
+        && (!('nm' in request.resource.data) || request.resource.data.nm == get(/databases/$(database)/documents/names/$(uid)).data.name)
+        && (!('av' in request.resource.data) || request.resource.data.av == get(/databases/$(database)/documents/names/$(uid)).data.get('av', ''))
         && request.resource.data.at == request.time
         && request.resource.data.lang in ['es', 'en']
         && request.resource.data.inv is bool
