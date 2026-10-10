@@ -27,6 +27,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - Ranking: popup chico dentro del mensaje de victoria, junto a "Siguiente" y "Compartir imagen". Nada de paneles grandes.
 - Varias pistas por palabra, elegidas al azar en cada partida. Sin IA en tiempo real.
 - Glosario de unos 120 términos con pistas en ES y EN (`G_ES`, `G_EN`). Las pistas nuevas se escriben en tandas para que la dueña revise el tono.
+- **Conectados e invitaciones:** en la portada se ve cuántos hay conectados (cada pestaña visible avisa cada minuto en `online/{uid}`; cuenta quien avisó en los últimos 2,5 min). "Invitar a jugar": quien invita elige el juego, apodo obligatorio, se sortea a alguien conectado del mismo idioma que acepte invitaciones y no tenga una partida en curso de ese juego. La invitación (`invites/{uid de quien invita}`) siempre lleva una partida recién creada, así ninguno la jugó; una sola pendiente por persona; vence a los 60 s con cuenta regresiva visible en las dos puntas. Al invitado se le congela el cronómetro de lo que esté jugando (el tiempo congelado no cuenta) y al terminar tiene un botón para volver a su partida. Opción "Recibir invitaciones" en la portada y "No quiero recibir invitaciones" en la ventanita. Sin aviso extra en la nota de privacidad (decisión de la dueña).
 - Nota de privacidad breve al pie.
 - Buzón de sugerencias (FormSubmit) y crédito a Bitcoin.AR al pie.
 - Panel de admin: estadísticas de jugadores, actividad, rendimiento por juego y exportación CSV. Acceso exclusivo para `claudia@rodo.es` con login de Google, en una app de Firebase separada (`initializeApp(cfg, "admin")`) para no pisar la sesión anónima. Protegido por `firestore.rules` (`isAdmin()` exige email verificado).
@@ -37,6 +38,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - Antes de cada push, verificar que los scripts de `index.html` compilen (extraer cada `<script>` y correr `node --check`; el segundo es `type="module"`, usar extensión `.mjs`).
 - Después de cada push, seguir el run de Actions hasta que termine y confirmar que games.rodo.es responda. Cerrar con una línea: commit, resultado del deploy y qué cambió.
 - Si un push o el deploy falla por permisos, avisar. No reintentar a ciegas.
+- Para probar reglas o funciones en tiempo real sin tocar producción: emulador de Firestore + Auth (`firebase emulators:exec`, proyecto `demo-rodo`) y Playwright con dos navegadores. La librería de Firebase se sirve desde el paquete npm `firebase` porque gstatic puede estar bloqueado.
 - Nada de secretos en el repo.
 
 ## Pendientes
