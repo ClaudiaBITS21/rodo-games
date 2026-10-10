@@ -190,6 +190,9 @@ body.tester .testbadge{display:block}
 .wlearn input{accent-color:#1A1E23;width:18px;height:18px}
 .wlearn .lnote{font-size:.8rem;opacity:.85}
 .wlearn[hidden]{display:none}
+.wlearn.wmiss{flex-direction:column;align-items:stretch;text-align:left}
+.missl{margin:0;padding:0 0 0 18px;font-size:.86rem;line-height:1.4}
+.missl li{margin:2px 0}
 .win.lose .wlearn{background:var(--paper)}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
 .wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
@@ -1582,6 +1585,7 @@ const Acro = (()=>{
   function giveUp(){
     if(solved || !P || !confirm(T[lang].giveUpQ)) return;
     solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
+    Reg.missed("acrostico", realRows().filter(r=>!r.given && r.entry.join("")!==r.word).map(r=>({w:r.word, clue:r.clue})));
     document.querySelectorAll("#grid .cell").forEach(c=>{ if(!c.readOnly && c.value!==solOf(c)){ c.value=solOf(c); c.classList.remove("ok","bad"); c.classList.add("miss"); } c.readOnly=true; });
     rowClue.remove(); $("current").textContent="";
     $("winLabel").textContent=T[lang].giveUpAcro; $("winPhrase").textContent=P.phrase; $("winStats").textContent=T[lang].giveUpStats(fmt(elapsed));
@@ -1875,6 +1879,7 @@ const Sopa = (()=>{
     if(done || !words.length || !confirm(T[lang].giveUpQ)) return;
     done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
     words.forEach(o=>{ if(!found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("miss")); });
+    Reg.missed("sopa", words.filter(o=>!found.has(o.w)).map(o=>({w:o.w, clue:o.clue})));
     showWin("s", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
     Reg.finish("sopa",{ok:false,s:0,h:0,ms:elapsed});
   }
@@ -2949,15 +2954,22 @@ const Reg = (()=>{
   function showLearn(g){
     const c=cur[g], el=slot(g,"wlearn"), t=T[lang];
     el.hidden=!(fb && c && c.n); if(el.hidden) return;
-    const pid=`${c.k}-${c.lang}-${c.n}`;
-    el.innerHTML=`<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
-    el.querySelector("input").addEventListener("change",async e=>{
-      const note=el.querySelector(".lnote");
-      try{
-        await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:e.target.checked, duel:!!c.duel, at:fb.serverTimestamp()});
-        note.textContent=e.target.checked ? t.learnThanks : "";
-      }catch(err){ note.textContent=t.rkFail; }
-    });
+    const pid=`${c.k}-${c.lang}-${c.n}`, miss=(c.missed||[]).slice(0,40);
+    // al rendirse: las palabras que faltaban, con su pista, y se anotan como conceptos nuevos (se puede destildar)
+    el.classList.toggle("wmiss", miss.length>0);
+    el.innerHTML = miss.length
+      ? `<p>${esc(t.missT(miss.length))}</p><ul class="missl">${miss.map(m=>`<li><b>${esc(m.w)}</b>${m.clue?" — "+esc(m.clue):""}</li>`).join("")}</ul>`+
+        `<label><input type="checkbox" checked> ${esc(t.learnN(miss.length))}</label><span class="lnote" aria-live="polite"></span>`
+      : `<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
+    const box=el.querySelector("input");
+    const save=async()=>{
+      const note=el.querySelector(".lnote"), d={u:uid, p:pid, g:c.k, yes:box.checked, duel:!!c.duel, at:fb.serverTimestamp()};
+      if(miss.length) d.n=box.checked ? miss.length : 0;
+      try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`), d); note.textContent=box.checked ? (miss.length ? t.learnedN(miss.length) : t.learnThanks) : ""; }
+      catch(err){ note.textContent=t.rkFail; }
+    };
+    box.addEventListener("change",save);
+    if(miss.length) save();
   }
   // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
@@ -3056,7 +3068,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3132,6 +3144,8 @@ Object.assign(T.es,{
   ivWordsL:"Palabras", ivSize:n=>`de ${n}×${n}`, ivWithClues:"con pistas", ivWithWords:"viendo las palabras", ivWords:n=>`de ${n} palabras`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Elegir otro juego",
   learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
+  missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
+  learnedN:n=>n===1?"¡Sumaste 1 concepto nuevo!":`¡Sumaste ${n} conceptos nuevos!`,
   giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
   giveUpAcro:"Te rendiste. La frase era", giveUpOther:"Te rendiste. Esta era la solución.", giveUpStats:t=>`Lo dejaste a los ${t}.`,
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
@@ -3172,6 +3186,8 @@ Object.assign(T.en,{
   ivWordsL:"Words", ivSize:n=>`${n}×${n}`, ivWithClues:"with clues", ivWithWords:"showing the words", ivWords:n=>`with ${n} words`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Pick another game",
   learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
+  missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
+  learnedN:n=>n===1?"You added 1 new concept!":`You added ${n} new concepts!`,
   giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
   giveUpAcro:"You gave up. The phrase was", giveUpOther:"You gave up. Here's the solution.", giveUpStats:t=>`You stopped at ${t}.`,
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
@@ -3813,7 +3829,7 @@ Object.assign(T.es,{
   stByGame:"Por juego", stCols:["Juego","Jugadas","Resueltas","Mejor","Promedio","Mejor tiempo"],
   stDuels:"Competencias", stDuelK:["duelos","partidas en duelo","ganadas","perdidas","empates","invitaciones mandadas"],
   stNoDuels:"Todavía no jugaste duelos. Desde la portada, \"Invitar a jugar\" te junta con alguien conectado.", stLast:"Últimas partidas", stLastCols:["Cuándo","Juego","Resultado","Puntos","Tiempo"], stNone:"Todavía no terminaste ninguna partida.",
-  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`,
+  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`, stConcepts:n=>`Al rendirte sumaste ${n} concepto${n===1?"":"s"} nuevo${n===1?"":"s"}.`,
   ndT:"Armá tu usuario en menos de 30 segundos", ndP:"Creá un alias, elegí un PIN y usalo en cualquier dispositivo. Además vas a poder seguir tu rendimiento.",
   ndGo:"Crear mi usuario", ndLater:"Recordar más tarde", ndNo:"Cancelar"
 });
@@ -3824,7 +3840,7 @@ Object.assign(T.en,{
   stByGame:"By game", stCols:["Game","Played","Solved","Best","Average","Best time"],
   stDuels:"Competitions", stDuelK:["duels","duel games","won","lost","ties","invitations sent"],
   stNoDuels:"No duels yet. From the home page, \"Invite to play\" matches you with someone online.", stLast:"Recent games", stLastCols:["When","Game","Result","Points","Time"], stNone:"You haven't finished a game yet.",
-  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`,
+  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`, stConcepts:n=>`Giving up added ${n} new concept${n===1?"":"s"}.`,
   ndT:"Set up your username in under 30 seconds", ndP:"Create an alias, pick a PIN and use it on any device. You'll also be able to track your performance.",
   ndGo:"Create my username", ndLater:"Remind me later", ndNo:"Cancel"
 });
@@ -3872,10 +3888,12 @@ const Stats = (()=>{
     }catch(e){}
     let inv=0, learned=0;
     try{ const f=await fb.getDoc(fb.doc(fb.db,"fichas",uid)); inv=(f.exists()&&f.data().inv)||0; }catch(e){}
-    try{ learned=(await fb.getDocs(fb.query(fb.collection(fb.db,"learned"), fb.where("u","==",uid)))).docs.filter(d=>d.data().yes).length; }catch(e){}
-    render(res, duels.length, dg, inv, learned);
+    let concepts=0;
+    try{ const ds=(await fb.getDocs(fb.query(fb.collection(fb.db,"learned"), fb.where("u","==",uid)))).docs.map(d=>d.data()).filter(d=>d.yes);
+      learned=ds.length; concepts=ds.reduce((a,d)=>a+(d.n||0),0); }catch(e){}
+    render(res, duels.length, dg, inv, learned, concepts);
   }
-  function render(res, nDuels, dg, inv, learned){
+  function render(res, nDuels, dg, inv, learned, concepts){
     const T0=t(), box=$("stBody");
     const solved=res.filter(x=>x.sc.ok), pts=res.reduce((a,x)=>a+x.sc.pts,0), best=res.reduce((a,x)=>Math.max(a,x.sc.pts),0);
     const time=res.reduce((a,x)=>a+Math.min(x.r.ms||0, 3*3600000),0), days=new Set(res.filter(x=>x.at).map(x=>new Date(x.at).toDateString())).size;
@@ -3897,7 +3915,7 @@ const Stats = (()=>{
       : `<p class="m">${esc(T0.stNoDuels)}</p>`);
     const last=[...res].sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,10);
     h+=`<h2>${esc(T0.stLast)}</h2>`+table(T0.stLastCols, last.map(x=>[when(x.at), `${esc(kName(x.k))} ${x.L.toUpperCase()} #${x.pid.split("-")[2]}`, x.sc.ok?"✓":"✗", x.sc.pts, fmt(x.r.ms||0)+(x.sc.pen?` + ${fmt(x.sc.pen*1000)}`:"")]));
-    if(learned) h+=`<p class="m">${esc(T0.stLearned(learned))}</p>`;
+    if(learned) h+=`<p class="m">${esc(T0.stLearned(learned)+(concepts?" "+T0.stConcepts(concepts):""))}</p>`;
     box.innerHTML=h;
   }
   $("statsBtn").addEventListener("click",()=>{ location.hash="stats"; });
@@ -4078,8 +4096,8 @@ const Admin = (()=>{
     const players=Object.values(P);
     const inviters=players.filter(p=>p.inv>0).length, invTot=players.reduce((a,p)=>a+p.inv,0);
     // "¿Aprendiste alguna palabra nueva?": tildes por juego e idioma (sobre las partidas terminadas)
-    const learnBy={}; let learnYes=0, learnDuel=0;
-    LE.forEach(d=>{ const x=d.data(); if(!x.yes||testers.has(x.u)) return; learnYes++; if(x.duel) learnDuel++;
+    const learnBy={}; let learnYes=0, learnDuel=0, learnN=0;
+    LE.forEach(d=>{ const x=d.data(); if(!x.yes||testers.has(x.u)) return; learnYes++; learnN+=x.n||0; if(x.duel) learnDuel++;
       const [k,L]=String(x.p).split("-"); learnBy[`${k}-${L}`]=(learnBy[`${k}-${L}`]||0)+1; });
     const since=d=>players.filter(p=>p.first && now-p.first<d*DAY).length;
     const active=d=>players.filter(p=>p.last && now-p.last<d*DAY).length;
@@ -4096,7 +4114,7 @@ const Admin = (()=>{
       <div class="kpi"><b>${rows.length}</b><span>partidas terminadas · ${pct(rows.filter(r=>r.ok).length,rows.length)} con éxito</span></div>
       <div class="kpi"><b>${hrs(totalTime)}</b><span>de juego en total · ${players.length?hrs(totalTime/players.length):"–"} por jugador</span></div>
       ${testers.size?`<div class="kpi"><b>${testers.size}</b><span>navegador${testers.size>1?"es":""} de prueba, fuera de estas cuentas</span></div>`:""}
-      <div class="kpi"><b>${learnYes}</b><span>dijeron que aprendieron algo · ${pct(learnYes,rows.length)} de las partidas${learnDuel?` · ${learnDuel} en duelo`:""}</span></div>
+      <div class="kpi"><b>${learnYes}</b><span>dijeron que aprendieron algo · ${pct(learnYes,rows.length)} de las partidas${learnDuel?` · ${learnDuel} en duelo`:""}${learnN?` · ${learnN} conceptos nuevos al rendirse`:""}</span></div>
       <div class="kpi"><b>${invTot}</b><span>invitaciones a jugar · de ${inviters} jugador${inviters===1?"":"es"}</span></div>
       <div class="kpi"><b>${duels}</b><span>duelos · ${duelGames} partidas en duelo</span></div>
       <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
