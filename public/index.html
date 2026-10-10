@@ -121,6 +121,25 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 body.tester .testbadge{display:block}
 .pcost{margin:-4px 0 10px;font-size:.8rem;color:var(--muted)}
 .pcost:empty{display:none}
+.userbtn{max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbtn.set{background:var(--paper)}
+.userdlg .utabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 12px}
+.userdlg .utabs[hidden]{display:none}
+.userdlg .utabs button{border:0;border-radius:0;padding:7px 12px;background:transparent;font-size:.9rem}
+.userdlg .utabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.userdlg .ufield{display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:left;margin:0 0 10px;font-size:.88rem;color:var(--muted)}
+.userdlg .ufield[hidden],.userdlg #uAvRow[hidden],.userdlg .ume[hidden]{display:none}
+.userdlg .ufield input{font:inherit;font-size:1rem;color:var(--ink);padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg)}
+.userdlg #uPin,.userdlg #uPin2{letter-spacing:.4em;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.userdlg .ulabel{display:block;text-align:left;font-size:.88rem;color:var(--muted);margin:0 0 4px}
+.userdlg .uavs{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:0 0 10px}
+.userdlg .uavs button{padding:4px 0;font-size:1.25rem;line-height:1.3;border-radius:8px}
+.userdlg .uavs button[aria-pressed="true"]{background:var(--btc-soft);border-color:var(--btc)}
+.userdlg .ume{font-size:1.15rem;font-weight:700;margin:0 0 10px}
+.userdlg .unote{font-size:.82rem;color:var(--muted);margin:0 0 4px}
+.userdlg .unote:empty{display:none}
+.userdlg #uOut[hidden],.userdlg #uGo[hidden],.userdlg #uSkip[hidden]{display:none}
+@media (max-width:420px){ .userdlg .uavs{grid-template-columns:repeat(5,1fr)} }
 .ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
 .ppen.show{animation:penflash 1.6s ease-out}
 @keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -410,6 +429,7 @@ body.tester .testbadge{display:block}
     </div>
     <div class="tools">
       <a class="btn" id="menuBtn" href="#"></a>
+      <button class="userbtn" id="userBtn"></button>
       <div class="lang" role="group" aria-label="Idioma / Language">
         <button data-lang="es" aria-pressed="true">ES</button>
         <button data-lang="en" aria-pressed="false">EN</button>
@@ -698,6 +718,22 @@ body.tester .testbadge{display:block}
 
 <div class="testbadge" aria-hidden="true">PRUEBA</div>
 
+<!-- ===== Usuario con PIN ===== -->
+<dialog class="ivdlg userdlg" id="userDlg" aria-labelledby="uT">
+  <button class="wclose" id="uX"></button>
+  <h3 id="uT"></h3>
+  <div class="seg utabs" id="uTabs" role="group"><button data-t="new"></button><button data-t="old"></button></div>
+  <p class="ume" id="uMeName" hidden></p>
+  <label class="ufield" id="uNameRow"><span id="uNameL"></span><input id="uName" maxlength="24" autocomplete="username"></label>
+  <div id="uAvRow"><span class="ulabel" id="uAvL"></span><div class="uavs" id="uAvs"></div></div>
+  <label class="ufield" id="uPinRow"><span id="uPinL"></span><input id="uPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password"></label>
+  <label class="ufield" id="uPin2Row"><span id="uPin2L"></span><input id="uPin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"></label>
+  <p class="unote" id="uNote"></p>
+  <div class="row"><button class="primary" id="uGo"></button><button id="uOut"></button></div>
+  <p class="ivmsg" id="uMsg" aria-live="polite"></p>
+  <button class="ivoff" id="uSkip"></button>
+</dialog>
+
 <!-- ===== Invitaciones: quien invita ===== -->
 <dialog class="ivdlg" id="ivOut" aria-labelledby="ivOutT">
   <button class="wclose" id="ivOutX"></button>
@@ -707,7 +743,7 @@ body.tester .testbadge{display:block}
   </div>
   <div id="ivOpts" hidden>
     <div class="ivsopa" id="ivSopa"></div>
-    <label class="ivnick" id="ivNickRow"><span id="ivNickL"></span> <input id="ivNick" maxlength="24" autocomplete="nickname"></label>
+    <div class="ivnick" id="ivNickRow"><button id="ivNickBtn"></button></div>
     <div class="row"><button class="primary" id="ivSend"></button></div>
     <button class="ivoff" id="ivBackPick"></button>
   </div>
@@ -732,245 +768,450 @@ body.tester .testbadge{display:block}
   <button class="ivoff" id="ivOff"></button>
 </dialog>
 <script>
-// ================= Glosarios: [palabra, pista] =================
+// ================= Glosarios: [palabra, [pista 1, pista 2, pista 3]] =================
+// Cada pista tiene un código "palabra.pista" por idioma ("2.3" = palabra 2, pista 3).
+// NO reordenar ni borrar: las palabras nuevas van al final, así los códigos no cambian.
+// Los personajes (Back, Antonopoulos, Chaum…) están al final de cada lista.
 const G_ES = [
-["BITCOIN","Red y moneda lanzada en 2009 por un seudónimo"],
-["SATOSHI","Unidad mínima de bitcoin, y nombre de pila de su creador"],
-["SATS","Forma abreviada de llamar a la unidad mínima"],
-["NAKAMOTO","Apellido del creador anónimo de Bitcoin"],
-["BLOQUE","Paquete de transacciones que se suma a la cadena cada unos 10 minutos"],
-["CADENA","Lo que forman los bloques enlazados por sus hashes"],
-["BLOCKCHAIN","Registro público y encadenado de transacciones (en inglés)"],
-["MINERO","Quien gasta energía buscando el próximo bloque"],
-["MINERIA","Proceso que asegura la red con prueba de trabajo"],
-["NODO","Computadora que valida por su cuenta las reglas de la red"],
-["HALVING","Evento que cada 210.000 bloques reduce a la mitad la recompensa"],
-["HASH","Huella digital de largo fijo que produce una función criptográfica"],
-["NONCE","Número que el minero cambia una y otra vez buscando un hash válido"],
-["BILLETERA","Software o dispositivo que administra tus claves"],
-["WALLET","Billetera, en inglés"],
-["SEMILLA","Lista de 12 o 24 palabras que respalda tu billetera"],
-["CLAVE","Si es privada, nunca la compartas"],
-["LLAVE","Otra forma de llamar a la clave privada"],
-["KEY","Clave o llave, en inglés"],
-["FIRMA","Prueba criptográfica de que autorizaste un gasto"],
-["MEMPOOL","Sala de espera de las transacciones sin confirmar"],
-["LIGHTNING","Red de segunda capa para pagos instantáneos"],
-["CANAL","En Lightning, lo que se abre entre dos nodos para pagar fuera de la cadena"],
-["TAPROOT","Actualización activada en 2021 que mejoró privacidad y scripts"],
-["SEGWIT","Soft fork de 2017 que separó las firmas del resto de la transacción"],
-["SCHNORR","Esquema de firmas que llegó con Taproot"],
-["MERKLE","Apellido del árbol que resume las transacciones de un bloque"],
-["GENESIS","Nombre del primer bloque, minado el 3 de enero de 2009"],
-["DIFICULTAD","Parámetro que se reajusta cada 2016 bloques"],
-["RECOMPENSA","Lo que cobra el minero por encontrar un bloque"],
-["COMISION","Lo que pagás para que un minero incluya tu transacción"],
-["UTXO","Salida de transacción no gastada (sigla)"],
-["TXID","Identificador único de una transacción (sigla)"],
-["ESCASEZ","Propiedad garantizada por el tope de 21 millones"],
-["CONSENSO","Acuerdo de los nodos sobre cuál es la cadena válida"],
-["SOFTFORK","Cambio de reglas compatible hacia atrás (todo junto, en inglés)"],
-["HARDFORK","Cambio de reglas que rompe la compatibilidad (todo junto, en inglés)"],
-["CRIPTOGRAFIA","Ciencia de cifrar sobre la que se apoya Bitcoin"],
-["PRIVACIDAD","Lo que el manifiesto cypherpunk considera necesario en una sociedad abierta"],
-["CYPHERPUNK","Activista que defiende la privacidad con criptografía"],
-["WHITEPAPER","Documento de nueve páginas publicado en octubre de 2008 (en inglés)"],
-["HODL","Error de tipeo de 2013 que se volvió filosofía: no vender"],
-["CUSTODIA","Si no tenés las claves, alguien más la tiene por vos"],
-["MULTIFIRMA","Esquema que exige varias firmas para gastar"],
-["MUSIG","Multifirma agregada basada en firmas Schnorr"],
-["XPUB","Clave pública extendida (abreviatura)"],
-["PSBT","Transacción parcialmente firmada (sigla en inglés)"],
-["DIRECCION","Lo que compartís para que te envíen bitcoin"],
-["TESTNET","Red de pruebas donde las monedas no valen nada"],
-["ASIC","Chip diseñado únicamente para minar"],
-["POOL","Grupo de mineros que suman poder de cómputo y reparten premios"],
-["CONFIRMACION","Cada bloque que se apila encima de tu transacción"],
-["ENERGIA","Lo que la prueba de trabajo convierte en seguridad"],
-["INFLACION","Pérdida de poder adquisitivo del dinero fiat"],
-["FIAT","Dinero que vale por decreto"],
-["ORO","Metal con el que suele compararse a Bitcoin"],
-["DINERO","Bitcoin aspira a ser el más sano de todos"],
-["SOBERANIA","Lo que ganás cuando controlás tus propias claves"],
-["FINNEY","Hal, quien recibió la primera transacción de Bitcoin"],
-["SZABO","Nick, el criptógrafo que propuso Bit Gold"],
-["HASHCASH","Sistema antispam de Adam Back que inspiró la prueba de trabajo"],
-["BITGOLD","Precursor de Bitcoin ideado por Nick Szabo (todo junto)"],
-["PIZZA","Comida comprada con 10.000 BTC en mayo de 2010"],
-["LASZLO","Nombre del programador que pagó esas pizzas"],
-["NOSTR","Protocolo de mensajes descentralizado muy usado por bitcoiners"],
-["ZAP","Propina en sats enviada por Lightning, típica en Nostr"],
-["COINJOIN","Técnica que combina pagos de varios usuarios en una transacción"],
-["PAYJOIN","Transacción en la que pagador y receptor aportan entradas"],
-["SCRIPT","Lenguaje sencillo que define las condiciones de gasto"],
-["TIMELOCK","Bloqueo que impide gastar hasta cierta fecha o altura"],
-["EXCHANGE","Casa de cambio donde se compra y vende bitcoin (en inglés)"],
-["KYC","Sigla del trámite de verificación de identidad en los exchanges"],
-["CONTRASEÑA","Palabra extra que algunas billeteras suman a la semilla"],
-["DUEÑO","Con autocustodia, sos el único de tus bitcoins"],
-["WATCHTOWER","Servicio que vigila tus canales Lightning (en inglés)"],
-["QR","Código que escaneás para pagar"],
-["SIDECHAIN","Cadena lateral anclada a Bitcoin (en inglés)"],
-["LIQUID","Sidechain federada lanzada por Blockstream"],
-["ORDINALS","Protocolo que numera cada satoshi"],
-["SELLO","Bitcoin funciona como un ___ de tiempo distribuido"],
-["LIBRO","Bitcoin es un ___ contable público"],
-["CONFIANZA","Lo que Bitcoin reemplaza por verificación"],
-["VERIFICAR","Lo que hacés en vez de confiar"],
-["EMISION","Calendario de nuevas monedas, fijo y predecible"],
-["VEINTIUNO","Los millones que habrá como máximo"],
-["MILLONES","Veintiún ___: el tope de emisión"],
-["BANCOS","Lo que el canciller estaba por rescatar según el bloque génesis"],
-["TIMES","Diario cuyo titular quedó grabado en el bloque génesis"],
-["CANCILLER","Cargo mencionado en el titular del bloque génesis"],
-["RESCATE","Lo que, según ese titular, estaba por darse a los bancos"],
-["EFECTIVO","Sistema de ___ electrónico, del título del whitepaper"],
-["ELECTRONICO","Sistema de efectivo ___, del título del whitepaper"],
-["PARES","Sistema de efectivo electrónico entre ___"],
-["BIP","Propuesta de mejora de Bitcoin (sigla)"],
-["PALABRAS","La semilla BIP39 se arma con 12 o 24 de estas"],
-["FRASE","___ semilla: nunca le saques foto"],
-["FRIO","Almacenamiento en ___: claves que nunca tocan internet"],
-["HARDWARE","Tipo de billetera física que guarda las claves offline"],
-["STACKEAR","Acumular sats de a poco, en spanglish bitcoiner"],
-["DCA","Estrategia de comprar montos fijos cada cierto tiempo (sigla)"],
-["ATH","Máximo histórico del precio (sigla en inglés)"],
-["FUD","Miedo, incertidumbre y duda (sigla en inglés)"],
-["PLEBS","Así se llaman a sí mismos los bitcoiners de a pie"],
-["HUMILDE","Mantenete ___ y acumulá sats"],
-["PREFERENCIA","Baja ___ temporal: valorar más el futuro"],
-["TICK","___ tock, next block"],
-["MAXI","Bitcoiner que solo confía en Bitcoin (abreviado)"],
-["ALTCOIN","Cualquier criptomoneda que no es bitcoin"],
-["OPRETURN","Instrucción que permite grabar datos en una transacción (todo junto)"],
-["LABITCONF","La conferencia de Bitcoin activa más antigua del mundo"],
-["OFERTA","___ limitada: nunca habrá más de 21 millones"],
-["VOLATILIDAD","Las subas y bajas bruscas del precio"],
-["DIVISIBLE","Bitcoin lo es hasta ocho decimales"],
-["FUNGIBLE","Cada unidad es intercambiable por otra igual: es ___"],
-["AUDITABLE","Con un nodo podés comprobar la oferta total: es ___"],
-["CENSURA","Resistencia a la ___: nadie puede bloquear tu transacción"],
-["PERMISO","Para usar Bitcoin no hace falta pedirlo"],
-["FRONTERAS","Bitcoin las cruza sin pedir autorización"],
-["HYPE","Euforia exagerada del mercado (en inglés)"],
-["CUANTICA","Computación que algunos temen que rompa las firmas actuales"]
+["BITCOIN",["Red y moneda lanzada en 2009 por un seudónimo","Dinero digital sin banco central ni dueño","La primera red de dinero que no necesita intermediarios"]],
+["SATOSHI",["Unidad mínima de bitcoin, y nombre de pila de su creador","Cien millones de estos forman un bitcoin","Seudónimo de quien firmó el whitepaper"]],
+["SATS",["Forma abreviada de llamar a la unidad mínima","Lo que se acumula de a poco, en jerga bitcoiner","En Lightning los montos se suelen contar en estos"]],
+["NAKAMOTO",["Apellido del creador anónimo de Bitcoin","Satoshi ___, autor que nunca reveló su identidad","Apellido japonés que firmó el código original"]],
+["BLOQUE",["Paquete de transacciones que se suma a la cadena cada unos 10 minutos","Cada uno lleva el hash del anterior","Su tamaño limitado hace competir a las transacciones por entrar"]],
+["CADENA",["Lo que forman los bloques enlazados por sus hashes","Bitcoin elige la que acumula más trabajo","Si cambiás un eslabón, se rompen todos los siguientes"]],
+["BLOCKCHAIN",["Registro público y encadenado de transacciones (en inglés)","Palabra de moda que Satoshi nunca escribió así en el whitepaper","Base de datos que solo crece y nadie borra (en inglés)"]],
+["MINERO",["Quien gasta energía buscando el próximo bloque","Ordena transacciones y cobra comisiones","Compite gastando electricidad para sellar el próximo bloque"]],
+["MINERIA",["Proceso que asegura la red con prueba de trabajo","Actividad que convierte electricidad en seguridad","Lo que hacen las máquinas ASIC día y noche"]],
+["NODO",["Computadora que valida por su cuenta las reglas de la red","Correr uno es la forma de no confiar en nadie","Guarda una copia de la cadena y rechaza lo que rompe las reglas"]],
+["HALVING",["Evento que cada 210.000 bloques reduce a la mitad la recompensa","Ocurre aproximadamente cada cuatro años","El de 2024 bajó el subsidio a 3,125 BTC"]],
+["HASH",["Huella digital de largo fijo que produce una función criptográfica","SHA-256 produce uno de 256 bits","Cambiás una coma y cambia por completo"]],
+["NONCE",["Número que el minero cambia una y otra vez buscando un hash válido","Número que se usa una sola vez (en jerga criptográfica)","Campo de 32 bits del encabezado que los mineros prueban sin parar"]],
+["BILLETERA",["Software o dispositivo que administra tus claves","No guarda monedas: guarda las claves para moverlas","Puede ser de celular, de escritorio o de hardware"]],
+["WALLET",["Billetera, en inglés","Donde viven tus claves, en inglés","Hot ___ si está conectada, cold ___ si no"]],
+["SEMILLA",["Lista de 12 o 24 palabras que respalda tu billetera","Si la perdés y se rompe el dispositivo, perdés los fondos","Con ella podés recrear todas tus claves en otra billetera"]],
+["CLAVE",["Si es privada, nunca la compartas","Pública para recibir, privada para firmar","Número secreto que demuestra que los fondos son tuyos"]],
+["LLAVE",["Otra forma de llamar a la clave privada","Quien tiene la ___, tiene los bitcoins","Sin ella no se abre la billetera"]],
+["KEY",["Clave o llave, en inglés","Not your ___s, not your coins","Private ___: el secreto que firma tus transacciones"]],
+["FIRMA",["Prueba criptográfica de que autorizaste un gasto","La produce la clave privada y la verifica cualquiera","Schnorr y ECDSA son dos tipos de esta prueba"]],
+["MEMPOOL",["Sala de espera de las transacciones sin confirmar","Cuando está llena, las comisiones suben","Cada nodo tiene la suya, con las transacciones que esperan bloque"]],
+["LIGHTNING",["Red de segunda capa para pagos instantáneos","Paga en segundos con comisiones mínimas","Red de canales de pago que se apoya sobre Bitcoin"]],
+["CANAL",["En Lightning, lo que se abre entre dos nodos para pagar fuera de la cadena","Se abre y se cierra con transacciones en la cadena","Varios de estos conectados forman la red de pagos instantáneos"]],
+["TAPROOT",["Actualización activada en 2021 que mejoró privacidad y scripts","Hace que contratos complejos parezcan pagos comunes","Soft fork que trajo las firmas Schnorr"]],
+["SEGWIT",["Soft fork de 2017 que separó las firmas del resto de la transacción","Arregló la maleabilidad y abrió paso a Lightning","Testigo segregado, en inglés y abreviado"]],
+["SCHNORR",["Esquema de firmas que llegó con Taproot","Claus ___, criptógrafo que da nombre a un esquema de firmas","Firmas más compactas que permiten agregarse entre sí"]],
+["MERKLE",["Apellido del árbol que resume las transacciones de un bloque","Ralph ___, pionero de la criptografía de clave pública","Árbol de ___: permite probar que una transacción está en un bloque"]],
+["GENESIS",["Nombre del primer bloque, minado el 3 de enero de 2009","El único bloque que no apunta a ninguno anterior","Lleva un titular del Times grabado en su coinbase"]],
+["DIFICULTAD",["Parámetro que se reajusta cada 2016 bloques","Sube si entra más poder de cómputo a la red","Mantiene los bloques cerca de uno cada diez minutos"]],
+["RECOMPENSA",["Lo que cobra el minero por encontrar un bloque","Subsidio más comisiones","Se reduce a la mitad con cada halving"]],
+["COMISION",["Lo que pagás para que un minero incluya tu transacción","Se paga por espacio en el bloque, no por monto enviado","Se mide en sats por vbyte"]],
+["UTXO",["Salida de transacción no gastada (sigla)","Las billeteras arman pagos juntando varias de estas (sigla)","El modelo de Bitcoin no usa cuentas sino estas salidas (sigla)"]],
+["TXID",["Identificador único de una transacción (sigla)","El hash que identifica a cada transacción (sigla)","Lo buscás en un explorador para ver si tu pago entró (sigla)"]],
+["ESCASEZ",["Propiedad garantizada por el tope de 21 millones","Lo que hace al oro valioso y a Bitcoin todavía más","Nadie puede imprimir más: eso garantiza su ___"]],
+["CONSENSO",["Acuerdo de los nodos sobre cuál es la cadena válida","Las reglas que todos los nodos aplican igual","Lo que se rompe cuando dos grupos validan reglas distintas"]],
+["SOFTFORK",["Cambio de reglas compatible hacia atrás (todo junto, en inglés)","Así se activaron SegWit y Taproot (en inglés)","Endurece las reglas sin dejar afuera a los nodos viejos (en inglés)"]],
+["HARDFORK",["Cambio de reglas que rompe la compatibilidad (todo junto, en inglés)","Así nació Bitcoin Cash en 2017 (en inglés)","Los nodos viejos rechazan los bloques nuevos (en inglés)"]],
+["CRIPTOGRAFIA",["Ciencia de cifrar sobre la que se apoya Bitcoin","Hashes y firmas digitales son parte de ella","Arte de escribir en secreto, del griego"]],
+["PRIVACIDAD",["Lo que el manifiesto cypherpunk considera necesario en una sociedad abierta","No es esconder algo malo: es elegir qué mostrar","CoinJoin y Lightning ayudan a protegerla"]],
+["CYPHERPUNK",["Activista que defiende la privacidad con criptografía","Los de la lista de correo donde se gestó Bitcoin","Escriben código para defender la libertad"]],
+["WHITEPAPER",["Documento de nueve páginas publicado en octubre de 2008 (en inglés)","Bitcoin: A Peer-to-Peer Electronic Cash System (en inglés)","El documento técnico que Satoshi envió a una lista de correo (en inglés)"]],
+["HODL",["Error de tipeo de 2013 que se volvió filosofía: no vender","Aguantar sin vender pase lo que pase","Se lo lee como Hold On for Dear Life"]],
+["CUSTODIA",["Si no tenés las claves, alguien más la tiene por vos","Un exchange te ofrece la suya; vos podés hacer la propia","Responsabilidad de guardar las claves"]],
+["MULTIFIRMA",["Esquema que exige varias firmas para gastar","Dos de tres, por ejemplo, para mover fondos","Ideal para empresas, familias o herencias"]],
+["MUSIG",["Multifirma agregada basada en firmas Schnorr","Protocolo para que varias firmas se vean como una sola","Multifirma de Schnorr que ahorra espacio y suma privacidad"]],
+["XPUB",["Clave pública extendida (abreviatura)","Con ella se ven tus direcciones pero no se puede gastar (abreviatura)","Se la pasás a una billetera de solo lectura (abreviatura)"]],
+["PSBT",["Transacción parcialmente firmada (sigla en inglés)","Formato para firmar entre varios dispositivos (sigla en inglés)","Transacción a medio firmar que viaja de una billetera a otra (sigla en inglés)"]],
+["DIRECCION",["Lo que compartís para que te envíen bitcoin","Conviene usar una nueva para cada pago","Empieza con bc1 en los formatos modernos"]],
+["TESTNET",["Red de pruebas donde las monedas no valen nada","Ideal para practicar sin arriesgar plata","Sus monedas se regalan en faucets"]],
+["ASIC",["Chip diseñado únicamente para minar","Circuito integrado de aplicación específica (sigla en inglés)","Reemplazó a las placas de video en la minería (sigla)"]],
+["POOL",["Grupo de mineros que suman poder de cómputo y reparten premios","Reparte el premio según el trabajo aportado","Achica la varianza de los mineros pequeños"]],
+["CONFIRMACION",["Cada bloque que se apila encima de tu transacción","Con seis se considera muy segura","Cero significa que todavía está en la mempool"]],
+["ENERGIA",["Lo que la prueba de trabajo convierte en seguridad","La minería busca la más barata, muchas veces la que sobra","Watts que se convierten en seguridad"]],
+["INFLACION",["Pérdida de poder adquisitivo del dinero fiat","Lo que el tope de 21 millones evita","Cuando los precios suben porque se imprime dinero"]],
+["FIAT",["Dinero que vale por decreto","Peso, dólar o euro: todos lo son","Dinero que un gobierno impone por ley"]],
+["ORO",["Metal con el que suele compararse a Bitcoin","Bitcoin es llamado el ___ digital","Escaso, durable y difícil de extraer, como Bitcoin"]],
+["DINERO",["Bitcoin aspira a ser el más sano de todos","Medio de cambio, unidad de cuenta y reserva de valor","Bitcoin es ___ sin estado"]],
+["SOBERANIA",["Lo que ganás cuando controlás tus propias claves","Financiera, cuando nadie puede congelar tus fondos","Ser tu propio banco es una forma de ___"]],
+["FINNEY",["Hal, quien recibió la primera transacción de Bitcoin","Hal ___ tuiteó \"Running bitcoin\" en 2009","Apellido del primer usuario de Bitcoin después de Satoshi"]],
+["SZABO",["Nick, el criptógrafo que propuso Bit Gold","Nick ___ acuñó el término contrato inteligente","Su apellido inspiró la unidad de otra cripto, pero él escribió sobre Bit Gold"]],
+["HASHCASH",["Sistema antispam de Adam Back que inspiró la prueba de trabajo","Prueba de trabajo de 1997 citada en el whitepaper","Idea de Adam Back para frenar el spam"]],
+["BITGOLD",["Precursor de Bitcoin ideado por Nick Szabo (todo junto)","Propuesta de 1998 que combinaba prueba de trabajo y escasez (todo junto)","Oro de bits, la idea de Szabo previa a Bitcoin (todo junto)"]],
+["PIZZA",["Comida comprada con 10.000 BTC en mayo de 2010","El 22 de mayo se celebra su día en el mundo bitcoiner","Dos de estas costaron diez mil bitcoins"]],
+["LASZLO",["Nombre del programador que pagó esas pizzas","___ Hanyecz, protagonista del Bitcoin Pizza Day","También fue pionero en minar con placa de video"]],
+["NOSTR",["Protocolo de mensajes descentralizado muy usado por bitcoiners","Notas y relevos: una red social sin dueño","Lo impulsó Jack Dorsey con donaciones"]],
+["ZAP",["Propina en sats enviada por Lightning, típica en Nostr","En Nostr, el me gusta que vale sats","Pago rápido de pocos sats a un posteo"]],
+["COINJOIN",["Técnica que combina pagos de varios usuarios en una transacción","Mezcla monedas sin entregarlas a nadie","Hace más difícil seguir el rastro de los fondos"]],
+["PAYJOIN",["Transacción en la que pagador y receptor aportan entradas","Rompe la suposición de que todas las entradas son del mismo dueño","CoinJoin entre quien paga y quien cobra"]],
+["SCRIPT",["Lenguaje sencillo que define las condiciones de gasto","Basado en pilas y deliberadamente limitado","Pay to Public Key Hash es un ejemplo de este lenguaje"]],
+["TIMELOCK",["Bloqueo que impide gastar hasta cierta fecha o altura","Sirve para herencias y canales de pago","Candado temporal para gastar más adelante"]],
+["EXCHANGE",["Casa de cambio donde se compra y vende bitcoin (en inglés)","Lugar donde se cambia fiat por bitcoin (en inglés)","Si dejás tus fondos ahí, no son realmente tuyos (en inglés)"]],
+["KYC",["Sigla del trámite de verificación de identidad en los exchanges","Know Your Customer (sigla)","Te piden documento y selfie (sigla)"]],
+["CONTRASEÑA",["Palabra extra que algunas billeteras suman a la semilla","También llamada palabra 25","Si la olvidás, la semilla sola no alcanza"]],
+["DUEÑO",["Con autocustodia, sos el único de tus bitcoins","Sin custodia ajena, el ___ sos vos","Quien controla la clave privada es el verdadero ___"]],
+["WATCHTOWER",["Servicio que vigila tus canales Lightning (en inglés)","Torre de vigilancia que castiga cierres tramposos (en inglés)","Te protege si tu nodo Lightning está apagado (en inglés)"]],
+["QR",["Código que escaneás para pagar","Cuadradito blanco y negro que guarda una dirección","Se escanea con la cámara para pagar con Lightning"]],
+["SIDECHAIN",["Cadena lateral anclada a Bitcoin (en inglés)","Cadena paralela a la que se mandan bitcoins con un peg (en inglés)","Liquid y Rootstock son ejemplos (en inglés)"]],
+["LIQUID",["Sidechain federada lanzada por Blockstream","Red federada con transacciones confidenciales","Su L-BTC se mueve en bloques de un minuto"]],
+["ORDINALS",["Protocolo que numera cada satoshi","Inscripciones de imágenes en bitcoin","Teoría de Casey Rodarmor para seguir satoshis individuales"]],
+["SELLO",["Bitcoin funciona como un ___ de tiempo distribuido","Bitcoin es un ___ de tiempo distribuido","Marca de tiempo que prueba que algo existía en cierta fecha"]],
+["LIBRO",["Bitcoin es un ___ contable público","Bitcoin es un ___ contable que todos pueden auditar","___ mayor: el registro de todas las cuentas"]],
+["CONFIANZA",["Lo que Bitcoin reemplaza por verificación","Don't trust, verify: no dependas de ella","La que Satoshi criticó en los bancos centrales"]],
+["VERIFICAR",["Lo que hacés en vez de confiar","Don't trust, ___","Lo que hace un nodo con cada bloque nuevo"]],
+["EMISION",["Calendario de nuevas monedas, fijo y predecible","Se reduce a la mitad cada cuatro años","Terminará alrededor del año 2140"]],
+["VEINTIUNO",["Los millones que habrá como máximo","Número de millones del tope de bitcoin","El ___ es el número favorito de los bitcoiners"]],
+["MILLONES",["Veintiún ___: el tope de emisión","Habrá 21 ___ de bitcoins, ni uno más","El tope son veintiún ___"]],
+["BANCOS",["Lo que el canciller estaba por rescatar según el bloque génesis","Bitcoin nació como alternativa a ellos","Los que fueron rescatados en la crisis de 2008"]],
+["TIMES",["Diario cuyo titular quedó grabado en el bloque génesis","The ___ 03/Jan/2009, inicio del mensaje del génesis","Periódico británico citado por Satoshi"]],
+["CANCILLER",["Cargo mencionado en el titular del bloque génesis","___ on brink of second bailout for banks","En el Reino Unido, el ministro de Hacienda"]],
+["RESCATE",["Lo que, según ese titular, estaba por darse a los bancos","Bailout, en castellano","Lo que reciben los bancos cuando se los salva con dinero público"]],
+["EFECTIVO",["Sistema de ___ electrónico, del título del whitepaper","Bitcoin quiso ser como este, pero digital","Billetes en la mano, sin intermediarios"]],
+["ELECTRONICO",["Sistema de efectivo ___, del título del whitepaper","Efectivo ___ entre pares","Digital, sin papel"]],
+["PARES",["Sistema de efectivo electrónico entre ___","Peer-to-peer, en castellano","Iguales que se conectan sin intermediarios"]],
+["BIP",["Propuesta de mejora de Bitcoin (sigla)","El 39 define las palabras de la semilla (sigla)","Así se proponen cambios a Bitcoin (sigla)"]],
+["PALABRAS",["La semilla BIP39 se arma con 12 o 24 de estas","Son 2048 en la lista oficial","Las que tenés que anotar en papel o en acero"]],
+["FRASE",["___ semilla: nunca le saques foto","Se la llama también mnemónica","Doce o veinticuatro palabras en orden"]],
+["FRIO",["Almacenamiento en ___: claves que nunca tocan internet","Billetera ___: nunca se conectó a internet","Lo contrario de caliente, para guardar claves"]],
+["HARDWARE",["Tipo de billetera física que guarda las claves offline","Billetera de ___: un dispositivo dedicado a firmar","Lo físico, en oposición al software"]],
+["STACKEAR",["Acumular sats de a poco, en spanglish bitcoiner","Sumar sats al montón todos los meses","Lo que hace el que compra un poquito cada semana"]],
+["DCA",["Estrategia de comprar montos fijos cada cierto tiempo (sigla)","Promedio del costo en dólares (sigla en inglés)","Comprar siempre el mismo monto sin mirar el precio (sigla)"]],
+["ATH",["Máximo histórico del precio (sigla en inglés)","Nuevo ___: el precio nunca estuvo tan alto (sigla)","All-Time High (sigla)"]],
+["FUD",["Miedo, incertidumbre y duda (sigla en inglés)","Rumores que buscan asustar (sigla en inglés)","Fear, Uncertainty and Doubt (sigla)"]],
+["PLEBS",["Así se llaman a sí mismos los bitcoiners de a pie","Bitcoiners comunes, sin ballenas ni gurúes","Gente de a pie que corre su nodo"]],
+["HUMILDE",["Mantenete ___ y acumulá sats","Stay ___, stack sats","Así hay que mantenerse cuando el precio sube"]],
+["PREFERENCIA",["Baja ___ temporal: valorar más el futuro","Baja ___ temporal: ahorrar en vez de gastar","La temporal mide cuánto valorás el presente frente al futuro"]],
+["TICK",["___ tock, next block","Sonido del reloj que avanza con cada bloque","El ___ tock de un nuevo bloque"]],
+["MAXI",["Bitcoiner que solo confía en Bitcoin (abreviado)","Maximalista, en corto","Para él, todo lo demás es ruido"]],
+["ALTCOIN",["Cualquier criptomoneda que no es bitcoin","Moneda alternativa que suele copiar a bitcoin","Shitcoin es su versión menos amable"]],
+["OPRETURN",["Instrucción que permite grabar datos en una transacción (todo junto)","Salida que no se puede gastar pero guarda datos (todo junto)","Con ella se graban mensajes en la cadena (todo junto)"]],
+["LABITCONF",["La conferencia de Bitcoin activa más antigua del mundo","Nació en Buenos Aires en 2013","Conferencia latinoamericana de Bitcoin y blockchain (todo junto)"]],
+["OFERTA",["___ limitada: nunca habrá más de 21 millones","___ fija: 21 millones","La ___ de bitcoin no responde a la demanda"]],
+["VOLATILIDAD",["Las subas y bajas bruscas del precio","Lo que asusta al que mira el precio a diario","Baja a medida que el mercado crece"]],
+["DIVISIBLE",["Bitcoin lo es hasta ocho decimales","Se puede partir hasta el satoshi","Pagar un café con bitcoin es posible porque es ___"]],
+["FUNGIBLE",["Cada unidad es intercambiable por otra igual: es ___","Un bitcoin vale lo mismo que otro, es ___","Lo que se pone en duda cuando hay monedas marcadas"]],
+["AUDITABLE",["Con un nodo podés comprobar la oferta total: es ___","Cualquiera puede verificar cuántos hay: es ___","Las cuentas de Bitcoin son públicas y ___"]],
+["CENSURA",["Resistencia a la ___: nadie puede bloquear tu transacción","Nadie puede impedir tu pago: resistencia a la ___","Lo que sufren las cuentas bancarias congeladas"]],
+["PERMISO",["Para usar Bitcoin no hace falta pedirlo","Bitcoin es una red sin ___","No hace falta pedirlo para abrir una billetera"]],
+["FRONTERAS",["Bitcoin las cruza sin pedir autorización","Sin ___: tus sats viajan con vos en la memoria","Mandar bitcoin a otro país no exige cruzarlas"]],
+["HYPE",["Euforia exagerada del mercado (en inglés)","Lo que sube rápido y se desinfla (en inglés)","Entusiasmo inflado por las redes (en inglés)"]],
+["CUANTICA",["Computación que algunos temen que rompa las firmas actuales","Computación ___: amenaza que todavía es teórica","Física de los qubits"]],
+["PROTOCOLO",["Conjunto de reglas que todos los nodos siguen","Bitcoin es un ___ abierto, no una empresa","Lo que define cómo se comunican las computadoras de la red"]],
+["CODIGO",["El de Bitcoin es abierto y cualquiera puede leerlo","El ___ es ley, dicen algunos","Lo que escriben los desarrolladores en GitHub"]],
+["RED",["Miles de nodos conectados forman la ___","Bitcoin es una ___ entre pares","La ___ Lightning corre encima de Bitcoin"]],
+["TRANSACCION",["Mueve bitcoins de unas salidas a otras","Se firma, se difunde y espera un bloque","Tiene entradas, salidas y una comisión"]],
+["ENTRADA",["Parte de una transacción que gasta una salida anterior","Input, en castellano","Cada una necesita su firma"]],
+["SALIDA",["Output, en castellano","Lo que crea una transacción y otro puede gastar después","Una no gastada se llama UTXO"]],
+["VUELTO",["Lo que vuelve a tu billetera cuando gastás de más","Salida de cambio que te mandás a vos mismo","Si pagás con un UTXO grande, recibís ___"]],
+["SALDO",["Suma de tus salidas no gastadas","Lo que muestra la billetera arriba de todo","Cuánto tenés disponible"]],
+["PAGO",["Con Lightning llega en segundos","Lo que hacés al escanear un QR","Cobro para uno, ___ para el otro"]],
+["FACTURA",["Invoice de Lightning, en castellano","Pedido de cobro que empieza con lnbc","Tiene monto, descripción y vencimiento en Lightning"]],
+["RUTA",["Camino de canales que recorre un pago Lightning","Si no hay ___ con liquidez, el pago falla","Encontrarla es tarea del nodo que paga"]],
+["LIQUIDEZ",["Capacidad disponible en un canal para enviar o recibir","Sin ___ entrante no podés cobrar en Lightning","Lo que mueven los nodos para que los pagos fluyan"]],
+["CAPA",["Lightning es la segunda","Se construyen unas sobre otras para escalar","La base es Bitcoin; encima van otras"]],
+["FEDIMINT",["Protocolo de ecash custodiado por una federación","Guardianes de la comunidad custodian los fondos en este sistema","Ecash federado que busca privacidad y uso comunitario"]],
+["ECASH",["Efectivo digital con firmas ciegas, a la Chaum","Tokens anónimos respaldados por sats","Fedimint y Cashu son ejemplos"]],
+["CASHU",["Protocolo de ecash con una sola casa de moneda","Ecash con nombre de fruto seco","Sus tokens se pueden mandar como texto"]],
+["RESPALDO",["Lo que hacés al anotar la semilla","Backup, en castellano","Sin él, perder el celular es perder los fondos"]],
+["ACERO",["Material de las placas que resisten fuego e inundación","Mejor que el papel para guardar la semilla","Placa de ___: respaldo casi indestructible"]],
+["ENTROPIA",["Aleatoriedad que da origen a una buena semilla","Si es baja, tus claves son adivinables","Medida del desorden, en física y en criptografía"]],
+["DADOS",["Algunos los tiran para generar su propia semilla","Seis caras de entropía casera","Con 99 tiradas de estos se arma una clave fuerte"]],
+["CHECKSUM",["La última palabra de la semilla lo incluye (en inglés)","Detecta errores al copiar una dirección (en inglés)","Suma de control, en inglés"]],
+["DERIVACION",["Camino que lleva de la semilla a cada dirección","Ruta de ___: m/84'/0'/0'","Las billeteras HD generan claves por ___"]],
+["PUBLICA",["Clave que podés mostrar sin peligro","De ella sale tu dirección","Lo contrario de privada"]],
+["PRIVADA",["Clave que nunca hay que compartir","Con ella se firma","Lo contrario de pública"]],
+["CURVA",["secp256k1 es una ___ elíptica","Forma matemática sobre la que se apoyan las firmas","Línea que no es recta"]],
+["ORACULO",["Fuente externa que informa un dato a un contrato","Dice el precio o un resultado para resolver una apuesta","En Grecia, el de Delfos"]],
+["BOVEDA",["Esquema que demora los retiros para frenar robos","Vault, en castellano","Lugar donde se guarda lo más valioso"]],
+["COVENANT",["Propuesta para limitar a dónde pueden ir unos fondos (en inglés)","CTV y OP_VAULT entran en esta discusión (en inglés)","Pacto o compromiso, en inglés"]],
+["REORG",["Cuando la cadena cambia por otra con más trabajo (abreviado)","Cuando bloques recientes quedan descartados por otra rama","Por eso conviene esperar confirmaciones"]],
+["HUERFANO",["Bloque válido que quedó afuera de la cadena","Sin padre ni madre","Bloque ___: lo encontraron dos mineros a la vez y perdió"]],
+["CABECERA",["Header del bloque, en castellano","Tiene 80 bytes y es lo que se hashea al minar","Parte de arriba de un bloque o de un diario"]],
+["ALTURA",["Número de bloques desde el génesis","Bloque a la ___ 840.000: el cuarto halving","Medida vertical, también de la cadena"]],
+["EPOCA",["Período de 2016 bloques entre ajustes","Cada una dura unas dos semanas","Era o período histórico"]],
+["AJUSTE",["El de dificultad ocurre cada 2016 bloques","Corrección automática que mantiene el ritmo de bloques","Lo que hace la red cuando sobra o falta poder de cómputo"]],
+["HASHRATE",["Poder de cómputo total de la red (en inglés)","Se mide en exahashes por segundo (en inglés)","Cuanto más alto, más cara es atacar la red (en inglés)"]],
+["COINBASE",["Primera transacción de cada bloque, la que crea monedas","Su campo libre guardó el titular del génesis","También es el nombre de un exchange famoso"]],
+["SUBSIDIO",["Monedas nuevas que recibe el minero por bloque","Hoy es de 3,125 BTC","Se achica a la mitad en cada halving"]],
+["CORE",["Bitcoin ___: el programa de nodo más usado","Núcleo, en inglés","Su repositorio tiene cientos de colaboradores"]],
+["KNOTS",["Variante de Bitcoin Core mantenida por Luke Dashjr","Nudos, en inglés","Implementación de nodo con políticas de mempool más estrictas"]],
+["SEUDONIMO",["Satoshi Nakamoto lo es","Nombre inventado para firmar","Bitcoin no es anónimo sino ___"]],
+["ANONIMATO",["Bitcoin no lo garantiza: las transacciones son públicas","Cualidad de quien no tiene nombre","Lo que se pierde al hacer KYC"]],
+["VIGILANCIA",["Lo que permiten las monedas digitales de bancos centrales","Control que la privacidad intenta evitar","Gran Hermano la ejerce"]],
+["CBDC",["Moneda digital de banco central (sigla en inglés)","Dinero programable que el estado puede vigilar (sigla)","El yuan digital es una (sigla)"]],
+["DEVALUACION",["Cuando tu moneda vale menos de un día para el otro","Los argentinos la conocen demasiado bien","Pérdida de valor frente a otras monedas"]],
+["CEPO",["Restricción para comprar dólares en Argentina","Control de cambios, en criollo","Con él, el dólar oficial y el blue se separan"]],
+["DOLAR",["Moneda de refugio de muchos argentinos","El blue es su versión informal","Billete verde que bitcoin suele usar como referencia"]],
+["AHORRO",["Bitcoin sirve para esto a largo plazo","Lo que la inflación se come","Guardar hoy para el futuro"]],
+["REMESA",["Dinero que un migrante manda a su familia","Con Lightning cuesta centavos enviarla","Envío de plata entre países"]],
+["ADOPCION",["Cuando más gente usa bitcoin","El Salvador la hizo moneda de curso legal","Proceso de sumar a nuevos usuarios"]],
+["COMERCIO",["Negocio que acepta bitcoin en su caja","Intercambio de bienes por dinero","Pagar en un ___ con Lightning ya es posible"]],
+["MERCADO",["Donde se forma el precio","Suba o baja del ___","Feria donde se compra y se vende"]],
+["TORO",["Símbolo del mercado alcista","Bull, en castellano","Embiste hacia arriba"]],
+["OSO",["Símbolo del mercado bajista","Bear, en castellano","Pega zarpazos hacia abajo"]],
+["BALLENA",["Quien tiene muchísimos bitcoins","Sus movimientos pueden mover el precio","El mamífero más grande del mar"]],
+["LUNA",["To the moon: hasta la ___","Adonde dicen que va el precio cuando sube","Satélite natural de la Tierra"]],
+["ESTABLE",["Moneda ___: atada al valor del dólar","Lo contrario de volátil","Que no cambia"]],
+["CUSTODIO",["Quien guarda tus claves por vos","Un exchange actúa como ___","Guardián, en castellano"]],
+["AUTOCUSTODIA",["Guardar tus propias claves","Ser tu propio banco","Lo contrario de dejar los fondos en un exchange"]],
+["MICROPAGO",["Pago de pocos sats que Lightning hace posible","Pagar por artículo en vez de suscribirse","Transacción diminuta"]],
+["MEETUP",["Reunión de bitcoiners de una ciudad (en inglés)","Encuentro informal con pizza y nodos (en inglés)","Donde se aprende de otros bitcoiners en persona (en inglés)"]],
+["COMUNIDAD",["Bitcoin la tiene en todo el mundo, sin líder","Grupo que comparte un interés","La de Argentina es de las más activas"]],
+["MEMORIA",["Billetera cerebral: la semilla guardada en tu ___","Lo que entrena la Semilla perdida","Recuerdo, capacidad de recordar"]],
+["HERENCIA",["Plan para que tus hijos reciban tus bitcoins","Multifirma y timelocks ayudan a planificarla","Lo que se deja a los herederos"]],
+["RESILIENCIA",["Capacidad de la red de seguir funcionando ante ataques","Bitcoin sobrevivió a prohibiciones y caídas gracias a ella","Resistencia ante la adversidad"]],
+["INMUTABLE",["Lo que queda en la cadena no se puede cambiar: es ___","Cualidad del historial de transacciones","Que no se puede alterar"]],
+["NEUTRAL",["Bitcoin no discrimina: es dinero ___","No toma partido","Ni a favor ni en contra"]],
+["RELOJ",["Bitcoin funciona como un ___ descentralizado","Cada bloque es un tic de este","Instrumento para medir el tiempo"]],
+["EXPLORADOR",["Sitio web para buscar transacciones y bloques","Mempool.space es uno de ellos","Quien recorre tierras desconocidas"]],
+["POLVO",["Salidas tan chicas que no vale la pena gastarlas","Dust, en castellano","Lo que se junta sobre los muebles"]],
+["CONSOLIDAR",["Juntar muchas salidas chicas en una sola","Conviene hacerlo cuando las comisiones están bajas","Unir y afirmar"]],
+["ETIQUETA",["Nota que le ponés a una dirección o pago","Ayuda a cuidar la privacidad al elegir monedas","Label, en castellano"]],
+["SIGNET",["Red de pruebas con bloques firmados (en inglés)","Testnet más predecible para desarrolladores (en inglés)","Red de prueba donde un firmante autoriza los bloques"]],
+["TOR",["Red de anonimato con forma de cebolla (sigla)","Muchos nodos corren detrás de ella","The Onion Router (sigla)"]],
+["FIRMWARE",["Software interno de una billetera de hardware","Conviene verificarlo antes de actualizar","Programa grabado en un dispositivo"]],
+["SHAMIR",["Adi ___, la S de RSA","Esquema para partir un secreto en varias partes","Compartir secretos de ___"]],
+["SWAP",["Intercambio entre redes, como de Lightning a la cadena","Atómico si se completa entero o no ocurre","Cambio, en inglés"]],
+["SUBMARINO",["Swap ___: mueve fondos entre la cadena y Lightning","Nave que va bajo el agua","Swap que sumerge fondos en Lightning"]],
+["PREIMAGEN",["Secreto cuyo hash bloquea un pago Lightning","Al revelarla, el pago se completa","Lo que hay antes del hash"]],
+["CEBOLLA",["El enrutamiento de Lightning tiene forma de ___","Capas y capas de cifrado","Tor usa su nombre en inglés"]],
+["BACK",["Adam, creador de Hashcash y citado en el whitepaper","Su firma en la lista cypherpunk: Adam ___","Hoy dirige Blockstream"]],
+["ANTONOPOULOS",["Andreas, autor de Mastering Bitcoin y gran divulgador","Dio la charla \"The Internet of Money\"","Explicó Bitcoin a medio mundo con paciencia de profesor"]],
+["DAI",["Wei, autor de la propuesta b-money","Su b-money aparece en las referencias del whitepaper","Wei ___, criptógrafo de la lista cypherpunk"]],
+["HUGHES",["Eric, autor del Manifiesto Cypherpunk de 1993","\"La privacidad es necesaria para una sociedad abierta\", escribió Eric ___","Cofundó la lista de correo cypherpunk"]],
+["MAY",["Tim, autor del Manifiesto Criptoanarquista","Tim ___, cofundador de los cypherpunks","Mes del Pizza Day, y apellido de un criptoanarquista"]],
+["CHAUM",["David, pionero del dinero electrónico con DigiCash","David ___, padre del dinero electrónico","Inventó las firmas ciegas en los ochenta"]],
+["ANDRESEN",["Gavin, a quien Satoshi le dejó la conducción del proyecto","Gavin ___, primer líder del proyecto después de Satoshi","Creó la canilla de bitcoins gratis de los primeros tiempos"]],
+["MAXWELL",["Gregory, histórico desarrollador de Bitcoin Core","Gregory ___, que propuso CoinJoin","Ideó las transacciones confidenciales"]],
+["WUILLE",["Pieter, coautor de SegWit y Taproot","Pieter ___, de las firmas Schnorr para Bitcoin","Diseñó el formato de direcciones bech32 junto a otros"]],
+["POON",["Joseph, coautor del paper de Lightning","Joseph ___, uno de los dos autores de Lightning","Después propuso Plasma para otra cadena"]],
+["DRYJA",["Thaddeus, coautor del paper de Lightning","Thaddeus ___, el otro autor de Lightning","Investigador del MIT que creó Utreexo"]],
+["SAYLOR",["Michael, que convirtió a su empresa en tesorería en bitcoin","Michael ___, el de los láser en los ojos","Su empresa acumula cientos de miles de bitcoins"]],
+["AMMOUS",["Saifedean, autor de El patrón bitcoin","Saifedean ___, economista de la escuela austríaca","Escribió El patrón fiat después de El patrón bitcoin"]],
+["DORSEY",["Jack, cofundador de Twitter y promotor de Nostr","Jack ___, fundador de Block","Donó millones para desarrollar Nostr"]],
+["LOPP",["Jameson, referente en seguridad y custodia","Jameson ___, cofundador de Casa","Lleva la cuenta de los ataques físicos a bitcoiners"]],
+["MALLERS",["Jack, fundador de Strike","Jack ___, CEO de Strike","Lloró al anunciar en El Salvador la ley de Bitcoin"]],
+["GLADSTEIN",["Alex, que difunde Bitcoin desde la Human Rights Foundation","Alex ___, que muestra a Bitcoin como herramienta contra dictaduras","Organiza el Oslo Freedom Forum"]],
+["HAL",["Nombre de pila de Finney, el primer receptor de bitcoin","___ Finney, criptógrafo y corredor","Nombre del primer en tuitear \"Running bitcoin\""]],
+["RALPH",["Nombre de pila de Merkle, el del árbol","___ Merkle, del árbol de hashes","Nombre de pila de un pionero de la clave pública"]]
 ];
 
 const G_EN = [
-["BITCOIN","Network and money launched in 2009 by a pseudonymous creator"],
-["SATOSHI","Smallest unit of bitcoin, and its creator's first name"],
-["SATS","Short name for the smallest units"],
-["NAKAMOTO","Surname of Bitcoin's anonymous creator"],
-["BLOCK","Batch of transactions added roughly every ten minutes"],
-["CHAIN","What blocks form when linked by their hashes"],
-["BLOCKCHAIN","Public, linked ledger of every transaction"],
-["MINER","Spends energy searching for the next block"],
-["MINING","Securing the network through proof of work"],
-["NODE","Computer that independently enforces the rules"],
-["HALVING","Event every 210,000 blocks that cuts the subsidy in half"],
-["HASH","Fixed-length fingerprint produced by a cryptographic function"],
-["NONCE","Number a miner keeps changing in search of a valid hash"],
-["WALLET","Software or device that manages your keys"],
-["SEED","12 or 24 words that back up your wallet"],
-["KEY","If it's private, never share it"],
-["SIGNATURE","Cryptographic proof that you authorized a spend"],
-["MEMPOOL","Waiting room for unconfirmed transactions"],
-["LIGHTNING","Layer-two network for instant payments"],
-["CHANNEL","What two Lightning nodes open to transact off-chain"],
-["TAPROOT","2021 upgrade that improved privacy and scripting"],
-["SEGWIT","2017 soft fork that separated signatures from transaction data"],
-["SCHNORR","Signature scheme that arrived with Taproot"],
-["MERKLE","Surname of the tree that summarizes a block's transactions"],
-["GENESIS","Name of the first block, mined January 3, 2009"],
-["DIFFICULTY","Parameter that readjusts every 2016 blocks"],
-["SUBSIDY","Newly issued coins a miner earns per block"],
-["FEE","What you pay so a miner includes your transaction"],
-["UTXO","Unspent transaction output (acronym)"],
-["TXID","Unique identifier of a transaction (acronym)"],
-["SCARCITY","Property guaranteed by the 21 million cap"],
-["CONSENSUS","Agreement among nodes on which chain is valid"],
-["SOFTFORK","Backward-compatible rule change (one word)"],
-["HARDFORK","Rule change that breaks compatibility (one word)"],
-["CRYPTOGRAPHY","Science of codes that Bitcoin rests on"],
-["PRIVACY","The Cypherpunk Manifesto calls it necessary for an open society"],
-["CYPHERPUNK","Activist who defends privacy with cryptography"],
-["WHITEPAPER","Nine-page document published in October 2008"],
-["HODL","2013 typo that became a philosophy: don't sell"],
-["CUSTODY","If you don't hold the keys, someone else has this"],
-["MULTISIG","Setup that requires several signatures to spend"],
-["MUSIG","Aggregated multisignature scheme based on Schnorr"],
-["XPUB","Extended public key (short form)"],
-["PSBT","Partially signed Bitcoin transaction (acronym)"],
-["ADDRESS","What you share so someone can send you bitcoin"],
-["TESTNET","Test network where coins are worthless"],
-["ASIC","Chip built only for mining"],
-["POOL","Miners combining hashpower and splitting rewards"],
-["CONFIRMATION","Each block stacked on top of your transaction"],
-["ENERGY","What proof of work turns into security"],
-["INFLATION","Loss of purchasing power of fiat money"],
-["FIAT","Money by decree"],
-["GOLD","Metal Bitcoin is often compared to"],
-["MONEY","Bitcoin aims to be the soundest kind"],
-["SOVEREIGNTY","What you gain by controlling your own keys"],
-["FINNEY","Hal, who received the first Bitcoin transaction"],
-["SZABO","Nick, the cryptographer who proposed Bit Gold"],
-["HASHCASH","Adam Back's anti-spam system that inspired proof of work"],
-["BITGOLD","Nick Szabo's precursor to Bitcoin (one word)"],
-["PIZZA","Food bought for 10,000 BTC in May 2010"],
-["LASZLO","First name of the programmer who paid for it"],
-["NOSTR","Decentralized messaging protocol popular with bitcoiners"],
-["ZAP","Sats tip sent over Lightning, common on Nostr"],
-["COINJOIN","Technique that merges several users' payments into one transaction"],
-["PAYJOIN","Transaction where both payer and receiver contribute inputs"],
-["SCRIPT","Simple language that defines spending conditions"],
-["TIMELOCK","Lock that prevents spending until a time or block height"],
-["EXCHANGE","Marketplace to buy and sell bitcoin"],
-["KYC","Identity-check acronym that exchanges require"],
-["PASSPHRASE","Optional extra word added to a seed"],
-["WATCHTOWER","Service that monitors your Lightning channels for you"],
-["QR","Code you scan to pay"],
-["SIDECHAIN","Separate chain pegged to Bitcoin"],
-["LIQUID","Federated sidechain launched by Blockstream"],
-["ORDINALS","Protocol that numbers every satoshi"],
-["TIMESTAMP","Bitcoin works as a distributed ___ server"],
-["LEDGER","Bitcoin is a public one"],
-["TRUST","What Bitcoin replaces with verification"],
-["VERIFY","What you do instead of trusting"],
-["ISSUANCE","Fixed, predictable schedule of new coins"],
-["MILLION","Twenty-one ___: the supply cap"],
-["BANKS","Who the chancellor was about to bail out, per the genesis block"],
-["TIMES","Newspaper whose headline is embedded in the genesis block"],
-["CHANCELLOR","Office named in the genesis block headline"],
-["BAILOUT","The second one was on the brink, per that headline"],
-["CASH","Peer-to-peer electronic ___ system"],
-["ELECTRONIC","Peer-to-peer ___ cash system"],
-["PEER","___-to-___: the architecture in the whitepaper's title"],
-["BIP","Bitcoin Improvement Proposal (acronym)"],
-["WORDS","A BIP39 seed is made of 12 or 24 of these"],
-["COLD","___ storage: keys that never touch the internet"],
-["HARDWARE","Kind of wallet that keeps keys offline"],
-["STACK","To accumulate sats bit by bit"],
-["DCA","Strategy of buying fixed amounts on a schedule (acronym)"],
-["ATH","All-time high (acronym)"],
-["FUD","Fear, uncertainty and doubt (acronym)"],
-["PLEBS","What everyday bitcoiners call themselves"],
-["HUMBLE","Stay ___, stack sats"],
-["PREFERENCE","Low time ___: valuing the future more"],
-["TICK","___ tock, next block"],
-["MAXI","Bitcoiner who believes only in Bitcoin (short)"],
-["ALTCOIN","Any cryptocurrency that isn't bitcoin"],
-["OPRETURN","Opcode that lets you embed data in a transaction (one word)"],
-["LABITCONF","Oldest active Bitcoin conference in the world"],
-["SUPPLY","Fixed ___: never more than 21 million"],
-["VOLATILITY","Sharp swings in price"],
-["DIVISIBLE","Bitcoin is, down to eight decimal places"],
-["FUNGIBLE","Every unit is interchangeable with any other"],
-["AUDITABLE","Anyone running a node can check the total supply"],
-["CENSORSHIP","___ resistance: no one can block your transaction"],
-["PERMISSION","Using Bitcoin doesn't require asking for it"],
-["BORDERS","Bitcoin crosses them without authorization"],
-["HYPE","Exaggerated market euphoria"],
-["QUANTUM","Kind of computing some fear could break today's signatures"]
+["BITCOIN",["Network and money launched in 2009 by a pseudonymous creator","Digital money with no central bank and no owner","The first money network that needs no middlemen"]],
+["SATOSHI",["Smallest unit of bitcoin, and its creator's first name","A hundred million of these make one bitcoin","Pseudonym of whoever signed the whitepaper"]],
+["SATS",["Short name for the smallest units","What stackers accumulate a little at a time","Lightning amounts are usually counted in these"]],
+["NAKAMOTO",["Surname of Bitcoin's anonymous creator","Satoshi ___, an author who never revealed who they were","Japanese-sounding surname that signed the original code"]],
+["BLOCK",["Batch of transactions added roughly every ten minutes","Each one carries the hash of the one before","Its limited size makes transactions compete to get in"]],
+["CHAIN",["What blocks form when linked by their hashes","Bitcoin follows the one with the most work","Change one link and every link after it breaks"]],
+["BLOCKCHAIN",["Public, linked ledger of every transaction","Buzzword Satoshi never wrote as one word in the whitepaper","A database that only grows and nobody erases"]],
+["MINER",["Spends energy searching for the next block","Orders transactions and collects fees","Burns electricity competing to seal the next block"]],
+["MINING",["Securing the network through proof of work","Turning electricity into security","What ASIC machines do day and night"]],
+["NODE",["Computer that independently enforces the rules","Running one means trusting no one","Keeps a copy of the chain and rejects anything that breaks the rules"]],
+["HALVING",["Event every 210,000 blocks that cuts the subsidy in half","Happens roughly every four years","The 2024 one cut the subsidy to 3.125 BTC"]],
+["HASH",["Fixed-length fingerprint produced by a cryptographic function","SHA-256 produces a 256-bit one","Change one comma and it changes completely"]],
+["NONCE",["Number a miner keeps changing in search of a valid hash","Number used once, in crypto slang","32-bit header field miners try over and over"]],
+["WALLET",["Software or device that manages your keys","It doesn't store coins, it stores the keys to move them","Hot if it's online, cold if it isn't"]],
+["SEED",["12 or 24 words that back up your wallet","Lose it and break your device, and the funds are gone","With it you can rebuild every key in another wallet"]],
+["KEY",["If it's private, never share it","Public to receive, private to sign","Not your ___s, not your coins"]],
+["SIGNATURE",["Cryptographic proof that you authorized a spend","Made with the private key, checked by anyone","Schnorr and ECDSA are two kinds of this proof"]],
+["MEMPOOL",["Waiting room for unconfirmed transactions","When it fills up, fees go up","Each node keeps its own set of transactions waiting for a block"]],
+["LIGHTNING",["Layer-two network for instant payments","Pays in seconds with tiny fees","Network of payment channels built on top of Bitcoin"]],
+["CHANNEL",["What two Lightning nodes open to transact off-chain","Opened and closed with on-chain transactions","Many of these linked together make the instant payment network"]],
+["TAPROOT",["2021 upgrade that improved privacy and scripting","Makes complex contracts look like ordinary payments","Soft fork that brought Schnorr signatures"]],
+["SEGWIT",["2017 soft fork that separated signatures from transaction data","Fixed malleability and paved the way for Lightning","Segregated witness, shortened"]],
+["SCHNORR",["Signature scheme that arrived with Taproot","Claus ___, cryptographer behind a signature scheme","Compact signatures that can be aggregated"]],
+["MERKLE",["Surname of the tree that summarizes a block's transactions","Ralph ___, a public-key cryptography pioneer","A ___ tree proves a transaction is in a block"]],
+["GENESIS",["Name of the first block, mined January 3, 2009","The only block that points to no previous block","Carries a Times headline in its coinbase"]],
+["DIFFICULTY",["Parameter that readjusts every 2016 blocks","Goes up when more hashpower joins the network","Keeps blocks coming about every ten minutes"]],
+["SUBSIDY",["Newly issued coins a miner earns per block","Today it's 3.125 BTC per block","It halves every four years or so"]],
+["FEE",["What you pay so a miner includes your transaction","Paid for block space, not for the amount sent","Measured in sats per vbyte"]],
+["UTXO",["Unspent transaction output (acronym)","Wallets build payments by combining several of these (acronym)","Bitcoin uses these outputs instead of accounts (acronym)"]],
+["TXID",["Unique identifier of a transaction (acronym)","The hash that identifies each transaction (acronym)","Look it up in an explorer to see if your payment confirmed (acronym)"]],
+["SCARCITY",["Property guaranteed by the 21 million cap","What makes gold valuable, and Bitcoin even more so","No one can print more: that guarantees its ___"]],
+["CONSENSUS",["Agreement among nodes on which chain is valid","The rules every node enforces the same way","What breaks when two groups validate different rules"]],
+["SOFTFORK",["Backward-compatible rule change (one word)","How SegWit and Taproot were activated (one word)","Tightens the rules without kicking out old nodes (one word)"]],
+["HARDFORK",["Rule change that breaks compatibility (one word)","How Bitcoin Cash was born in 2017 (one word)","Old nodes reject the new blocks (one word)"]],
+["CRYPTOGRAPHY",["Science of codes that Bitcoin rests on","Hashes and digital signatures belong to it","The art of secret writing, from Greek"]],
+["PRIVACY",["The Cypherpunk Manifesto calls it necessary for an open society","It's not hiding something bad, it's choosing what to show","CoinJoin and Lightning help protect it"]],
+["CYPHERPUNK",["Activist who defends privacy with cryptography","The mailing-list crowd where Bitcoin was born","They write code to defend freedom"]],
+["WHITEPAPER",["Nine-page document published in October 2008","Bitcoin: A Peer-to-Peer Electronic Cash System","The technical paper Satoshi sent to a mailing list"]],
+["HODL",["2013 typo that became a philosophy: don't sell","Holding no matter what happens","Often read as Hold On for Dear Life"]],
+["CUSTODY",["If you don't hold the keys, someone else has this","An exchange offers theirs; you can do your own","Responsibility for keeping the keys"]],
+["MULTISIG",["Setup that requires several signatures to spend","Two of three, for example, to move funds","Great for companies, families or inheritance"]],
+["MUSIG",["Aggregated multisignature scheme based on Schnorr","Protocol that makes several signatures look like one","Schnorr multisig that saves space and adds privacy"]],
+["XPUB",["Extended public key (short form)","Shows your addresses but can't spend (short form)","You give it to a watch-only wallet (short form)"]],
+["PSBT",["Partially signed Bitcoin transaction (acronym)","Format for signing across several devices (acronym)","Half-signed transaction passed from wallet to wallet (acronym)"]],
+["ADDRESS",["What you share so someone can send you bitcoin","Best to use a new one for every payment","Starts with bc1 in modern formats"]],
+["TESTNET",["Practice network where coins are worthless","Perfect for practicing without risking money","Its coins are handed out by faucets"]],
+["ASIC",["Chip built only for mining","Application-specific integrated circuit (acronym)","Replaced graphics cards in mining (acronym)"]],
+["POOL",["Miners combining hashpower and splitting rewards","Shares the reward according to work contributed","Smooths out variance for small miners"]],
+["CONFIRMATION",["Each block stacked on top of your transaction","Six of them is considered very safe","Zero means it's still in the mempool"]],
+["ENERGY",["What proof of work turns into security","Mining looks for the cheapest, often stranded","Watts turned into security"]],
+["INFLATION",["Loss of purchasing power of fiat money","What the 21 million cap prevents","When prices rise because money is printed"]],
+["FIAT",["Money by decree","Peso, dollar or euro: they all are","Money a government imposes by law"]],
+["GOLD",["Metal Bitcoin is often compared to","Bitcoin is called the digital version of it","Scarce, durable and hard to extract, like Bitcoin"]],
+["MONEY",["Bitcoin aims to be the soundest kind","Medium of exchange, unit of account and store of value","Bitcoin is ___ without a state"]],
+["SOVEREIGNTY",["What you gain by controlling your own keys","Financial ___: no one can freeze your funds","Being your own bank is a form of it"]],
+["FINNEY",["Hal, who received the first Bitcoin transaction","Hal ___ tweeted \"Running bitcoin\" in 2009","Surname of Bitcoin's first user after Satoshi"]],
+["SZABO",["Nick, the cryptographer who proposed Bit Gold","Nick ___ coined the term smart contract","His Bit Gold proposal came years before Bitcoin"]],
+["HASHCASH",["Adam Back's anti-spam system that inspired proof of work","1997 proof of work cited in the whitepaper","Adam Back's idea to stop spam"]],
+["BITGOLD",["Nick Szabo's precursor to Bitcoin (one word)","1998 proposal combining proof of work and scarcity (one word)","Szabo's idea that preceded Bitcoin (one word)"]],
+["PIZZA",["Food bought for 10,000 BTC in May 2010","May 22 is its day in the bitcoin world","Two of these cost ten thousand bitcoins"]],
+["LASZLO",["First name of the programmer who paid for it","___ Hanyecz, hero of Bitcoin Pizza Day","Also a pioneer of GPU mining"]],
+["NOSTR",["Decentralized messaging protocol popular with bitcoiners","Notes and relays: a social network with no owner","Jack Dorsey backed it with donations"]],
+["ZAP",["Sats tip sent over Lightning, common on Nostr","A like on Nostr that's worth sats","Quick payment of a few sats to a post"]],
+["COINJOIN",["Technique that merges several users' payments into one transaction","Mixes coins without handing them to anyone","Makes funds harder to trace"]],
+["PAYJOIN",["Transaction where both payer and receiver contribute inputs","Breaks the assumption that all inputs belong to one owner","CoinJoin between payer and payee"]],
+["SCRIPT",["Simple language that defines spending conditions","Stack-based and deliberately limited","Pay to Public Key Hash is an example of this language"]],
+["TIMELOCK",["Lock that prevents spending until a time or block height","Used for inheritance and payment channels","Spend-later lock written into a script"]],
+["EXCHANGE",["Marketplace to buy and sell bitcoin","Where fiat is swapped for bitcoin","If you leave your funds there, they're not really yours"]],
+["KYC",["Identity-check acronym that exchanges require","Know Your Customer (acronym)","They ask for your ID and a selfie (acronym)"]],
+["PASSPHRASE",["Optional extra word added to a seed","Also called the 25th word","Forget it, and the seed alone won't open the wallet"]],
+["WATCHTOWER",["Service that monitors your Lightning channels for you","Punishes cheating channel closes while you're away","Protects you if your Lightning node is offline"]],
+["QR",["Code you scan to pay","Black-and-white square that holds an address","Scan it with your camera to pay over Lightning"]],
+["SIDECHAIN",["Separate chain pegged to Bitcoin","Parallel chain you move bitcoin to with a peg","Liquid and Rootstock are examples"]],
+["LIQUID",["Federated sidechain launched by Blockstream","Federated network with confidential transactions","Its L-BTC moves in one-minute blocks"]],
+["ORDINALS",["Protocol that numbers every satoshi","Image inscriptions on bitcoin","Casey Rodarmor's theory for tracking individual sats"]],
+["TIMESTAMP",["Bitcoin works as a distributed ___ server","Proof that something existed at a given time","Bitcoin is a distributed ___ server"]],
+["LEDGER",["Bitcoin is a public one","An accounting record anyone can audit","Book of accounts, also a hardware wallet brand"]],
+["TRUST",["What Bitcoin replaces with verification","Don't ___, verify","What Satoshi criticized central banks for demanding"]],
+["VERIFY",["What you do instead of trusting","Don't trust, ___","What a node does with every new block"]],
+["ISSUANCE",["Fixed, predictable schedule of new coins","Halves every four years","Will end around the year 2140"]],
+["MILLION",["Twenty-one ___: the supply cap","Twenty-one ___ bitcoins, not one more","A thousand thousand"]],
+["BANKS",["Who the chancellor was about to bail out, per the genesis block","Bitcoin was born as an alternative to them","Those bailed out in the 2008 crisis"]],
+["TIMES",["Newspaper whose headline is embedded in the genesis block","The ___ 03/Jan/2009, start of the genesis message","British newspaper quoted by Satoshi"]],
+["CHANCELLOR",["Office named in the genesis block headline","___ on brink of second bailout for banks","The UK's finance minister"]],
+["BAILOUT",["The second one was on the brink, per that headline","What banks get when they're saved with public money","Rescue, in finance jargon"]],
+["CASH",["Peer-to-peer electronic ___ system","Bitcoin wanted to be like this, but digital","Notes in hand, no middlemen"]],
+["ELECTRONIC",["Peer-to-peer ___ cash system","Peer-to-peer ___ cash","Digital, not paper"]],
+["PEER",["___-to-___: the architecture in the whitepaper's title","An equal you connect to directly","Each node is one in the network"]],
+["BIP",["Bitcoin Improvement Proposal (acronym)","Number 39 of these defines the seed words (acronym)","How changes to Bitcoin are proposed (acronym)"]],
+["WORDS",["A BIP39 seed is made of 12 or 24 of these","There are 2048 in the official list","What you write down on paper or steel"]],
+["COLD",["___ storage: keys that never touch the internet","___ wallet: never connected to the internet","Opposite of hot, for storing keys"]],
+["HARDWARE",["Kind of wallet that keeps keys offline","___ wallet: a device dedicated to signing","The physical side, as opposed to software"]],
+["STACK",["To accumulate sats bit by bit","Add sats to the pile every month","What you do buying a little every week"]],
+["DCA",["Strategy of buying fixed amounts on a schedule (acronym)","Dollar-cost averaging (acronym)","Buying the same amount regardless of price (acronym)"]],
+["ATH",["All-time high (acronym)","New ___: the price has never been higher (acronym)","Highest price ever recorded (acronym)"]],
+["FUD",["Fear, uncertainty and doubt (acronym)","Rumors meant to scare (acronym)","Fear, Uncertainty and Doubt (acronym)"]],
+["PLEBS",["What everyday bitcoiners call themselves","Ordinary bitcoiners, no whales or gurus","Regular folks running their own node"]],
+["HUMBLE",["Stay ___, stack sats","How to stay when the price goes up","Stay ___ and keep stacking"]],
+["PREFERENCE",["Low time ___: valuing the future more","Low time ___: saving instead of spending","Time ___ measures how much you value now over later"]],
+["TICK",["___ tock, next block","Sound of the clock with every block","The ___ tock of a new block"]],
+["MAXI",["Bitcoiner who believes only in Bitcoin (short)","Maximalist, for short","For them, everything else is noise"]],
+["ALTCOIN",["Any cryptocurrency that isn't bitcoin","Alternative coin that usually copies bitcoin","Shitcoin is its less polite name"]],
+["OPRETURN",["Opcode that lets you embed data in a transaction (one word)","Unspendable output that stores data (one word)","Used to write messages into the chain (one word)"]],
+["LABITCONF",["Oldest active Bitcoin conference in the world","Born in Buenos Aires in 2013","Latin American Bitcoin and blockchain conference (one word)"]],
+["SUPPLY",["Fixed ___: never more than 21 million","Bitcoin's doesn't respond to demand","Total ___: 21 million"]],
+["VOLATILITY",["Sharp swings in price","What scares people who check the price daily","It shrinks as the market grows"]],
+["DIVISIBLE",["Bitcoin is, down to eight decimal places","Can be split down to the satoshi","Paying for coffee in bitcoin works because it's ___"]],
+["FUNGIBLE",["Every unit is interchangeable with any other","One bitcoin is worth the same as another","What's questioned when coins get tainted"]],
+["AUDITABLE",["Anyone running a node can check the total supply","Anyone can verify how many exist","Bitcoin's books are public and ___"]],
+["CENSORSHIP",["___ resistance: no one can block your transaction","What frozen bank accounts suffer","No one can stop your payment: ___ resistance"]],
+["PERMISSION",["Using Bitcoin doesn't require asking for it","Bitcoin is a network without it","You don't need it to open a wallet"]],
+["BORDERS",["Bitcoin crosses them without authorization","Your sats travel with you in your memory, across these","Sending bitcoin abroad doesn't require crossing them"]],
+["HYPE",["Exaggerated market euphoria","What rises fast and deflates","Enthusiasm inflated by social media"]],
+["QUANTUM",["Kind of computing some fear could break today's signatures","___ computing: a threat that's still theoretical","Physics of qubits"]],
+["PROTOCOL",["Set of rules every node follows","Bitcoin is an open ___, not a company","Defines how the network's computers talk"]],
+["CODE",["Bitcoin's is open and anyone can read it","___ is law, some say","What developers write on GitHub"]],
+["NETWORK",["Thousands of connected nodes form it","Bitcoin is a peer-to-peer ___","Lightning is a ___ on top of Bitcoin"]],
+["TRANSACTION",["Moves bitcoins from some outputs to others","Signed, broadcast, then waits for a block","Has inputs, outputs and a fee"]],
+["INPUT",["Part of a transaction that spends a previous output","Each one needs its own signature","What goes in, as opposed to output"]],
+["OUTPUT",["What a transaction creates for someone to spend later","An unspent one is a UTXO","What comes out, as opposed to input"]],
+["CHANGE",["What comes back to your wallet when you overspend","An output you send to yourself","Pay with a big UTXO and you get some"]],
+["BALANCE",["Sum of your unspent outputs","What the wallet shows at the top","How much you have available"]],
+["PAYMENT",["With Lightning it arrives in seconds","What you make when you scan a QR","Income for one side, ___ for the other"]],
+["INVOICE",["Lightning payment request starting with lnbc","Has an amount, a memo and an expiry","What you send to get paid on Lightning"]],
+["ROUTE",["Path of channels a Lightning payment travels","No ___ with liquidity, no payment","Finding it is the paying node's job"]],
+["LIQUIDITY",["Capacity available in a channel to send or receive","Without inbound ___ you can't receive on Lightning","What nodes shuffle so payments flow"]],
+["LAYER",["Lightning is the second one","Built one on top of another to scale","Bitcoin is the base one"]],
+["FEDIMINT",["Ecash protocol guarded by a federation","Community guardians custody the funds in this system","Federated ecash aimed at privacy and communities"]],
+["ECASH",["Digital cash with blind signatures, Chaum style","Anonymous tokens backed by sats","Fedimint and Cashu are examples"]],
+["CASHU",["Ecash protocol with a single mint","Ecash named like a nut","Its tokens can be sent as plain text"]],
+["BACKUP",["What you make when you write down your seed","Without one, losing your phone means losing your funds","Spare copy kept just in case"]],
+["STEEL",["Plates of it survive fire and flood","Better than paper for storing a seed","Metal for indestructible seed backups"]],
+["ENTROPY",["Randomness that makes a good seed","If it's low, your keys can be guessed","Measure of disorder in physics and cryptography"]],
+["DICE",["Some roll them to generate their own seed","Six-sided homemade entropy","99 rolls of these make a strong key"]],
+["CHECKSUM",["The last seed word includes one","Catches typos when copying an address","Check value computed from data"]],
+["DERIVATION",["Path from the seed to each address","___ path: m/84'/0'/0'","HD wallets generate keys by ___"]],
+["PUBLIC",["A key you can show safely","Your address comes from this key","Opposite of private"]],
+["PRIVATE",["A key you must never share","The key that signs","Opposite of public"]],
+["CURVE",["secp256k1 is an elliptic one","Math shape signatures are built on","A line that isn't straight"]],
+["ORACLE",["External source that feeds data to a contract","Reports a price or result to settle a bet","The one at Delphi gave prophecies"]],
+["VAULT",["Setup that delays withdrawals to stop thieves","Where the most valuable things are kept","OP_ ___ is a proposal for this kind of protection"]],
+["COVENANT",["Proposal to restrict where funds can go","CTV and OP_VAULT are part of this debate","A binding promise"]],
+["REORG",["When the chain switches to one with more work (short)","When recent blocks get dropped for another branch","Why waiting for confirmations is wise"]],
+["ORPHAN",["Valid block left out of the chain","Child with no parents","Two miners found one at once and this one lost"]],
+["HEADER",["80 bytes that miners hash","Top part of a block","Summary at the start of a block, like a letterhead"]],
+["HEIGHT",["Number of blocks since genesis","Block ___ 840,000: the fourth halving","Vertical measure, also of the chain"]],
+["EPOCH",["2016 blocks between difficulty adjustments","Each lasts about two weeks","Era or period of time"]],
+["ADJUSTMENT",["Difficulty ___ happens every 2016 blocks","Automatic correction that keeps block pace","What the network does when hashpower changes"]],
+["HASHRATE",["Total computing power of the network","Measured in exahashes per second","The higher it is, the costlier an attack"]],
+["COINBASE",["First transaction of each block, the one that mints coins","Its free field held the genesis headline","Also the name of a famous exchange"]],
+["CORE",["Bitcoin ___: the most used node software","The center of something","Its repository has hundreds of contributors"]],
+["KNOTS",["Bitcoin Core variant maintained by Luke Dashjr","Node implementation with stricter mempool policy","Tied in rope, or speed at sea"]],
+["PSEUDONYM",["Satoshi Nakamoto is one","Made-up name to sign with","Bitcoin isn't anonymous, it's ___ous"]],
+["ANONYMITY",["Bitcoin doesn't guarantee it: transactions are public","The quality of having no name","What you give up with KYC"]],
+["SURVEILLANCE",["What central bank digital currencies make easy","Control that privacy tries to avoid","Big Brother's specialty"]],
+["CBDC",["Central bank digital currency (acronym)","Programmable money a state can monitor (acronym)","The digital yuan is one (acronym)"]],
+["DEVALUATION",["When your currency is worth less overnight","Argentines know it all too well","Loss of value against other currencies"]],
+["DOLLAR",["Safe-haven currency for many Argentines","The blue is its informal rate","Greenback often used as bitcoin's price reference"]],
+["SAVINGS",["Bitcoin is good for these in the long run","What inflation eats","Money put aside for the future"]],
+["REMITTANCE",["Money a migrant sends home","With Lightning it costs cents to send","Cross-border transfer to family"]],
+["ADOPTION",["When more people use bitcoin","El Salvador made it legal tender: a milestone of this","Bringing in new users"]],
+["COMMERCE",["Shops accepting bitcoin at the register","Exchange of goods for money","Paying at a store with Lightning is already possible"]],
+["MARKET",["Where the price is formed","Bull ___ or bear ___","Where people buy and sell"]],
+["BULL",["Symbol of a rising market","Charges upward with its horns","___ run: a long price rally"]],
+["BEAR",["Symbol of a falling market","Swipes downward with its paws","___ market: the long winter"]],
+["WHALE",["Someone holding a huge amount of bitcoin","Their moves can shift the price","The largest animal in the sea"]],
+["MOON",["To the ___!","Where the price goes when it pumps","Earth's natural satellite"]],
+["STABLECOIN",["Token pegged to the dollar","The opposite of volatile, as a coin","USDT and USDC are examples"]],
+["CUSTODIAN",["Someone who holds your keys for you","An exchange acts as one","A guardian or keeper"]],
+["SELFCUSTODY",["Holding your own keys (one word)","Being your own bank (one word)","The opposite of leaving coins on an exchange (one word)"]],
+["MICROPAYMENT",["A few-sats payment Lightning makes possible","Paying per article instead of subscribing","A tiny transaction"]],
+["MEETUP",["Local gathering of bitcoiners","Informal get-together with pizza and nodes","Where you learn from other bitcoiners in person"]],
+["COMMUNITY",["Bitcoin has one worldwide, with no leader","Group sharing an interest","Argentina's is one of the most active"]],
+["MEMORY",["Brain wallet: the seed kept in your ___","What Lost Seed trains","Ability to remember"]],
+["INHERITANCE",["Plan so your kids receive your bitcoin","Multisig and timelocks help plan it","What heirs receive"]],
+["RESILIENCE",["The network's ability to keep running under attack","Bitcoin survived bans and crashes thanks to it","Bouncing back from adversity"]],
+["IMMUTABLE",["What's in the chain can't be changed","Quality of the transaction history","Unchangeable"]],
+["NEUTRAL",["Bitcoin doesn't discriminate: it's ___ money","Takes no side","Neither for nor against"]],
+["CLOCK",["Bitcoin works as a decentralized one","Each block is one of its ticks","Instrument for telling time"]],
+["EXPLORER",["Website to look up transactions and blocks","Mempool.space is one","Someone who travels the unknown"]],
+["DUST",["Outputs so small they aren't worth spending","What piles up on furniture","Tiny leftover amounts"]],
+["CONSOLIDATE",["Merge many small outputs into one","Best done when fees are low","Combine and strengthen"]],
+["LABEL",["Note you attach to an address or payment","Helps privacy when choosing coins","Tag on a product"]],
+["SIGNET",["Test network with signed blocks","A more predictable testnet for developers","Test network where a signer approves blocks"]],
+["TOR",["Anonymity network shaped like an onion","Many nodes run behind it","The Onion Router (acronym)"]],
+["FIRMWARE",["Internal software of a hardware wallet","Verify it before updating","Program burned into a device"]],
+["SHAMIR",["Adi ___, the S in RSA","Scheme to split a secret into parts","___'s secret sharing"]],
+["SWAP",["Exchange between networks, like Lightning to on-chain","Atomic if it either fully completes or never happens","Trade one thing for another"]],
+["SUBMARINE",["___ swap: moves funds between chain and Lightning","Vessel that travels underwater","Swap that dives funds into Lightning"]],
+["PREIMAGE",["Secret whose hash locks a Lightning payment","Revealing it completes the payment","What comes before the hash"]],
+["ONION",["Lightning routing is shaped like one","Layers upon layers of encryption","Tor is named after it"]],
+["RESERVE",["Store of value meant to be held for years","Some countries consider bitcoin for theirs","Something kept back for later"]],
+["LEVERAGE",["Borrowing to bet bigger, often ending in liquidation","What turns a dip into a wipeout","Using debt to amplify a position"]],
+["SPEND",["What you do with an output once","Double ___: the problem Bitcoin solved","Use money to pay"]],
+["BROADCAST",["Sending a signed transaction to the network","What a node does to relay a transaction","Transmit to everyone"]],
+["TIMECHAIN",["Satoshi's name for what others call the blockchain","A chain of timestamps (one word)","Bitcoiners prefer this term to blockchain"]],
+["DISTRIBUTED",["Spread across thousands of nodes","No single point of failure","Shared out among many"]],
+["PATIENCE",["What hodlers need most","Virtue of waiting through bear markets","Low time preference requires it"]],
+["BITCOINER",["Someone who uses, studies or builds on bitcoin","What a pleb calls themselves","Fan of orange money"]],
+["BACK",["Adam, creator of Hashcash, cited in the whitepaper","His Hashcash proof of work is in the whitepaper's references","Adam ___ now runs Blockstream"]],
+["ANTONOPOULOS",["Andreas, author of Mastering Bitcoin and tireless educator","Gave the talks collected in The Internet of Money","Explained Bitcoin to the world with a teacher's patience"]],
+["DAI",["Wei, author of the b-money proposal","His b-money is in the whitepaper's references","Wei ___, cryptographer on the cypherpunk list"]],
+["HUGHES",["Eric, author of A Cypherpunk's Manifesto (1993)","\"Privacy is necessary for an open society,\" wrote Eric ___","Co-founded the cypherpunk mailing list"]],
+["MAY",["Tim, author of The Crypto Anarchist Manifesto","Tim ___, cypherpunk co-founder","Month of Pizza Day, and a crypto anarchist's surname"]],
+["CHAUM",["David, electronic cash pioneer behind DigiCash","Invented blind signatures in the eighties","David ___, father of digital cash"]],
+["ANDRESEN",["Gavin, to whom Satoshi handed the project's lead","Gavin ___, first project lead after Satoshi","Built the early faucet that gave away free bitcoins"]],
+["MAXWELL",["Gregory, longtime Bitcoin Core developer","Gregory ___, who proposed CoinJoin","Came up with confidential transactions"]],
+["WUILLE",["Pieter, co-author of SegWit and Taproot","Pieter ___, who brought Schnorr signatures to Bitcoin","Co-designed the bech32 address format"]],
+["POON",["Joseph, co-author of the Lightning paper","Joseph ___, one of Lightning's two authors","Later proposed Plasma for another chain"]],
+["DRYJA",["Thaddeus, co-author of the Lightning paper","Thaddeus ___, Lightning's other author","MIT researcher who created Utreexo"]],
+["SAYLOR",["Michael, who turned his company into a bitcoin treasury","Michael ___, of laser-eyes fame","His company holds hundreds of thousands of bitcoins"]],
+["AMMOUS",["Saifedean, author of The Bitcoin Standard","Saifedean ___, Austrian-school economist","Followed his bestseller with The Fiat Standard"]],
+["DORSEY",["Jack, Twitter co-founder and Nostr backer","Jack ___, founder of Block","Donated millions to build Nostr"]],
+["LOPP",["Jameson, go-to voice on security and custody","Jameson ___, Casa co-founder","Keeps a list of physical attacks on bitcoiners"]],
+["MALLERS",["Jack, founder of Strike","Jack ___, CEO of Strike","Teared up announcing El Salvador's Bitcoin law"]],
+["GLADSTEIN",["Alex, who champions Bitcoin at the Human Rights Foundation","Alex ___, who shows Bitcoin as a tool against dictatorships","Runs the Oslo Freedom Forum"]],
+["HAL",["Finney's first name, the first bitcoin recipient","___ Finney, cryptographer and runner","First name of who tweeted \"Running bitcoin\""]],
+["RALPH",["Merkle's first name, of tree fame","___ Merkle, of hash tree fame","First name of a public-key cryptography pioneer"]]
 ];
 
 const PHRASES = {
@@ -1067,7 +1308,32 @@ const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floo
 const $ = id => document.getElementById(id);
 const fmt = ms => { const s=Math.round(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
 // cada entrada es [PALABRA, pista] o [PALABRA, [pista1, pista2, ...]]: si hay varias, se elige una al azar en cada partida
-const gloss = () => (lang==="en" ? G_EN : G_ES).map(([w,c])=>[w, Array.isArray(c) ? c[Math.floor(Math.random()*c.length)] : c]);
+// Pistas: cada una tiene un código "palabra.pista" ("2.3" = palabra 2, pista 3), por idioma.
+// seen: las que este jugador ya vio (se guardan en su ficha); use: cuántas veces las vieron todos (colección clueuse).
+// Partida normal: primero una pista que el jugador no vio, y entre esas la menos usada.
+// Partida de invitación (duel): primero la menos usada por todos, y se prefieren las palabras menos vistas.
+const CLUES={ seen:{es:new Set(),en:new Set()}, use:{es:{},en:{}}, duel:false, trimWords:false, byText:{es:new Map(),en:new Map()} };
+["es","en"].forEach(L=>(L==="en"?G_EN:G_ES).forEach(([w,cs],i)=>cs.forEach((c,j)=>CLUES.byText[L].set(c,`${i+1}.${j+1}`))));
+const clueKey=id=>"c"+id.replace(".","_");
+const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
+// devuelve [palabra, pista elegida, código, todas sus pistas]
+const gloss = () => {
+  const L=lang, seen=CLUES.seen[L];
+  let list=(L==="en" ? G_EN : G_ES).map(([w,cs],i)=>{
+    const ids=cs.map((_,j)=>`${i+1}.${j+1}`);
+    const sc=ids.map(id=>{ const u=clueUse(L,id), s=seen.has(id)?1:0; return (CLUES.duel ? u*2+s : s*1e6+u) + Math.random()*0.9; });
+    const j=sc.indexOf(Math.min(...sc));
+    return [w, cs[j], ids[j], cs, ids.reduce((a,id)=>a+clueUse(L,id),0)];
+  });
+  // en las invitaciones se dejan afuera las palabras más vistas (el acróstico necesita todas para armar la frase)
+  if(CLUES.duel && CLUES.trimWords) list=list.map(x=>[x,x[4]+Math.random()*0.9]).sort((a,b)=>a[1]-b[1]).slice(0,Math.ceil(list.length*0.6)).map(x=>x[0]);
+  return list;
+};
+// códigos de las pistas que aparecen en una partida (busca los textos dentro de sus datos)
+function cluesIn(d, L){
+  const ids=new Set(), walk=v=>{ if(typeof v==="string"){ const id=CLUES.byText[L].get(v); if(id) ids.add(id); } else if(v && typeof v==="object") Object.values(v).forEach(walk); };
+  walk(d); return [...ids];
+}
 const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
 
 let lang = store.get("rodo-lang")==="en" ? "en" : "es";
@@ -1595,51 +1861,6 @@ const Sopa = (()=>{
   return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
 })();
 
-// =====================================================================
-// PERSONAJES (se suman a los glosarios)
-// =====================================================================
-G_ES.push(
-["BACK","Adam, creador de Hashcash y citado en el whitepaper"],
-["ANTONOPOULOS","Andreas, autor de Mastering Bitcoin y gran divulgador"],
-["DAI","Wei, autor de la propuesta b-money"],
-["HUGHES","Eric, autor del Manifiesto Cypherpunk de 1993"],
-["MAY","Tim, autor del Manifiesto Criptoanarquista"],
-["CHAUM","David, pionero del dinero electrónico con DigiCash"],
-["ANDRESEN","Gavin, a quien Satoshi le dejó la conducción del proyecto"],
-["MAXWELL","Gregory, histórico desarrollador de Bitcoin Core"],
-["WUILLE","Pieter, coautor de SegWit y Taproot"],
-["POON","Joseph, coautor del paper de Lightning"],
-["DRYJA","Thaddeus, coautor del paper de Lightning"],
-["SAYLOR","Michael, que convirtió a su empresa en tesorería en bitcoin"],
-["AMMOUS","Saifedean, autor de El patrón bitcoin"],
-["DORSEY","Jack, cofundador de Twitter y promotor de Nostr"],
-["LOPP","Jameson, referente en seguridad y custodia"],
-["MALLERS","Jack, fundador de Strike"],
-["GLADSTEIN","Alex, que difunde Bitcoin desde la Human Rights Foundation"],
-["HAL","Nombre de pila de Finney, el primer receptor de bitcoin"],
-["RALPH","Nombre de pila de Merkle, el del árbol"]
-);
-G_EN.push(
-["BACK","Adam, creator of Hashcash, cited in the whitepaper"],
-["ANTONOPOULOS","Andreas, author of Mastering Bitcoin and tireless educator"],
-["DAI","Wei, author of the b-money proposal"],
-["HUGHES","Eric, author of A Cypherpunk's Manifesto (1993)"],
-["MAY","Tim, author of The Crypto Anarchist Manifesto"],
-["CHAUM","David, electronic cash pioneer behind DigiCash"],
-["ANDRESEN","Gavin, to whom Satoshi handed the project's lead"],
-["MAXWELL","Gregory, longtime Bitcoin Core developer"],
-["WUILLE","Pieter, co-author of SegWit and Taproot"],
-["POON","Joseph, co-author of the Lightning paper"],
-["DRYJA","Thaddeus, co-author of the Lightning paper"],
-["SAYLOR","Michael, who turned his company into a bitcoin treasury"],
-["AMMOUS","Saifedean, author of The Bitcoin Standard"],
-["DORSEY","Jack, Twitter co-founder and Nostr backer"],
-["LOPP","Jameson, go-to voice on security and custody"],
-["MALLERS","Jack, founder of Strike"],
-["GLADSTEIN","Alex, who champions Bitcoin at the Human Rights Foundation"],
-["HAL","Finney's first name, the first bitcoin recipient"],
-["RALPH","Merkle's first name, of tree fame"]
-);
 
 // =====================================================================
 // FRASES PARA EL CRIPTOGRAMA
@@ -2135,7 +2356,7 @@ const Ana = (()=>{
   const word=()=>list[i][0];
   function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length; }
   function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
-  function gen(){ return {list:shuffle(gloss().filter(([w,c])=>w.length>=4&&w.length<=10&&!ACR.test(c))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
+  function gen(){ return {list:shuffle(gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
   function create(){ Reg.newGame("anagrama"); }
   function load(d){
     list=d.list.map(o=>[o.w,o.c]); hints=0;
@@ -2275,11 +2496,11 @@ function duelWinner(k, a, b, timedOut){
 }
 const Reg = (()=>{
   const KEYS=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla","esbip","placa"];
-  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", seen={};
+  let fb=null, uid=null, busy=false, nick=store.get("rodo-nick")||"", myAv=store.get("rodo-av")||"", seen={};
   // clave de la partida: el juego, o una variante (la sopa tiene una numeración por tamaño)
   const kid = g => GAMES[g].key ? GAMES[g].key() : g;
   const tagOf = g => GAMES[g].tag ? GAMES[g].tag() : "";
-  const cur={}, ui={}, subs={}, names={};
+  const cur={}, ui={}, subs={}, names={}, avs={};
   let testers=new Set();     // navegadores de prueba: no aparecen en los rankings (salvo para sí mismos)
   const counts=u=>u===uid || !testers.has(u);
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -2293,10 +2514,12 @@ const Reg = (()=>{
       // ficha del jugador: primera y última visita, partidas vistas y jugadas
       try{
         const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
-        if(s.exists()){ seen=s.data().seen||{}; await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
+        if(s.exists()){ seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
+          await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
         else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}});
       }catch(e){}
       await loadNick();
+      await Promise.all(["es","en"].map(loadClueUse));
       try{ (await fb.getDocs(fb.collection(fb.db,"testers"))).forEach(d=>testers.add(d.id)); }catch(e){}
       document.body.classList.toggle("tester", testers.has(uid));
     }
@@ -2336,8 +2559,7 @@ const Reg = (()=>{
       u.rkBtn.addEventListener("click",()=>{ if(u.win.style.display!=="block") u.win.classList.add("rkonly"); u.win.style.display="block"; u.rk.hidden=false; renderRank(g); });
       u.tabs=[...rk.querySelectorAll(".rtabs button")]; u.body=rk.querySelector(".rkbody");
       u.tabs.forEach(b=>b.addEventListener("click",()=>{ u.tab=b.dataset.t; renderRank(g); }));
-      rk.addEventListener("click",e=>{ if(e.target.classList.contains("nicksave")) saveNick(g, rk.querySelector(".nickin").value); });
-      rk.addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.classList.contains("nickin")){ e.preventDefault(); saveNick(g, e.target.value); } });
+      rk.addEventListener("click",e=>{ if(e.target.classList.contains("nickopen")) User.open(); });
     });
   }
   function setPid(g){
@@ -2429,10 +2651,24 @@ const Reg = (()=>{
   }
 
   // partidas vistas por este jugador (cuentan apenas se abren, aunque no se terminen)
-  function markSeen(k,L,n){
-    const key=`${k}-${L}`, arr=seen[key]=seen[key]||[];
-    if(!arr.includes(n)) arr.push(n);
-    if(fb) fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), seen:{[key]:fb.arrayUnion(n)}},{merge:true}).catch(()=>{});
+  function markSeen(k,L,n,d){
+    const key=`${k}-${L}`, arr=seen[key]=seen[key]||[], first=!arr.includes(n);
+    if(first) arr.push(n);
+    // pistas de esta partida: el jugador ya las vio, y si es la primera vez que la abre, suman al uso general
+    const ids=d ? cluesIn(d,L) : [], fresh=ids.filter(id=>!CLUES.seen[L].has(id));
+    fresh.forEach(id=>CLUES.seen[L].add(id));
+    const upd={last:fb ? fb.serverTimestamp() : null, seen:{[key]: fb ? fb.arrayUnion(n) : n}};
+    if(fb && fresh.length) upd.cl={[L]:fb.arrayUnion(...fresh)};
+    if(fb) fb.setDoc(fb.doc(fb.db,"fichas",uid),upd,{merge:true}).catch(()=>{});
+    if(fb && first && ids.length){
+      const inc={}; ids.forEach(id=>{ inc[clueKey(id)]=fb.increment(1); CLUES.use[L][clueKey(id)]=(CLUES.use[L][clueKey(id)]||0)+1; });
+      fb.setDoc(fb.doc(fb.db,"clueuse",L),inc,{merge:true}).catch(()=>{});
+    }
+  }
+  // uso general de las pistas, para elegir las menos vistas
+  async function loadClueUse(L){
+    if(!fb) return;
+    try{ const s=await fb.getDoc(fb.doc(fb.db,"clueuse",L)); CLUES.use[L]=s.exists() ? s.data() : {}; }catch(e){}
   }
   const msg=(g,s)=>{ if(ui[g]) ui[g].msg.textContent=s||""; };
   function texts(){
@@ -2444,35 +2680,33 @@ const Reg = (()=>{
   }
   // apodos únicos: nicks/{apodo en minúsculas} guarda de quién es; se escribe junto con names/{uid}
   const nickKey=v=>v.toLowerCase();
-  async function setNick(v){
+  // opt: {av: avatar, ver: versión del PIN (la escribe el módulo de usuario al vincular nombre + PIN)}
+  async function setNick(v, opt={}){
     v=String(v||"").trim().replace(/\s+/g," ").slice(0,24).trim(); if(!v||!fb) return "fail";
     if(v.includes("/")||/^\.+$/.test(v)||/^__.*__$/.test(v)) return "bad";
     const key=nickKey(v), ref=fb.doc(fb.db,"nicks",key);
     try{
       const s=await fb.getDoc(ref);
       if(s.exists() && s.data().uid!==uid) return "taken";
-      const b=fb.writeBatch(fb.db);
-      b.set(fb.doc(fb.db,"names",uid),{name:v});
-      if(!s.exists()) b.set(ref,{uid});
+      const b=fb.writeBatch(fb.db), a=opt.av||myAv;
+      b.set(fb.doc(fb.db,"names",uid), a ? {name:v, av:a} : {name:v});
+      if(!s.exists() || opt.ver) b.set(ref, opt.ver ? {uid, v:opt.ver} : {uid});
       // libera el apodo anterior, si era suyo
       if(nick && nickKey(nick)!==key){
         const o=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick)));
         if(o.exists() && o.data().uid===uid) b.delete(o.ref);
       }
       await b.commit();
-      nick=v; names[uid]=v; store.set("rodo-nick",v); KEYS.forEach(renderRank); return "ok";
+      nick=v; names[uid]=v; if(a){ myAv=a; avs[uid]=a; store.set("rodo-av",a); } store.set("rodo-nick",v); KEYS.forEach(renderRank); return "ok";
     }catch(e){ return "fail"; }
   }
   const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]||T[lang].rkFail);
-  async function saveNick(g, v){
-    if(!String(v||"").trim()) return;
-    msg(g, nickMsg(await setNick(v)));
-  }
   // el apodo guardado manda sobre el del navegador; si todavía no estaba reservado, se reserva
   async function loadNick(){
     try{
       const s=await fb.getDoc(fb.doc(fb.db,"names",uid));
       nick = s.exists() ? s.data().name : ""; store.set("rodo-nick",nick); if(nick) names[uid]=nick;
+      myAv = s.exists() ? (s.data().av||"") : ""; store.set("rodo-av",myAv); if(myAv) avs[uid]=myAv;
       if(nick){ const r=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick))); if(!r.exists()) await setNick(nick); }
     }catch(e){}
   }
@@ -2507,7 +2741,7 @@ const Reg = (()=>{
       if(!fb){ cur[g]={lang:L,k,n:null}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g,T[lang].rkLocal); return; }
       cur[g]={lang:L, k, n:null, loading:true}; setPid(g); msg(g,"");
       const n = await mkPuzzle(k, L, d);
-      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); markSeen(k,L,n); watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); markSeen(k,L,n,d); watch(g);
     }catch(e){
       cur[g]={lang:L,k,n:null}; closeWin(g); GAMES[g].load(d); setPid(g); startT(g); msg(g, T[lang].rkFailNew);
     } finally { busy=false; }
@@ -2531,7 +2765,9 @@ const Reg = (()=>{
     await ready; if(!fb) throw new Error("offline");
     const k=opt.s ? (opt.s==="media" ? "sopa" : "sopa"+opt.s) : kid(g), L=opt.L||lang;
     // la partida se genera en el idioma elegido aunque la página esté en otro
-    const prev=lang; lang=L; let d; try{ d=GAMES[g].gen(g==="semilla" ? opt.w : opt.s); } finally { lang=prev; }
+    await loadClueUse(L);
+    const prev=lang; lang=L; CLUES.duel=true; CLUES.trimWords=g!=="acrostico";
+    let d; try{ d=GAMES[g].gen(g==="semilla" ? opt.w : opt.s); } finally { lang=prev; CLUES.duel=false; CLUES.trimWords=false; }
     const r={g, k, lang:L, n: await mkPuzzle(k, L, d)};
     if(opt.m) r.m=opt.m; if(opt.w) r.w=opt.w;
     return r;
@@ -2558,7 +2794,7 @@ const Reg = (()=>{
       const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${k}-${L}-${n}`));
       if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await fresh(g); return; }
       const d=JSON.parse(JSON.stringify(s.data().data));
-      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); setCost(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n); watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); setCost(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n,d); watch(g);
     }catch(e){ msg(g, T[lang].rkNotFound(n)); }
   }
   function watch(g){
@@ -2626,12 +2862,13 @@ const Reg = (()=>{
   async function loadNames(ids){
     const miss=ids.filter(i=>!(i in names));
     await Promise.all(miss.map(async i=>{
-      try{ const s=await fb.getDoc(fb.doc(fb.db,"names",i)); names[i]= s.exists() ? s.data().name : ""; }catch(e){ names[i]=""; }
+      try{ const s=await fb.getDoc(fb.doc(fb.db,"names",i)); names[i]= s.exists() ? s.data().name : ""; avs[i]= s.exists() ? (s.data().av||"") : ""; }catch(e){ names[i]=""; }
     }));
   }
   const online=()=>!!fb;
   const nickName=()=>nick;
-  const nickHtml=()=>`<div class="nick"><label>${esc(T[lang].rkNick)} <input class="nickin" maxlength="24" value="${esc(nick)}"></label><button class="nicksave">${esc(T[lang].rkNickSave)}</button></div>`;
+  // el apodo se elige en "Elegí tu usuario" (con PIN); acá solo se muestra o se ofrece elegirlo
+  const nickHtml=()=> nick ? `<p class="m small">${esc(T[lang].uPlaying(myAv||"🙂", nick))}</p>` : `<div class="nick"><button class="nickopen">${esc(T[lang].rkUserBtn)}</button></div>`;
   async function fetchAll(g){
     const qs=await fb.getDocs(fb.query(fb.collectionGroup(fb.db,"players"), fb.where("g","==",kid(g))));
     // en la sopa, cada modo (palabras o pistas) tiene su propio ranking
@@ -2665,7 +2902,7 @@ const Reg = (()=>{
     const k=kid(g)+(GAMES[g].mode?GAMES[g].mode():""), c=gcache[k]; if(c && Date.now()-c.at<60000) return c.entries;
     const entries=await fetchAll(g); gcache[k]={at:Date.now(), entries}; return entries;
   }
-  const nmOf=i=>{ const t=T[lang], nk=nickName(); return i===uid ? (nk ? `${nk} (${t.rkYou.toLowerCase()})` : t.rkYou) : (names[i]||t.rkSomeone); };
+  const nmOf=i=>{ const t=T[lang], nk=nickName(), a=avs[i] ? avs[i]+" " : ""; return i===uid ? (nk ? `${a}${nk} (${t.rkYou.toLowerCase()})` : t.rkYou) : (names[i] ? a+names[i] : t.rkSomeone); };
   async function renderRank(g){
     const u=ui[g], c=cur[g], t=T[lang]; if(!u||u.rk.hidden) return;
     const tab=u.tab||"p";
@@ -2710,7 +2947,7 @@ const Reg = (()=>{
   }
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
-    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, isTester:()=>testers.has(uid),
+    ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, isTester:()=>testers.has(uid),
     setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
@@ -2894,11 +3131,7 @@ const Live = (()=>{
   }
   async function send(){
     if(out) return;
-    if(!Reg.nick()){
-      const v=$("ivNick").value.trim();
-      if(!v){ msgOut(t().ivNeedNick); $("ivNick").focus(); return; }
-      const r=await Reg.setNick(v); if(r!=="ok"){ msgOut(Reg.nickMsg(r)); return; }
-    }
+    if(!Reg.nick()){ msgOut(t().ivNeedNick); User.open(); return; }
     $("ivSend").disabled=true; $("ivAgain").disabled=true; msgOut(t().ivSearching);
     try{
       const g=game ? game.g : pickG, to=await candidate(g);
@@ -3088,7 +3321,9 @@ const Live = (()=>{
     if(d.s) pickS=d.s; if(d.m) pickM=d.m; if(d.l) pickL=d.l; if(d.w) pickW=+d.w; game=null; tried=new Set(); renderOpts(); stage("opts"); });
   $("ivBackPick").addEventListener("click",()=>{ game=null; msgOut(""); stage("pick"); });
   $("ivSend").addEventListener("click",send);
-  $("ivNick").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); send(); } });
+  $("ivNickBtn").addEventListener("click",()=>User.open());
+  // al cerrar la ventana de usuario, la invitación muestra o esconde el botón de elegir usuario
+  $("userDlg").addEventListener("close",()=>{ if(dOut.open) $("ivNickRow").hidden=!!Reg.nick(); });
   $("ivAgain").addEventListener("click",send);
   $("ivSolo").addEventListener("click",solo);
   $("ivCancel").addEventListener("click",cancelOut);
@@ -3115,7 +3350,7 @@ const Live = (()=>{
     $("ivBtn").textContent=T0.ivBtn; $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
     if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=direct ? T0.ivRematchT(direct.who) : T0.ivOutT;
     else if(!$("ivOpts").hidden) $("ivOutT").textContent=cap(describe(curOpts()));
-    $("ivNickL").textContent=T0.ivNick; $("ivSend").textContent=T0.ivSend;
+    $("ivNickBtn").textContent=T0.ivNickBtn; $("ivSend").textContent=T0.ivSend;
     $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivBackPick").textContent=T0.ivBackPick;
     $("ivYes").textContent=T0.ivYes; $("ivNo").textContent=T0.ivNo; $("ivOff").textContent=T0.ivOff;
     if(dOut.open && (!$("ivPick").hidden || !$("ivOpts").hidden)) renderPick();
@@ -3123,6 +3358,179 @@ const Live = (()=>{
     count();
   }
   return {texts};
+})();
+
+// =====================================================================
+// USUARIO CON PIN: nombre único + avatar + PIN de 6 números para volver desde otro dispositivo.
+// Por dentro es una cuenta de Firebase con un mail inventado (derivado del nombre) y el PIN como contraseña,
+// vinculada al jugador anónimo, así no se pierde nada de lo jugado. Siempre se puede jugar sin usuario.
+// Bloqueo: 3 PIN mal → 24 h; otros 3 → 48 h; otros 3 → bloqueado y aviso por mail a la administración.
+// =====================================================================
+Object.assign(T.es,{
+  uBtn:"Elegí tu usuario", uTitleNew:"Elegí tu usuario", uTitleOld:"Volvé a tu usuario", uTitleMe:"Tu usuario",
+  uTabNew:"Soy nuevo", uTabOld:"Ya tengo usuario", uName:"Nombre de usuario", uAv:"Avatar", uPin:"PIN de 6 números", uPin2:"Repetí el PIN",
+  uNoteNew:"Con el PIN volvés a tu usuario desde otro celu o compu. Anotalo: no lo podemos recuperar.",
+  uNoteOld:"Escribí tu nombre de usuario y tu PIN.",
+  uGoNew:"Crear usuario", uGoOld:"Entrar", uSkip:"Jugar sin usuario", uOut:"Salir de este usuario",
+  uSetPinNote:"Tu usuario todavía no tiene PIN. Ponele uno para poder recuperarlo en otro dispositivo.", uSavePin:"Guardar PIN",
+  uBadPin:"El PIN tiene que tener 6 números.", uPinDiff:"Los dos PIN no coinciden.", uNoUser:"No hay un usuario con ese nombre que tenga PIN.",
+  uWrong:n=>`PIN incorrecto. Te queda${n===1?"":"n"} ${n} intento${n===1?"":"s"}.`,
+  uLocked:t=>`Por seguridad, este usuario está bloqueado hasta el ${t}.`, uLockedAdmin:"Este usuario está bloqueado. Ya le avisamos a la administración para que te ayude.",
+  uLockNow:h=>`Tercer PIN incorrecto: el usuario queda bloqueado ${h} horas.`,
+  uTooMany:"Demasiados intentos seguidos. Probá en unos minutos.", uOff:"El ingreso con PIN todavía no está activo. Probá más tarde.",
+  uDone:"¡Listo! Ya tenés usuario.", uWelcome:"Entrando…", uAvSaved:"Avatar guardado.", uFail:"No se pudo completar. Probá de nuevo.",
+  uOutWarn:"Vas a seguir jugando sin usuario en este dispositivo. Para volver, usá tu nombre y tu PIN.",
+  uPlaying:(a,n)=>`Jugás como ${a} ${n}`, rkUserBtn:"Elegí tu usuario para aparecer con tu nombre", ivNickBtn:"Elegí tu usuario para poder invitar"
+});
+Object.assign(T.en,{
+  uBtn:"Pick your username", uTitleNew:"Pick your username", uTitleOld:"Back to your username", uTitleMe:"Your username",
+  uTabNew:"I'm new", uTabOld:"I have a username", uName:"Username", uAv:"Avatar", uPin:"6-digit PIN", uPin2:"Repeat the PIN",
+  uNoteNew:"Your PIN takes you back to your username from another phone or computer. Write it down: we can't recover it.",
+  uNoteOld:"Type your username and your PIN.",
+  uGoNew:"Create username", uGoOld:"Sign in", uSkip:"Play without a username", uOut:"Sign out of this username",
+  uSetPinNote:"Your username has no PIN yet. Add one so you can recover it on another device.", uSavePin:"Save PIN",
+  uBadPin:"The PIN must be 6 digits.", uPinDiff:"The two PINs don't match.", uNoUser:"There's no username with a PIN by that name.",
+  uWrong:n=>`Wrong PIN. ${n} attempt${n===1?"":"s"} left.`,
+  uLocked:t=>`For security, this username is locked until ${t}.`, uLockedAdmin:"This username is locked. We've let the admins know so they can help you.",
+  uLockNow:h=>`Third wrong PIN: the username is locked for ${h} hours.`,
+  uTooMany:"Too many attempts in a row. Try again in a few minutes.", uOff:"Signing in with a PIN isn't available yet. Try later.",
+  uDone:"Done! You have a username.", uWelcome:"Signing in…", uAvSaved:"Avatar saved.", uFail:"Couldn't complete that. Please try again.",
+  uOutWarn:"You'll keep playing without a username on this device. To come back, use your username and PIN.",
+  uPlaying:(a,n)=>`Playing as ${a} ${n}`, rkUserBtn:"Pick a username to show up by name", ivNickBtn:"Pick a username to invite people"
+});
+const User = (()=>{
+  const AV=["🦊","🐻","🐂","🐋","🦉","🐢","🦁","🐙","🐝","🦄","🚀","⚡","🔑","🧠","🌕","🍕","🎲","🛠️","🎩","🌵"];
+  const HOURS=[24,48];   // primer y segundo bloqueo; el tercero queda hasta que lo destrabe la administración
+  let fb=null, mode="new", av="", busy=false;
+  const t=()=>T[lang], dlg=$("userDlg");
+  const msgU=s=>{ $("uMsg").textContent=s||""; };
+  const key=v=>v.trim().replace(/\s+/g," ").toLowerCase();
+  const hasPin=()=>!!(fb && fb.auth.currentUser && fb.auth.currentUser.email);
+  async function emailOf(k, v){
+    const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(k+"|"+v));
+    return [...new Uint8Array(b)].slice(0,20).map(x=>x.toString(16).padStart(2,"0")).join("")+"@jugadores.rodo.es";
+  }
+  const rnd=()=>[...crypto.getRandomValues(new Uint8Array(6))].map(x=>x.toString(36).padStart(2,"0")).join("").slice(0,10);
+
+  function head(){
+    const n=Reg.nick(), b=$("userBtn");
+    b.textContent = n ? `${Reg.av()||"🙂"} ${n}` : t().uBtn;
+    b.classList.toggle("set", !!n);
+  }
+  function avs(){
+    $("uAvs").innerHTML=AV.map(a=>`<button type="button" data-a="${a}" aria-pressed="${a===av}">${a}</button>`).join("");
+  }
+  function render(){
+    const T0=t(), me=mode==="me", nw=mode==="new", old=mode==="old", setPin=me && !hasPin();
+    $("uT").textContent = me ? T0.uTitleMe : nw ? T0.uTitleNew : T0.uTitleOld;
+    $("uTabs").hidden=me;
+    $("uTabs").querySelectorAll("button").forEach(b=>{ b.textContent=b.dataset.t==="new"?T0.uTabNew:T0.uTabOld; b.setAttribute("aria-pressed", b.dataset.t===mode); });
+    $("uNameRow").hidden=me; $("uMeName").hidden=!me;
+    if(me) $("uMeName").textContent=T0.uPlaying(av||"🙂", Reg.nick());
+    $("uAvRow").hidden=old;
+    $("uPinRow").hidden=me && !setPin; $("uPin2Row").hidden=old || (me && !setPin);
+    $("uNote").textContent = nw ? T0.uNoteNew : old ? T0.uNoteOld : setPin ? T0.uSetPinNote : "";
+    $("uGo").textContent = nw ? T0.uGoNew : old ? T0.uGoOld : T0.uSavePin; $("uGo").hidden=me && !setPin;
+    $("uOut").hidden=!(me && hasPin()); $("uOut").textContent=T0.uOut;
+    $("uSkip").hidden=me; $("uSkip").textContent=T0.uSkip;
+    ["uNameL","uAvL","uPinL","uPin2L"].forEach(id=>$(id).textContent=T0[{uNameL:"uName",uAvL:"uAv",uPinL:"uPin",uPin2L:"uPin2"}[id]]);
+    $("uX").setAttribute("aria-label",T0.ivClose); $("uX").textContent="×";
+    avs();
+  }
+  async function open(){
+    await Reg.ready; fb=Reg.fb(); if(!fb || dlg.open) return;
+    mode = Reg.nick() ? "me" : "new"; av=Reg.av()||AV[Math.floor(Math.random()*AV.length)];
+    $("uName").value=""; $("uPin").value=""; $("uPin2").value=""; msgU(""); render();
+    dlg.showModal(); (mode==="me" ? $("uX") : $("uName")).focus();
+  }
+  // vincula el jugador actual a una cuenta "nombre + PIN" (sin perder lo jugado)
+  async function linkPin(name, pin){
+    const k=key(name), ver=rnd();
+    const r=await Reg.setNick(name, {av, ver}); if(r!=="ok") return Reg.nickMsg(r);
+    const cred=fb.EmailAuthProvider.credential(await emailOf(k,ver), pin);
+    try{ await fb.linkWithCredential(fb.auth.currentUser, cred); }
+    catch(e){ return e.code==="auth/operation-not-allowed" ? t().uOff : t().uFail; }
+    return "";
+  }
+  async function create(){
+    const name=$("uName").value, pin=$("uPin").value, pin2=$("uPin2").value;
+    if(!name.trim()) return msgU(t().ivNeedNick);
+    if(!/^\d{6}$/.test(pin)) return msgU(t().uBadPin);
+    if(pin!==pin2) return msgU(t().uPinDiff);
+    const err=await linkPin(name, pin); if(err) return msgU(err);
+    msgU(t().uDone); head(); setTimeout(()=>dlg.open&&dlg.close(), 900);
+  }
+  async function savePin(){
+    const pin=$("uPin").value, pin2=$("uPin2").value;
+    if(!/^\d{6}$/.test(pin)) return msgU(t().uBadPin);
+    if(pin!==pin2) return msgU(t().uPinDiff);
+    const err=await linkPin(Reg.nick(), pin); if(err) return msgU(err);
+    msgU(t().uDone); render();
+  }
+  const fmtDate=ms=>new Date(ms).toLocaleString(lang==="en"?"en-US":"es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  async function signin(){
+    const name=$("uName").value, pin=$("uPin").value, k=key(name);
+    if(!k) return msgU(t().ivNeedNick);
+    if(!/^\d{6}$/.test(pin)) return msgU(t().uBadPin);
+    const ns=await fb.getDoc(fb.doc(fb.db,"nicks",k));
+    if(!ns.exists() || !ns.data().v) return msgU(t().uNoUser);
+    const lref=fb.doc(fb.db,"pinlocks",k);
+    let lk=await fb.getDoc(lref); lk=lk.exists() ? lk.data() : {fails:0,level:0,at:null};
+    if(lk.level>=3) return msgU(t().uLockedAdmin);
+    // bloqueado: empezó en "at" y dura 24 h (primer bloqueo) o 48 h (segundo)
+    const until=lk.level>=1 && lk.fails===0 && lk.at && lk.at.toMillis ? lk.at.toMillis()+HOURS[lk.level-1]*3600000 : 0;
+    if(until>Date.now()) return msgU(t().uLocked(fmtDate(until)));
+    try{
+      await fb.signInWithEmailAndPassword(fb.auth, await emailOf(k, ns.data().v), pin);
+      // entró: se borra el contador de intentos y se recarga la página con su usuario
+      try{ await fb.setDoc(lref,{fails:0,level:0,at:null}); }catch(e){}
+      msgU(t().uWelcome); setTimeout(()=>location.reload(), 400);
+    }catch(e){
+      if(e.code==="auth/too-many-requests") return msgU(t().uTooMany);
+      if(e.code==="auth/operation-not-allowed") return msgU(t().uOff);
+      if(!/invalid-credential|wrong-password|invalid-login|user-not-found/.test(e.code||"")) return msgU(t().uFail);
+      // PIN mal: suma un intento; al tercero, bloqueo
+      try{
+        const nx=await fb.runTransaction(fb.db, async tx=>{
+          const s=await tx.get(lref), o=s.exists() ? s.data() : {fails:0,level:0,at:null};
+          // al tercer intento fallido sube el nivel de bloqueo y la hora la pone el servidor
+          tx.set(lref, o.fails<2 ? {fails:o.fails+1, level:o.level, at:o.at||null} : {fails:0, level:o.level+1, at:fb.serverTimestamp()});
+          return {o};
+        });
+        if(nx.o.fails<2) return msgU(t().uWrong(2-nx.o.fails));
+        const lvl=nx.o.level+1;
+        if(lvl>=3){ notifyAdmin(name); return msgU(t().uLockedAdmin); }
+        return msgU(t().uLockNow(HOURS[lvl-1]));
+      }catch(err){ return msgU(t().uFail); }
+    }
+  }
+  function notifyAdmin(name){
+    fetch("https://formsubmit.co/ajax/claudia@rodo.es",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({_subject:"RODO ₿ Games: usuario bloqueado", _template:"table", _captcha:"false",
+        Usuario:name, Detalle:"Tercer bloqueo por PIN incorrecto (9 intentos fallidos). Queda bloqueado hasta que se destrabe desde el panel de administración.", Idioma:lang})}).catch(()=>{});
+  }
+  async function signout(){
+    if(!confirm(t().uOutWarn)) return;
+    await fb.signOut(fb.auth); location.reload();
+  }
+  async function go(){
+    if(busy) return; busy=true; $("uGo").disabled=true;
+    try{ if(mode==="new") await create(); else if(mode==="old") await signin(); else await savePin(); }
+    finally{ busy=false; $("uGo").disabled=false; }
+  }
+  $("userBtn").addEventListener("click",open);
+  $("uX").addEventListener("click",()=>dlg.close());
+  $("uSkip").addEventListener("click",()=>dlg.close());
+  $("uOut").addEventListener("click",signout);
+  $("uGo").addEventListener("click",go);
+  ["uName","uPin","uPin2"].forEach(id=>$(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } }));
+  $("uTabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; mode=b.dataset.t; msgU(""); render(); });
+  $("uAvs").addEventListener("click",async e=>{
+    const b=e.target.closest("button"); if(!b) return; av=b.dataset.a; avs();
+    if(mode==="me"){ const r=await Reg.setNick(Reg.nick(), {av}); msgU(r==="ok" ? t().uAvSaved : Reg.nickMsg(r)); head(); render(); }
+  });
+  (async()=>{ await Reg.ready; fb=Reg.fb(); head(); })();
+  return {open, texts:()=>{ head(); if(dlg.open) render(); }};
 })();
 
 // =====================================================================
@@ -3229,11 +3637,11 @@ const Admin = (()=>{
   });
   async function load(){
     $("admBody").innerHTML=`<p class="m">Cargando datos…</p>`;
-    let F,S,C,N,X,DU,LE;
+    let F,S,C,N,X,DU,LE,PL;
     try{
-      [F,S,C,N,X,DU,LE]=await Promise.all([
+      [F,S,C,N,X,DU,LE,PL]=await Promise.all([
         A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
-        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned"))]);
+        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned")), A.getDocs(A.collection(A.db,"pinlocks"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
@@ -3315,6 +3723,16 @@ const Admin = (()=>{
     h+=`<h2>Partidas con más jugadores</h2>`+table(["Partida","Jugadores","Éxito","Mejor tiempo"],
       topz.map(([key,r])=>{ const [k,L,n]=key.split("-"), okr=r.filter(x=>x.ok); return [`${esc(gname(k))} ${L.toUpperCase()} #${n}`, r.length, pct(okr.length,r.length), okr.length?fmt(Math.min(...okr.map(x=>x.ms))):"–"]; }));
 
+    // usuarios bloqueados por PIN incorrecto (nivel 1: 24 h, 2: 48 h, 3: hasta destrabarlo acá)
+    const locks=[]; PL.forEach(d=>{ const x=d.data(); if(x.level>=1) locks.push({k:d.id, level:x.level, at:ms(x.at)}); });
+    if(locks.length){
+      locks.sort((a,b)=>b.level-a.level||(b.at||0)-(a.at||0));
+      h+=`<h2>Usuarios bloqueados por PIN</h2>`+table(["Usuario","Bloqueos","Desde","Hasta",""],
+        locks.map(l=>[esc(l.k), l.level, dt(l.at), l.level>=3?"hasta que lo destrabes":dt((l.at||0)+(l.level===1?24:48)*3600000),
+          `<button class="unlock" data-k="${esc(l.k)}">Destrabar</button>`]));
+      h+=`<p class="m small">Destrabar vuelve a cero los intentos. Si la persona olvidó el PIN, no se puede recuperar: tiene que crear un usuario nuevo con otro nombre.</p>`;
+    }
+
     // últimos resultados
     const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);
     h+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
@@ -3332,6 +3750,11 @@ const Admin = (()=>{
   $("admOut").addEventListener("click",()=>A&&A.logout());
   $("admReload").addEventListener("click",()=>load());
   $("admCsv").addEventListener("click",csv);
+  $("admBody").addEventListener("click",async e=>{
+    const b=e.target.closest(".unlock"); if(!b||!A) return;
+    try{ await A.setDoc(A.doc(A.db,"pinlocks",b.dataset.k),{fails:0,level:0,at:null}); load(); }
+    catch(err){ $("admErr").textContent="No se pudo destrabar: "+(err.code||err.message); }
+  });
   return {show};
 })();
 const GAMES = { acrostico:Acro, ahorcado:Hang, sopa:Sopa, criptograma:Cripto, anagrama:Ana, semilla:Seed, esbip:IsBip, placa:Plate };
@@ -3343,7 +3766,7 @@ function applyTexts(){
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
-  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts();
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts();
   $("adminLink").textContent=t.adminLink;
   if(view==="admin") return setTitle("Administración");
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
@@ -3377,7 +3800,7 @@ route();
 <script type="module">
 // Firebase: autenticación anónima + Firestore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 try {
   // Firebase Hosting publica la configuración del proyecto en esta ruta: no hace falta copiarla al código
@@ -3394,11 +3817,12 @@ try {
   }catch(e){ window.__adminResolve(null); }
   const auth = getAuth(app);
   const db = getFirestore(app);
+  // si en este navegador ya entró alguien (anónimo o con usuario y PIN) sigue siendo ese; si no, jugador anónimo nuevo
   const user = await new Promise((resolve, reject) => {
-    const off = onAuthStateChanged(auth, u => { if (u) { off(); resolve(u); } });
-    signInAnonymously(auth).catch(reject);
+    const off = onAuthStateChanged(auth, u => { off(); if (u) resolve(u); else signInAnonymously(auth).then(c => resolve(c.user)).catch(reject); });
   });
-  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp, writeBatch });
+  window.__fbResolve({ db, uid: user.uid, doc, getDoc, setDoc, collection, collectionGroup, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp, arrayUnion, increment, updateDoc, deleteDoc, getCountFromServer, Timestamp, writeBatch,
+    auth, EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword, signOut });
 } catch (e) {
   console.warn("RODO Games sin servidor:", e.message);
   window.__fbResolve(null); window.__adminResolve && window.__adminResolve(null);

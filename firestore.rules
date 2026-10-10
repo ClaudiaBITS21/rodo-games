@@ -76,7 +76,9 @@ service cloud.firestore {
     match /fichas/{uid} {
       allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays', 'inv'])
+        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays', 'inv', 'cl'])
+        // cl: códigos de las pistas que ya vio, por idioma ({es: ["2.3", ...]})
+        && (!('cl' in request.resource.data) || request.resource.data.cl is map)
         // inv: cuántas invitaciones a jugar mandó
         && (!('inv' in request.resource.data) || request.resource.data.inv is int)
         && request.resource.data.seen is map
@@ -92,18 +94,26 @@ service cloud.firestore {
     match /names/{uid} {
       allow read: if true;
       allow write: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name'])
+        && request.resource.data.keys().hasOnly(['name', 'av'])
         && validNick(request.resource.data.name)
+        // av: el avatar (un emoji)
+        && (!('av' in request.resource.data) || (request.resource.data.av is string && request.resource.data.av.size() <= 8))
         && getAfter(/databases/$(database)/documents/nicks/$(request.resource.data.name.lower())).data.uid == uid;
     }
     // Reserva de apodos: la clave es el apodo en minúsculas y guarda de quién es.
     // Se crea junto con el apodo propio y se libera al cambiarlo; no se puede pisar la de otro.
     match /nicks/{key} {
       allow read: if true;
-      allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid'])
+      // v: versión del PIN (se cambia cada vez que el dueño pone un PIN; arma el mail interno de la cuenta)
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid', 'v'])
         && request.resource.data.uid == request.auth.uid
+        && (!('v' in request.resource.data) || (request.resource.data.v is string && request.resource.data.v.size() <= 16))
         && getAfter(/databases/$(database)/documents/names/$(request.auth.uid)).data.name.lower() == key;
-      allow update: if false;
+      allow update: if signedIn() && resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'v'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.v is string && request.resource.data.v.size() <= 16
+        && getAfter(/databases/$(database)/documents/names/$(request.auth.uid)).data.name.lower() == key;
       allow delete: if (signedIn() && resource.data.uid == request.auth.uid
         && getAfter(/databases/$(database)/documents/names/$(request.auth.uid)).data.name.lower() != key)
         || isAdmin();
@@ -121,6 +131,43 @@ service cloud.firestore {
         && request.resource.data.yes is bool && request.resource.data.duel is bool
         && request.resource.data.at == request.time
         && exists(/databases/$(database)/documents/puzzles/$(request.resource.data.p));
+      allow delete: if false;
+    }
+
+    // Intentos de PIN por usuario (la clave es el apodo en minúsculas). Cualquiera puede sumar un intento fallido;
+    // al tercero sube el nivel: 1 = bloqueado 24 h, 2 = bloqueado 48 h, 3 = bloqueado hasta que lo destrabe la administración.
+    // "at" es cuándo empezó el último bloqueo (lo pone el servidor). El dueño, al entrar bien, lo vuelve a cero.
+    function pinLocked(o) {
+      return o.level >= 3
+        || (o.level >= 1 && o.fails == 0 && o.at != null && request.time < o.at + duration.value(o.level == 1 ? 24 : 48, 'h'));
+    }
+    function pinFail(o) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fails', 'level', 'at']) && d.keys().hasAll(['fails', 'level', 'at']) && !pinLocked(o)
+        && ((o.fails < 2 && d.fails == o.fails + 1 && d.level == o.level && d.at == o.at)
+          || (o.fails >= 2 && d.fails == 0 && d.level == o.level + 1 && d.at == request.time));
+    }
+    function pinReset(key) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['fails', 'level', 'at']) && d.fails == 0 && d.level == 0 && d.at == null
+        && get(/databases/$(database)/documents/nicks/$(key)).data.uid == request.auth.uid;
+    }
+    match /pinlocks/{key} {
+      allow read: if true;
+      allow create: if signedIn() && exists(/databases/$(database)/documents/nicks/$(key))
+        && (pinFail({'fails': 0, 'level': 0, 'at': null}) || pinReset(key));
+      allow update: if signedIn() && (pinFail(resource.data) || pinReset(key) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Uso general de cada pista (un campo por pista, "c2_3"), para elegir las menos vistas.
+    // Solo se suman de a pocas pistas por vez; no se borra.
+    match /clueuse/{L} {
+      allow read: if true;
+      allow create: if signedIn() && L in ['es', 'en'] && request.resource.data.keys().size() <= 40;
+      allow update: if signedIn() && L in ['es', 'en']
+        && request.resource.data.diff(resource.data).affectedKeys().size() <= 40
+        && request.resource.data.diff(resource.data).removedKeys().size() == 0;
       allow delete: if false;
     }
 

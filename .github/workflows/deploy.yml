@@ -23,8 +23,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Autenticación con Google (sin claves)
+        id: gauth
         uses: google-github-actions/auth@v2
         with:
+          token_format: access_token
           workload_identity_provider: projects/150328029178/locations/global/workloadIdentityPools/github/providers/github
           service_account: github-deploy@rodo-games.iam.gserviceaccount.com
 
@@ -52,3 +54,15 @@ jobs:
           curl -fsS https://games.rodo.es/__/firebase/init.json | grep -q '"projectId": *"rodo-games"' \
             && echo "✔ configuración de Firebase disponible" \
             || { echo "::error::no responde /__/firebase/init.json"; exit 1; }
+
+      # El usuario con PIN usa el ingreso por mail y contraseña de Firebase (con un mail interno, no se mandan mails).
+      # Se deja activado en cada deploy, así no hay que tocarlo a mano en la consola. Va al final para no frenar la publicación.
+      - name: Activar ingreso con usuario y PIN
+        env:
+          TOKEN: ${{ steps.gauth.outputs.access_token }}
+        run: |
+          curl -fsS -X PATCH \
+            -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: rodo-games" -H "Content-Type: application/json" \
+            "https://identitytoolkit.googleapis.com/admin/v2/projects/rodo-games/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired" \
+            -d '{"signIn":{"email":{"enabled":true,"passwordRequired":true}}}' | grep -q '"enabled": *true' \
+            && echo "✔ ingreso con usuario y PIN activo"
