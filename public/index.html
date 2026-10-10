@@ -129,6 +129,13 @@ body.tester .testbadge{display:block}
 .wpts span{font-size:.85rem;opacity:.85}
 .ptime.frozen{color:#4A90D9}
 .ptime.frozen::before{content:"❄ "}
+.wlearn{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:6px 12px;flex-wrap:wrap;font-size:.88rem}
+.wlearn p{font-size:.88rem!important;font-weight:600!important;margin:0!important}
+.wlearn label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.wlearn input{accent-color:#1A1E23;width:18px;height:18px}
+.wlearn .lnote{font-size:.8rem;opacity:.85}
+.wlearn[hidden]{display:none}
+.win.lose .wlearn{background:var(--paper)}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
 .wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
 .wback button,.wduel button{padding:7px 12px;font-size:.88rem}
@@ -697,9 +704,12 @@ body.tester .testbadge{display:block}
   <h3 id="ivOutT"></h3>
   <div id="ivPick">
     <div class="ivgames" id="ivGames"></div>
-    <div class="ivsopa" id="ivSopa" hidden></div>
+  </div>
+  <div id="ivOpts" hidden>
+    <div class="ivsopa" id="ivSopa"></div>
     <label class="ivnick" id="ivNickRow"><span id="ivNickL"></span> <input id="ivNick" maxlength="24" autocomplete="nickname"></label>
     <div class="row"><button class="primary" id="ivSend"></button></div>
+    <button class="ivoff" id="ivBackPick"></button>
   </div>
   <div id="ivWait" hidden>
     <p id="ivWaitT"></p>
@@ -1804,9 +1814,10 @@ const Seed = (()=>{
     $("pStatus").textContent = stage==="memo" ? t.pMemo(fmt(left*1000)) : stage==="play" ? t.pPlay(next+1, errors) : (stage==="intro"&&pz) ? t.pPz(pz.n) : "";
   }
   function show(id,on){ $(id).style.display = on ? "" : "none"; }
-  function gen(){
-    const all=shuffle(BIP39[lang]).slice(0, n + Math.round(n/3));
-    return {n, words:all.slice(0,n), decoys:all.slice(n)};
+  // w: cantidad de palabras (por defecto la elegida)
+  function gen(w){
+    const k=w||n, all=shuffle(BIP39[lang]).slice(0, k + Math.round(k/3));
+    return {n:k, words:all.slice(0,k), decoys:all.slice(k)};
   }
   function create(){ Reg.newGame("semilla"); }
   function load(d){
@@ -2236,6 +2247,7 @@ Object.assign(T.en,{
 // Puntos = 100 por resolverla + (900 − segundos ajustados, mínimo 0). Sin resolver: 0.
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
+const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tamaño de sopa
 const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, HELP_LOCK:7*60000, ROUNDS:{anagrama:10, placa:10, esbip:20}};
 const errCost=k=> k==="ahorcado" ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
@@ -2467,9 +2479,10 @@ const Reg = (()=>{
 
   function localGame(g, note){ cur[g]={lang, k:kid(g), n:null}; closeWin(g); GAMES[g].load(GAMES[g].gen()); setPid(g); startT(g); msg(g,note); }
 
-  async function enter(g){
+  // force: el usuario cambió el idioma a propósito (pasa a una partida del idioma nuevo)
+  async function enter(g, force){
     const c=cur[g];
-    if(c && c.lang===lang && c.k===kid(g)){ thaw(g); return; }
+    if(c && c.k===kid(g) && (c.lang===lang || (!force && (going(g) || c.fz)))){ thaw(g); return; }
     cur[g]={lang, k:kid(g), n:null, loading:true}; setPid(g); msg(g,"");
     await ready;
     if(!fb) return localGame(g, T[lang].rkLocal);
@@ -2513,11 +2526,14 @@ const Reg = (()=>{
   }
   // partida nueva para una invitación: se crea sin abrirla (se abre cuando el otro acepta)
   // opt (sopa): {s: tamaño, m: modo}
+  // opt: {L: idioma, s: tamaño de sopa, m: modo de sopa, w: palabras de la semilla}
   async function inviteGame(g, opt={}){
     await ready; if(!fb) throw new Error("offline");
-    const k=opt.s ? (opt.s==="media" ? "sopa" : "sopa"+opt.s) : kid(g), L=lang;
-    const r={g, k, lang:L, n: await mkPuzzle(k, L, GAMES[g].gen(opt.s))};
-    if(opt.m) r.m=opt.m;
+    const k=opt.s ? (opt.s==="media" ? "sopa" : "sopa"+opt.s) : kid(g), L=opt.L||lang;
+    // la partida se genera en el idioma elegido aunque la página esté en otro
+    const prev=lang; lang=L; let d; try{ d=GAMES[g].gen(g==="semilla" ? opt.w : opt.s); } finally { lang=prev; }
+    const r={g, k, lang:L, n: await mkPuzzle(k, L, d)};
+    if(opt.m) r.m=opt.m; if(opt.w) r.w=opt.w;
     return r;
   }
   // abrir la partida de una invitación; duel: el duelo al que pertenece
@@ -2560,7 +2576,7 @@ const Reg = (()=>{
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
     if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; }
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
-    if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); }
+    if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); showLearn(g); }
     showBack(g);
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
     else if(ui[g]){ const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; }
@@ -2584,6 +2600,20 @@ const Reg = (()=>{
     const u=ui[g], t=T[lang], c=cur[g], sc=scoreOf(c?c.k:g, rec);
     if(!u.pts){ u.pts=document.createElement("div"); u.pts.className="wpts"; const st=u.win.querySelector(".stats"); u.win.insertBefore(u.pts, st?st.nextSibling:u.rk); }
     u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), sc.pen?fmt(sc.pen*1000):""))}</span>`;
+  }
+  // al terminar (ganando o perdiendo): "¿Aprendiste alguna palabra nueva?" para medir si el juego enseña
+  function showLearn(g){
+    const c=cur[g], el=slot(g,"wlearn"), t=T[lang];
+    el.hidden=!(fb && c && c.n); if(el.hidden) return;
+    const pid=`${c.k}-${c.lang}-${c.n}`;
+    el.innerHTML=`<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
+    el.querySelector("input").addEventListener("change",async e=>{
+      const note=el.querySelector(".lnote");
+      try{
+        await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:e.target.checked, duel:!!c.duel, at:fb.serverTimestamp()});
+        note.textContent=e.target.checked ? t.learnThanks : "";
+      }catch(err){ note.textContent=t.rkFail; }
+    });
   }
   // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
@@ -2748,6 +2778,11 @@ Object.assign(T.es,{
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
   ivFz:"Tu cronómetro quedó congelado. Si aceptás, al terminar podés volver a tu partida.",
   ivYes:"Aceptar", ivNo:"No, gracias", ivOff:"No quiero recibir invitaciones", ivLate:"La invitación ya venció.",
+  gName:{acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"},
+  ivLangL:"Idioma", ivLangName:{es:"Castellano",en:"Inglés"}, ivIn:{es:"en castellano",en:"en inglés"},
+  ivWordsL:"Palabras", ivSize:n=>`de ${n}×${n}`, ivWithClues:"con pistas", ivWithWords:"viendo las palabras", ivWords:n=>`de ${n} palabras`,
+  ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Elegir otro juego",
+  learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
   ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
   ivAway:who=>`${cap(who)} no está disponible ahora.`,
@@ -2769,6 +2804,11 @@ Object.assign(T.en,{
   ivInT:(who,g)=>`${who} invites you to play ${g}`,
   ivFz:"Your timer is frozen. If you accept, you can go back to your game when you finish.",
   ivYes:"Accept", ivNo:"No, thanks", ivOff:"I don't want invitations", ivLate:"The invitation has expired.",
+  gName:{acrostico:"Acrostic",ahorcado:"Hangman",sopa:"Word search",criptograma:"Cryptogram",anagrama:"Anagram",semilla:"Lost seed",esbip:"Is it on the list?",placa:"Steel plate"},
+  ivLangL:"Language", ivLangName:{es:"Spanish",en:"English"}, ivIn:{es:"in Spanish",en:"in English"},
+  ivWordsL:"Words", ivSize:n=>`${n}×${n}`, ivWithClues:"with clues", ivWithWords:"showing the words", ivWords:n=>`with ${n} words`,
+  ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Pick another game",
+  learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
   ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
   ivAway:who=>`${cap(who)} isn't available right now.`,
@@ -2782,7 +2822,7 @@ const Live = (()=>{
   const PICK=["acrostico","ahorcado","sopa","criptograma","anagrama","semilla"];
   let fb=null, uid=null, off=0, synced=false, sentLang=null;
   let want=store.get("rodo-inv")!=="0";
-  let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null, pickS="media", pickM="w";
+  let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null, pickS="media", pickM="w", pickL="es", pickW=12;
   const now=()=>Date.now()+off;            // hora del servidor, estimada
   const dOut=$("ivOut"), dIn=$("ivIn");
   const anyOpen=()=>dOut.open||dIn.open;
@@ -2812,36 +2852,44 @@ const Live = (()=>{
   // ---------- quien invita ----------
   const msgOut=s=>{ $("ivOutMsg").textContent=s||""; };
   function stage(s){
-    $("ivPick").hidden=s!=="pick"; $("ivWait").hidden=s!=="wait"; $("ivDone").hidden=s!=="done";
-    $("ivOutT").textContent = s==="pick" ? (direct ? t().ivRematchT(direct.who) : t().ivOutT) : Reg.gameName(game ? game.g : pickG);
+    $("ivPick").hidden=s!=="pick"; $("ivOpts").hidden=s!=="opts"; $("ivWait").hidden=s!=="wait"; $("ivDone").hidden=s!=="done";
+    $("ivOutT").textContent = s==="pick" ? (direct ? t().ivRematchT(direct.who) : t().ivOutT) : cap(describe(curOpts()));
     $("ivAgain").hidden=!!direct;
   }
+  // lo que se elige: juego, idioma y, si corresponde, tamaño y modo (sopa) o cantidad de palabras (semilla)
+  const curOpts=()=> game ? {g:game.g, k:game.k, lang:game.lang, m:game.m, w:game.w} :
+    {g:pickG, lang:pickL, k:pickG==="sopa" ? (pickS==="media"?"sopa":"sopa"+pickS) : pickG, m:pickG==="sopa"?pickM:undefined, w:pickG==="semilla"?pickW:undefined};
   function renderPick(){
     const games=PICK.filter(g=>!HIDDEN.has(g));
     if(!games.includes(pickG)) pickG=games[0];
-    $("ivGames").innerHTML=games.map(g=>`<button data-g="${g}" aria-pressed="${g===pickG}">${g==="sopa"?T[lang].sopaName:Reg.gameName(g)}</button>`).join("");
-    // sopa: quien invita elige tamaño y modo, y la otra persona juega igual
-    const T0=t(), so=$("ivSopa"); so.hidden=pickG!=="sopa";
-    if(pickG==="sopa") so.innerHTML=
-      `<div class="seg" role="group" aria-label="${T0.sSizeL}">${["chica","media","grande"].map(s=>`<button data-s="${s}" aria-pressed="${s===pickS}">${T0.sSize[s]}</button>`).join("")}</div>`+
-      `<div class="seg" role="group" aria-label="${T0.sModeL}">${["w","c"].map(m=>`<button data-m="${m}" aria-pressed="${m===pickM}">${m==="w"?T0.sList:T0.sListClue}</button>`).join("")}</div>`;
+    $("ivGames").innerHTML=games.map(g=>`<button data-g="${g}">${T[lang].gName[g]}</button>`).join("");
+    renderOpts();
+  }
+  // segundo paso: las opciones del juego elegido (la otra persona juega exactamente eso)
+  function renderOpts(){
+    const T0=t(), seg=(label,items)=>`<div class="seg" role="group" aria-label="${label}">${items.map(([k,v,on,txt])=>`<button data-${k}="${v}" aria-pressed="${on}">${txt}</button>`).join("")}</div>`;
+    let o=seg(T0.ivLangL, ["es","en"].map(L=>["l",L,L===pickL,T0.ivLangName[L]]));
+    if(pickG==="sopa") o+=seg(T0.sSizeL, ["chica","media","grande"].map(s=>["s",s,s===pickS,`${T0.sSize[s]} ${SOPA_N[s]}×${SOPA_N[s]}`]))+
+      seg(T0.sModeL, ["w","c"].map(m=>["m",m,m===pickM,m==="w"?T0.sList:T0.sListClue]));
+    if(pickG==="semilla") o+=seg(T0.ivWordsL, [12,24].map(w=>["w",w,w===pickW,T0.pSize(w)]));
+    $("ivSopa").innerHTML=o;
     $("ivNickRow").hidden=!!Reg.nick();
   }
   // dir: revancha con alguien en particular {to, who, d}
   function openOut(dir){
     if(!fb || anyOpen()) return;
     direct=dir&&dir.to ? dir : null;
-    pickS=GAMES.sopa.size(); pickM=GAMES.sopa.mode();
+    pickS=GAMES.sopa.size(); pickM=GAMES.sopa.mode(); pickL=lang; pickW=12;
     game=null; tried=new Set(); msgOut(""); stage("pick"); renderPick(); $("ivSend").disabled=false;
     dOut.showModal();
   }
   async function candidate(g){
     if(direct){
       const s=await fb.getDoc(fb.doc(fb.db,"online",direct.to)), x=s.exists()&&s.data();
-      return x && x.at && x.at.toMillis()>now()-FRESH && x.inv && x.lang===lang && !(x.busy||[]).includes(g) ? direct.to : null;
+      return x && x.at && x.at.toMillis()>now()-FRESH && x.inv && !(x.busy||[]).includes(g) ? direct.to : null;
     }
     const s=await fb.getDocs(fresh());
-    const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && x.lang===lang && !(x.busy||[]).includes(g) && !tried.has(d.id); }).map(d=>d.id);
+    const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && !(x.busy||[]).includes(g) && !tried.has(d.id); }).map(d=>d.id);
     return list.length ? list[Math.floor(Math.random()*list.length)] : null;
   }
   async function send(){
@@ -2854,14 +2902,15 @@ const Live = (()=>{
     $("ivSend").disabled=true; $("ivAgain").disabled=true; msgOut(t().ivSearching);
     try{
       const g=game ? game.g : pickG, to=await candidate(g);
-      if(!to){ msgOut(direct ? t().ivAway(direct.who) : t().ivNobody); stage(game?"done":"pick"); return; }
+      if(!to){ msgOut(direct ? t().ivAway(direct.who) : t().ivNobody); stage(game?"done":"opts"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
-      if(!game) game=await Reg.inviteGame(g, g==="sopa" ? {s:pickS, m:pickM} : {});
+      if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
       const ns=direct ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
       const who=direct ? direct.who : (ns && ns.exists() && ns.data().name) || t().ivSomeone;
       const inv={to, name:Reg.nick(), g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"};
       if(direct) inv.d=direct.d;
       if(game.m) inv.m=game.m;
+      if(game.w) inv.w=game.w;
       await fb.setDoc(fb.doc(fb.db,"invites",uid),inv);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
       tried.add(to);
@@ -2869,7 +2918,7 @@ const Live = (()=>{
       out.unsub=fb.onSnapshot(fb.doc(fb.db,"invites",uid), s=>{ const st=s.exists()&&s.data().st; if(out && st && st!=="pending") answered(st); }, ()=>{});
       out.timer=setInterval(tickOut,1000);
       msgOut(""); $("ivWaitT").textContent=t().ivWaitT(who); stage("wait"); tickOut(); beat();
-    }catch(e){ msgOut(t().ivFail); stage(game?"done":"pick"); }
+    }catch(e){ msgOut(t().ivFail); stage(game?"done":"opts"); }
     finally{ $("ivSend").disabled=false; $("ivAgain").disabled=false; }
   }
   function tickOut(){
@@ -2898,7 +2947,7 @@ const Live = (()=>{
           }
           watchDuel(id);
         }catch(e){ id=null; }
-        setTimeout(()=>{ if(dOut.open) dOut.close(); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m); }, 700);
+        setTimeout(()=>{ if(dOut.open) dOut.close(); setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m); }, 700);
       })();
       return;
     }
@@ -2910,7 +2959,7 @@ const Live = (()=>{
     if(out){ fb.updateDoc(fb.doc(fb.db,"invites",uid),{st:"cancelled"}).catch(()=>{}); stopOut(); }
     if(dOut.open) dOut.close();
   }
-  function solo(){ const gm=game; game=null; dOut.close(); if(gm) Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m); }
+  function solo(){ const gm=game; game=null; dOut.close(); if(gm){ setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m); } }
   $("ivAgain").hidden=false;
 
   // ---------- quien recibe ----------
@@ -2927,12 +2976,12 @@ const Live = (()=>{
   function receive(id, d){
     const left=WIN-(now()-(d.at ? d.at.toMillis() : now()));
     if(left<=2000) return;
-    if(inc || out || anyOpen() || !want || d.lang!==lang || Reg.busyList().includes(d.g))
+    if(inc || out || anyOpen() || !want || Reg.busyList().includes(d.g))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
     inc.frozen=Reg.freeze();
-    $("ivInT").textContent=(d.d ? t().ivRematchIn : t().ivInT)(d.name, Reg.gameName(d.g));
+    $("ivInT").textContent=(d.d ? t().ivRematchIn : t().ivInT)(d.name, describe(d));
     $("ivInFz").textContent=playing ? t().ivFz : "";
     $("ivYes").disabled=$("ivNo").disabled=false;
     dIn.showModal(); $("ivYes").focus();
@@ -2964,7 +3013,7 @@ const Live = (()=>{
     catch(e){ inc.answering=false; return late(); }
     const duel=d.d || `${id}_${d.k}-${d.lang}-${d.n}`;
     endIn(false); watchDuel(duel);
-    Reg.playInvite(d.g, d.k, d.n, duel, d.m);
+    setLang(d.lang); Reg.playInvite(d.g, d.k, d.n, duel, d.m);
   }
   function decline(){
     if(!inc || inc.answering) return;
@@ -2973,6 +3022,15 @@ const Live = (()=>{
     endIn(true);
   }
   function setWant(v){ want=v; store.set("rodo-inv", v?"1":"0"); $("ivRecv").checked=v; beat(); }
+
+  // "Sopa de letras de 15×15, con pistas, en inglés"
+  function describe(o){
+    const T0=t(), p=[];
+    if(o.g==="sopa"){ const s=o.k==="sopa"?"media":String(o.k).slice(4); p.push(T0.ivSize(SOPA_N[s]||12)); p.push(o.m==="c"?T0.ivWithClues:T0.ivWithWords); }
+    if(o.g==="semilla" && o.w) p.push(T0.ivWords(o.w));
+    p.push(T0.ivIn[o.lang]||"");
+    return T0.ivDesc(T0.gName[o.g], p.filter(Boolean));
+  }
 
   // ---------- duelos ----------
   // D[id] = {doc, scores:{partida:{uid:resultado}}, at:{partida:ms}, opp, who}
@@ -3025,8 +3083,10 @@ const Live = (()=>{
   // ---------- eventos ----------
   $("ivBtn").addEventListener("click",()=>openOut());
   $("ivRecv").addEventListener("change",e=>setWant(e.target.checked));
-  $("ivGames").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; pickG=b.dataset.g; game=null; renderPick(); });
-  $("ivSopa").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; if(b.dataset.s) pickS=b.dataset.s; if(b.dataset.m) pickM=b.dataset.m; game=null; renderPick(); });
+  $("ivGames").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; pickG=b.dataset.g; game=null; tried=new Set(); msgOut(""); renderOpts(); stage("opts"); });
+  $("ivSopa").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; const d=b.dataset;
+    if(d.s) pickS=d.s; if(d.m) pickM=d.m; if(d.l) pickL=d.l; if(d.w) pickW=+d.w; game=null; tried=new Set(); renderOpts(); stage("opts"); });
+  $("ivBackPick").addEventListener("click",()=>{ game=null; msgOut(""); stage("pick"); });
   $("ivSend").addEventListener("click",send);
   $("ivNick").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); send(); } });
   $("ivAgain").addEventListener("click",send);
@@ -3053,11 +3113,12 @@ const Live = (()=>{
   function texts(){
     const T0=t();
     $("ivBtn").textContent=T0.ivBtn; $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
-    if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=T0.ivOutT;
+    if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=direct ? T0.ivRematchT(direct.who) : T0.ivOutT;
+    else if(!$("ivOpts").hidden) $("ivOutT").textContent=cap(describe(curOpts()));
     $("ivNickL").textContent=T0.ivNick; $("ivSend").textContent=T0.ivSend;
-    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo;
+    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivBackPick").textContent=T0.ivBackPick;
     $("ivYes").textContent=T0.ivYes; $("ivNo").textContent=T0.ivNo; $("ivOff").textContent=T0.ivOff;
-    if(dOut.open && !$("ivPick").hidden) renderPick();
+    if(dOut.open && (!$("ivPick").hidden || !$("ivOpts").hidden)) renderPick();
     if(fb && sentLang!==lang) beat();
     count();
   }
@@ -3168,11 +3229,11 @@ const Admin = (()=>{
   });
   async function load(){
     $("admBody").innerHTML=`<p class="m">Cargando datos…</p>`;
-    let F,S,C,N,X,DU;
+    let F,S,C,N,X,DU,LE;
     try{
-      [F,S,C,N,X,DU]=await Promise.all([
+      [F,S,C,N,X,DU,LE]=await Promise.all([
         A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
-        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels"))]);
+        A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
@@ -3197,6 +3258,10 @@ const Admin = (()=>{
         duelGames++; pl(a).dj++; pl(b).dj++; if(w==="a") pl(a).dg++; if(w==="b") pl(b).dg++; }); });
     const players=Object.values(P);
     const inviters=players.filter(p=>p.inv>0).length, invTot=players.reduce((a,p)=>a+p.inv,0);
+    // "¿Aprendiste alguna palabra nueva?": tildes por juego e idioma (sobre las partidas terminadas)
+    const learnBy={}; let learnYes=0, learnDuel=0;
+    LE.forEach(d=>{ const x=d.data(); if(!x.yes||testers.has(x.u)) return; learnYes++; if(x.duel) learnDuel++;
+      const [k,L]=String(x.p).split("-"); learnBy[`${k}-${L}`]=(learnBy[`${k}-${L}`]||0)+1; });
     const since=d=>players.filter(p=>p.first && now-p.first<d*DAY).length;
     const active=d=>players.filter(p=>p.last && now-p.last<d*DAY).length;
     const totalTime=players.reduce((a,p)=>a+p.time,0);
@@ -3212,6 +3277,7 @@ const Admin = (()=>{
       <div class="kpi"><b>${rows.length}</b><span>partidas terminadas · ${pct(rows.filter(r=>r.ok).length,rows.length)} con éxito</span></div>
       <div class="kpi"><b>${hrs(totalTime)}</b><span>de juego en total · ${players.length?hrs(totalTime/players.length):"–"} por jugador</span></div>
       ${testers.size?`<div class="kpi"><b>${testers.size}</b><span>navegador${testers.size>1?"es":""} de prueba, fuera de estas cuentas</span></div>`:""}
+      <div class="kpi"><b>${learnYes}</b><span>dijeron que aprendieron algo · ${pct(learnYes,rows.length)} de las partidas${learnDuel?` · ${learnDuel} en duelo`:""}</span></div>
       <div class="kpi"><b>${invTot}</b><span>invitaciones a jugar · de ${inviters} jugador${inviters===1?"":"es"}</span></div>
       <div class="kpi"><b>${duels}</b><span>duelos · ${duelGames} partidas en duelo</span></div>
       <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
@@ -3223,10 +3289,10 @@ const Admin = (()=>{
     rows.forEach(r=>{ const key=`${r.k}-${r.L}`; (G[key]=G[key]||[]).push(r); });
     Object.keys(counters).forEach(k=>G[k]=G[k]||[]);
     const gl=Object.keys(G).sort();
-    h+=`<h2>Por juego</h2>`+table(["Juego","Idioma","Creadas","Terminadas","Jugadores","Éxito","Tiempo mediano","Puntos mediana","Sin errores ni ayudas"],
+    h+=`<h2>Por juego</h2>`+table(["Juego","Idioma","Creadas","Terminadas","Jugadores","Éxito","Tiempo mediano","Puntos mediana","Sin errores ni ayudas","Aprendieron algo"],
       gl.map(key=>{ const r=G[key], [k,L]=key.split("-"), okr=r.filter(x=>x.ok);
         return [esc(gname(k)), L.toUpperCase(), counters[key]||0, r.length, new Set(r.map(x=>x.u)).size, pct(okr.length,r.length),
-          okr.length?fmt(median(okr.map(x=>x.ms))):"–", r.length?Math.round(median(r.map(x=>x.sc.pts))):"–", pct(r.filter(x=>!x.sc.pen).length,r.length)]; }));
+          okr.length?fmt(median(okr.map(x=>x.ms))):"–", r.length?Math.round(median(r.map(x=>x.sc.pts))):"–", pct(r.filter(x=>!x.sc.pen).length,r.length), learnBy[key]?`${learnBy[key]} (${pct(learnBy[key],r.length)})`:"–"]; }));
 
     // actividad: últimos 30 días
     const days=[...Array(30)].map((_,i)=>{ const d=new Date(now-(29-i)*DAY); return d.toDateString(); });
@@ -3298,8 +3364,13 @@ document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",
   lang=b.dataset.lang; store.set("rodo-lang",lang);
   applyTexts();
   // el juego abierto pasa al último número del nuevo idioma; los demás, al abrirlos
-  if(GAMES[view]) Reg.enter(view);
+  if(GAMES[view]) Reg.enter(view, true);
 }));
+// cambio de idioma por una invitación: no reemplaza las partidas en curso ni las congeladas
+function setLang(L){
+  if(!L || L===lang) return;
+  lang=L; store.set("rodo-lang",lang); applyTexts();
+}
 window.addEventListener("hashchange",route);
 route();
 </script>

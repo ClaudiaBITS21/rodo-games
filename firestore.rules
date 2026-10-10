@@ -109,6 +109,21 @@ service cloud.firestore {
         || isAdmin();
     }
 
+    // "¿Aprendiste alguna palabra nueva?": una respuesta por jugador y partida, que puede cambiar. Solo la lee la administración
+    match /learned/{id} {
+      allow read: if isAdmin();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at'])
+        && request.resource.data.u == request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.p
+        && request.resource.data.p is string && request.resource.data.p.size() <= 80
+        && request.resource.data.g is string && request.resource.data.g.size() <= 20
+        && request.resource.data.yes is bool && request.resource.data.duel is bool
+        && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/puzzles/$(request.resource.data.p));
+      allow delete: if false;
+    }
+
     // Navegadores de prueba (los marca la administración): sus resultados no cuentan en rankings ni estadísticas
     match /testers/{uid} {
       allow read: if true;
@@ -134,9 +149,10 @@ service cloud.firestore {
     // Vencen a los 60 segundos (65 de margen). Solo las leen quien invita y quien es invitado.
     function newInvite(from) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm'])
-        // m: modo de la sopa que eligió quien invita
+      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w'])
+        // m: modo de la sopa y w: palabras de la semilla, que eligió quien invita
         && (!('m' in d) || d.m in ['w', 'c'])
+        && (!('w' in d) || d.w in [12, 24])
         // d: el duelo, cuando es una revancha
         && (!('d' in d) || (d.d is string && d.d.size() <= 300))
         && d.to is string && d.to != from && d.to.size() > 0 && d.to.size() <= 128

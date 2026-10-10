@@ -72,7 +72,7 @@ Cada error suma 10 segundos al reloj (20 en el ahorcado), cada ayuda 60 y cada "
 
 ## Colecciones de Firestore
 
-`puzzles`, `counters`, `scores/{partida}/players` (resultados), `fichas` (actividad de cada navegador, privada), `names` y `nicks` (apodos únicos), `online` (conectados), `invites` (invitaciones), `duels` (duelos) y `testers` (navegadores de prueba, los marca la administración).
+`puzzles`, `counters`, `scores/{partida}/players` (resultados), `fichas` (actividad de cada navegador, privada), `names` y `nicks` (apodos únicos), `online` (conectados), `invites` (invitaciones), `duels` (duelos), `learned` (respuestas a "¿Aprendiste alguna palabra nueva?") y `testers` (navegadores de prueba, los marca la administración).
 
 ## Juegos ocultos
 
