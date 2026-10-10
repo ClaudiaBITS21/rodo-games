@@ -292,6 +292,8 @@ body.tester .testbadge{display:block}
 .key{flex:1 1 0;max-width:46px;min-width:0;padding:12px 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;border-radius:8px}
 .key.hit{background:var(--ok);border-color:var(--ok);color:#fff}
 .key.miss{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+/* ahorcado de varias palabras */
+#hScore[hidden]{display:none}   /* puntitos de avance (.score les pone display:flex); en el ahorcado normal no se ven */
 
 /* ---------- Sopa de letras ---------- */
 .sgrid{display:grid;gap:2px;width:max-content;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;
@@ -585,6 +587,7 @@ body.tester .testbadge{display:block}
       <div class="row"><button id="hAgain"></button><button id="hShare"></button></div>
       <p class="note" id="hNote"></p>
     </div>
+    <div class="score" id="hScore" hidden></div>
     <svg class="blocks" id="hBlocks" viewBox="0 0 520 80" aria-hidden="true"></svg>
     <p class="lives" id="hLives" aria-live="polite"></p>
     <div class="actions"><button id="hClueBtn"></button></div>
@@ -1326,6 +1329,7 @@ const T = {
     hWin:"¡Adivinaste!", hLose:"Se rompió la cadena. Era", hAgain:"Otra palabra",
     hStats:(e,s)=>`${e} error${e===1?"":"es"}. Racha: ${s}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla.",
     hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
+    hMetaN:(i,n,l)=>`Palabra ${i} de ${n} · ${l} letras`, hMWin:(s,n)=>`${s} de ${n}`, hMStats:e=>`${e} error${e===1?"":"es"}.`,
     // sopa
     sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
     sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
@@ -1355,6 +1359,7 @@ const T = {
     hWin:"You got it!", hLose:"The chain broke. It was", hAgain:"Another word",
     hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
     hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
+    hMetaN:(i,n,l)=>`Word ${i} of ${n} · ${l} letters`, hMWin:(s,n)=>`${s} of ${n}`, hMStats:e=>`${e} mistake${e===1?"":"s"}.`,
     sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
     sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
@@ -1448,6 +1453,17 @@ async function shareBlob(blob, filename, noteEl, btn){
   } finally { btn.disabled=false; }
 }
 const toBlob = cv => new Promise(res => cv.toBlob(res,"image/png"));
+
+// ================= Dificultad al generar (torneo) =================
+// gen({dif}) o gen(x, {dif}); sin dif, la partida sale como siempre
+const DIFS = Object.freeze(["facil","media","dificil"]);
+const genOpts = (a,b) => (a && typeof a==="object") ? a : (b||{});
+// el tercio de la lista que toca según la dificultad (ordenada por f, de menor a mayor)
+const byThird = (list,f,dif) => { const i=DIFS.indexOf(dif); if(i<0) return list;
+  const s=[...list].sort((a,b)=>f(a)-f(b)), n=s.length; return s.slice(Math.round(i*n/3), Math.round((i+1)*n/3)); };
+// n entradas del glosario con largo entre lo y hi; si no alcanzan, las de largo más cercano (pen: castigo extra, entre 0 y 0,5)
+const nearLen = (list,n,lo,hi,pen) => list.map(x=>{ const l=x[0].length; return [x, (l<lo?lo-l:l>hi?l-hi:0)+(pen?pen(x):0)+Math.random()*0.4]; })
+  .sort((a,b)=>a[1]-b[1]).slice(0,n).map(x=>x[0]);
 
 // =====================================================================
 // ACRÓSTICO
@@ -1631,8 +1647,9 @@ const Acro = (()=>{
     x.fillText(`${t.imgSolved} ${fmt(elapsed)}, ${t.imgHints(hintsUsed)}`, pad, H-pad+6);
     return toBlob(cv);
   }
-  function gen(){
-    const pool=PHRASES[lang].filter(p=>p!==lastPhrase);
+  // dif: frase corta, mediana o larga (tercios por cantidad de letras)
+  function gen(a,b){
+    const pool=byThird(PHRASES[lang], p=>p.replace(/ /g,"").length, genOpts(a,b).dif).filter(p=>p!==lastPhrase);
     const phrase=rand(pool); lastPhrase=phrase;
     const g=generate(phrase);
     return {phrase:g.phrase, L:g.L, W:g.W, rows:g.rows.map(r=>r.gap?{gap:true}:{word:r.word,clue:r.clue,pos:r.pos,given:!!r.given})};
@@ -1643,6 +1660,12 @@ const Acro = (()=>{
     hintsUsed=0; solved=false; badSeen=new Set(); startTime=Date.now(); elapsed=0; updateHintBtn(); render();
   }
   function create(){ Reg.newGame("acrostico"); }
+  // avance: casillas no regaladas con la letra correcta (las reveladas con ayuda cuentan; lo que muestra "Me rindo" no, porque no toca entry)
+  function progress(){
+    if(!P) return {p:0, s:0};
+    let ok=0, n=0; realRows().forEach(r=>{ if(!r.given) [...r.word].forEach((ch,k)=>{ n++; if(r.entry[k]===ch) ok++; }); });
+    return {p:n?ok/n:0, s:0};
+  }
   // eventos
   const grid=$("grid");
   grid.addEventListener("focusin",e=>{ const t=e.target; if(!t.classList.contains("cell")) return;
@@ -1664,7 +1687,7 @@ const Acro = (()=>{
   $("hintBtn").addEventListener("click",hint);
   $("printBtn").addEventListener("click",()=>window.print());
   $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
-  return {texts, create, gen, load, started:()=>!!P};
+  return {texts, create, gen, load, started:()=>!!P, progress, difs:DIFS};
 })();
 
 // =====================================================================
@@ -1673,13 +1696,18 @@ const Acro = (()=>{
 const Hang = (()=>{
   const LIVES=6;
   let word="", clue="", guessed=new Set(), wrong=0, over=false, recent=[], clueUsed=false;
+  // torneo: varias palabras seguidas. multi=[{word,clue}], wi=la que se juega, res="ok"/"skip" por palabra,
+  // hits=adivinadas, errs=bloques rotos en total, tok=invalida la pausa entre palabras si se carga otra partida
+  let multi=null, wi=0, res=[], hits=0, errs=0, done=false, tok=0, free=new Set();
   const ROWS = { es:["QWERTYUIOP","ASDFGHJKLÑ","ZXCVBNM"], en:["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"] };
+  const LEN = {facil:[4,6], media:[6,9], dificil:[8,12]};
 
   function texts(){
     const t=T[lang];
     $("hNew").textContent=t.hNew; $("hAgain").textContent=t.hAgain; $("hShare").textContent=t.share;
-    $("hFoot").textContent=t.hFoot; updClue();
+    $("hFoot").textContent=t.hFoot; updClue(); if(multi && word) meta();
   }
+  const meta=()=>{ $("hMeta").textContent = multi ? T[lang].hMetaN(wi+1, multi.length, word.length) : T[lang].hMeta(word.length); };
   const streak = () => +(store.get("rodo-hang-streak")||0);
   function drawBlocks(){
     const svg=$("hBlocks"); let h="";
@@ -1709,19 +1737,33 @@ const Hang = (()=>{
     }).join("")}</div>`).join("");
   }
   let hStart=0;
-  function gen(){
-    const pool=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
-    const [w,c]=rand(pool); recent.push(w); if(recent.length>25) recent.shift();
+  const remember=w=>{ recent.push(w); if(recent.length>25) recent.shift(); };
+  // gen() o gen({dif}): una palabra, {word, clue}. gen({n, dif}): n palabras distintas para el torneo, {words:[{word, clue}]}
+  function gen(a,b){
+    const o=genOpts(a,b), [lo,hi]=LEN[o.dif]||[4,12], all=()=>gloss().filter(([w])=>w.length>=4 && w.length<=12);
+    if(o.n>0) return {words:shuffle(nearLen(all(), Math.floor(o.n), lo, hi, x=>recent.includes(x[0])?0.5:0)).map(([w,c])=>{ remember(w); return {word:w, clue:c}; })};
+    let pool=gloss().filter(([w])=>w.length>=lo && w.length<=hi && !recent.includes(w));
+    if(!pool.length) pool=nearLen(all(), 1, lo, hi);
+    const [w,c]=rand(pool); remember(w);
     return {word:w, clue:c};
   }
   function create(){ Reg.newGame("ahorcado"); }
+  // acepta {word, clue} (una palabra) o {words:[{word, clue}]} (varias, en orden)
   function load(d){
-    word=d.word; clue=d.clue; hStart=Date.now();
+    tok++; hStart=Date.now(); done=false;
+    multi = d.words ? d.words.map(x=>({word:x.word, clue:x.clue})) : null;
+    wi=0; res=[]; hits=0; errs=0; $("hScore").hidden=!multi;
+    $("hWin").style.display="none"; $("hWin").classList.remove("lose");
+    setWord(multi ? multi[0] : d);
+  }
+  function setWord(d){
+    word=d.word; clue=d.clue;
     guessed=new Set(); wrong=0; over=false;
     // letras fuera del teclado (por ejemplo Ñ en inglés) se regalan
     [...word].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) guessed.add(ch); });
-    $("hClue").textContent=clue; $("hClue").style.display="none"; clueUsed=false; $("hMeta").textContent=T[lang].hMeta(word.length);
-    $("hWin").style.display="none"; $("hWin").classList.remove("lose");
+    free=new Set(guessed);
+    $("hClue").textContent=clue; $("hClue").style.display="none"; clueUsed=false; meta();
+    if(multi) scoreDots($("hScore"), multi.length, res, wi);
     drawBlocks(); drawWord(); drawKeys();
   }
   function guess(ch){
@@ -1729,8 +1771,31 @@ const Hang = (()=>{
     guessed.add(ch);
     if(!word.includes(ch)){ wrong++; Reg.pen("ahorcado","e"); }
     const won=[...word].every(c=>guessed.has(c)), lost=wrong>=LIVES;
-    if(won||lost) finish(won);
+    if(won||lost) (multi ? endWord : finish)(won);
     drawBlocks(); drawWord(); drawKeys();
+  }
+  // varias palabras: se anota esta y, tras una pausa (más larga si perdió, para ver la palabra), sigue la próxima o termina
+  function endWord(won){
+    over=true; errs+=wrong; res[wi]=won?"ok":"skip";
+    if(won) hits++; else Reg.pen("ahorcado","r");
+    scoreDots($("hScore"), multi.length, res, -1);
+    const t=tok;
+    setTimeout(()=>{ if(t!==tok) return; if(++wi<multi.length) setWord(multi[wi]); else finishAll(); }, won?800:1500);
+  }
+  function finishAll(){
+    done=true; const t=T[lang], n=multi.length;
+    $("hWinLabel").textContent=t.hMWin(hits,n); $("hWinWord").textContent=""; $("hWinStats").textContent=t.hMStats(errs);
+    $("hWin").classList.toggle("lose", !hits); $("hShare").style.display="none";
+    $("hNote").textContent=""; $("hWin").style.display="block";
+    $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
+    Reg.finish("ahorcado",{ok:hits>0, s:hits, h:errs, ms:Date.now()-hStart-Reg.wait("ahorcado")});
+  }
+  // avance: letras distintas adivinadas (sin las regaladas); con varias palabras, (adivinadas + fracción de la actual) / total
+  const frac=()=>{ const L=[...new Set(word)].filter(c=>!free.has(c)); return L.length ? L.filter(c=>guessed.has(c)).length/L.length : 1; };
+  function progress(){
+    if(!word) return {p:0, s:0};
+    if(!multi) return {p:frac(), s:0};
+    return {p:(hits+(over?0:frac()))/multi.length, s:hits};
   }
   function finish(won){
     over=true; const t=T[lang];
@@ -1770,7 +1835,8 @@ const Hang = (()=>{
   $("hNew").addEventListener("click",create);
   $("hAgain").addEventListener("click",create);
   $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
-  return {texts, create, gen, load, started:()=>!!word, redrawLives:()=>{ if(word) $("hLives").textContent=T[lang].hLives(LIVES-wrong); }};
+  return {texts, create, gen, load, started:()=>!!word, redrawLives:()=>{ if(word) $("hLives").textContent=T[lang].hLives(LIVES-wrong); },
+    progress, rounds:()=>multi?multi.length:1, difs:DIFS};
 })();
 
 // =====================================================================
@@ -1946,7 +2012,9 @@ const Sopa = (()=>{
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
-  return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
+  return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag,
+    // avance: palabras encontradas (las que marca "Me rindo" no entran en found)
+    progress:()=>({p:words.length ? found.size/words.length : 0, s:0})};
 })();
 
 
@@ -2188,7 +2256,9 @@ const Seed = (()=>{
   $("pAgain").addEventListener("click",create);
   $("pShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.seedTitle, t.pSize(words.length), t.pCard(words.length,errors,fmt(elapsed)), null), lang==="en"?"lost-seed-rodo-games.png":"semilla-rodo-games.png", $("pNote"), $("pShare")); });
-  return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end"};
+  return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end",
+    // avance: palabras bien ubicadas (mientras memoriza, 0)
+    progress:()=>({p:(stage==="play"||stage==="end") && words.length ? next/words.length : 0, s:0})};
 })();
 
 // =====================================================================
@@ -2328,8 +2398,9 @@ const Cripto = (()=>{
     showWin("c", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
     Reg.finish("criptograma",{ok:false,s:0,h:hints,ms:elapsed});
   }
-  function gen(){
-    const pool=QUOTES[lang].filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
+  // dif: frase corta, mediana o larga (tercios por cantidad de letras)
+  function gen(a,b){
+    const pool=byThird(QUOTES[lang], x=>norm(x[0]).replace(/[^A-ZÑ]/g,"").length, genOpts(a,b).dif).filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
     const A=alpha(); let perm;
     do { perm=shuffle(A); } while (perm.some((c,i)=>c===A[i]));
     const m={}; A.forEach((c,i)=>m[c]=perm[i]);
@@ -2433,7 +2504,9 @@ const Cripto = (()=>{
   $("cNew").addEventListener("click",create); $("cAgain").addEventListener("click",create);
   $("cPrint").addEventListener("click",()=>window.print());
   $("cShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"cryptogram-rodo-games.png":"criptograma-rodo-games.png", $("cNote"), $("cShare")));
-  return {texts, create, gen, load, started:()=>!!q};
+  return {texts, create, gen, load, started:()=>!!q, difs:DIFS,
+    // avance: casillas con la letra correcta (las que completa "Me rindo" quedan con la clase miss y no cuentan)
+    progress:()=>({p:q && cells.length ? cells.filter(x=>x.el.value===x.p && !x.el.classList.contains("miss")).length/cells.length : 0, s:0})};
 })();
 
 // =====================================================================
@@ -2453,7 +2526,12 @@ const Ana = (()=>{
   const word=()=>list[i][0];
   function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length; }
   function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
-  function gen(){ return {list:shuffle(gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
+  // dif: largo de las palabras; si no alcanzan 10 en el rango, se completa con las de largo más cercano (siempre entre 4 y 10)
+  const LEN={facil:[4,6], media:[6,8], dificil:[8,10]};
+  function gen(a,b){
+    const R=LEN[genOpts(a,b).dif], pool=gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)));
+    return {list:(R ? shuffle(nearLen(pool,ROUNDS,R[0],R[1])) : shuffle(pool).slice(0,ROUNDS)).map(([w,c])=>({w,c}))};
+  }
   function create(){ Reg.newGame("anagrama"); }
   function load(d){
     list=d.list.map(o=>[o.w,o.c]); hints=0;
@@ -2509,7 +2587,9 @@ const Ana = (()=>{
   $("aNew").addEventListener("click",create); $("aAgain").addEventListener("click",create);
   $("aShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
-  return {texts, create, gen, load, started:()=>list.length>0};
+  return {texts, create, gen, load, started:()=>list.length>0, difs:DIFS,
+    // avance: rondas acertadas (las pasadas no suman)
+    progress:()=>({p:list.length ? score/ROUNDS : 0, s:score})};
 })();
 
 function applyTexts2(){
