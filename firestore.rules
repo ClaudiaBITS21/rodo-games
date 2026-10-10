@@ -200,7 +200,9 @@ service cloud.firestore {
     // Vencen a los 60 segundos (65 de margen). Solo las leen quien invita y quien es invitado.
     function newInvite(from) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w'])
+      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w', 'r'])
+        // r: invitación al azar (quien ya rechazó una al azar en su sesión la rechaza sola)
+        && (!('r' in d) || d.r is bool)
         // m: modo de la sopa y w: palabras de la semilla, que eligió quien invita
         && (!('m' in d) || d.m in ['w', 'c'])
         && (!('w' in d) || d.w in [12, 24])
@@ -231,8 +233,11 @@ service cloud.firestore {
         || (request.auth.uid == from && onlySt() && resource.data.st == 'pending'
             && request.resource.data.st in ['cancelled', 'expired'])
         // quien es invitado responde, dentro del plazo
-        || (request.auth.uid == resource.data.to && onlySt() && resource.data.st == 'pending' && live()
-            && request.resource.data.st in ['accepted', 'declined', 'busy']));
+        // (al aceptar marca go = hora del servidor: los dos arrancan el duelo 5 s después, a la vez)
+        || (request.auth.uid == resource.data.to && resource.data.st == 'pending' && live()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'go'])
+            && request.resource.data.st in ['accepted', 'declined', 'busy']
+            && (!('go' in request.resource.data) || (request.resource.data.st == 'accepted' && request.resource.data.go == request.time))));
       allow delete: if false;
     }
 

@@ -136,6 +136,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .newver button{padding:6px 12px;background:var(--btc);border-color:var(--btc);color:#1A1E23}
 .testbadge{display:none;position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:50;background:#7B3FE4;color:#fff;font:700 .72rem "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;padding:4px 8px;border-radius:6px;pointer-events:none}
 body.tester .testbadge{display:block}
+.pduel{margin:-6px 0 10px;font-weight:700;font-size:.92rem;color:var(--btc)}
+.pduel:empty{display:none}
 .pcost{margin:-4px 0 10px;font-size:.8rem;color:var(--muted)}
 .pcost:empty{display:none}
 .statsbtn{padding:9px 11px;line-height:1}
@@ -810,8 +812,7 @@ body.tester .testbadge{display:block}
   <p class="ivfz" id="ivInFz"></p>
   <div class="ivbar"><i id="ivInBar"></i></div>
   <p class="ivmsg" id="ivInLeft"></p>
-  <div class="row"><button class="primary" id="ivYes"></button><button id="ivNo"></button></div>
-  <button class="ivoff" id="ivOff"></button>
+  <div class="row"><button class="primary" id="ivYes"></button><button id="ivNo"></button><button id="ivOff"></button></div>
 </dialog>
 <script>
 // ================= Glosarios: [palabra, [pista 1, pista 2, pista 3]] =================
@@ -2581,13 +2582,14 @@ const Reg = (()=>{
       bar.innerHTML=`<span class="pid"></span><button class="pjump"></button><span class="pfind" hidden><input type="number" min="1" inputmode="numeric" placeholder="#"><button class="pgo"></button></span><button class="prk"></button><span class="ptime" aria-hidden="true"></span><span class="ppen" aria-hidden="true"></span><span class="pmsg" aria-live="polite"></span>`;
       sec.insertBefore(bar, sec.firstChild);
       const cost=document.createElement("p"); cost.className="pcost"; bar.after(cost);
+      const duelP=document.createElement("p"); duelP.className="pduel"; duelP.setAttribute("aria-live","polite"); cost.after(duelP);
       // el ranking va dentro del cartel final, que se muestra como ventana emergente
       const win=sec.querySelector(".win");
       const x=document.createElement("button"); x.className="wclose"; x.textContent="×"; win.insertBefore(x, win.firstChild);
       const rk=document.createElement("div"); rk.className="rank"; rk.hidden=true;
       rk.innerHTML=`<div class="rtabs" role="group"><button data-t="p"></button><button data-t="g"></button></div><div class="rkbody"></div>`;
       win.appendChild(rk);
-      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime"), pen:bar.querySelector(".ppen"), cost};
+      const u = ui[g] = {bar, rk, win, x, pid:bar.querySelector(".pid"), input:bar.querySelector("input"), go:bar.querySelector(".pgo"), rkBtn:bar.querySelector(".prk"), msg:bar.querySelector(".pmsg"), find:bar.querySelector(".pfind"), jump:bar.querySelector(".pjump"), time:bar.querySelector(".ptime"), pen:bar.querySelector(".ppen"), cost, duel:duelP};
       // la semilla ya tiene su propio paso previo (memorizar), así que no lleva botón Iniciar
       if(g!=="semilla"){
         const gate=document.createElement("div"); gate.className="gate";
@@ -2631,7 +2633,8 @@ const Reg = (()=>{
     if(on && view===g) u.gateBtn.focus({preventScroll:true});
   }
   function unlock(g){
-    const c=cur[g]; if(!c||c.t0) return lock(g,false);
+    const c=cur[g]; if(c && c.sync && Date.now()<c.sync) return;   // duelo: se espera la cuenta regresiva
+    if(!c||c.t0) return lock(g,false);
     c.t0=Date.now(); c.wait=c.t0-c.load; lock(g,false); tick();
   }
   const locked=g=>!!(ui[g] && ui[g].gate && $("view-"+g).classList.contains("locked"));
@@ -2685,6 +2688,19 @@ const Reg = (()=>{
     if(t>=SCORE.HELP_LOCK) return true;
     msg(g, T[lang].duHelpLock(fmt(SCORE.HELP_LOCK-t))); return false;
   }
+  // duelo: sin botón Iniciar; los dos arrancan a la vez con una cuenta regresiva
+  function syncStart(g, at){
+    const u=ui[g], c=cur[g]; if(!u || !u.gate || !c) return;
+    u.gateBtn.disabled=true; c.sync=at; u.gateNote.textContent=T[lang].duSyncNote;
+    const step=()=>{
+      if(cur[g]!==c){ u.gateBtn.disabled=false; return; }
+      const left=at-Date.now();
+      if(left<=0){ u.gateBtn.disabled=false; u.gateBtn.textContent=T[lang].gateGo; u.gateNote.textContent=T[lang].gateNote; unlock(g); return; }
+      u.gateBtn.textContent=T[lang].duStartIn(Math.ceil(left/1000)); setTimeout(step, Math.min(250,left));
+    };
+    step();
+  }
+  function duelNote(g, s){ const u=ui[g]; if(!u) return; u.duel.textContent=s||""; }
   // línea con lo que cuesta cada cosa en este juego (y el aviso de duelo)
   function setCost(g){
     const u=ui[g]; if(!u) return; const t=T[lang], c=cur[g];
@@ -2820,13 +2836,13 @@ const Reg = (()=>{
     return r;
   }
   // abrir la partida de una invitación; duel: el duelo al que pertenece
-  async function playInvite(g, k, n, duel, m){
+  async function playInvite(g, k, n, duel, m, at){
     if(GAMES[g].setKey) GAMES[g].setKey(k);
     if(m && GAMES[g].setMode) GAMES[g].setMode(m);
     cur[g]={lang, k, n:null, loading:true}; setPid(g);
     if(location.hash!=="#"+g) location.hash=g;
     await open(g, n);
-    if(cur[g] && cur[g].n===n && duel){ cur[g].duel=duel; setCost(g); }
+    if(cur[g] && cur[g].n===n && duel){ cur[g].duel=duel; setCost(g); if(at) syncStart(g, at); if(Reg.onDuelStart) Reg.onDuelStart(g, duel); }
   }
   // un lugar propio dentro del cartel final (duelo, retomar partida)
   function slot(g, cls){
@@ -2841,7 +2857,7 @@ const Reg = (()=>{
       const s=await fb.getDoc(fb.doc(fb.db,"puzzles",`${k}-${L}-${n}`));
       if(!s.exists()){ msg(g, T[lang].rkNotFound(n)); if(cur[g]&&cur[g].loading) await fresh(g); return; }
       const d=JSON.parse(JSON.stringify(s.data().data));
-      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); setCost(g); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n,d); watch(g);
+      cur[g]={lang:L, k, n}; closeWin(g); GAMES[g].load(d); setPid(g); setCost(g); duelNote(g,""); startT(g); msg(g,""); ui[g].input.value=""; ui[g].find.hidden=true; markSeen(k,L,n,d); watch(g);
     }catch(e){ msg(g, T[lang].rkNotFound(n)); }
   }
   function watch(g){
@@ -2861,6 +2877,7 @@ const Reg = (()=>{
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
     if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); showLearn(g); }
     showBack(g);
+    duelNote(g,"");
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
     else if(ui[g]){ const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; }
     if(!fb||!c||!c.n||!uid) return;
@@ -2995,7 +3012,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3061,7 +3078,8 @@ Object.assign(T.es,{
   ivAgain:"Invitar a otro", ivSolo:"Jugarla solo", ivFail:"No se pudo enviar la invitación. Probá de nuevo.",
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
   ivFz:"Tu cronómetro quedó congelado. Si aceptás, al terminar podés volver a tu partida.",
-  ivYes:"Aceptar", ivNo:"No, gracias", ivOff:"No quiero recibir invitaciones", ivLate:"La invitación ya venció.",
+  ivYes:"Aceptar", ivNo:"No, gracias", ivOff:"Rechazar todas",
+  ivNext:"Probando con otra persona…", ivNoneLeft:"No hay nadie más disponible por ahora.", ivLate:"La invitación ya venció.",
   gName:{acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"},
   ivWhoL:"¿A quién?", ivRandom:"Alguien al azar", ivByName:"Por nombre", ivNamePh:"Escribí un nombre…",
   ivNoMatch:"Nadie conectado con ese nombre.", ivNoneOnline:"No hay nadie con usuario conectado ahora.", ivPickName:"Elegí a alguien de la lista.",
@@ -3075,6 +3093,7 @@ Object.assign(T.es,{
   duTitle:who=>`Duelo con ${who}`, duScore:(w,l,who)=>`Vos ${w} – ${l} ${who}`, duTies:n=>` · ${n} empate${n>1?"s":""}`,
   duPlayed:n=>`${n} partida${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} todavía está jugando…`,
   duWon:"¡Ganaste esta!", duLost:who=>`Esta la ganó ${who}.`, duTie:"Esta terminó empatada.", duVoid:"Esta no contó.",
+  duStartIn:s=>`Empieza en ${s}…`, duSyncNote:"Duelo: los dos arrancan a la vez.", duOppPlaying:who=>`${cap(who)} está jugando…`, duOppDone:(who,p)=>`⚡ ${cap(who)} ya terminó: ${p} puntos`,
   duRematch:"Revancha: elegí el juego", duTheirPick:who=>`Le toca elegir la revancha a ${who}.`
 });
 Object.assign(T.en,{
@@ -3089,7 +3108,8 @@ Object.assign(T.en,{
   ivAgain:"Invite someone else", ivSolo:"Play it alone", ivFail:"Couldn't send the invitation. Please try again.",
   ivInT:(who,g)=>`${who} invites you to play ${g}`,
   ivFz:"Your timer is frozen. If you accept, you can go back to your game when you finish.",
-  ivYes:"Accept", ivNo:"No, thanks", ivOff:"I don't want invitations", ivLate:"The invitation has expired.",
+  ivYes:"Accept", ivNo:"No, thanks", ivOff:"Decline all",
+  ivNext:"Trying someone else…", ivNoneLeft:"Nobody else is available right now.", ivLate:"The invitation has expired.",
   gName:{acrostico:"Acrostic",ahorcado:"Hangman",sopa:"Word search",criptograma:"Cryptogram",anagrama:"Anagram",semilla:"Lost seed",esbip:"Is it on the list?",placa:"Steel plate"},
   ivWhoL:"Who?", ivRandom:"Someone at random", ivByName:"By name", ivNamePh:"Type a name…",
   ivNoMatch:"Nobody online by that name.", ivNoneOnline:"Nobody with a username is online right now.", ivPickName:"Pick someone from the list.",
@@ -3103,6 +3123,7 @@ Object.assign(T.en,{
   duTitle:who=>`Duel with ${who}`, duScore:(w,l,who)=>`You ${w} – ${l} ${who}`, duTies:n=>` · ${n} tie${n>1?"s":""}`,
   duPlayed:n=>`${n} game${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} is still playing…`,
   duWon:"You won this one!", duLost:who=>`${cap(who)} won this one.`, duTie:"This one was a tie.", duVoid:"This one didn't count.",
+  duStartIn:s=>`Starts in ${s}…`, duSyncNote:"Duel: you both start at the same time.", duOppPlaying:who=>`${cap(who)} is playing…`, duOppDone:(who,p)=>`⚡ ${cap(who)} already finished: ${p} points`,
   duRematch:"Rematch: pick the game", duTheirPick:who=>`It's ${who}'s turn to pick the rematch.`
 });
 const Live = (()=>{
@@ -3113,6 +3134,10 @@ const Live = (()=>{
   let pickG=null, game=null, tried=new Set(), out=null, inc=null, direct=null, pickS="media", pickM="w", pickL="es", pickW=12;
   // por nombre: whoMode "name", pickTo = {to, who} elegido de la lista de conectados (onl)
   let whoMode="rnd", pickTo=null, onl=[], onlAt=0;
+  // quienes rechazaron una invitación al azar en esta sesión no vuelven a ser sorteados (por nombre, sí)
+  const declinedBy=new Set(); let lastWhy="";
+  // quien recibe: si ya rechazó una al azar en esta sesión, las siguientes al azar se rechazan solas
+  const SKEY="rodo-declined-rnd", iDeclined=()=>{ try{ return sessionStorage.getItem(SKEY)==="1"; }catch(e){ return false; } };
   const now=()=>Date.now()+off;            // hora del servidor, estimada
   const dOut=$("ivOut"), dIn=$("ivIn");
   const anyOpen=()=>dOut.open||dIn.open;
@@ -3215,10 +3240,11 @@ const Live = (()=>{
       return x && x.at && x.at.toMillis()>now()-FRESH && x.inv && !(x.busy||[]).includes(g) ? one.to : null;
     }
     const s=await fb.getDocs(fresh());
-    const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && !(x.busy||[]).includes(g) && !tried.has(d.id); }).map(d=>d.id);
+    const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && !(x.busy||[]).includes(g) && !tried.has(d.id) && !declinedBy.has(d.id); }).map(d=>d.id);
     return list.length ? list[Math.floor(Math.random()*list.length)] : null;
   }
-  async function send(){
+  // auto: reintento solo al azar después de un "no" (mismo juego y misma partida)
+  async function send(auto){
     if(out) return;
     if(!Reg.nick()){ msgOut(t().ivNeedNick); User.open(); return; }
     $("ivSend").disabled=true; $("ivAgain").disabled=true; msgOut(t().ivSearching);
@@ -3226,7 +3252,7 @@ const Live = (()=>{
       if(!direct && whoMode==="name" && !pickTo){ msgOut(t().ivPickName); $("ivName").focus(); return; }
       const one=direct || (whoMode==="name" ? pickTo : null);
       const g=game ? game.g : pickG, to=await candidate(g);
-      if(!to){ msgOut(one ? t().ivAway(one.who) : t().ivNobody); stage(game?"done":"opts"); return; }
+      if(!to){ msgOut(one ? t().ivAway(one.who) : auto ? lastWhy+" "+t().ivNoneLeft : t().ivNobody); stage(game?"done":"opts"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
       if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
       const ns=one ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
@@ -3235,11 +3261,16 @@ const Live = (()=>{
       if(direct && direct.d) inv.d=direct.d;
       if(game.m) inv.m=game.m;
       if(game.w) inv.w=game.w;
+      if(!one) inv.r=true;   // al azar
       await fb.setDoc(fb.doc(fb.db,"invites",uid),inv);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
       tried.add(to);
-      out={who, to, d:direct?direct.d:null, end:Date.now()+WIN};
-      out.unsub=fb.onSnapshot(fb.doc(fb.db,"invites",uid), s=>{ const st=s.exists()&&s.data().st; if(out && st && st!=="pending") answered(st); }, ()=>{});
+      out={who, to, d:direct?direct.d:null, rnd:!one, end:Date.now()+WIN};
+      out.unsub=fb.onSnapshot(fb.doc(fb.db,"invites",uid), s=>{
+        const x=s.exists()&&s.data(), st=x&&x.st;
+        if(st==="accepted" && !x.go) return;   // espera la hora del servidor de la aceptación
+        if(out && st && st!=="pending"){ out.go=x.go; answered(st); }
+      }, ()=>{});
       out.timer=setInterval(tickOut,1000);
       msgOut(""); $("ivWaitT").textContent=t().ivWaitT(who); stage("wait"); tickOut(); beat();
     }catch(e){ msgOut(t().ivFail); stage(game?"done":"opts"); }
@@ -3271,12 +3302,17 @@ const Live = (()=>{
           }
           watchDuel(id);
         }catch(e){ id=null; }
-        setTimeout(()=>{ if(dOut.open) dOut.close(); setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m); }, 700);
+        setTimeout(()=>{ if(dOut.open) dOut.close(); setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m, startAt(o.go)); }, 400);
       })();
       return;
     }
     if(st==="cancelled") return;
-    msgOut(st==="declined" ? t().ivNoOut(o.who) : st==="busy" ? t().ivBusyOut(o.who) : t().ivExpOut(o.who));
+    if(st==="declined" && o.rnd) declinedBy.add(o.to);
+    const why = st==="declined" ? t().ivNoOut(o.who) : st==="busy" ? t().ivBusyOut(o.who) : t().ivExpOut(o.who);
+    // al azar: se sigue invitando a otro disponible, con la misma partida, hasta que alguien acepte
+    lastWhy=why;
+    if(o.rnd && dOut.open){ msgOut(why+" "+t().ivNext); stage("wait"); $("ivWaitT").textContent=t().ivSearching; setTimeout(()=>{ if(dOut.open && !out) send(true); }, 1200); return; }
+    msgOut(why);
     stage("done");
   }
   function cancelOut(){
@@ -3300,6 +3336,7 @@ const Live = (()=>{
   function receive(id, d){
     const left=WIN-(now()-(d.at ? d.at.toMillis() : now()));
     if(left<=2000) return;
+    if(d.r && iDeclined()) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"declined"}).catch(()=>{});
     if(inc || out || anyOpen() || !want || Reg.busyList().includes(d.g))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
@@ -3307,7 +3344,7 @@ const Live = (()=>{
     inc.frozen=Reg.freeze();
     $("ivInT").textContent=(d.d ? t().ivRematchIn : t().ivInT)(d.name, describe(d));
     $("ivInFz").textContent=playing ? t().ivFz : "";
-    $("ivYes").disabled=$("ivNo").disabled=false;
+    $("ivYes").disabled=$("ivNo").disabled=$("ivOff").disabled=false;
     dIn.showModal(); $("ivYes").focus();
     inc.timer=setInterval(tickIn,1000); tickIn(); beat();
   }
@@ -3327,26 +3364,33 @@ const Live = (()=>{
   }
   function late(){
     if(!inc) return; clearInterval(inc.timer);
-    $("ivInLeft").textContent=t().ivLate; $("ivYes").disabled=$("ivNo").disabled=true;
+    $("ivInLeft").textContent=t().ivLate; $("ivYes").disabled=$("ivNo").disabled=$("ivOff").disabled=true;
     setTimeout(()=>{ if(inc){ inc.answering=true; endIn(true); } }, 1500);
   }
   async function accept(){
     if(!inc || inc.answering) return;
     inc.answering=true; const {id,d}=inc;
-    try{ await fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"accepted"}); }
+    let go=null;
+    try{
+      await fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"accepted", go:fb.serverTimestamp()});
+      const s=await fb.getDoc(fb.doc(fb.db,"invites",id)); go=s.data().go;
+    }
     catch(e){ inc.answering=false; return late(); }
     const duel=d.d || `${id}_${d.k}-${d.lang}-${d.n}`;
     endIn(false); watchDuel(duel);
-    setLang(d.lang); Reg.playInvite(d.g, d.k, d.n, duel, d.m);
+    setLang(d.lang); Reg.playInvite(d.g, d.k, d.n, duel, d.m, startAt(go));
   }
   function decline(){
     if(!inc || inc.answering) return;
     inc.answering=true;
+    if(inc.d.r){ try{ sessionStorage.setItem(SKEY,"1"); }catch(e){} }
     fb.updateDoc(fb.doc(fb.db,"invites",inc.id),{st:"declined"}).catch(()=>{});
     endIn(true);
   }
   function setWant(v){ want=v; store.set("rodo-inv", v?"1":"0"); $("ivRecv").checked=v; beat(); }
 
+  // arranque simultáneo del duelo: 5 s después de la aceptación, en hora del servidor, pasada a la hora de este dispositivo
+  const startAt=go=> go && go.toMillis ? go.toMillis()+5000-off : Date.now()+3000;
   // "Sopa de letras de 15×15, con pistas, en inglés"
   function describe(o){
     const T0=t(), p=[];
@@ -3367,7 +3411,7 @@ const Live = (()=>{
       if(!s.exists()) return;
       x.doc=s.data(); x.opp=x.doc.p.find(u=>u!==uid);
       // el apodo del rival se relee con cada cambio del duelo (puede ponérselo recién en la revancha)
-      fb.getDoc(fb.doc(fb.db,"names",x.opp)).then(n=>{ x.who=(n.exists()&&n.data().name)||t().ivSomeone; redraw(id); }).catch(()=>{});
+      fb.getDoc(fb.doc(fb.db,"names",x.opp)).then(n=>{ x.who=(n.exists()&&n.data().name)||""; redraw(id); }).catch(()=>{});
       x.doc.games.forEach(pid=>{
         if(x.subs[pid]) return;
         x.subs[pid]=fb.onSnapshot(fb.collection(fb.db,"scores",pid,"players"), qs=>{ const sc={}; qs.forEach(d=>sc[d.id]=d.data()); x.scores[pid]=sc; redraw(id); }, ()=>{});
@@ -3381,7 +3425,17 @@ const Live = (()=>{
     const w=duelWinner(k, S[uid], S[x.opp], late);
     return w==="a" ? "me" : w==="b" ? "op" : w;
   }
-  function redraw(id){ Object.entries(shown).forEach(([g,s])=>{ if(s.id===id) drawDuel(g); }); }
+  function redraw(id){ Object.entries(shown).forEach(([g,s])=>{ if(s.id===id) drawDuel(g); }); liveNote(id); }
+  // mientras se juega una partida del duelo: "Gonzalo está jugando…" / "⚡ Gonzalo ya terminó: 912 puntos"
+  function liveNote(id){
+    const x=D[id]; if(!x || !x.doc) return;
+    Object.keys(GAMES).forEach(g=>{
+      const c=Reg.cur(g); if(!c || c.duel!==id || !c.n) return;
+      const pid=`${c.k}-${c.lang}-${c.n}`, r=(x.scores[pid]||{})[x.opp], who=x.who||t().ivSomeone;
+      if(c.t1){ Reg.duelNote(g,""); return; }
+      Reg.duelNote(g, r ? t().duOppDone(who, scoreOf(c.k, r).pts) : t().duOppPlaying(who));
+    });
+  }
   function drawDuel(g){
     const s=shown[g], x=s && D[s.id], c=Reg.cur(g);
     if(!x || !x.doc || !c || `${c.k}-${c.lang}-${c.n}`!==s.pid) return;
@@ -3399,6 +3453,7 @@ const Live = (()=>{
     const b=el.querySelector(".duRe");
     if(b) b.addEventListener("click",()=>openOut({to:x.opp, who, d:s.id}));
   }
+  Reg.onDuelStart=(g, id)=>{ watchDuel(id); liveNote(id); };
   Reg.onDuel=(g, id, pid)=>{ shown[g]={id, pid}; watchDuel(id); drawDuel(g); };
   // el resultado "esperando al otro" vence a los 16 minutos: se redibuja cada tanto
   setInterval(()=>Object.values(shown).forEach(s=>redraw(s.id)), 30000);
