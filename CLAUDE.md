@@ -46,7 +46,15 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - **"Me rindo"** en acróstico, criptograma y sopa: pide confirmación, muestra la solución marcada en rojo y guarda la partida como no resuelta (0 puntos). En el acróstico y la sopa, el cartel lista las palabras que faltaban con su pista y las anota como conceptos nuevos ("Aprendí 7 conceptos nuevos", tildado y guardado solo; se puede destildar): `learned.n`, que suman Mis estadísticas y el panel.
 - **Torneo en vivo** (por ejemplo, "BITCOIN.AR HALVING GAMES"; módulos `Tour`, sala de jugadores en `#torneo`, y `TourAdmin`, panel del organizador en `#torneo-admin`):
   - **Rondas eliminatorias:** todos juegan la misma partida a la vez y pasa la mitad (la mayor potencia de 2 menor que los que juegan); con 2 jugadores, la final (1 a 1, la última ronda configurada).
-  - **Organizadores:** crea torneos solo `claudia@rodo.es`; los manejan ella y los mails de Google en `orgs` (`isOrg()` en las reglas). El organizador define cada ronda: juego, idioma (queda fijo cuando se genera la partida), opciones (sopa: tamaño y modo; semilla: 12/24; ahorcado: cantidad de palabras), dificultad (fácil/media/difícil por largo de palabra o frase) y minutos (0 = sin límite).
+  - **Organizadores:** crea torneos solo `claudia@rodo.es`; los manejan ella y los mails de Google en `orgs` (`isOrg()` en las reglas). La lista se edita en el bloque "Administradores de este torneo" del panel, y solo la toca `claudia@rodo.es`. El panel de administración (`#admin`) tiene un botón "Torneos".
+  - **Visible desde (`pub`):** el público no ve el torneo (ni se puede inscribir, lo exigen las reglas) hasta esa fecha; vacío = apenas se abre la inscripción. La fecha de arranque (`when`) es solo informativa.
+  - **Ensayo (`test`, `src`, `inv`):** "🧪 Armar un ensayo" copia el torneo con los mismos organizadores.
+    - No lo ve el público: solo los invitados (`inv`, uids).
+    - Desde el panel se suman jugadores falsos (`bot-N`, que juegan solos con nivel, tiempos y errores al azar) y la organizadora como jugadora.
+    - Se invita por nombre a gente conectada con usuario; al invitado le aparece un aviso para sumarse.
+    - Un ensayo no apaga las invitaciones del sitio y se puede borrar.
+    - Con el panel a la vista, la ronda no se abre sola: aparece el aviso con "Ir" (conviene jugar en otra pestaña).
+  - **Imagen del torneo:** fichas de Scrabble cruzadas con su puntaje (HALVING en naranja; BITCOIN, GAMES y AR en madera; `SCRAB`, `scrabHtml`) en el cartel de la portada y en la sala. "Compartir imagen" en la sala genera un PNG (`tourImage`); hay una copia fija en `public/img/torneo-halving.png`. El organizador define cada ronda: juego, idioma (queda fijo cuando se genera la partida), opciones (sopa: tamaño y modo; semilla: 12/24; ahorcado: cantidad de palabras), dificultad (fácil/media/difícil por largo de palabra o frase) y minutos (0 = sin límite).
   - **Por defecto:** ahorcado de 6 palabras, anagrama, sopa, acróstico, semilla y final de criptograma difícil sin límite.
   - **Flujo:** borrador → inscripción → check-in → en juego → terminado.
     - Inscribirse exige usuario (apodo registrado), mail, teléfono y aceptar las bases.

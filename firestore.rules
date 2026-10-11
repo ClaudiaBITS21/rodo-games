@@ -278,14 +278,20 @@ service cloud.firestore {
     // ================= Torneos en vivo =================
     // tourneys/{tid}: la configuración y el estado. Lo crea la administración; lo manejan ella y los organizadores (orgs).
     // st: draft (borrador) → open (inscripción) → checkin (confirmar presencia) → live (rondas) → done.
+    // pub: desde cuándo se ve en la web (antes no se puede inscribir nadie).
+    // Ensayo (test): copia de un torneo (src) para probarlo; no lo ve el público, solo los invitados (inv, uids),
+    // y puede tener jugadores falsos (ins y res con id "bot-N") que maneja el panel del organizador.
     function isOrg(tid) {
       return isAdmin() || (request.auth != null && request.auth.token.get('email_verified', false) == true
         && request.auth.token.get('email', '') in get(/databases/$(database)/documents/tourneys/$(tid)).data.get('orgs', []));
     }
     function tour(tid) { return get(/databases/$(database)/documents/tourneys/$(tid)).data; }
+    function isTest(tid) { return tour(tid).get('test', false) == true; }
     function validTour(d) {
       // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv'])
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv', 'test', 'src', 'inv'])
+        && (!('test' in d) || d.test is bool)
+        && (!('inv' in d) || (d.inv is list && d.inv.size() <= 40))
         && d.name is string && d.name.size() > 0 && d.name.size() <= 80
         && d.st in ['draft', 'open', 'checkin', 'live', 'done']
         && d.cap is int && d.cap >= 2 && d.cap <= 64
@@ -294,23 +300,36 @@ service cloud.firestore {
     }
     match /tourneys/{tid} {
       allow read: if true;
-      allow create: if isAdmin() && validTour(request.resource.data);
+      allow create: if validTour(request.resource.data) && (isAdmin()
+        // un ensayo lo puede armar cualquier organizador del torneo original, con los mismos organizadores
+        || (request.resource.data.get('test', false) == true && request.resource.data.src is string
+          && isOrg(request.resource.data.src) && request.resource.data.orgs == tour(request.resource.data.src).get('orgs', [])));
       allow update: if isOrg(tid) && validTour(request.resource.data)
-        // la lista de organizadores la cambia solo la administración
-        && (isAdmin() || request.resource.data.orgs == resource.data.orgs);
-      allow delete: if isAdmin();
+        // la lista de organizadores la cambia solo la administración; un ensayo no deja de serlo
+        && (isAdmin() || request.resource.data.orgs == resource.data.orgs)
+        && request.resource.data.get('test', false) == resource.data.get('test', false);
+      allow delete: if isAdmin() || (isOrg(tid) && resource.data.get('test', false) == true);
 
       // Inscriptos (público: apodo y avatar). Hace falta usuario (apodo registrado). Cada uno se anota y confirma su presencia;
       // el organizador marca quién aportó al pozo (paid) y puede descalificar (out).
       match /ins/{uid} {
         allow read: if true;
-        allow create: if signedIn() && request.auth.uid == uid
+        allow create: if (signedIn() && request.auth.uid == uid
           && tour(tid).st in ['open', 'checkin']
+          // visible desde pub; un ensayo, solo para invitados
+          && (tour(tid).get('pub', null) == null || request.time >= tour(tid).pub)
+          && (!isTest(tid) || uid in tour(tid).get('inv', []))
           && request.resource.data.keys().hasOnly(['nm', 'av', 'at', 'ck', 'paid', 'out'])
           && request.resource.data.nm == get(/databases/$(database)/documents/names/$(uid)).data.name
           && request.resource.data.get('av', '') == get(/databases/$(database)/documents/names/$(uid)).data.get('av', '')
           && request.resource.data.at == request.time
-          && request.resource.data.ck == null && request.resource.data.paid == false && request.resource.data.out == false;
+          && request.resource.data.ck == null && request.resource.data.paid == false && request.resource.data.out == false)
+          // en un ensayo, el organizador suma jugadores falsos (bot-N) o a sí mismo, ya con check-in
+          || (isOrg(tid) && isTest(tid)
+            && request.resource.data.keys().hasOnly(['nm', 'av', 'at', 'ck', 'paid', 'out', 'bot'])
+            && request.resource.data.nm is string && request.resource.data.nm.size() > 0 && request.resource.data.nm.size() <= 30
+            && request.resource.data.at == request.time && request.resource.data.ck == request.time
+            && request.resource.data.paid is bool && request.resource.data.out == false);
         // check-in: una sola vez, con la hora del servidor, mientras está abierto
         allow update: if (signedIn() && request.auth.uid == uid && tour(tid).st == 'checkin' && resource.data.ck == null
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ck'])
@@ -348,7 +367,9 @@ service cloud.firestore {
         // rondas falladas nunca bajan; una vez terminada (done) no se toca. x: juega sin competir (no está en pl).
         match /res/{uid} {
           allow read: if true;
-          allow create, update: if signedIn() && request.auth.uid == uid && resOk(tid, r, uid);
+          allow create, update: if (signedIn() && request.auth.uid == uid && resOk(tid, r, uid))
+            // los jugadores falsos de un ensayo los mueve el panel del organizador
+            || (uid.matches('^bot-[0-9]+$') && isOrg(tid) && isTest(tid) && resOk(tid, r, uid));
           allow delete: if isOrg(tid);
         }
       }

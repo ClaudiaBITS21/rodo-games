@@ -206,9 +206,34 @@ body.tester .testbadge{display:block}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 
 /* ---------- Torneo ---------- */
-.tbanner{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin:-4px 0 14px;padding:12px 16px;border-radius:12px;background:var(--ink);color:var(--paper);text-decoration:none;border-left:6px solid var(--btc)}
+.tbanner{--sq:23px;display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:-4px 0 18px;padding:16px 18px;border-radius:14px;background:var(--paper);color:var(--ink);text-decoration:none;
+  border:1px solid var(--line);border-left:6px solid var(--btc);transition:border-color .15s, transform .15s}
+.tbanner:hover{border-color:var(--btc);transform:translateY(-2px)}
 .tbanner[hidden]{display:none}
-.tbanner b{font-size:1.05rem}.tbanner span{opacity:.8;font-size:.9rem}.tbanner i{margin-left:auto;font-style:normal;font-weight:700;color:var(--btc)}
+.tbtx{display:flex;flex-direction:column;gap:4px;flex:1 1 150px;min-width:0}
+.tbtx b{font-size:1.35rem;line-height:1.1;font-weight:800;letter-spacing:-.02em}.tbtx span{color:var(--muted);font-size:.92rem}
+.tbtx em{font-style:normal;font-weight:700;background:#7B3FE4;color:#fff;border-radius:6px;padding:0 6px;font-size:.8rem}
+.tbtx i{font-style:normal;font-weight:700;color:var(--btc)}
+/* fichas de Scrabble */
+.scrab{display:grid;grid-template-columns:repeat(8,var(--sq,21px));grid-auto-rows:var(--sq,21px);gap:2px;flex:0 0 auto}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#F2D8A7;border:1px solid #C9A061;box-shadow:0 2px 0 rgba(0,0,0,.14);
+  font:700 calc(var(--sq,21px)*.56)/1 "IBM Plex Mono",ui-monospace,monospace;color:#3A2A14;padding-right:2px}
+.sq i{position:absolute;right:1.5px;bottom:1px;font:600 calc(var(--sq,21px)*.27)/1 "IBM Plex Mono",ui-monospace,monospace;font-style:normal}
+.sq.o{background:var(--btc);border-color:#C76F00;color:#1A1E23}
+.sq.e{background:transparent;border-color:transparent;box-shadow:none}
+.thead{display:flex;gap:14px 18px;align-items:center;flex-wrap:wrap;margin:0 0 6px;--sq:24px}
+.thead>div:last-child{flex:1 1 180px;min-width:0}
+.tshare{padding:6px 12px;font-size:.85rem;margin-top:4px}
+.ttest{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#EFE7FD;color:#4B2A99;font-weight:600;font-size:.92rem}
+.tabox{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px}
+.tabox h2{margin-top:2px!important}
+.tatest{border-left:5px solid #7B3FE4}
+.taadm{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.taadm li{display:flex;align-items:center;gap:6px;background:var(--cell-bg);border:1px solid var(--line);border-radius:8px;padding:3px 4px 3px 10px;font-size:.9rem}
+.taadm button,.tainv button{padding:2px 7px!important;font-size:.8rem!important;border:0;background:transparent}
+.tabox input{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+#taBotsN{width:4.5em}#taAdmIn,#taInvIn{min-width:16em}
+.tainv{display:inline-flex;align-items:center;background:var(--cell-bg);border:1px solid var(--line);border-radius:8px;padding:0 0 0 8px;margin:2px}
 #ivBtn[hidden]{display:none}
 .tname{font-size:clamp(1.5rem,6vw,2.2rem);line-height:1.05;margin:0 0 6px}
 .tsub{margin:0 0 14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
@@ -239,7 +264,7 @@ body.tester .testbadge{display:block}
 .tln{overflow-wrap:anywhere}
 .tbases{margin:0 0 14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .tbases summary{cursor:pointer;font-weight:700}.tbases p{margin:8px 0 0;font-size:.92rem;white-space:pre-line}
-.tbar{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:55;display:flex;align-items:center;gap:10px;
+.tbar{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:55;display:flex;align-items:center;gap:10px;width:max-content;
   padding:9px 10px 9px 16px;border-radius:12px;background:var(--ink);color:var(--paper);box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:.95rem;max-width:calc(100vw - 32px);border-left:5px solid var(--btc)}
 .tbar[hidden]{display:none}
 .tbar b{font-family:"IBM Plex Mono",ui-monospace,monospace;margin-left:4px}
@@ -814,7 +839,7 @@ body.tester .testbadge{display:block}
   </section>
 
   <section class="view" id="view-admin">
-    <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
+    <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <a class="btn" href="#torneo-admin">Torneos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
     <div id="admLogin" class="admlogin">
       <p>Acceso restringido a la cuenta de administración.</p>
       <button class="primary" id="admIn">Entrar con Google</button>
@@ -1527,13 +1552,13 @@ function tile(x,cx,cy,size,ch,fill,stroke,color){
   if (ch){ x.fillStyle=color||"#1A1E23"; x.font=`700 ${Math.round(size*.5)}px ${MONO}`; x.textAlign="center"; x.textBaseline="middle";
     x.fillText(ch, cx+size/2, cy+size/2+1); x.textAlign="left"; x.textBaseline="alphabetic"; }
 }
-async function shareBlob(blob, filename, noteEl, btn){
+async function shareBlob(blob, filename, noteEl, btn, text){
   const t=T[lang]; noteEl.textContent=""; btn.disabled=true;
   try{
     const file = new File([blob], filename, {type:"image/png"});
     try{
       if (navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], text:t.shareText}); noteEl.textContent=t.shared; return;
+        await navigator.share({files:[file], text:text||t.shareText}); noteEl.textContent=t.shared; return;
       }
     }catch(e){ if (e && e.name==="AbortError") return; }
     const url=URL.createObjectURL(blob), a=document.createElement("a");
@@ -4578,6 +4603,8 @@ Object.assign(T.es,{
   tPos:(p,n)=>`Puesto provisorio: ${p}° (de ${n} que terminaron).`, tSeeTable:"Ver la tabla", tPts:p=>`${p} puntos`,
   tLoadFail:"No se pudo abrir la partida de la ronda. Probá de nuevo.", tWaitStart:"Abriendo la partida…",
   tBanner:{open:"Inscribite", checkin:"Confirmá que estás", live:"En juego ahora", done:"Ver resultados"},
+  tTest:"🧪 Ensayo: lo ven solo los invitados. Los resultados no cuentan.", tTestPill:"Ensayo", tBarInv:n=>`🧪 Te invitaron a probar «${n}»`,
+  tShare:"Compartir imagen", tShareText:n=>`Sumate a ${n} en RODO ₿ Games`, tImgCta:"Inscribite en games.rodo.es/#torneo",
   tScoreHow:"Puntos: si terminás, 100 por resolverla más 1 por cada segundo antes de los 15 minutos (errores y ayudas suman segundos, como siempre). Si se acaba el tiempo, 1 punto por cada 1 % resuelto, menos 1 por cada 10 segundos de penalidad. El tiempo corre para todos desde el arranque de la ronda."
 });
 Object.assign(T.en,{
@@ -4616,8 +4643,39 @@ Object.assign(T.en,{
   tPos:(p,n)=>`Provisional rank: #${p} (of ${n} who finished).`, tSeeTable:"See standings", tPts:p=>`${p} points`,
   tLoadFail:"Couldn't open the round's game. Please try again.", tWaitStart:"Opening the game…",
   tBanner:{open:"Register", checkin:"Check in", live:"Live now", done:"See results"},
+  tTest:"🧪 Rehearsal: only invited players can see it. Results don't count.", tTestPill:"Rehearsal", tBarInv:n=>`🧪 You've been invited to try out «${n}»`,
+  tShare:"Share image", tShareText:n=>`Join ${n} on RODO ₿ Games`, tImgCta:"Register at games.rodo.es/#torneo",
   tScoreHow:"Points: if you finish, 100 for solving it plus 1 for every second under 15 minutes (mistakes and hints add seconds, as usual). If time runs out, 1 point per 1% solved, minus 1 per 10 seconds of penalties. The clock runs for everyone from the start of the round."
 });
+// Imagen del torneo: fichas de Scrabble cruzadas (HALVING en naranja; BITCOIN, GAMES y AR en madera), con su puntaje
+const SCRAB_V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,L:1,M:3,N:1,O:1,P:3,Q:5,R:1,S:1,T:1,U:1,V:4,X:8,Y:4,Z:10};
+const SCRAB=(()=>{ const g=[...Array(7)].map(()=>Array(8).fill(null)), put=(w,r,c,dr,dc,o)=>[...w].forEach((ch,i)=>{ const x=g[r+dr*i][c+dc*i]; g[r+dr*i][c+dc*i]={ch, o:o||(x&&x.o)}; });
+  put("BITCOIN",0,4,1,0); put("GAMES",1,6,1,0); put("AR",2,6,0,1); put("HALVING",1,0,0,1,true); return g; })();
+const scrabHtml=()=>`<div class="scrab" aria-hidden="true">${SCRAB.map(row=>row.map(x=>x?`<span class="sq${x.o?" o":""}">${x.ch}<i>${SCRAB_V[x.ch]}</i></span>`:`<span class="sq e"></span>`).join("")).join("")}</div>`;
+// imagen para compartir el torneo (como las de los juegos)
+async function tourImage(TD){
+  try{ await document.fonts.ready; }catch(e){}
+  const W=1200, H=630, S=2, cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
+  const x=cv.getContext("2d"); x.scale(S,S);
+  x.fillStyle="#F7F8F9"; x.fillRect(0,0,W,H); x.fillStyle="#F7931A"; x.fillRect(0,0,W,10);
+  const sz=56, gp=6, ox=60, oy=110;
+  SCRAB.forEach((row,r)=>row.forEach((c,k)=>{ if(!c) return;
+    const X=ox+k*(sz+gp), Y=oy+r*(sz+gp);
+    x.fillStyle="rgba(0,0,0,.12)"; x.beginPath(); x.roundRect ? x.roundRect(X+2,Y+4,sz,sz,8) : x.rect(X+2,Y+4,sz,sz); x.fill();
+    x.fillStyle=c.o?"#F7931A":"#F2D8A7"; x.strokeStyle=c.o?"#C76F00":"#C9A061"; x.lineWidth=2;
+    x.beginPath(); x.roundRect ? x.roundRect(X,Y,sz,sz,8) : x.rect(X,Y,sz,sz); x.fill(); x.stroke();
+    x.fillStyle=c.o?"#1A1E23":"#3A2A14"; x.font=`700 32px ${MONO}`; x.textAlign="center"; x.textBaseline="middle"; x.fillText(c.ch, X+sz/2-3, Y+sz/2+1);
+    x.font=`600 13px ${MONO}`; x.textAlign="right"; x.textBaseline="alphabetic"; x.fillText(String(SCRAB_V[c.ch]), X+sz-6, Y+sz-6); }));
+  x.textAlign="left"; x.textBaseline="alphabetic";
+  const tx=ox+8*(sz+gp)+40, tw=W-tx-50;
+  x.fillStyle="#5B6672"; x.font=`600 22px ${SANS}`; x.fillText("RODO ₿ Games", tx, 150);
+  x.fillStyle="#1A1E23"; x.font=`800 52px ${SANS}`; let y=wrapText(x, TD.name, tx, 215, tw, 58);
+  const when=tms(TD.when);
+  if(when){ x.fillStyle="#C76F00"; x.font=`700 26px ${SANS}`; y=wrapText(x, new Date(when).toLocaleString(lang==="en"?"en-US":"es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}), tx, y+56, tw, 32); }
+  x.fillStyle="#1A1E23"; x.font=`600 24px ${SANS}`; wrapText(x, T[lang].tImgCta, tx, y+60, tw, 30);
+  x.fillStyle="#5B6672"; x.font=`400 18px ${SANS}`; x.fillText("Bitcoin.AR", tx, H-50);
+  return toBlob(cv);
+}
 // la dificultad y las palabras del ahorcado, para generar la partida de cada ronda
 const TOUR_GEN=o=>({dif:o.dif, n:o.n});
 // rondas que tiene cada partida, para el puntaje (anagrama 10; ahorcado del torneo, las palabras que tenga)
@@ -4680,12 +4738,14 @@ const Tour = (()=>{
   const who=u=>{ const x=INS&&INS[u]; return x ? (x.av?x.av+" ":"")+x.nm : "…"; };
   const set=(id,h)=>{ const el=$(id); if(el && el.innerHTML!==h) el.innerHTML=h; };
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}` : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
-  const blocks=()=>Object.values(ALL).some(x=>x.st==="live");
+  const blocks=()=>Object.values(ALL).some(x=>x.st==="live" && !x.test);
 
   // ---------- suscripciones ----------
   function pick(){
-    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
-      .sort((a,b)=>(pri[a[1].st]-pri[b[1].st])||((tms(b[1].at)||0)-(tms(a[1].at)||0)));
+    const vis=x=> x.test ? (x.inv||[]).includes(uid) : (!tms(x.pub) || srv()>=tms(x.pub));
+    const tst=x=> x.test && x.st!=="done" ? 0 : 1;   // un ensayo en curso al que me invitaron va primero
+    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && vis(x) && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
+      .sort((a,b)=>(tst(a[1])-tst(b[1]))||(pri[a[1].st]-pri[b[1].st])||((tms(b[1].at)||0)-(tms(a[1].at)||0)));
     const id=l.length ? l[0][0] : null;
     if(id!==tid){ tid=id; RS={}; mine=null; INS=null; RES={}; resId=null; closedRes={};
       if(rUnsub){ rUnsub(); rUnsub=null; } if(mUnsub){ mUnsub(); mUnsub=null; } if(iUnsub){ iUnsub(); iUnsub=null; } if(resUnsub){ resUnsub(); resUnsub=null; }
@@ -4826,7 +4886,7 @@ const Tour = (()=>{
     if(!fb) return;
     const r=curR(), now=srv();
     // arranque automático para quien compite (si la pestaña está a la vista)
-    if(r && (r.st==="sched"||r.st==="live") && r.go && now>=tms(r.go) && comp(r) && (!play || play.id!==r.id) && document.visibilityState==="visible"
+    if(r && (r.st==="sched"||r.st==="live") && r.go && now>=tms(r.go) && comp(r) && (!play || play.id!==r.id) && document.visibilityState==="visible" && view!=="torneo-admin"
        && myRes[r.id]!==undefined && !(myRes[r.id] && myRes[r.id].done) && (now-tms(r.go)<90000 || view==="torneo") && RS[r.id].st!=="closed" && !(play && play.failed && play.id===r.id)){
       start(r, false);
     }
@@ -4842,8 +4902,10 @@ const Tour = (()=>{
     }
     // cuentas regresivas de la sala
     document.querySelectorAll("[data-cd]").forEach(el=>{ const ms=+el.dataset.cd-now; el.textContent=clock(ms); });
+    if(++ticks%15===0) pick();
     bar();
   }
+  let ticks=0;
   setInterval(tick, 1000);
   setInterval(()=>sync(false), 5000);
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") tick(); });
@@ -4856,6 +4918,7 @@ const Tour = (()=>{
       if(r.st==="sched" && r.go && comp(r)) h=`<span>${esc(t().tBarGo(rName(r), ""))}<b data-cd="${tms(r.go)}">${clock(tms(r.go)-now)}</b></span>`;
       else if(r.st==="live" && comp(r) && !(myRes[r.id]&&myRes[r.id].done) && !(play && play.id===r.id && play.done)) h=`<span>${esc(t().tBarLive(rName(r)))}</span>`;
     }
+    if(!h && TD && TD.test && !mine && (TD.st==="open"||TD.st==="checkin") && view!=="torneo") h=`<span>${esc(t().tBarInv(TD.name))}</span>`;
     if(!h){ el.hidden=true; el.innerHTML=""; return; }
     h+=`<button class="primary">${esc(t().tBarBtn)}</button>`;
     if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
@@ -4870,7 +4933,8 @@ const Tour = (()=>{
     if(ib) ib.hidden=blocks();
     if(!TD){ el.hidden=true; return; }
     el.hidden=false;
-    el.innerHTML=`<b>🏆 ${esc(TD.name)}</b><span>${esc(t().tSt[TD.st]||"")}</span><i>${esc(t().tBanner[TD.st]||"")} →</i>`;
+    const h=scrabHtml()+`<div class="tbtx"><b>${esc(TD.name)}</b><span>${TD.test?`<em>${esc(t().tTestPill)}</em> `:""}${esc(t().tSt[TD.st]||"")}</span><i>${esc(t().tBanner[TD.st]||"")} →</i></div>`;
+    if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
   }
 
   // ---------- sala ----------
@@ -4881,7 +4945,7 @@ const Tour = (()=>{
     if(!TD){ set("tHead",`<p class="intro">${esc(T0.tNone)}</p>`); ["tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
     const nIns=INS ? Object.values(INS).filter(x=>!x.out).length : null;
     const when=tms(TD.when) ? new Date(tms(TD.when)).toLocaleString(lang==="en"?"en-US":"es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
-    set("tHead", `<h2 class="tname">${esc(TD.name)}</h2><p class="tsub"><span class="tpill st-${esc(TD.st)}">${esc(T0.tSt[TD.st]||"")}</span>`+
+    set("tHead", `<div class="thead">${scrabHtml()}<div><h2 class="tname">${esc(TD.name)}</h2><button class="tshare" data-act="share">${esc(T0.tShare)}</button></div></div>`+(TD.test?`<p class="ttest">${esc(T0.tTest)}</p>`:"")+`<p class="tsub"><span class="tpill st-${esc(TD.st)}">${esc(T0.tSt[TD.st]||"")}</span>`+
       `${when?` <span>${esc(T0.tWhen(when))}</span>`:""}${nIns!==null?` <span>· ${esc(T0.tCount(nIns, TD.cap))}</span>`:""}</p>`+(flash?`<p class="tflash">${esc(flash)}</p>`:""));
     set("tMe", meBox());
     set("tRound", roundBox());
@@ -4999,6 +5063,7 @@ const Tour = (()=>{
     if(a==="ck"){ b.disabled=true; try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid),{ck:fb.serverTimestamp()}); }catch(err){ b.disabled=false; flash=T0.tCkFail; render(); } }
     if(a==="push"){ b.disabled=true; try{ pushSt=await Push.enable(); }catch(err){} render(); }
     if(a==="copy"){ try{ await navigator.clipboard.writeText(TD.lnurl); b.textContent=T0.tCopied; }catch(err){} }
+    if(a==="share"){ const n=document.createElement("span"); shareBlob(await tourImage(TD), "torneo-rodo-games.png", n, b, T0.tShareText(TD.name)+" https://games.rodo.es/#torneo"); }
     if(a==="play" && r) start(r, false);
     if(a==="playx" && r) start(r, true);
     if(a==="back" && r) location.hash=r.g;
@@ -5038,7 +5103,8 @@ const TourAdmin = (()=>{
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
   const srv=()=>Live.now();
   let A=null, me=null, ALL={}, tid=null, TD=null, RS={}, INS={}, PRIV={}, RESL={}, resFor=null, resOk=false;
-  let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="";
+  let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="", onl=[], onlQ="", plan={};
+  const isBot=u=>/^bot-\d+$/.test(u);
   const tref=()=>A.doc(A.db,"tourneys",tid), rref=id=>A.doc(A.db,"tourneys",tid,"rounds",String(id));
   const rounds=()=>Object.values(RS).sort((a,b)=>a.no-b.no);
   const last=()=>{ const l=rounds(); return l.length ? l[l.length-1] : null; };
@@ -5098,6 +5164,7 @@ const TourAdmin = (()=>{
     if(!A || !me || !TD) return;
     if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
     const r=last(), now=srv(); if(!r || busy || TD.st!=="live") return;
+    if(TD.test) bots(r, now);
     try{
       if(r.st==="sched" && r.go && now>=tms(r.go)){ busy=true; await A.updateDoc(rref(r.id),{st:"live"}); }
       else if(r.st==="live" && resOk && resFor===r.id && tDecided(r, RESL, now)){ busy=true; await close(r); }
@@ -5147,7 +5214,7 @@ const TourAdmin = (()=>{
   // primera ronda: los primeros que confirmaron (o, si no hubo check-in, los primeros inscriptos), hasta el cupo
   function firstPl(){
     const l=Object.entries(INS).filter(([,x])=>!x.out), ck=l.filter(([,x])=>x.ck);
-    const src=ck.length ? ck.sort((a,b)=>tms(a[1].ck)-tms(b[1].ck)) : l.sort((a,b)=>(tms(a[1].at)||0)-(tms(b[1].at)||0));
+    const src=ck.length ? ck.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||(tms(a[1].ck)-tms(b[1].ck))) : l.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||((tms(a[1].at)||0)-(tms(b[1].at)||0)));
     return src.slice(0, TD.cap).map(([u])=>u);
   }
 
@@ -5159,6 +5226,34 @@ const TourAdmin = (()=>{
         await A.setDoc(ref,{name:"BITCOIN.AR HALVING GAMES", st:"draft", cap:64, fee:2100, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS, champ:null, auto:true, at:A.serverTimestamp()});
         cfgFor=null; pickT(ref.id); return; }
       if(a==="pick"){ pickT(el.value); return; }
+      // administradores del torneo (solo claudia@rodo.es)
+      if(a==="admadd"){ const m=$("taAdmIn").value.trim().toLowerCase();
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){ say("Escribí un mail válido.", true); return; }
+        const o=[...new Set([...(TD.orgs||[]), m])]; if(o.length>10){ say("Hasta 10 administradores por torneo.", true); return; }
+        await A.updateDoc(tref(),{orgs:o}); $("taAdmIn").value=""; say(`${m} ya puede manejar este torneo.`); return; }
+      if(a==="admdel"){ const m=el.dataset.m; if(!confirm(`¿Sacarle a ${m} el acceso a este torneo?`)) return; await A.updateDoc(tref(),{orgs:(TD.orgs||[]).filter(x=>x!==m)}); return; }
+      // ensayo: copia del torneo que no ve el público
+      if(a==="mktest"){
+        const ref=A.doc(A.collection(A.db,"tourneys")), me0=Reg.uid();
+        await A.setDoc(ref,{name:(TD.name+" · ensayo").slice(0,80), st:"open", cap:TD.cap, fee:TD.fee||0, lnurl:TD.lnurl||"", when:null, orgs:TD.orgs||[], bases:TD.bases||"", lang:TD.lang||"es",
+          cur:0, rounds:TD.rounds, champ:null, auto:true, test:true, src:tid, inv:me0?[me0]:[], at:A.serverTimestamp()});
+        cfgFor=null; pickT(ref.id); say("Ensayo armado: no lo ve el público. Sumá jugadores falsos, invitá gente y arrancalo cuando quieras."); return; }
+      if(a==="deltest" && TD.test){ if(!confirm("¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
+      if(a==="bots" && TD.test){
+        const n=Math.max(1,Math.min(63,parseInt($("taBotsN").value,10)||0)), have=Object.keys(INS).filter(isBot).map(u=>+u.slice(4));
+        let k=have.length ? Math.max(...have) : 0; const b=A.writeBatch(A.db);
+        for(let i=0;i<n;i++){ k++; b.set(A.doc(A.db,"tourneys",tid,"ins","bot-"+k),{nm:"Bot "+k, av:"🤖", bot:true, at:A.serverTimestamp(), ck:A.serverTimestamp(), paid:false, out:false}); }
+        await b.commit(); say(`${n} jugador${n===1?"":"es"} falso${n===1?"":"s"} anotado${n===1?"":"s"}, con check-in.`); return; }
+      if(a==="botsdel" && TD.test){ const b=A.writeBatch(A.db); Object.keys(INS).filter(isBot).forEach(u=>b.delete(A.doc(A.db,"tourneys",tid,"ins",u))); await b.commit(); return; }
+      if(a==="me" && TD.test){ const u=Reg.uid(); if(!u){ say("Este navegador no tiene jugador todavía: recargá la página.", true); return; }
+        const d={nm:Reg.nick()||"Organización", av:Reg.av()||"🎩", at:A.serverTimestamp(), ck:A.serverTimestamp(), paid:false, out:false};
+        await A.setDoc(A.doc(A.db,"tourneys",tid,"ins",u), d);
+        if(!(TD.inv||[]).includes(u)) await A.updateDoc(tref(),{inv:[...(TD.inv||[]), u]});
+        say("Ya estás entre los jugadores del ensayo. Cuando arranque la ronda, tocá Ir en el aviso de abajo (o jugá en otra pestaña)."); return; }
+      if(a==="inv" && TD.test){ const u=el.dataset.u, x=onl.find(o=>o.u===u); if(!u) return;
+        if(!(TD.inv||[]).includes(u)) await A.updateDoc(tref(),{inv:[...(TD.inv||[]), u].slice(-40)});
+        if(x) invNames[u]=x.nm; $("taInvIn").value=""; onlQ=""; say(`${x?x.nm:"Esa persona"} ya ve el ensayo: le aparece un aviso para sumarse.`); return; }
+      if(a==="invdel" && TD.test){ await A.updateDoc(tref(),{inv:(TD.inv||[]).filter(x=>x!==el.dataset.u)}); return; }
       if(a==="save") return save();
       if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
@@ -5181,6 +5276,62 @@ const TourAdmin = (()=>{
     }catch(e){ fail(e); }
   }
   let prevD=null;
+  // ---------- administradores del torneo ----------
+  function admHtml(){
+    const o=TD.orgs||[];
+    let h=`<div class="tabox"><h2>Administradores de este torneo</h2><p class="m small">Además de ${SUPER}. Entran a este panel con su cuenta de Google y pueden manejar todo el torneo, menos esta lista.</p>`;
+    h+=o.length ? `<ul class="taadm">${o.map(m=>`<li><span>${esc(m)}</span>${isSuper()?`<button data-ta="admdel" data-m="${esc(m)}" title="Quitar">✕</button>`:""}</li>`).join("")}</ul>` : `<p class="m small">Todavía no hay otros administradores.</p>`;
+    if(isSuper()) h+=`<div class="row"><input id="taAdmIn" type="email" placeholder="mail@gmail.com" autocomplete="off"><button data-ta="admadd">Agregar</button></div>`;
+    return h+`</div>`;
+  }
+  // ---------- ensayo: invitados, jugadores falsos y la organizadora como jugadora ----------
+  const invNames={};
+  function testHtml(){
+    if(!TD.test) return "";
+    const bots=Object.keys(INS).filter(isBot).length, me0=Reg.uid(), inv=(TD.inv||[]).filter(u=>u!==me0);
+    let h=`<div class="tabox tatest"><h2>🧪 Ensayo</h2><p class="m small">No lo ve el público: solo vos y las personas que invites. Podés acortar los minutos de cada ronda en la configuración y usar "Arrancar ya" para no esperar la cuenta regresiva.</p>`;
+    h+=`<div class="row"><b>${bots}</b> jugador${bots===1?"":"es"} falso${bots===1?"":"s"} · <input id="taBotsN" type="number" min="1" max="63" value="${Math.min(63,Math.max(1,(TD.cap||64)-1-bots))}"> <button data-ta="bots">Sumar jugadores falsos</button>${bots?`<button data-ta="botsdel">Quitarlos</button>`:""}</div>`;
+    h+=`<div class="row">`+(me0 && INS[me0] ? `<span>Ya estás entre los jugadores ✓</span>` : `<button class="primary" data-ta="me">Sumarme a jugar</button>`)+`</div>`;
+    h+=`<p><b>Invitar a alguien conectado</b> (que tenga usuario):</p><div class="row"><input id="taInvIn" placeholder="Escribí un nombre…" autocomplete="off" value="${esc(onlQ)}"></div><div class="row tasugg">${suggHtml()}</div>`;
+    if(inv.length) h+=`<p class="m small">Invitados: ${inv.map(u=>`<span class="tainv">${esc(INS[u] ? nm(u)+" ✓" : invNames[u]||u.slice(0,6))} <button data-ta="invdel" data-u="${u}" title="Quitar">✕</button></span>`).join(" ")}</p>`;
+    return h+`<div class="row"><button data-ta="deltest">Borrar el ensayo</button></div></div>`;
+  }
+  function suggHtml(){
+    if(!onlQ) return `<span class="m small">Aparecen los conectados con usuario que coinciden.</span>`;
+    const f=x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""), q=f(onlQ), inv=new Set(TD.inv||[]);
+    const l=onl.filter(x=>!inv.has(x.u) && f(x.nm).includes(q)).slice(0,8);
+    return l.length ? l.map(x=>`<button data-ta="inv" data-u="${esc(x.u)}">${esc((x.av?x.av+" ":"")+x.nm)}</button>`).join("") : `<span class="m small">Nadie conectado con ese nombre.</span>`;
+  }
+  let onlAt=0;
+  async function searchOnline(){
+    onlQ=$("taInvIn").value.trim();
+    if(Date.now()-onlAt>20000){ onlAt=Date.now();
+      try{ const qs=await A.getDocs(A.query(A.collection(A.db,"online"), A.where("at",">",A.Timestamp.fromMillis(srv()-150000))));
+        onl=qs.docs.filter(d=>d.data().nm).map(d=>({u:d.id, nm:d.data().nm, av:d.data().av||""})); }catch(e){ onl=[]; } }
+    const box=$("view-torneo-admin").querySelector(".tasugg"); if(box) box.innerHTML=suggHtml();
+  }
+  // ---------- jugadores falsos: cada uno tiene su nivel y "juega" cada ronda con tiempos y errores al azar ----------
+  const BASE={ahorcado:20, anagrama:15, sopa:150, acrostico:240, semilla:110, criptograma:300};   // segundos típicos (por palabra en los de rondas)
+  const skill=u=>{ let h=7; for(const ch of u) h=(h*31+ch.charCodeAt(0))%9973; return 0.3+0.65*((Math.sin(h)*10000)%1+1)%1; };
+  function bots(r, now){
+    if(!(r.st==="sched"||r.st==="live") || !r.go || now<tms(r.go) || resFor!==r.id || !resOk) return;
+    const go=tms(r.go), end=tms(r.end), P=plan[r.id]=plan[r.id]||{}, nr=r.nr||0;
+    (r.pl||[]).filter(isBot).forEach(u=>{
+      const cur=RESL[u]; if(cur && cur.done) return;
+      let b=P[u];
+      if(!b){ const sk=skill(u), base=(BASE[r.g]||150)*(nr||1)*(r.s==="grande"?1.5:r.s==="chica"?0.7:1)*(r.w===24?1.8:1);
+        const ok=Math.random()<0.2+0.75*sk;
+        b=P[u]={t0:go+800+Math.random()*4000, t1:go+1000*base*(1.75-sk)*(0.6+0.8*Math.random())*(ok?1:0.7), ok, p:0.15+0.7*Math.random(),
+          e:Math.round(Math.random()*5*(1.15-sk)), h:Math.random()<0.3*(1.15-sk)?1:0, f:nr && ok && Math.random()<0.4*(1.1-sk) ? 1 : 0}; }
+      const stop=end ? Math.min(b.t1, end-2500) : b.t1;
+      if(!b.s0 && !cur && now>=b.t0){ b.s0=1; botWrite(r,u,{p:0,s:0,e:0,h:0,c:0,f:0,ok:false,done:false}); return; }
+      if(!b.s1 && cur && now>=stop){ b.s1=1;
+        const cut=end && b.t1>end-2500, ok=b.ok && !cut;
+        const rec= ok ? (nr ? {s:nr-b.f, f:b.f, p:(nr-b.f)/nr} : {s:0, f:0, p:1}) : (nr ? {s:Math.floor(b.p*nr), f:0, p:b.p} : {s:0, f:0, p:b.p});
+        botWrite(r,u,{...rec, e:b.e, h:b.h, c:0, ok, done:true}); }
+    });
+  }
+  function botWrite(r,u,d){ A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"res",u),{...d, x:false, at:A.serverTimestamp()}).catch(e=>console.warn("bot",u,e.code||e.message)); }
   // resumen de la solución, para que el organizador vea qué partida salió
   function solution(g, d){
     if(!d) return "";
@@ -5197,15 +5348,15 @@ const TourAdmin = (()=>{
   function cfgHtml(){
     const T0=TD, ro=T0.st!=="draft" && T0.st!=="open" && T0.st!=="checkin";
     const used=new Set(rounds().map(r=>r.ci));
-    const whenV=tms(T0.when) ? new Date(tms(T0.when)-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : "";
+    const dtv=x=>tms(x) ? new Date(tms(x)-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : "", whenV=dtv(T0.when), pubV=dtv(T0.pub);
     const sel=(name,opts,v,dis)=>`<select data-f="${name}"${dis?" disabled":""}>${opts.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v??"")?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
     let h=`<h2>Configuración</h2><div class="tacfg">
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
-      <label>Fecha y hora (informativa)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      <label>Arranca (fecha y hora, informativa)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label>Cupo<input data-f="cap" type="number" min="2" max="64" value="${T0.cap}"></label>
       <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
       <label class="wide">LNURL o Lightning Address para el pozo<input data-f="lnurl" value="${esc(T0.lnurl||"")}" maxlength="400" spellcheck="false"></label>
-      <label class="wide">Organizadores (mails de Google, separados por coma)<input data-f="orgs" value="${esc((T0.orgs||[]).join(", "))}"${isSuper()?"":" disabled"}></label>
       <label class="wide">Bases y condiciones (vacío = el texto por defecto, en el idioma de cada jugador)<textarea data-f="bases" maxlength="3000" placeholder="${esc(T.es.tBasesDef)}">${esc(T0.bases||"")}</textarea></label>
     </div><h2>Rondas</h2><p class="m small">La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. El idioma de cada ronda queda fijo cuando se genera su partida. Duración 0 = sin límite.</p>
     <div class="atabw"><table class="atab tarounds"><thead><tr><th>#</th><th>Juego</th><th>Idioma</th><th>Opciones</th><th>Dificultad</th><th>Minutos</th><th></th></tr></thead><tbody>`;
@@ -5237,14 +5388,14 @@ const TourAdmin = (()=>{
       const d=q("dif"); if(d) c.dif=d;
       return c;
     });
-    const w=v("when");
-    return {name:v("name").trim().slice(0,80)||TD.name, when:w ? A.Timestamp.fromMillis(new Date(w).getTime()) : null, cap:Math.max(2,Math.min(64,parseInt(v("cap"),10)||64)),
-      fee:Math.max(0,parseInt(v("fee"),10)||0), lnurl:v("lnurl").trim(), orgs:v("orgs").split(/[,\s]+/).map(s=>s.trim().toLowerCase()).filter(s=>/^[^@\s]+@[^@\s]+$/.test(s)).slice(0,10),
-      bases:v("bases").trim(), rounds:rs, lang:(rs[0]&&rs[0].lang)||"es"};
+    const w=v("when"), pb=v("pub"), ts=x=>x ? A.Timestamp.fromMillis(new Date(x).getTime()) : null;
+    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), cap:Math.max(2,Math.min(64,parseInt(v("cap"),10)||64)),
+      fee:Math.max(0,parseInt(v("fee"),10)||0), lnurl:v("lnurl").trim(), bases:v("bases").trim(), rounds:rs, lang:(rs[0]&&rs[0].lang)||"es"};
+    if(!TD.test) c.pub=ts(pb);
+    return c;
   }
   async function save(){
     const c=readCfg();
-    if(!isSuper()) delete c.orgs;
     try{ await A.updateDoc(tref(), c); cfgFor=null; say("Configuración guardada."); }catch(e){ fail(e); }
   }
 
@@ -5252,10 +5403,12 @@ const TourAdmin = (()=>{
   function render(){
     if(view!=="torneo-admin" || !me) return;
     const ok=Object.keys(ALL).filter(k=>mine(ALL[k]));
-    let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${esc(ALL[k].name)} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
+    let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
       (isSuper()?` <button data-ta="new">Nuevo torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
     if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
-    $("taPick").innerHTML=h;
+    // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
+    const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });
+    $("taPick").innerHTML=h+admHtml()+testHtml();
     // estado y botones
     const st=TD.st, r=last(), nIns=Object.values(INS).filter(x=>!x.out).length, nCk=Object.values(INS).filter(x=>x.ck&&!x.out).length;
     let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · cupo ${TD.cap}</span></div>
@@ -5264,9 +5417,11 @@ const TourAdmin = (()=>{
     if(st==="open") c+=`<button class="primary" data-ta="st" data-s="checkin">Abrir el check-in</button><button data-ta="st" data-s="draft">Volver a borrador</button>`;
     if(st==="checkin") c+=`<button data-ta="st" data-s="open">Cerrar el check-in</button>`;
     if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button>`;
+    if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
     if(st==="live") c+=`<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, programar sola la siguiente (5 min de cuenta regresiva)</label><button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
     $("taCtl").innerHTML=c;
+    Object.entries(keep).forEach(([i,[v,f]])=>{ const el=$(i); if(el){ el.value=v; if(f) el.focus(); } });
     renderLive();
     if(cfgFor!==tid+JSON.stringify(TD.rounds)+TD.st){ cfgFor=tid+JSON.stringify(TD.rounds)+TD.st; $("taCfg").innerHTML=cfgHtml(); }
     // inscriptos
@@ -5328,6 +5483,8 @@ const TourAdmin = (()=>{
       return; }
     if(b.tagName!=="SELECT" && b.dataset.ta!=="auto") act(b.dataset.ta, b);
   });
+  $("view-torneo-admin").addEventListener("input",e=>{ if(e.target.id==="taInvIn") searchOnline(); });
+  $("view-torneo-admin").addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.id==="taAdmIn"){ e.preventDefault(); act("admadd"); } });
   $("view-torneo-admin").addEventListener("change",e=>{ const b=e.target.closest("[data-ta]"); if(!b) return;
     if(b.dataset.ta==="pick"||b.dataset.ta==="auto") act(b.dataset.ta, b);
     if(b.closest(".tarounds") && b.dataset.f==="g"){ /* el juego nuevo trae sus opciones al guardar */ } });
