@@ -2534,6 +2534,8 @@ Object.assign(T.es,{
   rkHelp:h=>h===0?"sin ayuda":`${h} ayuda${h>1?"s":""}`, rkErr:h=>`${h} error${h===1?"":"es"}`,
   rkYourPos:(p,m)=>`Tu puesto: ${p}, ${m}.`, rkYouFailed:"Tu intento no llegó a completarse.",
   rkNoNum:"Sin número", rkLocal:"Sin conexión con el servidor: esta partida no tiene número ni ranking.", rkNick:"Tu apodo en el ranking:", rkNickSave:"Guardar", rkNickSaved:"Apodo guardado.", rkNickTaken:"Ese apodo ya lo usa otra persona. Probá con otro.", rkNickBad:"Ese apodo no sirve: sin barras ni espacios al principio o al final.",
+  nickOffline:"No hay conexión con el servidor. Revisá internet (o si tenés un bloqueador de contenido) y tocá de nuevo.",
+  nickFail:c=>`No se pudo guardar el usuario. Probá de nuevo en un rato. (Código: ${c})`,
   rkNoPerm:"Tu acceso es de solo lectura: podés jugar los números que ya existen, pero no crear nuevos ni guardar resultados.",
   rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
   rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
@@ -2550,6 +2552,8 @@ Object.assign(T.en,{
   rkHelp:h=>h===0?"no help":`${h} hint${h>1?"s":""}`, rkErr:h=>`${h} mistake${h===1?"":"s"}`,
   rkYourPos:(p,m)=>`Your rank: ${p}, ${m}.`, rkYouFailed:"Your attempt wasn't completed.",
   rkNoNum:"No number", rkLocal:"No connection to the server: this game has no number or leaderboard.", rkNick:"Your leaderboard nickname:", rkNickSave:"Save", rkNickSaved:"Nickname saved.", rkNickTaken:"Someone else already uses that nickname. Try another one.", rkNickBad:"That nickname won't work: no slashes or leading/trailing spaces.",
+  nickOffline:"Can't reach the server. Check your connection (or any content blocker) and tap again.",
+  nickFail:c=>`Couldn't save the username. Try again in a while. (Code: ${c})`,
   rkNoPerm:"You have read-only access: you can play existing numbers, but not create new ones or save results.",
   rkNotFound:n=>`There's no #${n} yet for this game and language.`,
   rkPlayed:"You already played this number: your first result is the one that counts.",
@@ -2798,7 +2802,7 @@ const Reg = (()=>{
     if(v.includes("/")||/^\.+$/.test(v)||/^__.*__$/.test(v)) return "bad";
     const key=nickKey(v), ref=fb.doc(fb.db,"nicks",key);
     try{
-      const s=await fb.getDoc(ref);
+      const s=await withRetry(()=>fb.getDoc(ref));
       if(s.exists() && s.data().uid!==uid) return "taken";
       const b=fb.writeBatch(fb.db), a=opt.av||myAv;
       b.set(fb.doc(fb.db,"names",uid), a ? {name:v, av:a} : {name:v});
@@ -2808,11 +2812,26 @@ const Reg = (()=>{
         const o=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick)));
         if(o.exists() && o.data().uid===uid) b.delete(o.ref);
       }
-      await b.commit();
+      await withRetry(()=>b.commit());
       nick=v; names[uid]=v; if(a){ myAv=a; avs[uid]=a; store.set("rodo-av",a); } store.set("rodo-nick",v); KEYS.forEach(renderRank); return "ok";
-    }catch(e){ return "fail"; }
+    }catch(e){ lastErr=e.code||e.message||"?"; logErr("nick", lastErr, v); return "fail"; }
   }
-  const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]||T[lang].rkFail);
+  // un corte de conexión (frecuente en el celular) se reintenta dos veces antes de dar error
+  async function withRetry(f){
+    for(let i=0;;i++){
+      try{ return await f(); }
+      catch(e){ if(i>=2 || !/unavailable|deadline|offline|network/i.test((e.code||"")+" "+(e.message||""))) throw e; await sleep(1500*(i+1)); }
+    }
+  }
+  // anota el error para que la administración lo vea en el panel (si hay conexión)
+  function logErr(w, c, n){
+    if(!fb || !uid) return;
+    const d={u:uid, w, c:String(c).slice(0,80), ua:navigator.userAgent.slice(0,200), at:fb.serverTimestamp()}; if(n) d.n=String(n).slice(0,30);
+    fb.setDoc(fb.doc(fb.collection(fb.db,"errs")), d).catch(()=>{});
+  }
+  let lastErr="";
+  const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]
+    || (/unavailable|offline|network|deadline/i.test(lastErr) ? T[lang].nickOffline : T[lang].nickFail(lastErr)));
   // el apodo guardado manda sobre el del navegador; si todavía no estaba reservado, se reserva
   async function loadNick(){
     try{
@@ -3068,7 +3087,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3734,7 +3753,7 @@ const User = (()=>{
     const r=await Reg.setNick(name, {av, ver}); if(r!=="ok") return Reg.nickMsg(r);
     const cred=fb.EmailAuthProvider.credential(await emailOf(k,ver), pin);
     try{ await fb.linkWithCredential(fb.auth.currentUser, cred); }
-    catch(e){ return e.code==="auth/operation-not-allowed" ? t().uOff : t().uFail; }
+    catch(e){ Reg.logErr("pin", e.code||e.message||"?", name); return e.code==="auth/operation-not-allowed" ? t().uOff : t().uFail; }
     return "";
   }
   async function create(){
@@ -4072,6 +4091,7 @@ const Admin = (()=>{
         A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
         A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned")), A.getDocs(A.collection(A.db,"pinlocks"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
+    let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
     N.forEach(d=>names[d.id]=d.data().name);
@@ -4161,6 +4181,11 @@ const Admin = (()=>{
           `<button class="unlock" data-k="${esc(l.k)}">Destrabar</button>`]));
       h+=`<p class="m small">Destrabar vuelve a cero los intentos. Si la persona olvidó el PIN, no se puede recuperar: tiene que crear un usuario nuevo con otro nombre.</p>`;
     }
+
+    // errores que vieron los jugadores al guardar (p. ej. crear usuario)
+    const errs=ER.map(x=>({...x, at:ms(x.at)})).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,20);
+    if(errs.length) h+=`<h2>Errores recientes</h2>`+table(["Cuándo","Dónde","Código","Nombre","Navegador",""],
+      errs.map(x=>[dt(x.at), esc(x.w), esc(x.c), esc(x.n||""), `<span class="small">${esc(x.ua.replace(/^Mozilla\/5\.0 /,"").slice(0,90))}</span>`, esc(names[x.u]||"")]));
 
     // últimos resultados
     const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);

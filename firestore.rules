@@ -155,6 +155,19 @@ service cloud.firestore {
       return d.keys().hasOnly(['fails', 'level', 'at']) && d.fails == 0 && d.level == 0 && d.at == null
         && get(/databases/$(database)/documents/nicks/$(key)).data.uid == request.auth.uid;
     }
+    // Errores al guardar (p. ej. crear usuario): solo se anotan; los lee la administración para diagnosticar.
+    match /errs/{id} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['u', 'w', 'c', 'n', 'ua', 'at'])
+        && request.resource.data.u == request.auth.uid
+        && request.resource.data.w is string && request.resource.data.w.size() <= 20
+        && request.resource.data.c is string && request.resource.data.c.size() <= 80
+        && (!('n' in request.resource.data) || (request.resource.data.n is string && request.resource.data.n.size() <= 30))
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 200
+        && request.resource.data.at == request.time;
+      allow update, delete: if false;
+    }
     match /pinlocks/{key} {
       allow read: if true;
       allow create: if signedIn() && exists(/databases/$(database)/documents/nicks/$(key))
