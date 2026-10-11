@@ -1317,10 +1317,10 @@ const T = {
     // acróstico
     newBtn:"Nuevo acróstico", acroNext:"Siguiente acróstico", check:"Comprobar +5 s", print:"Imprimir", clues:"Pistas",
     hint:n=>`Revelar letra +60 s (quedan ${n})`,
-    foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Tenés 5 letras de ayuda por acróstico.",
+    foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Las letras de ayuda dependen del largo de la frase: más larga, más ayudas.",
     metaP:(w,l)=>`Frase escondida: ${w} palabras, ${l} letras.`, metaW:l=>`Palabra escondida: ${l} letras.`,
     wrong:n=>`Hay ${n} letra${n>1?"s":""} mal (en rojo).`, empty:n=>`Vas bien. Faltan ${n} casilla${n>1?"s":""}.`,
-    noHints:"Ya usaste las 5 letras de ayuda.", winLabel:"¡Resuelto! La frase era",
+    noHints:"Ya usaste todas las letras de ayuda.", winLabel:"¡Resuelto! La frase era",
     stats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin letras reveladas":h+" letra"+(h>1?"s":"")+" revelada"+(h>1?"s":"")}.`,
     given:"Letra regalada", cellLabel:(r,k)=>`Fila ${r}, letra ${k}`,
     imgSolved:"Resuelto en", imgHints:h=>h===0?"sin ayuda":`${h} letra${h>1?"s":""} revelada${h>1?"s":""}`,
@@ -1348,10 +1348,10 @@ const T = {
     acroTitle:"Acrostics", hangTitle:"Hangman", sopaTitle:"Word search",
     newBtn:"New acrostic", acroNext:"Next acrostic", check:"Check +5s", print:"Print", clues:"Clues",
     hint:n=>`Reveal letter +60s (${n} left)`,
-    foot:"Read top to bottom, the orange column spells the hidden phrase. You get 5 helper letters per acrostic.",
+    foot:"Read top to bottom, the orange column spells the hidden phrase. Longer phrases get more helper letters.",
     metaP:(w,l)=>`Hidden phrase: ${w} words, ${l} letters.`, metaW:l=>`Hidden word: ${l} letters.`,
     wrong:n=>`${n} letter${n>1?"s are":" is"} wrong (in red).`, empty:n=>`Looking good. ${n} square${n>1?"s":""} to go.`,
-    noHints:"You've used all 5 helper letters.", winLabel:"Solved! The phrase was",
+    noHints:"You've used all your helper letters.", winLabel:"Solved! The phrase was",
     stats:(t,h)=>`Time ${t}. ${h===0?"No letters revealed":h+" letter"+(h>1?"s":"")+" revealed"}.`,
     given:"Free letter", cellLabel:(r,k)=>`Row ${r}, letter ${k}`,
     imgSolved:"Solved in", imgHints:h=>h===0?"no help":`${h} letter${h>1?"s":""} revealed`,
@@ -1459,7 +1459,8 @@ const toBlob = cv => new Promise(res => cv.toBlob(res,"image/png"));
 // ACRÓSTICO
 // =====================================================================
 const Acro = (()=>{
-  const MAX_HINTS = 5;
+  // letras de ayuda según el largo de la frase (una cada 2,5 filas): 4 letras → 2, 12 → 5, 23 → 8
+  const maxHints=()=>P ? Math.min(8, Math.max(2, Math.round(P.phrase.replace(/ /g,"").length/2.5))) : 5;
   let P=null, active=-1, hintsUsed=0, startTime=0, elapsed=0, solved=false, lastPhrase="";
   const rowClue = document.createElement("div");
   rowClue.className="rowclue"; rowClue.setAttribute("aria-live","polite");
@@ -1494,7 +1495,7 @@ const Acro = (()=>{
     $("winLabel").textContent=t.winLabel; $("acroGiveUp").textContent=t.giveUp; updateHintBtn();
   }
   function updateHintBtn(){
-    const left=MAX_HINTS-hintsUsed;
+    const left=maxHints()-hintsUsed;
     $("hintBtn").textContent=T[lang].hint(left);
     $("hintBtn").disabled = left<=0 || solved; $("checkBtn").disabled = solved; $("acroGiveUp").disabled = solved;
   }
@@ -1574,8 +1575,8 @@ const Acro = (()=>{
     if(!checkWin()) $("current").textContent = wrong?T[lang].wrong(wrong):empty?T[lang].empty(empty):"";
   }
   function hint(){
-    if(solved || !Reg.canHelp("acrostico")) return;
-    if(hintsUsed>=MAX_HINTS){ $("current").textContent=T[lang].noHints; return; }
+    if(solved) return;
+    if(hintsUsed>=maxHints()){ $("current").textContent=T[lang].noHints; return; }
     const needs=c=>!c.readOnly && c.value!==solOf(c);
     let cell=document.activeElement;
     if(!(cell&&cell.classList&&cell.classList.contains("cell")&&needs(cell)))
@@ -1584,7 +1585,7 @@ const Acro = (()=>{
     cell.value=solOf(cell); realRows()[+cell.dataset.r].entry[+cell.dataset.k]=cell.value;
     cell.classList.remove("ok","bad"); cell.classList.add("rev");
     hintsUsed++; updateHintBtn(); Reg.pen("acrostico","h");
-    if(hintsUsed>=MAX_HINTS) $("current").textContent=T[lang].noHints;
+    if(hintsUsed>=maxHints()) $("current").textContent=T[lang].noHints;
     if(!checkWin()) move(cell,1);
   }
   // "Me rindo": muestra la solución y la partida queda como no resuelta
@@ -1765,7 +1766,7 @@ const Hang = (()=>{
   }
   // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
   function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
-  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1||!Reg.canHelp("ahorcado")) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
+  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
   $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
   document.addEventListener("keydown",e=>{
     if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
@@ -2415,7 +2416,7 @@ const Cripto = (()=>{
   $("cHint").addEventListener("mousedown",e=>e.preventDefault());
   $("cGiveUp").addEventListener("click",giveUp);
   $("cHint").addEventListener("click",()=>{
-    if(solved || !Reg.canHelp("criptograma")) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
+    if(solved) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
     const needs=c=>group(c).some(x=>x.el.value!==x.p);
     const c = (focusC && needs(focusC)) ? focusC : (cells.find(x=>x.el.value!==x.p)||{}).c;
     if(!c) return;
@@ -2505,7 +2506,7 @@ const Ana = (()=>{
   $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
   $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
   $("aSkip").addEventListener("click",skip);
-  $("aHint").addEventListener("click",()=>{ if(locked||shown||!Reg.canHelp("anagrama")) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
+  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
   document.addEventListener("keydown",e=>{
     if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
     if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
@@ -2572,11 +2573,11 @@ Object.assign(T.en,{
 // =====================================================================
 // PUNTAJE: tiempo ajustado = tiempo + 10 s por error (20 s en el ahorcado) + 60 s por ayuda + 5 s por cada "Comprobar"
 // + (15 min / rondas) por ronda fallada.
-// Puntos = 100 por resolverla + (900 − segundos ajustados, mínimo 0). Sin resolver: 0.
+// Puntos = 1000 − segundos ajustados (mínimo 1 si la resolviste; sin resolver: 0). Así cada ayuda o error siempre resta, aun pasados los 15 minutos.
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
 const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tamaño de sopa
-const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, HELP_LOCK:7*60000, ROUNDS:{anagrama:10, placa:10, esbip:20}};
+const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20}};
 const errCost=k=> k==="ahorcado" ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
 // segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas
@@ -2587,7 +2588,7 @@ function scoreOf(k, r){
   const R=SCORE.ROUNDS[k], fails=R ? Math.max(0, R-(r.s||0)) : 0;
   const pen=penSecs(k, e, h, r.c||0, fails);
   const adj=(r.ms||0)/1000 + pen, ok=R ? (r.s||0)>0 : !!r.ok;
-  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? SCORE.BONUS + Math.max(0, Math.round(SCORE.CAP-adj)) : 0};
+  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)) : 0};
 }
 // Duelo: quién ganó una partida. a y b son los resultados de cada uno (o undefined si no terminó).
 // timedOut: pasaron más de 15 minutos desde que se creó la partida. Devuelve "a", "b", "tie", "void" o null (en juego).
@@ -2740,13 +2741,6 @@ const Reg = (()=>{
     const c=cur[g]; if(!c) return;
     c.t0=c.load=Date.now(); c.wait=0; c.fz=null; c.e=c.h=c.c=c.r=0; tick();
   }
-  // en duelo, las ayudas se habilitan a los 7 minutos de juego
-  function canHelp(g){
-    const c=cur[g]; if(!c || !c.duel) return true;
-    const t=c.t0 ? (c.fz||Date.now())-c.t0 : 0;
-    if(t>=SCORE.HELP_LOCK) return true;
-    msg(g, T[lang].duHelpLock(fmt(SCORE.HELP_LOCK-t))); return false;
-  }
   // duelo: sin botón Iniciar; los dos arrancan a la vez con una cuenta regresiva
   function syncStart(g, at){
     const u=ui[g], c=cur[g]; if(!u || !u.gate || !c) return;
@@ -2763,7 +2757,7 @@ const Reg = (()=>{
   // línea con lo que cuesta cada cosa en este juego (y el aviso de duelo)
   function setCost(g){
     const u=ui[g]; if(!u) return; const t=T[lang], c=cur[g];
-    u.cost.textContent=(t.cost[g]||"")+(c && c.duel && t.costDuel[g] ? " "+t.costDuel[g] : "");
+    u.cost.textContent=t.cost[g]||"";
   }
   function thaw(g){
     const c=cur[g]; if(!c || !c.fz) return;
@@ -3093,12 +3087,12 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, freeze, thaw, inviteGame, restartClock, canHelp, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, freeze, thaw, inviteGame, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
   rkTabP:"Esta partida", rkTabG:"General", rkLoading:"Cargando…",
-  rkScoreHow:"Puntos: 100 por resolverla más 1 por cada segundo antes de los 15 minutos. Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
+  rkScoreHow:"Puntos: 1000 menos los segundos que marca el reloj (si la resolvés, al menos 1). Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
     ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s.",
@@ -3107,9 +3101,6 @@ Object.assign(T.es,{
     anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar +90 s.",
     semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
     esbip:"Cada respuesta equivocada suma 45 s al reloj.", placa:"Cada intento equivocado suma 10 s al reloj · Pasar +90 s."},
-  costDuel:{acrostico:"En duelo, las ayudas se habilitan a los 7 minutos.", ahorcado:"En duelo, la pista se habilita a los 7 minutos.",
-    criptograma:"En duelo, las ayudas se habilitan a los 7 minutos.", anagrama:"En duelo, las pistas se habilitan a los 7 minutos."},
-  duHelpLock:t=>`En duelo, las ayudas se habilitan a los 7 minutos. Faltan ${t}.`,
   sModeLocked:"El modo se elige antes de empezar. Terminá esta sopa o pedí una nueva para cambiarlo.", sModeTag:"con pistas",
   ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`,
   rkGenTitle:g=>`Ranking general de ${g}`,
@@ -3120,7 +3111,7 @@ Object.assign(T.es,{
 });
 Object.assign(T.en,{
   rkTabP:"This game", rkTabG:"Overall", rkLoading:"Loading…",
-  rkScoreHow:"Points: 100 for solving it plus 1 for every second under 15 minutes. Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
+  rkScoreHow:"Points: 1000 minus the seconds on the clock (at least 1 if you solve it). Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
     ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s.",
@@ -3129,9 +3120,6 @@ Object.assign(T.en,{
     anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skip +90s.",
     semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
     esbip:"Each wrong answer adds 45s to the clock.", placa:"Each wrong try adds 10s to the clock · Skip +90s."},
-  costDuel:{acrostico:"In a duel, help unlocks at 7 minutes.", ahorcado:"In a duel, the clue unlocks at 7 minutes.",
-    criptograma:"In a duel, help unlocks at 7 minutes.", anagrama:"In a duel, clues unlock at 7 minutes."},
-  duHelpLock:t=>`In a duel, help unlocks at 7 minutes. ${t} to go.`,
   sModeLocked:"Pick the mode before you start. Finish this one or start a new one to change it.", sModeTag:"with clues",
   ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`,
   rkGenTitle:g=>`${g} overall leaderboard`,
