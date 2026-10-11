@@ -181,6 +181,8 @@ body.tester .testbadge{display:block}
 .cell.miss,.scell.miss{color:var(--bad);background:var(--bad-soft)}
 .giveup{color:var(--bad)}
 .giveup:disabled{color:inherit}
+button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.surenote{flex-basis:100%;margin:6px 0 0;font-size:.85rem;color:var(--bad);text-align:center}
 .ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
 .ppen.show{animation:penflash 1.6s ease-out}
 @keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -1610,7 +1612,7 @@ const Acro = (()=>{
   }
   // "Me rindo": muestra la solución y la partida queda como no resuelta
   function giveUp(){
-    if(solved || !P || !confirm(T[lang].giveUpQ)) return;
+    if(solved || !P || !sure($("acroGiveUp"), T[lang].giveUpQ)) return;
     solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
     Reg.missed("acrostico", realRows().filter(r=>!r.given && r.entry.join("")!==r.word).map(r=>({w:r.word, clue:r.clue})));
     document.querySelectorAll("#grid .cell").forEach(c=>{ if(!c.readOnly && c.value!==solOf(c)){ c.value=solOf(c); c.classList.remove("ok","bad"); c.classList.add("miss"); } c.readOnly=true; });
@@ -1776,7 +1778,7 @@ const Hang = (()=>{
   function skip(){ if(over||S().r||pending().length<2) return; next(); }
   function end(){
     if(over) return; const p=pending();
-    if(p.length && !confirm(T[lang].hEndQ(p.length))) return;
+    if(p.length && !sure($("hEnd"), T[lang].hEndQ(p.length))) return;
     p.forEach(k=>st[k].r="lost"); finish();
   }
   function finish(){
@@ -1915,7 +1917,7 @@ const Sopa = (()=>{
     if(found.size===words.length) finish();
   }
   function giveUp(){
-    if(done || !words.length || !confirm(T[lang].giveUpQ)) return;
+    if(done || !words.length || !sure($("sGiveUp"), T[lang].giveUpQ)) return;
     done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
     words.forEach(o=>{ if(!found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("miss")); });
     Reg.missed("sopa", words.filter(o=>!found.has(o.w)).map(o=>({w:o.w, clue:o.clue})));
@@ -2127,6 +2129,16 @@ Object.assign(T.en,{
   aCard:(s,n,t)=>`${s} of ${n} anagrams in ${t}`
 });
 
+// confirmación dentro de la página (algunos navegadores, como los de WhatsApp o Instagram, bloquean confirm() en silencio):
+// el primer toque muestra la pregunta y cambia el botón; el segundo, dentro de 8 s, confirma
+function sure(btn, q){
+  if(btn._sure && Date.now()-btn._sure.t<8000){ btn._sure.undo(); return true; }
+  const old=btn.textContent, note=document.createElement("p"); note.className="surenote"; note.textContent=q;
+  btn.insertAdjacentElement("afterend", note); btn.textContent=T[lang].sureAgain; btn.classList.add("sure");
+  const undo=()=>{ clearTimeout(tm); btn.textContent=old; btn.classList.remove("sure"); note.remove(); btn._sure=null; };
+  const tm=setTimeout(undo, 8000); btn._sure={t:Date.now(), undo};
+  return false;
+}
 function scoreDots(el, n, results, cur){
   el.innerHTML = Array.from({length:n},(_,i)=>`<i class="${results[i]||(i===cur?"cur":"")}"></i>`).join("");
 }
@@ -2360,7 +2372,7 @@ const Cripto = (()=>{
   }
   function updateHint(){ $("cHint").textContent=T[lang].cHint(MAX_HINTS-hints); $("cHint").disabled = hints>=MAX_HINTS||solved; $("cCheck").disabled=solved; $("cGiveUp").disabled=solved; }
   function giveUp(){
-    if(solved || !q || !confirm(T[lang].giveUpQ)) return;
+    if(solved || !q || !sure($("cGiveUp"), T[lang].giveUpQ)) return;
     solved=true; elapsed=Date.now()-start-Reg.wait("criptograma"); const t=T[lang];
     cells.forEach(x=>{ if(x.el.value!==x.p){ x.el.value=x.p; x.el.classList.remove("ok","bad"); x.el.classList.add("miss"); } x.el.readOnly=true; x.el.classList.remove("inrow"); });
     $("cStatus").textContent=""; updateHint();
@@ -2530,7 +2542,7 @@ const Ana = (()=>{
   function advance(){ const p=pending(); if(!p.length) return finish(); i = p.find(k=>k>i) ?? p[0]; round(); }
   function end(){
     if(over) return; const p=pending();
-    if(p.length && !confirm(T[lang].aEndQ(p.length))) return;
+    if(p.length && !sure($("aEnd"), T[lang].aEndQ(p.length))) return;
     p.forEach(k=>results[k]="skip"); finish();
   }
   function finish(){
@@ -3213,7 +3225,7 @@ Object.assign(T.es,{
   learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
   missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnQWords:"¿Aprendiste alguna palabra nueva? Tocá las que no conocías y se suman a tu glosario.", learnQMiss:"Las que te faltaron ya están marcadas como aprendidas (tocalas para desmarcar). Marcá también las que no conocías.", defsLoading:"Cargando definición…", learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
   learnedN:n=>n===1?"Sumaste 1 palabra a tu glosario (está en 📊 Mis estadísticas).":`Sumaste ${n} palabras a tu glosario (está en 📊 Mis estadísticas).`,
-  giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
+  sureAgain:"Tocá de nuevo para confirmar", giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
   giveUpAcro:"Te rendiste. La frase era", giveUpOther:"Te rendiste. Esta era la solución.", giveUpStats:t=>`Lo dejaste a los ${t}.`,
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
   ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
@@ -3255,7 +3267,7 @@ Object.assign(T.en,{
   learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
   missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnQWords:"Did you learn a new word? Tap the ones you didn\u2019t know and they go to your glossary.", learnQMiss:"The ones you missed are already marked as learned (tap to unmark). Also mark any you didn\u2019t know.", defsLoading:"Loading definition…", learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
   learnedN:n=>n===1?"You added 1 word to your glossary (see 📊 My stats).":`You added ${n} words to your glossary (see 📊 My stats).`,
-  giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
+  sureAgain:"Tap again to confirm", giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
   giveUpAcro:"You gave up. The phrase was", giveUpOther:"You gave up. Here's the solution.", giveUpStats:t=>`You stopped at ${t}.`,
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
   ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
@@ -3868,7 +3880,7 @@ const User = (()=>{
         Usuario:name, Detalle:"Tercer bloqueo por PIN incorrecto (9 intentos fallidos). Queda bloqueado hasta que se destrabe desde el panel de administración.", Idioma:lang})}).catch(()=>{});
   }
   async function signout(){
-    if(!confirm(t().uOutWarn)) return;
+    if(!sure($("uOut"), t().uOutWarn)) return;
     await fb.signOut(fb.auth); location.reload();
   }
   async function go(){
