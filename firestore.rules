@@ -16,7 +16,7 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
     function validKey(k) {
-      return k.matches('^(acrostico|ahorcado|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
+      return k.matches('^(acrostico|ahorcado|ahorcado6|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
     }
 
     // Contador por juego e idioma: solo sube de a uno, junto con la partida nueva

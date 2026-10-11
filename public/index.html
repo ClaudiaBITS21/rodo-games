@@ -591,12 +591,15 @@ body.tester .testbadge{display:block}
       <div class="row"><button id="hAgain"></button><button id="hShare"></button></div>
       <p class="note" id="hNote"></p>
     </div>
+    <div id="hPlay">
+    <div class="score" id="hScore"></div>
     <svg class="blocks" id="hBlocks" viewBox="0 0 520 80" aria-hidden="true"></svg>
     <p class="lives" id="hLives" aria-live="polite"></p>
-    <div class="actions"><button id="hClueBtn"></button></div>
+    <div class="actions"><button id="hClueBtn"></button><button id="hSkip"></button><button class="giveup" id="hEnd"></button></div>
     <div class="hclue" id="hClue"></div>
     <div class="hword" id="hWord" aria-live="polite"></div>
     <div class="keys" id="hKeys"></div>
+    </div>
     <footer id="hFoot"></footer>
   </section>
 
@@ -679,7 +682,7 @@ body.tester .testbadge{display:block}
       <div class="aslots" id="aSlots"></div>
       <div class="atiles" id="aTiles"></div>
       <div class="actions">
-        <button id="aHint"></button><button id="aErase"></button><button id="aShuffle"></button><button id="aSkip"></button>
+        <button id="aHint"></button><button id="aErase"></button><button id="aShuffle"></button><button id="aSkip"></button><button class="giveup" id="aEnd"></button>
       </div>
     </div>
     <footer id="aFoot"></footer>
@@ -1312,7 +1315,7 @@ const T = {
     menuTitle:"Juegos", menuBtn:"Menú",
     menuIntro:"Juegos de palabras bitcoiners. Elegí uno; cada partida se genera al azar.",
     acroName:"Acróstico", acroDesc:"Completá las filas y descubrí la frase escondida en la columna naranja.",
-    hangName:"Ahorcado", hangDesc:"Adiviná la palabra bitcoiner antes de que se rompan los 6 bloques.",
+    hangName:"Ahorcado", hangDesc:"6 palabras bitcoiners: adiviná cada una antes de que se rompan sus 6 bloques. Podés pasar y volver.",
     sopaName:"Sopa de letras", sopaDesc:"Encontrá los términos escondidos en la grilla, en cualquier dirección.",
     acroTitle:"Acrósticos", hangTitle:"Ahorcado", sopaTitle:"Sopa de letras",
     // acróstico
@@ -1329,10 +1332,10 @@ const T = {
     share:"Compartir imagen", shared:"Imagen lista.", shareFail:"No se pudo compartir la imagen.",
     shareText:"Jugué a RODO ₿ Games",
     // ahorcado
-    hNew:"Nueva palabra", hClueBtn:"Ver pista +60 s (rompe 1 bloque)", hMeta:l=>`${l} letras.`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
-    hWin:"¡Adivinaste!", hLose:"Se rompió la cadena. Era", hAgain:"Otra palabra",
-    hStats:(e,s)=>`${e} error${e===1?"":"es"}. Racha: ${s}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla.",
-    hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
+    hNew:"Nueva partida", hClueBtn:"Ver pista +60 s (rompe 1 bloque)", hMeta:(i,n,l,s)=>`Palabra ${i} de ${n} · ${l} letras · Resueltas: ${s}.`, hSkip:"Pasar a la siguiente", hEnd:"Terminar", hEndQ:n=>`Te ${n===1?"queda 1 palabra":`quedan ${n} palabras`} sin resolver: van a contar como falladas. ¿Terminás?`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
+    hWin:(s,n)=>`${s} de ${n} palabras`, hAgain:"Otra partida",
+    hStats:t=>`Tiempo ${t}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla. Pasar no cuesta nada: las que quedan sin resolver al terminar suman tiempo, como en el anagrama.",
+    hCard:(s,n,t)=>`${s} de ${n} palabras en ${t}`,
     // sopa
     sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
     sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
@@ -1344,7 +1347,7 @@ const T = {
     menuTitle:"Games", menuBtn:"Menu",
     menuIntro:"Bitcoin word games. Pick one; every round is generated at random.",
     acroName:"Acrostic", acroDesc:"Fill in the rows and uncover the phrase hidden in the orange column.",
-    hangName:"Hangman", hangDesc:"Guess the Bitcoin word before all 6 blocks break.",
+    hangName:"Hangman", hangDesc:"6 Bitcoin words: guess each one before its 6 blocks break. You can skip and come back.",
     sopaName:"Word search", sopaDesc:"Find the terms hidden in the grid, in any direction.",
     acroTitle:"Acrostics", hangTitle:"Hangman", sopaTitle:"Word search",
     newBtn:"New acrostic", acroNext:"Next acrostic", check:"Check +5s", print:"Print", clues:"Clues",
@@ -1358,10 +1361,10 @@ const T = {
     imgSolved:"Solved in", imgHints:h=>h===0?"no help":`${h} letter${h>1?"s":""} revealed`,
     share:"Share image", shared:"Image ready.", shareFail:"Couldn't share the image.",
     shareText:"I played RODO ₿ Games",
-    hNew:"New word", hClueBtn:"Show clue +60s (breaks 1 block)", hMeta:l=>`${l} letters.`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
-    hWin:"You got it!", hLose:"The chain broke. It was", hAgain:"Another word",
-    hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
-    hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
+    hNew:"New game", hClueBtn:"Show clue +60s (breaks 1 block)", hMeta:(i,n,l,s)=>`Word ${i} of ${n} · ${l} letters · Solved: ${s}.`, hSkip:"Skip to the next", hEnd:"Finish", hEndQ:n=>`${n===1?"1 word is":`${n} words are`} still unsolved and will count as missed. Finish?`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
+    hWin:(s,n)=>`${s} of ${n} words`, hAgain:"Another game",
+    hStats:t=>`Time ${t}.`, hFoot:"Use your physical keyboard or the one on screen. Skipping is free: words left unsolved when you finish add time, like in the anagram.",
+    hCard:(s,n,t)=>`${s} of ${n} words in ${t}`,
     sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
     sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
@@ -1679,96 +1682,108 @@ const Acro = (()=>{
 // AHORCADO
 // =====================================================================
 const Hang = (()=>{
-  const LIVES=6;
-  let word="", clue="", guessed=new Set(), wrong=0, over=false, recent=[], clueUsed=false;
+  // 6 palabras por partida, cada una con sus 6 bloques. "Pasar" va a la siguiente sin costo y se puede volver;
+  // una palabra se pierde al romperse sus 6 bloques. Las que quedan sin resolver al terminar cuentan como falladas.
+  const LIVES=6, ROUNDS=6;
   const ROWS = { es:["QWERTYUIOP","ASDFGHJKLÑ","ZXCVBNM"], en:["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"] };
+  let list=[], st=[], i=0, over=false, recent=[], start=0, elapsed=0;
+  const W=()=>list[i]||{w:"",c:""}, S=()=>st[i];
+  const solved=()=>st.filter(x=>x.r==="ok").length;
+  const pending=()=>st.map((x,k)=>x.r?-1:k).filter(k=>k>=0);
 
   function texts(){
     const t=T[lang];
     $("hNew").textContent=t.hNew; $("hAgain").textContent=t.hAgain; $("hShare").textContent=t.share;
-    $("hFoot").textContent=t.hFoot; updClue();
+    $("hSkip").textContent=t.hSkip; $("hEnd").textContent=t.hEnd; $("hFoot").textContent=t.hFoot; if(list.length){ updClue(); meta(); drawBlocks(); }
   }
-  const streak = () => +(store.get("rodo-hang-streak")||0);
+  const meta=()=>{ if(list.length && !over) $("hMeta").textContent=T[lang].hMeta(i+1, ROUNDS, W().w.length, solved()); };
+  function dots(){ scoreDots($("hScore"), ROUNDS, st.map(x=>x.r==="ok"?"ok":x.r==="lost"?"skip":""), over?-1:i); }
   function drawBlocks(){
-    const svg=$("hBlocks"); let h="";
+    const svg=$("hBlocks"), wrong=S()?S().wrong:0; let h="";
     const bw=64, gap=20, total=LIVES*bw+(LIVES-1)*gap, ox=(520-total)/2;
-    for(let i=0;i<LIVES;i++){
-      const x=ox+i*(bw+gap), broken = i >= LIVES-wrong;
-      if(i<LIVES-1){ const lx=x+bw, nb = (i+1) >= LIVES-wrong;
+    for(let k=0;k<LIVES;k++){
+      const x=ox+k*(bw+gap), broken = k >= LIVES-wrong;
+      if(k<LIVES-1){ const lx=x+bw, nb = (k+1) >= LIVES-wrong;
         h+=`<line x1="${lx}" y1="40" x2="${lx+gap}" y2="40" stroke="${nb||broken?'var(--bad)':'var(--line)'}" stroke-width="4" ${nb?'stroke-dasharray="4 5"':''}/>`; }
       h+=`<rect x="${x}" y="8" width="${bw}" height="64" rx="8" fill="${broken?'var(--bad-soft)':'var(--btc)'}" stroke="${broken?'var(--bad)':'#C76F00'}" stroke-width="2"/>`;
       if(broken) h+=`<path d="M${x+18} 20 L${x+34} 38 L${x+26} 44 L${x+46} 62" fill="none" stroke="var(--bad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
       else h+=`<text x="${x+bw/2}" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="20" fill="#1A1E23">₿</text>`;
     }
     svg.innerHTML=h;
-    $("hLives").textContent=T[lang].hLives(LIVES-wrong);
+    $("hLives").textContent=list.length ? T[lang].hLives(LIVES-wrong) : "";
     updClue();
   }
   function drawWord(){
-    $("hWord").innerHTML=[...word].map(ch=>{
-      const show=guessed.has(ch)||over, miss=over&&!guessed.has(ch);
+    const s=S(), w=W().w, done=!!(s&&s.r);
+    $("hWord").innerHTML=[...w].map(ch=>{
+      const show=s.g.has(ch)||done, miss=done&&!s.g.has(ch);
       return `<span class="hl${miss?' miss':''}">${show?ch:""}</span>`;
     }).join("");
   }
   function drawKeys(){
+    const s=S(), w=W().w, off=over||!s||!!s.r;
     $("hKeys").innerHTML=ROWS[lang].map(r=>`<div class="krow">${[...r].map(ch=>{
-      const cls = guessed.has(ch) ? (word.includes(ch)?" hit":" miss") : "";
-      return `<button class="key${cls}" data-k="${ch}" ${guessed.has(ch)||over?"disabled":""} aria-label="${ch}">${ch}</button>`;
+      const cls = s && s.g.has(ch) ? (w.includes(ch)?" hit":" miss") : "";
+      return `<button class="key${cls}" data-k="${ch}" ${(s&&s.g.has(ch))||off?"disabled":""} aria-label="${ch}">${ch}</button>`;
     }).join("")}</div>`).join("");
   }
-  let hStart=0;
+  function draw(){ drawBlocks(); drawWord(); drawKeys(); dots(); meta();
+    const s=S(); $("hClue").textContent=W().c; $("hClue").style.display=s&&s.clue?"":"none";
+    $("hSkip").disabled=over||pending().length<2; $("hEnd").disabled=over; }
   function gen(){
-    const pool=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
-    const [w,c]=rand(pool); recent.push(w); if(recent.length>25) recent.shift();
-    return {word:w, clue:c};
+    const pool=shuffle(gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w))).slice(0,ROUNDS);
+    pool.forEach(([w])=>{ recent.push(w); if(recent.length>40) recent.shift(); });
+    return {list:pool.map(([w,c])=>({w,c}))};
   }
   function create(){ Reg.newGame("ahorcado"); }
   function load(d){
-    word=d.word; clue=d.clue; hStart=Date.now();
-    guessed=new Set(); wrong=0; over=false;
-    // letras fuera del teclado (por ejemplo Ñ en inglés) se regalan
-    [...word].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) guessed.add(ch); });
-    $("hClue").textContent=clue; $("hClue").style.display="none"; clueUsed=false; $("hMeta").textContent=T[lang].hMeta(word.length);
-    $("hWin").style.display="none"; $("hWin").classList.remove("lose");
-    drawBlocks(); drawWord(); drawKeys();
+    list = d.list ? d.list : [{w:d.word, c:d.clue}];
+    st=list.map(o=>{ const g=new Set(); [...o.w].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) g.add(ch); }); return {g, wrong:0, clue:false, r:""}; });
+    i=0; over=false; start=Date.now(); elapsed=0;
+    $("hWin").style.display="none"; $("hWin").classList.remove("lose"); $("hPlay").style.display="";
+    draw();
+  }
+  // la siguiente palabra sin resolver (dando la vuelta); si no queda ninguna, termina
+  function next(){
+    const p=pending(); if(!p.length) return finish();
+    i = p.find(k=>k>i) ?? p[0]; draw();
   }
   function guess(ch){
-    if(over||guessed.has(ch)||!word) return;
-    guessed.add(ch);
-    if(!word.includes(ch)){ wrong++; Reg.pen("ahorcado","e"); }
-    const won=[...word].every(c=>guessed.has(c)), lost=wrong>=LIVES;
-    if(won||lost) finish(won);
-    drawBlocks(); drawWord(); drawKeys();
+    const s=S(); if(over||!s||s.r||s.g.has(ch)) return;
+    s.g.add(ch);
+    if(!W().w.includes(ch)){ s.wrong++; Reg.pen("ahorcado","e"); }
+    if([...W().w].every(c=>s.g.has(c))) s.r="ok";
+    else if(s.wrong>=LIVES) s.r="lost";
+    draw();
+    if(s.r) setTimeout(next, s.r==="ok"?700:1500);
   }
-  function finish(won){
-    over=true; const t=T[lang];
-    const s = won ? streak()+1 : 0; store.set("rodo-hang-streak", s);
-    $("hWinLabel").textContent = won ? t.hWin : t.hLose;
-    $("hWinWord").textContent = word;
-    $("hWinStats").textContent = t.hStats(wrong, s);
-    $("hWin").classList.toggle("lose", !won);
-    $("hShare").style.display = won ? "" : "none";
+  function skip(){ if(over||S().r||pending().length<2) return; next(); }
+  function end(){
+    if(over) return; const p=pending();
+    if(p.length && !confirm(T[lang].hEndQ(p.length))) return;
+    p.forEach(k=>st[k].r="lost"); finish();
+  }
+  function finish(){
+    over=true; elapsed=Date.now()-start-Reg.wait("ahorcado"); const t=T[lang], n=solved();
+    $("hPlay").style.display="none"; $("hMeta").textContent="";
+    $("hWinLabel").textContent=t.hWin(n,ROUNDS);
+    $("hWinWord").textContent=list.map((o,k)=>(st[k].r==="ok"?"✓ ":"✗ ")+o.w).join("  ");
+    $("hWinStats").textContent=t.hStats(fmt(elapsed));
+    $("hWin").classList.toggle("lose", n===0);
     $("hNote").textContent=""; $("hWin").style.display="block";
     $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
-    Reg.finish("ahorcado",{ok:won,s:0,h:wrong,ms:Date.now()-hStart-Reg.wait("ahorcado")});
+    Reg.missed("ahorcado", list.filter((o,k)=>st[k].r!=="ok").map(o=>({w:o.w, clue:o.c})));
+    Reg.finish("ahorcado",{ok:n>0, s:n, ms:elapsed});
   }
   async function image(){
-    try{ await document.fonts.ready; }catch(e){}
-    const t=T[lang], size=44, g=6, n=word.length;
-    const W=Math.max(600, n*(size+g)+80), H=330;
-    const {cv,x}=canvasBase(W,H,t.hangTitle);
-    let ox=(W-(n*(size+g)-g))/2;
-    [...word].forEach((ch,i)=>tile(x, ox+i*(size+g), 130, size, ch, "#FFFFFF", "#B9C2CB"));
-    const bw=40, bg=14, tot=LIVES*bw+(LIVES-1)*bg; ox=(W-tot)/2;
-    for(let i=0;i<LIVES;i++) tile(x, ox+i*(bw+bg), 200, bw, i>=LIVES-wrong?"✕":"₿", i>=LIVES-wrong?"#F6D5D1":"#F7931A", i>=LIVES-wrong?"#C2362B":"#C76F00", i>=LIVES-wrong?"#C2362B":"#1A1E23");
-    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`;
-    x.fillText(`${t.hCardWin(wrong)}. ${t.hStreak(streak())}`, 40, H-36);
-    return toBlob(cv);
+    const t=T[lang];
+    return cardImage(t.hangTitle, t.hWin(solved(),ROUNDS), t.hCard(solved(),ROUNDS,fmt(elapsed)), st.map(x=>x.r==="ok"?"ok":"skip"));
   }
-  // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
-  function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
-  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
+  // la pista está oculta: pedirla rompe un bloque de esa palabra y suma 60 s
+  function updClue(){ const b=$("hClueBtn"), s=S(); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=s&&s.clue?"none":""; b.disabled = over || !s || !!s.r || LIVES-s.wrong<=1; }
+  $("hClueBtn").addEventListener("click",()=>{ const s=S(); if(over||!s||s.r||s.clue||LIVES-s.wrong<=1) return; s.clue=true; s.wrong++; Reg.pen("ahorcado","h"); draw(); });
   $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
+  $("hSkip").addEventListener("click",skip); $("hEnd").addEventListener("click",end);
   document.addEventListener("keydown",e=>{
     if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
     if(e.target.tagName==="INPUT") return;
@@ -1778,7 +1793,7 @@ const Hang = (()=>{
   $("hNew").addEventListener("click",create);
   $("hAgain").addEventListener("click",create);
   $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
-  return {texts, create, gen, load, started:()=>!!word, redrawLives:()=>{ if(word) $("hLives").textContent=T[lang].hLives(LIVES-wrong); }};
+  return {texts, create, gen, load, started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); }};
 })();
 
 // =====================================================================
@@ -2049,7 +2064,7 @@ Object.assign(T.es,{
   cAgain:"Otro criptograma", cFoot:"Las frases en inglés están traducidas al castellano.",
   cCard:(t,h)=>`Descifrado en ${t}${h?`, con ${h} ayuda${h>1?"s":""}`:", sin ayuda"}`,
   // anagrama
-  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar +90 s", aHint:n=>n?`Ver pista +60 s (usadas: ${n})`:"Ver pista +60 s", aAgain:"Jugar de nuevo",
+  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar a la siguiente", aEnd:"Terminar", aEndQ:n=>`Te ${n===1?"queda 1 palabra":`quedan ${n} palabras`} sin resolver: van a contar como falladas. ¿Terminás?`, aHint:n=>n?`Ver pista +60 s (usadas: ${n})`:"Ver pista +60 s", aAgain:"Jugar de nuevo",
   aMeta:(i,n,s)=>`Ronda ${i} de ${n}. Aciertos: ${s}.`, aWin:(s,n)=>`${s} de ${n}`, aStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin pistas":h+" pista"+(h>1?"s":"")}.`,
   aFoot:"Tocá las letras en orden, o escribilas con el teclado. Tocá una casilla de arriba para devolver la letra. Las pistas son libres, pero cuentan para el ranking.",
   aCard:(s,n,t)=>`${s} de ${n} anagramas en ${t}`
@@ -2090,7 +2105,7 @@ Object.assign(T.en,{
   cWin:"Decoded!", cStats:(t,h)=>`Time ${t}. ${h===0?"No help":h+" letter"+(h>1?"s":"")+" revealed"}.`,
   cAgain:"Another cryptogram", cFoot:"Original quotes in English.",
   cCard:(t,h)=>`Decoded in ${t}${h?`, with ${h} hint${h>1?"s":""}`:", no help"}`,
-  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip +90s", aHint:n=>n?`Show clue +60s (used: ${n})`:"Show clue +60s", aAgain:"Play again",
+  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip to the next", aEnd:"Finish", aEndQ:n=>`${n===1?"1 word is":`${n} words are`} still unsolved and will count as missed. Finish?`, aHint:n=>n?`Show clue +60s (used: ${n})`:"Show clue +60s", aAgain:"Play again",
   aMeta:(i,n,s)=>`Round ${i} of ${n}. Score: ${s}.`, aWin:(s,n)=>`${s} of ${n}`, aStats:(t,h)=>`Time ${t}. ${h===0?"No clues":h+" clue"+(h>1?"s":"")}.`,
   aFoot:"Tap the letters in order, or type them. Tap a filled square to send the letter back. Clues are unlimited, but they count in the leaderboard.",
   aCard:(s,n,t)=>`${s} of ${n} anagrams in ${t}`
@@ -2449,28 +2464,32 @@ const Cripto = (()=>{
 // =====================================================================
 const Ana = (()=>{
   const ROUNDS=10;
-  let list=[], i=0, tiles=[], picks=[], results=[], score=0, start=0, elapsed=0, locked=false, hints=0, shown=false;
+  // "Pasar" va a la siguiente sin costo y se puede volver; las que quedan sin resolver al terminar cuentan como falladas
+  let list=[], i=0, tiles=[], picks=[], results=[], score=0, start=0, elapsed=0, locked=false, hints=0, shown=false, seenClue=new Set(), over=false;
   const MAXH=3;
   const ACR=/sigla|acronym|abreviatura|short form|\(short\)|abreviado/i;
   function texts(){
     const t=T[lang];
     $("aNew").textContent=t.aNew; $("aErase").textContent=t.aErase; $("aShuffle").textContent=t.aShuffle;
-    $("aSkip").textContent=t.aSkip; updHint(); $("aAgain").textContent=t.aAgain; $("aShare").textContent=t.share; $("aFoot").textContent=t.aFoot; meta();
+    $("aSkip").textContent=t.aSkip; $("aEnd").textContent=t.aEnd; updHint(); $("aAgain").textContent=t.aAgain; $("aShare").textContent=t.share; $("aFoot").textContent=t.aFoot; meta();
   }
-  const meta=()=>{ if(list.length && i<ROUNDS) $("aMeta").textContent=T[lang].aMeta(i+1,ROUNDS,score); };
+  const meta=()=>{ if(list.length && !over) $("aMeta").textContent=T[lang].aMeta(i+1,ROUNDS,score); };
+  const pending=()=>list.map((_,k)=>results[k]?-1:k).filter(k=>k>=0);
   const word=()=>list[i][0];
-  function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length; }
+  function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length || over;
+    $("aSkip").disabled = over || locked || pending().length<2; $("aEnd").disabled = over; }
   function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
   function gen(){ return {list:shuffle(gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
   function create(){ Reg.newGame("anagrama"); }
   function load(d){
-    list=d.list.map(o=>[o.w,o.c]); hints=0;
+    list=d.list.map(o=>[o.w,o.c]); hints=0; seenClue=new Set(); over=false;
     i=0; results=[]; score=0; start=Date.now();
     $("aWin").style.display="none"; $("aPlay").style.display=""; round();
   }
   function round(){
     locked=false; tiles=scramble(word()); picks=[];
-    shown=false; $("aClue").textContent=list[i][1]; $("aClue").style.display="none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
+    // la pista ya pagada de esta palabra sigue visible al volver
+    shown=seenClue.has(i); $("aClue").textContent=list[i][1]; $("aClue").style.display=shown?"":"none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
   }
   function draw(cls){
     const w=word();
@@ -2490,13 +2509,17 @@ const Ana = (()=>{
       setTimeout(advance,800);
     } else { draw("bad"); Reg.pen("anagrama","e"); setTimeout(()=>{ if(!locked) draw(); },400); }
   }
-  function skip(){
-    if(locked) return; locked=true; results[i]="skip"; Reg.pen("anagrama","r");
-    const w=word(); tiles=[...w]; picks=tiles.map((_,k)=>k); draw("skip"); scoreDots($("aScore"),ROUNDS,results,-1);
-    setTimeout(advance,1500);
+  function skip(){ if(locked||over||pending().length<2) return; advance(); }
+  // la siguiente sin resolver (dando la vuelta); si no queda ninguna, termina
+  function advance(){ const p=pending(); if(!p.length) return finish(); i = p.find(k=>k>i) ?? p[0]; round(); }
+  function end(){
+    if(over) return; const p=pending();
+    if(p.length && !confirm(T[lang].aEndQ(p.length))) return;
+    p.forEach(k=>results[k]="skip"); finish();
   }
-  function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
   function finish(){
+    over=true; updHint();
+    Reg.missed("anagrama", list.filter((_,k)=>results[k]!=="ok").map(([w,c])=>({w, clue:c})));
     elapsed=Date.now()-start-Reg.wait("anagrama"); const t=T[lang];
     $("aPlay").style.display="none"; $("aMeta").textContent="";
     showWin("a", t.aWin(score,ROUNDS), t.aStats(fmt(elapsed),hints));
@@ -2506,8 +2529,8 @@ const Ana = (()=>{
   $("aSlots").addEventListener("click",e=>{ const b=e.target.closest(".aslot"); if(!b||locked) return; const j=+b.dataset.j; if(picks[j]===undefined) return; picks.splice(j,1); draw(); });
   $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
   $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
-  $("aSkip").addEventListener("click",skip);
-  $("aHint").addEventListener("click",()=>{ if(locked||shown) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
+  $("aSkip").addEventListener("click",skip); $("aEnd").addEventListener("click",end);
+  $("aHint").addEventListener("click",()=>{ if(locked||shown||over) return; hints++; shown=true; seenClue.add(i); Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
   document.addEventListener("keydown",e=>{
     if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
     if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
@@ -2578,8 +2601,8 @@ Object.assign(T.en,{
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
 const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tamaño de sopa
-const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20}};
-const errCost=k=> k==="ahorcado" ? 20 : SCORE.ERR;
+const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20, ahorcado6:6}};
+const errCost=k=> k.startsWith("ahorcado") ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
 // segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas
 const penSecs=(k,e,h,c,r)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*roundCost(k);
@@ -3097,10 +3120,10 @@ Object.assign(T.es,{
   rkScoreHow:"Puntos: 1000 menos los segundos que marca el reloj (si la resolvés, al menos 1). Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
-    ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s.",
+    ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +150 s.",
     sopa:"Gana el tiempo. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
     criptograma:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
-    anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar +90 s.",
+    anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +90 s.",
     semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
     esbip:"Cada respuesta equivocada suma 45 s al reloj.", placa:"Cada intento equivocado suma 10 s al reloj · Pasar +90 s."},
   sModeLocked:"El modo se elige antes de empezar. Terminá esta sopa o pedí una nueva para cambiarlo.", sModeTag:"con pistas",
@@ -3116,10 +3139,10 @@ Object.assign(T.en,{
   rkScoreHow:"Points: 1000 minus the seconds on the clock (at least 1 if you solve it). Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
-    ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s.",
+    ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +150s.",
     sopa:"Time wins. Pick the mode (words or clues) before you start; each has its own leaderboard.",
     criptograma:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
-    anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skip +90s.",
+    anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +90s.",
     semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
     esbip:"Each wrong answer adds 45s to the clock.", placa:"Each wrong try adds 10s to the clock · Skip +90s."},
   sModeLocked:"Pick the mode before you start. Finish this one or start a new one to change it.", sModeTag:"with clues",
@@ -3886,7 +3909,7 @@ const Stats = (()=>{
   const t=()=>T[lang];
   const ms=x=> x&&x.toMillis ? x.toMillis() : null;
   // nombre de cada clave de partida: "sopagrande" → "Sopa de letras (grande)"
-  const kName=k=>{ const T0=t(); if(k.startsWith("sopa")){ const s=k==="sopa"?"media":k.slice(4); return T0.gName.sopa+(s==="media"?"":` (${T0.sSize[s].toLowerCase()})`); } return T0.gName[k]||k; };
+  const kName=k=>{ const T0=t(); if(k.startsWith("sopa")){ const s=k==="sopa"?"media":k.slice(4); return T0.gName.sopa+(s==="media"?"":` (${T0.sSize[s].toLowerCase()})`); } return T0.gName[k==="ahorcado6"?"ahorcado":k]||k; };
   const hrs=v=>{ const m=Math.round(v/60000); return m<60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; };
   const when=v=> v ? new Date(v).toLocaleString(lang==="en"?"en-US":"es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "–";
   const table=(head,rows)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
@@ -4074,7 +4097,7 @@ const Admin = (()=>{
   const pct=(a,b)=> b ? Math.round(100*a/b)+"%" : "–";
   const median=a=>{ if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), i=b.length>>1; return b.length%2?b[i]:(b[i-1]+b[i])/2; };
   const dt=t=> t ? new Date(t).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "–";
-  const NAMES={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa mediana",sopachica:"Sopa chica",sopagrande:"Sopa grande",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"};
+  const NAMES={acrostico:"Acróstico",ahorcado:"Ahorcado (1 palabra, viejo)",ahorcado6:"Ahorcado",sopa:"Sopa mediana",sopachica:"Sopa chica",sopagrande:"Sopa grande",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"};
   const gname=k=>NAMES[k]||k;
   const table=(head,body)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 
