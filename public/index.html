@@ -199,6 +199,7 @@ body.tester .testbadge{display:block}
 .missl{margin:0;padding:0 0 0 18px;font-size:.86rem;line-height:1.4}
 .missl li{margin:2px 0}
 .win.lose .wlearn{background:var(--paper)}
+.win.induel .row > button:first-child{display:none}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
 .wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
 .wback button,.wduel button{padding:7px 12px;font-size:.88rem}
@@ -2943,7 +2944,8 @@ const Reg = (()=>{
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
     if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; }
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
-    if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); showLearn(g); }
+    // en duelo no hay "Siguiente": se sigue con "Revancha" (invita al mismo rival)
+    if(ui[g]){ ui[g].win.classList.remove("rkonly"); ui[g].win.classList.toggle("induel", !!(cur[g] && cur[g].duel)); showPts(g, rec); showLearn(g); }
     showBack(g);
     duelNote(g,"");
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
