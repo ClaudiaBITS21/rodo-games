@@ -198,6 +198,15 @@ body.tester .testbadge{display:block}
 .wlearn.wmiss{flex-direction:column;align-items:stretch;text-align:left}
 .missl{margin:0;padding:0 0 0 18px;font-size:.86rem;line-height:1.4}
 .missl li{margin:2px 0}
+.lchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.lchips button{padding:4px 10px;font:600 .8rem "IBM Plex Mono",ui-monospace,monospace;border-radius:999px}
+.lchips button[aria-pressed="true"]{background:var(--btc-soft);border-color:var(--btc)}
+.ldefs{margin:4px 0 0;font-size:.85rem;line-height:1.4}
+.ldefs dt{font-weight:700;margin-top:6px}
+.ldefs dd{margin:0}
+.stgloss{margin:0;line-height:1.45}
+.stgloss dt{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;margin-top:10px}
+.stgloss dd{margin:2px 0 0;color:var(--muted);font-size:.92rem}
 .win.lose .wlearn{background:var(--paper)}
 .win.induel .row > button:first-child{display:none}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
@@ -1391,6 +1400,11 @@ const CLUES={ seen:{es:new Set(),en:new Set()}, use:{es:{},en:{}}, duel:false, t
 const clueKey=id=>"c"+id.replace(".","_");
 const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
 // devuelve [palabra, pista elegida, código, todas sus pistas]
+// número de cada palabra del glosario (1..218, el mismo del código de pista) y sus definiciones (se bajan solo cuando hacen falta)
+const GW={es:new Map(G_ES.map(([w],i)=>[w,i+1])), en:new Map(G_EN.map(([w],i)=>[w,i+1]))};
+const gWord=(L,n)=>((L==="en"?G_EN:G_ES)[n-1]||[""])[0];
+const DEFS={};
+const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; }));
 const gloss = () => {
   const L=lang, seen=CLUES.seen[L];
   let list=(L==="en" ? G_EN : G_ES).map(([w,cs],i)=>{
@@ -1675,7 +1689,7 @@ const Acro = (()=>{
   $("hintBtn").addEventListener("click",hint);
   $("printBtn").addEventListener("click",()=>window.print());
   $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
-  return {texts, create, gen, load, started:()=>!!P};
+  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P};
 })();
 
 // =====================================================================
@@ -1793,7 +1807,7 @@ const Hang = (()=>{
   $("hNew").addEventListener("click",create);
   $("hAgain").addEventListener("click",create);
   $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
-  return {texts, create, gen, load, started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); }};
+  return {texts, create, gen, load, words:()=>list.map(o=>o.w), started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); }};
 })();
 
 // =====================================================================
@@ -1969,7 +1983,7 @@ const Sopa = (()=>{
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
-  return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
+  return {texts, create, gen, load, words:()=>words.map(o=>o.w), setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
 })();
 
 
@@ -2540,7 +2554,7 @@ const Ana = (()=>{
   $("aNew").addEventListener("click",create); $("aAgain").addEventListener("click",create);
   $("aShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
-  return {texts, create, gen, load, started:()=>list.length>0};
+  return {texts, create, gen, load, words:()=>list.map(x=>x[0]), started:()=>list.length>0};
 })();
 
 function applyTexts2(){
@@ -2998,22 +3012,35 @@ const Reg = (()=>{
   function showLearn(g){
     const c=cur[g], el=slot(g,"wlearn"), t=T[lang];
     el.hidden=!(fb && c && c.n); if(el.hidden) return;
-    const pid=`${c.k}-${c.lang}-${c.n}`, miss=(c.missed||[]).slice(0,40);
-    // al rendirse: las palabras que faltaban, con su pista, y se anotan como conceptos nuevos (se puede destildar)
-    el.classList.toggle("wmiss", miss.length>0);
-    el.innerHTML = miss.length
-      ? `<p>${esc(t.missT(miss.length))}</p><ul class="missl">${miss.map(m=>`<li><b>${esc(m.w)}</b>${m.clue?" — "+esc(m.clue):""}</li>`).join("")}</ul>`+
-        `<label><input type="checkbox" checked> ${esc(t.learnN(miss.length))}</label><span class="lnote" aria-live="polite"></span>`
-      : `<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
-    const box=el.querySelector("input");
-    const save=async()=>{
-      const note=el.querySelector(".lnote"), d={u:uid, p:pid, g:c.k, yes:box.checked, duel:!!c.duel, at:fb.serverTimestamp()};
-      if(miss.length) d.n=box.checked ? miss.length : 0;
-      try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`), d); note.textContent=box.checked ? (miss.length ? t.learnedN(miss.length) : t.learnThanks) : ""; }
-      catch(err){ note.textContent=t.rkFail; }
+    const pid=`${c.k}-${c.lang}-${c.n}`, L=c.lang, miss=new Set((c.missed||[]).map(m=>m.w));
+    // palabras del glosario que aparecieron en la partida (en el criptograma y la semilla no hay: queda el tilde simple)
+    const ws=[...new Set(GAMES[g].words ? GAMES[g].words() : [])].filter(w=>GW[L].has(w)).slice(0,40);
+    el.classList.toggle("wmiss", ws.length>0);
+    if(!ws.length){
+      el.innerHTML=`<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
+      const box=el.querySelector("input");
+      box.addEventListener("change",async()=>{ const note=el.querySelector(".lnote");
+        try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:box.checked, duel:!!c.duel, at:fb.serverTimestamp()}); note.textContent=box.checked ? t.learnThanks : ""; }
+        catch(err){ note.textContent=t.rkFail; } });
+      return;
+    }
+    // las que faltaron (al rendirse o terminar) ya vienen marcadas; cada palabra marcada muestra su definición
+    const on=new Set(ws.filter(w=>miss.has(w)));
+    el.innerHTML=`<p>${esc(miss.size ? t.learnQMiss : t.learnQWords)}</p><div class="lchips"></div><dl class="ldefs"></dl><span class="lnote" aria-live="polite"></span>`;
+    const chips=el.querySelector(".lchips"), dl=el.querySelector(".ldefs"), note=el.querySelector(".lnote");
+    let timer=null;
+    const draw=async()=>{
+      chips.innerHTML=ws.map(w=>`<button type="button" data-w="${esc(w)}" aria-pressed="${on.has(w)}">${esc(w)}</button>`).join("");
+      const D=on.size ? await defsOf(L) : null;
+      dl.innerHTML=ws.filter(w=>on.has(w)).map(w=>`<dt>${esc(w)}</dt><dd>${esc(D ? D[GW[L].get(w)-1]||"" : t.defsLoading)}</dd>`).join("");
     };
-    box.addEventListener("change",save);
-    if(miss.length) save();
+    const save=()=>{ clearTimeout(timer); timer=setTimeout(async()=>{
+      const w=ws.filter(x=>on.has(x)).map(x=>GW[L].get(x));
+      try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:w.length>0, duel:!!c.duel, n:w.length, w, at:fb.serverTimestamp()});
+        note.textContent = w.length ? t.learnedN(w.length) : ""; }
+      catch(err){ note.textContent=t.rkFail; } }, 500); };
+    chips.addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; const w=b.dataset.w; if(on.has(w)) on.delete(w); else on.add(w); draw(); save(); });
+    draw(); if(on.size) save();
   }
   // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
@@ -3182,8 +3209,8 @@ Object.assign(T.es,{
   ivWordsL:"Palabras", ivSize:n=>`de ${n}×${n}`, ivWithClues:"con pistas", ivWithWords:"viendo las palabras", ivWords:n=>`de ${n} palabras`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Elegir otro juego",
   learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
-  missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
-  learnedN:n=>n===1?"¡Sumaste 1 concepto nuevo!":`¡Sumaste ${n} conceptos nuevos!`,
+  missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnQWords:"¿Aprendiste alguna palabra nueva? Tocá las que no conocías y se suman a tu glosario.", learnQMiss:"Las que te faltaron ya están marcadas como aprendidas (tocalas para desmarcar). Marcá también las que no conocías.", defsLoading:"Cargando definición…", learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
+  learnedN:n=>n===1?"Sumaste 1 palabra a tu glosario (está en 📊 Mis estadísticas).":`Sumaste ${n} palabras a tu glosario (está en 📊 Mis estadísticas).`,
   giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
   giveUpAcro:"Te rendiste. La frase era", giveUpOther:"Te rendiste. Esta era la solución.", giveUpStats:t=>`Lo dejaste a los ${t}.`,
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
@@ -3224,8 +3251,8 @@ Object.assign(T.en,{
   ivWordsL:"Words", ivSize:n=>`${n}×${n}`, ivWithClues:"with clues", ivWithWords:"showing the words", ivWords:n=>`with ${n} words`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Pick another game",
   learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
-  missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
-  learnedN:n=>n===1?"You added 1 new concept!":`You added ${n} new concepts!`,
+  missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnQWords:"Did you learn a new word? Tap the ones you didn\u2019t know and they go to your glossary.", learnQMiss:"The ones you missed are already marked as learned (tap to unmark). Also mark any you didn\u2019t know.", defsLoading:"Loading definition…", learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
+  learnedN:n=>n===1?"You added 1 word to your glossary (see 📊 My stats).":`You added ${n} words to your glossary (see 📊 My stats).`,
   giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
   giveUpAcro:"You gave up. The phrase was", giveUpOther:"You gave up. Here's the solution.", giveUpStats:t=>`You stopped at ${t}.`,
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
@@ -3889,7 +3916,7 @@ Object.assign(T.es,{
   stByGame:"Por juego", stCols:["Juego","Jugadas","Resueltas","Mejor","Promedio","Mejor tiempo"],
   stDuels:"Competencias", stDuelK:["duelos","partidas en duelo","ganadas","perdidas","empates","invitaciones mandadas"],
   stNoDuels:"Todavía no jugaste duelos. Desde la portada, \"Invitar a jugar\" te junta con alguien conectado.", stLast:"Últimas partidas", stLastCols:["Cuándo","Juego","Resultado","Puntos","Tiempo"], stNone:"Todavía no terminaste ninguna partida.",
-  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`, stConcepts:n=>`Al rendirte sumaste ${n} concepto${n===1?"":"s"} nuevo${n===1?"":"s"}.`,
+  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`, stConcepts:n=>`Marcaste ${n} palabra${n===1?"":"s"} como aprendida${n===1?"":"s"}.`, stGloss:n=>`Mi glosario (${n} palabra${n===1?"":"s"})`,
   ndT:"Armá tu usuario en menos de 30 segundos", ndP:"Creá un alias, elegí un PIN y usalo en cualquier dispositivo. Además vas a poder seguir tu rendimiento.",
   ndGo:"Crear mi usuario", ndLater:"Recordar más tarde", ndNo:"Cancelar"
 });
@@ -3900,7 +3927,7 @@ Object.assign(T.en,{
   stByGame:"By game", stCols:["Game","Played","Solved","Best","Average","Best time"],
   stDuels:"Competitions", stDuelK:["duels","duel games","won","lost","ties","invitations sent"],
   stNoDuels:"No duels yet. From the home page, \"Invite to play\" matches you with someone online.", stLast:"Recent games", stLastCols:["When","Game","Result","Points","Time"], stNone:"You haven't finished a game yet.",
-  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`, stConcepts:n=>`Giving up added ${n} new concept${n===1?"":"s"}.`,
+  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`, stConcepts:n=>`You marked ${n} word${n===1?"":"s"} as learned.`, stGloss:n=>`My glossary (${n} word${n===1?"":"s"})`,
   ndT:"Set up your username in under 30 seconds", ndP:"Create an alias, pick a PIN and use it on any device. You'll also be able to track your performance.",
   ndGo:"Create my username", ndLater:"Remind me later", ndNo:"Cancel"
 });
@@ -3948,12 +3975,15 @@ const Stats = (()=>{
     }catch(e){}
     let inv=0, learned=0;
     try{ const f=await fb.getDoc(fb.doc(fb.db,"fichas",uid)); inv=(f.exists()&&f.data().inv)||0; }catch(e){}
-    let concepts=0;
+    let concepts=0; const gl=new Map();   // glosario propio: "es:12" → {L, n}
     try{ const ds=(await fb.getDocs(fb.query(fb.collection(fb.db,"learned"), fb.where("u","==",uid)))).docs.map(d=>d.data()).filter(d=>d.yes);
-      learned=ds.length; concepts=ds.reduce((a,d)=>a+(d.n||0),0); }catch(e){}
-    render(res, duels.length, dg, inv, learned, concepts);
+      learned=ds.length; concepts=ds.reduce((a,d)=>a+(d.n||0),0);
+      ds.forEach(d=>{ const L=String(d.p).split("-")[1]; (d.w||[]).forEach(n=>gl.set(`${L}:${n}`,{L,n})); }); }catch(e){}
+    const Ls=[...new Set([...gl.values()].map(x=>x.L))], D={};
+    await Promise.all(Ls.map(async L=>{ D[L]=await defsOf(L); }));
+    render(res, duels.length, dg, inv, learned, concepts, [...gl.values()].map(x=>({...x, w:gWord(x.L,x.n), d:(D[x.L]||[])[x.n-1]||""})));
   }
-  function render(res, nDuels, dg, inv, learned, concepts){
+  function render(res, nDuels, dg, inv, learned, concepts, gl=[]){
     const T0=t(), box=$("stBody");
     const solved=res.filter(x=>x.sc.ok), pts=res.reduce((a,x)=>a+x.sc.pts,0), best=res.reduce((a,x)=>Math.max(a,x.sc.pts),0);
     const time=res.reduce((a,x)=>a+Math.min(x.r.ms||0, 3*3600000),0), days=new Set(res.filter(x=>x.at).map(x=>new Date(x.at).toDateString())).size;
@@ -3976,6 +4006,11 @@ const Stats = (()=>{
     const last=[...res].sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,10);
     h+=`<h2>${esc(T0.stLast)}</h2>`+table(T0.stLastCols, last.map(x=>[when(x.at), `${esc(kName(x.k))} ${x.L.toUpperCase()} #${x.pid.split("-")[2]}`, x.sc.ok?"✓":"✗", x.sc.pts, fmt(x.r.ms||0)+(x.sc.pen?` + ${fmt(x.sc.pen*1000)}`:"")]));
     if(learned) h+=`<p class="m">${esc(T0.stLearned(learned)+(concepts?" "+T0.stConcepts(concepts):""))}</p>`;
+    // mi glosario: las palabras que marcó como aprendidas, con su definición (primero las del idioma de la página)
+    if(gl.length){
+      gl.sort((a,b)=>(a.L===lang?0:1)-(b.L===lang?0:1) || a.w.localeCompare(b.w));
+      h+=`<h2>${esc(T0.stGloss(gl.length))}</h2><dl class="stgloss">${gl.map(x=>`<dt>${esc(x.w)}${x.L!==lang?` <span class="small">(${x.L.toUpperCase()})</span>`:""}</dt><dd>${esc(x.d)}</dd>`).join("")}</dl>`;
+    }
     box.innerHTML=h;
   }
   $("statsBtn").addEventListener("click",()=>{ location.hash="stats"; });

@@ -124,7 +124,7 @@ service cloud.firestore {
       // la administración ve todas; cada jugador, las suyas (para sus estadísticas)
       allow read: if isAdmin() || (signedIn() && resource.data.u == request.auth.uid);
       allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at', 'n'])
+        && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at', 'n', 'w'])
         && request.resource.data.u == request.auth.uid
         && id == request.auth.uid + '_' + request.resource.data.p
         && request.resource.data.p is string && request.resource.data.p.size() <= 80
@@ -132,6 +132,8 @@ service cloud.firestore {
         && request.resource.data.yes is bool && request.resource.data.duel is bool
         // n: cuántos conceptos nuevos (las palabras que le faltaron al rendirse)
         && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 40))
+        // w: los números de glosario de las palabras que marcó como aprendidas
+        && (!('w' in request.resource.data) || (request.resource.data.w is list && request.resource.data.w.size() <= 40))
         && request.resource.data.at == request.time
         && exists(/databases/$(database)/documents/puzzles/$(request.resource.data.p));
       allow delete: if false;
