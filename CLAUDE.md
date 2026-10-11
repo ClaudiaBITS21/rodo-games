@@ -12,6 +12,8 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - Sitio: https://games.rodo.es (también https://rodo-games.web.app). DNS en Namecheap: CNAME `games` → `rodo-games.web.app`.
 - Firebase: proyecto `rodo-games`, Firestore en `southamerica-east1`, login anónimo para jugadores.
 - Repo: `ClaudiaBITS21/rodo-games`, público, rama `main`. Cada push a `main` publica Hosting y reglas/índices de Firestore vía GitHub Actions (`.github/workflows/deploy.yml`, cuenta de servicio `github-deploy@rodo-games`).
+- **Cloud Functions** (`functions/`, Node 22, región `southamerica-east1`): avisos push del torneo. Están escritas y probadas en el emulador, pero **no se publican** hasta que el proyecto pase a Blaze: el workflow publica solo `--only hosting,firestore`. Para sumarlas hay que dar permisos de IAM a `github-deploy@rodo-games` y agregar `npm ci --prefix functions` y `functions` al `--only` del workflow.
+- `public/sw.js`: service worker solo para mostrar avisos push (no cachea nada). Lo registra `Push.enable()` cuando alguien activa los avisos.
 - La web es una sola página: `public/index.html`, bilingüe ES/EN. La config de Firebase se lee de `/__/firebase/init.json` (la sirve Hosting), así que abriendo el archivo local no conecta.
 
 ## Juegos (8)
@@ -42,7 +44,25 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - **Conectados e invitaciones:** en la portada se ve cuántos hay conectados (cada pestaña visible avisa cada minuto en `online/{uid}`; cuenta quien avisó en los últimos 2,5 min). "Invitar a jugar": invitar es en dos pasos: primero el juego y después sus opciones (idioma siempre; en la sopa, tamaño y modo; en la semilla, 12 o 24 palabras). Apodo obligatorio. "¿A quién?": "Alguien al azar" (se sortea a alguien conectado, de cualquier idioma, que acepte invitaciones y no tenga una partida en curso de ese juego) o "Por nombre" (mientras se escribe aparecen solo los conectados con usuario, en vivo; la presencia lleva `nm` y `av`, que las reglas exigen iguales a los registrados). El contador de la portada se actualiza cada 30 s a propósito: en vivo para todos costaría lecturas que crecen con el cuadrado de la gente conectada. Al azar, si alguien rechaza, está ocupado o no contesta, se invita solo a otro disponible con la misma partida hasta que alguien acepte o no quede nadie. Quien rechaza una invitación al azar no vuelve a ser sorteado en esa sesión (por nombre, sí): quien invita lo anota y quien rechazó rechaza solas las siguientes al azar (`invites.r`, sessionStorage). La ventanita tiene "Aceptar", "No, gracias" y "Rechazar todas" (rechaza y apaga "Recibir invitaciones"). La invitación (`invites/{uid de quien invita}`) siempre lleva una partida recién creada, así ninguno la jugó; una sola pendiente por persona; vence a los 60 s con cuenta regresiva visible en las dos puntas. La invitación dice exactamente a qué se invita ("Sopa de letras de 15×15, con pistas, en inglés"). Al aceptar, el sitio pasa al idioma de la invitación sin tocar las partidas en curso o congeladas (solo el botón de idioma fuerza una partida nueva). Al invitado se le congela el cronómetro de lo que esté jugando (el tiempo congelado no cuenta). Opción "Recibir invitaciones" en la portada y "No quiero recibir invitaciones" en la ventanita. Sin aviso extra en la nota de privacidad (decisión de la dueña).
 - **Contador de la portada:** "N disponibles para jugar" cuenta solo a quienes tienen tildado "Recibir invitaciones" y no se cuenta a uno mismo (consulta `online` con `inv==true` y `at` reciente; índice compuesto en `firestore.indexes.json`; mientras se construye, cae a "conectados menos yo"). "Ver quiénes ▾" despliega en vivo los disponibles con usuario (más "y N sin usuario"); tocar uno abre la invitación con esa persona elegida y después se elige el juego. La lista en vivo solo escucha mientras está abierta.
 - **"Me rindo"** en acróstico, criptograma y sopa: pide confirmación, muestra la solución marcada en rojo y guarda la partida como no resuelta (0 puntos). En el acróstico y la sopa, el cartel lista las palabras que faltaban con su pista y las anota como conceptos nuevos ("Aprendí 7 conceptos nuevos", tildado y guardado solo; se puede destildar): `learned.n`, que suman Mis estadísticas y el panel.
-- Nota de privacidad breve al pie.
+- **Torneo en vivo** (por ejemplo, "BITCOIN.AR HALVING GAMES"; módulos `Tour`, sala de jugadores en `#torneo`, y `TourAdmin`, panel del organizador en `#torneo-admin`):
+  - **Rondas eliminatorias:** todos juegan la misma partida a la vez y pasa la mitad (la mayor potencia de 2 menor que los que juegan); con 2 jugadores, la final (1 a 1, la última ronda configurada).
+  - **Organizadores:** crea torneos solo `claudia@rodo.es`; los manejan ella y los mails de Google en `orgs` (`isOrg()` en las reglas). El organizador define cada ronda: juego, idioma (queda fijo cuando se genera la partida), opciones (sopa: tamaño y modo; semilla: 12/24; ahorcado: cantidad de palabras), dificultad (fácil/media/difícil por largo de palabra o frase) y minutos (0 = sin límite).
+  - **Por defecto:** ahorcado de 6 palabras, anagrama, sopa, acróstico, semilla y final de criptograma difícil sin límite.
+  - **Flujo:** borrador → inscripción → check-in → en juego → terminado.
+    - Inscribirse exige usuario (apodo registrado), mail, teléfono y aceptar las bases.
+    - Mail y teléfono van en `tourneys/{tid}/priv/{uid}` y solo los leen el dueño y los organizadores.
+    - Juegan los primeros `cap` (64) que hacen check-in, por hora del servidor; si nadie hizo check-in, los primeros inscriptos.
+  - **Partidas:** se generan al programar cada ronda, con las pistas menos usadas por todos (`Reg.genFor`, como las invitaciones). Son secretas (`rounds/{n}/data/p`) hasta que la ronda arranca o está en juego.
+  - **Arranque:** a la hora (`go`), sin botón Iniciar; los que compiten entran solos a la partida. Entre rondas hay 5 min de cuenta regresiva y el organizador puede pausar, reanudar, arrancar ya o regenerar la partida.
+  - **Tiempo y resultados:** el tiempo lo pone el servidor (`at − go`). Cada jugador guarda su avance (`p`) cada 5 s en `rounds/{n}/res/{uid}`; las reglas impiden que bajen errores, ayudas, comprobaciones y rondas falladas, y que se escriba pasado el fin (+20 s) o con la ronda cerrada.
+  - **Puntos (`tScore`):** quien termina, 100 × fracción resuelta + (900 − segundos ajustados, mínimo 0); quien no termina, 100 × avance − penalidades/10. En el ahorcado de varias palabras, cada palabra perdida suma 900/palabras s.
+  - **Cierre (`tDecided`):** la ronda se cierra sola cuando terminaron todos, se acabó el tiempo (+22 s) o nadie de los que siguen puede superar al último que pasa. **Lo hace el panel del organizador, que tiene que quedar abierto** (una transacción evita duplicados con dos pestañas).
+  - **Eliminados y espectadores:** los eliminados (y cualquiera) pueden jugar cada ronda "sin competir" (`x`) y ven dónde habrían quedado.
+  - **Invitaciones:** con un torneo en vivo no hay invitaciones para nadie.
+  - **Pozo:** el aporte es voluntario (por defecto 2100 sats, a la LNURL o Lightning Address del organizador) y el organizador marca a mano quién aportó. Solo puede ganar el pozo quien aportó; si no, queda para el organizador. El premio se paga después.
+  - **Bases por defecto:** el texto de la dueña (`tBasesDef`).
+  - **Avisos push** (necesitan Blaze): ronda programada, "arranca en 1 minuto", resultado de la ronda, check-in y arranque. En iPhone, solo con el sitio agregado a la pantalla de inicio (iOS 16.4+).
+- Nota de privacidad breve al pie (menciona mail y teléfono del torneo, que ven solo los organizadores).
 - Buzón de sugerencias (FormSubmit) y crédito a Bitcoin.AR al pie.
 - Panel de admin: estadísticas de jugadores, actividad, rendimiento por juego (con puntos), invitaciones y duelos, exportación CSV (con puntos, errores y ayudas), botón "Ir a los juegos" y botón de modo prueba. Acceso exclusivo para `claudia@rodo.es` con login de Google, en una app de Firebase separada (`initializeApp(cfg, "admin")`) para no pisar la sesión anónima. Protegido por `firestore.rules` (`isAdmin()` exige email verificado).
 
@@ -57,6 +77,11 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 - Nada de secretos en el repo.
 
 ## Pendientes
+- **Torneo:**
+  - Pasar a Blaze y dar los permisos de IAM para publicar las Functions de avisos.
+  - Aporte al pozo automático por Lightning (hoy se marca a mano).
+  - Avisos por mail y WhatsApp (WhatsApp Business: hacen falta el número, el token de la API de Meta y plantillas aprobadas).
+  - Si el panel del organizador no está abierto, las rondas no se abren ni se cierran solas: se podría pasar a una Function programada.
 - Revisar el tono de las pistas nuevas (2 por cada palabra vieja y 3 por cada una de las 80 nuevas, en ES y EN).
 - Confirmar que `claudia@rodo.es` entra al panel de admin (que sea cuenta de Google válida).
 - Probar el sitio publicado completo, incluido el admin.

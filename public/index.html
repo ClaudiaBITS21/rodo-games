@@ -2501,6 +2501,9 @@ const Cripto = (()=>{
     hints=0; solved=false; start=Date.now(); cells=[]; cBad=new Set();
     const text=norm(q[0]);
     const box=$("cQuote"); box.innerHTML="";
+    // en el celular, la palabra más larga tiene que entrar entera en el ancho de la pantalla
+    const L=Math.max(...text.split(" ").map(w=>[...w].length));
+    box.style.setProperty("--cell", `min(clamp(26px,7.6vw,36px), calc((100vw - 44px - ${3*(L-1)}px) / ${L}))`);
     text.split(" ").forEach(word=>{
       const wd=document.createElement("div"); wd.className="cw";
       for(const ch of word){
@@ -3967,11 +3970,13 @@ const User = (()=>{
     const until=lk.level>=1 && lk.fails===0 && lk.at && lk.at.toMillis ? lk.at.toMillis()+HOURS[lk.level-1]*3600000 : 0;
     if(until>Date.now()) return msgU(t().uLocked(fmtDate(until)));
     try{
+      await Push.forget();   // los avisos de este dispositivo dejan de ir al jugador anterior
       await fb.signInWithEmailAndPassword(fb.auth, await emailOf(k, ns.data().v), pin);
       // entró: se borra el contador de intentos y se recarga la página con su usuario
       try{ await fb.setDoc(lref,{fails:0,level:0,at:null}); }catch(e){}
       msgU(t().uWelcome); setTimeout(()=>location.reload(), 400);
     }catch(e){
+      Push.sync();
       if(e.code==="auth/too-many-requests") return msgU(t().uTooMany);
       if(e.code==="auth/operation-not-allowed") return msgU(t().uOff);
       if(!/invalid-credential|wrong-password|invalid-login|user-not-found/.test(e.code||"")) return msgU(t().uFail);
@@ -3997,7 +4002,7 @@ const User = (()=>{
   }
   async function signout(){
     if(!confirm(t().uOutWarn)) return;
-    await fb.signOut(fb.auth); location.reload();
+    await Push.forget(); await fb.signOut(fb.auth); location.reload();
   }
   async function go(){
     if(busy) return; busy=true; $("uGo").disabled=true;
@@ -4407,6 +4412,128 @@ function applyTexts(){
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
 
 // =====================================================================
+// AVISOS PUSH (torneo): el navegador se suscribe y guarda la suscripción en pushsubs/{uid}; las manda una Cloud Function.
+// Push.state() → "on" | "off" | "denied" | "unsupported" | "ios-install" | "unavailable"; Push.enable() se llama directo del toque.
+// =====================================================================
+const Push = (()=>{
+  const MAX = 5;
+  const ok = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const ios = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const bytes = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+  const sameKey = (s, k) => { const a = s.options && s.options.applicationServerKey; return !a || b64(a) === k; };
+  const fbx = async () => { await Reg.ready; return Reg.fb(); };
+  const uidOf = f => (Reg.uid && Reg.uid()) || f.uid;
+  let key = null; // clave pública VAPID (la crea la Function en config/push)
+
+  async function vapid(){
+    if (key) return key;
+    const f = await fbx(); if (!f) return null;
+    try { const s = await f.getDoc(f.doc(f.db, "config", "push")); key = (s.exists() && s.data().vapid) || null; } catch(e){ key = null; }
+    return key;
+  }
+  async function current(){
+    const r = await navigator.serviceWorker.getRegistration("/");
+    return r && r.pushManager ? r.pushManager.getSubscription() : null;
+  }
+  const item = s => { const j = s.toJSON(); return { endpoint: j.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth } }; };
+  // guarda este dispositivo primero; si quedan más de 5, se va el más viejo
+  async function save(s){
+    const f = await fbx(); if (!f) throw new Error("sin servidor");
+    const it = item(s), ref = f.doc(f.db, "pushsubs", uidOf(f));
+    await f.runTransaction(f.db, async tx => {
+      const d = await tx.get(ref), old = d.exists() ? (d.data().subs || []) : [];
+      tx.set(ref, { subs: [it, ...old.filter(o => o && o.endpoint !== it.endpoint)].slice(0, MAX), at: f.serverTimestamp() });
+    });
+  }
+  async function drop(ep){
+    const f = await fbx(); if (!f || !ep) return;
+    const ref = f.doc(f.db, "pushsubs", uidOf(f));
+    await f.runTransaction(f.db, async tx => {
+      const d = await tx.get(ref); if (!d.exists()) return;
+      const old = d.data().subs || [], subs = old.filter(o => o && o.endpoint !== ep);
+      if (subs.length === old.length) return;
+      if (subs.length) tx.set(ref, { subs, at: f.serverTimestamp() }); else tx.delete(ref);
+    });
+  }
+
+  async function state(){
+    if (!ok()) return ios() && navigator.standalone !== true ? "ios-install" : "unsupported";
+    if (Notification.permission === "denied") return "denied";
+    if (!(await vapid())) return "unavailable";
+    if (Notification.permission !== "granted") return "off";
+    return (await current().catch(() => null)) ? "on" : "off";
+  }
+
+  // sin async a propósito: el permiso se pide antes de cualquier espera (Safari lo exige pegado al toque)
+  function enable(){
+    if (!ok()) return state();
+    const perm = Notification.permission !== "default" ? Promise.resolve(Notification.permission)
+      : new Promise(res => { const p = Notification.requestPermission(res); if (p && p.then) p.then(res, () => res("default")); });
+    return (async () => {
+      const p = await perm;
+      if (p === "denied") return "denied";
+      if (p !== "granted") return "off";
+      const k = await vapid(); if (!k) return "unavailable";
+      let s = null, made = false;
+      try {
+        await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
+        const r = await navigator.serviceWorker.ready;
+        s = await r.pushManager.getSubscription();
+        if (s && !sameKey(s, k)) { await s.unsubscribe().catch(() => {}); s = null; } // era de una clave vieja
+        if (!s) { s = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(k) }); made = true; }
+        await save(s);
+        return "on";
+      } catch(e) {
+        console.warn("Push:", e);
+        if (s && made) await s.unsubscribe().catch(() => {}); // que no quede activo sin estar guardado
+        return state();
+      }
+    })();
+  }
+
+  async function disable(){
+    try {
+      const s = await current();
+      if (s) { const ep = s.endpoint; await s.unsubscribe().catch(() => {}); await drop(ep); }
+    } catch(e) { console.warn("Push:", e); }
+    return state();
+  }
+
+  async function sync(){
+    try {
+      if ((await state()) !== "on") return;
+      const k = await vapid();
+      let s = await current();
+      if (!sameKey(s, k)) { // la clave cambió: se renueva sola (con el permiso ya dado no hace falta un toque)
+        const r = await navigator.serviceWorker.ready;
+        await s.unsubscribe().catch(() => {});
+        s = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(k) });
+      }
+      const f = await fbx(), it = item(s);
+      const d = await f.getDoc(f.doc(f.db, "pushsubs", uidOf(f)));
+      const have = d.exists() && (d.data().subs || []).some(o => o && o.endpoint === it.endpoint && o.keys && o.keys.p256dh === it.keys.p256dh && o.keys.auth === it.keys.auth);
+      if (!have) await save(s);
+    } catch(e) { console.warn("Push:", e); }
+  }
+
+  async function forget(){
+    try { const s = ok() ? await current() : null; if (s) await drop(s.endpoint); } catch(e) { console.warn("Push:", e); }
+  }
+
+  // aviso tocado con el sitio abierto (lo manda /sw.js): ir al # del aviso
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
+    const d = e.data; if (!d || d.type !== "push-open") return;
+    try { const u = new URL(d.url, location.href); if (u.origin === location.origin && u.hash && u.hash !== location.hash) location.hash = u.hash; } catch(_) {}
+    window.dispatchEvent(new CustomEvent("rodo-push", { detail: d }));
+  });
+
+  return { state, enable, disable, sync, forget };
+})();
+// si este dispositivo ya tenía los avisos activados, se asegura de que la suscripción esté guardada (sin pedir nada)
+Reg.ready.then(()=>{ try{ if("Notification" in window && Notification.permission==="granted") Push.sync(); }catch(e){} });
+
+// =====================================================================
 // TORNEO EN VIVO (por ejemplo, BITCOIN.AR HALVING GAMES)
 // Rondas eliminatorias: todos juegan la misma partida a la vez y pasa la mitad; la final es 1 a 1.
 // La partida de cada ronda es secreta hasta que arranca (reglas). El tiempo lo pone el servidor: desde el arranque
@@ -4502,7 +4629,8 @@ function tScore(rd, r){
   if(!r) return {pts:-1, p:0, ok:false, pen:0, adj:Infinity, fin:false};
   const nr=rd.nr||0, k=rd.k||rd.g, pen=penSecs(k, r.e||0, r.h||0, r.c||0, r.f||0, nr);
   const go=tms(rd.go), at=tms(r.at), secs=go&&at ? Math.max(0,(at-go)/1000) : 0, adj=secs+pen;
-  const p=Math.max(0, Math.min(1, nr ? (r.s||0)/nr : r.ok ? 1 : (r.p||0)));
+  // quien completó una partida de rondas: aciertos / rondas; quien no terminó: su avance (incluye la palabra a medias)
+  const p=Math.max(0, Math.min(1, r.done && r.ok ? (nr ? (r.s||0)/nr : 1) : (r.p||0)));
   if(r.done && r.ok) return {pts:Math.round(100*p)+Math.max(0, Math.round(SCORE.CAP-adj)), p, ok:true, pen, adj, fin:true};
   return {pts:Math.max(0, Math.round(100*p-pen/10)), p, ok:false, pen, adj, fin:!!r.done};
 }
@@ -4556,7 +4684,7 @@ const Tour = (()=>{
 
   // ---------- suscripciones ----------
   function pick(){
-    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined)
+    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
       .sort((a,b)=>(pri[a[1].st]-pri[b[1].st])||((tms(b[1].at)||0)-(tms(a[1].at)||0)));
     const id=l.length ? l[0][0] : null;
     if(id!==tid){ tid=id; RS={}; mine=null; INS=null; RES={}; resId=null; closedRes={};
@@ -4592,9 +4720,10 @@ const Tour = (()=>{
     closedRes[r.id]={};
     try{ const qs=await fb.getDocs(fb.collection(fb.db,"tourneys",tid,"rounds",r.id,"res")); const m={}; qs.forEach(d=>m[d.id]=d.data()); closedRes[r.id]=m; render(); winSlot(); }catch(e){ delete closedRes[r.id]; }
   }
+  const mineAsked={};
   async function loadMine(r){
-    if(myRes[r.id]!==undefined) return; myRes[r.id]=null;
-    try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"res",uid)); myRes[r.id]=s.exists()?s.data():null; render(); }catch(e){}
+    if(mineAsked[r.id]) return; mineAsked[r.id]=1;
+    try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"res",uid)); myRes[r.id]=s.exists()?s.data():null; render(); }catch(e){ delete mineAsked[r.id]; }
   }
   function onRounds(){
     const r=curR();
@@ -4618,12 +4747,17 @@ const Tour = (()=>{
     }
     flash="";
     if(!d){ play.failed=true; flash=t().tLoadFail; render(); return; }
-    play.loading=false;
+    // si ya había empezado (recargó la página), sigue con sus errores y ayudas: no pueden bajar
+    let prev=null; try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"res",uid)); prev=s.exists()?s.data():null; }catch(e){}
+    if(prev && prev.done){ myRes[r.id]=prev; play.done=true; play.loading=false; render(); return; }
+    play.loading=false; play.base=prev||{};
     Reg.freeze();                                    // otra partida en curso queda en pausa
     if(r.lang) setLang(r.lang);
     const sk=`rodo-tseen-${tid}-${r.id}`;
     Reg.playTour(r.g, d, {k:r.k, m:r.m, R:r.nr||0, t0:loc(tms(r.go)), label:()=>rName(RS[r.id]||r), seen:store.get(sk)==="1", rid:r.id, x});
     store.set(sk,"1");
+    const c=Reg.cur(r.g), b=play.base;
+    if(c && b.at){ c.e=b.e||0; c.h=b.h||0; c.c=b.c||0; c.r=b.f||0; Reg.tick(); }
     watchRes(); sync(true);
   }
   const prog=g=>{ try{ const p=GAMES[g].progress ? GAMES[g].progress() : null; return p ? {p:+p.p||0, s:p.s|0} : {p:0, s:0}; }catch(e){ return {p:0, s:0}; } };
@@ -4633,8 +4767,9 @@ const Tour = (()=>{
     const r=RS[play.id]; if(!r || !(r.st==="live"||r.st==="sched")) return;
     const c=Reg.cur(play.g); if(!c || !c.tour || c.tour.rid!==play.id) return;
     const pr=prog(play.g);
-    const rec={p:Math.round(Math.min(1,Math.max(0,pr.p))*1000)/1000, s:Math.min(20,pr.s), e:c.e||0, h:c.h||0, c:c.c||0, f:Math.min(20,c.r||0), ok:false, done:false, x:!!play.x, at:fb.serverTimestamp()};
-    if(fin) Object.assign(rec, fin);
+    const b=play.base||{}, mx=(v,k)=>Math.max(v, b[k]||0);
+    const rec={p:Math.round(Math.min(1,Math.max(0,pr.p))*1000)/1000, s:Math.min(20,mx(pr.s,"s")), e:mx(c.e||0,"e"), h:mx(c.h||0,"h"), c:mx(c.c||0,"c"), f:Math.min(20,mx(c.r||0,"f")), ok:false, done:false, x:!!play.x, at:fb.serverTimestamp()};
+    if(fin){ Object.assign(rec, fin); rec.s=Math.min(20, mx(rec.s,"s")); }
     const key=JSON.stringify([rec.p,rec.s,rec.e,rec.h,rec.c,rec.f,rec.ok,rec.done]);
     if(!force && !fin && key===play.sent) return;
     play.sent=key;
@@ -4662,7 +4797,7 @@ const Tour = (()=>{
     const was=play.done; play.done=true;
     if(c && c.tour && c.tour.rid===play.id && !c.t1){ c.t1=Date.now(); Reg.tick(); }
     const sec=$("view-"+g); sec.classList.remove("tourmode");
-    if(!was){ [...sec.children].forEach(el=>{ if(!el.matches(".pbar,.win,footer")) el.inert=true; }); play.why=why; Reg.winShow(g, true); winSlot(true); }
+    if(!was){ [...sec.children].forEach(el=>{ if(!el.matches(".pbar,.bar,.win,footer")) el.inert=true; }); play.why=why; Reg.winShow(g, true); winSlot(true); }
   }
   // cartel del torneo dentro del cartel final del juego
   function winSlot(force){
@@ -4731,11 +4866,11 @@ const Tour = (()=>{
 
   // ---------- portada ----------
   function banner(){
-    const el=$("tBanner"); if(!el) return;
+    const el=$("tBanner"), ib=$("ivBtn"); if(!el) return;
+    if(ib) ib.hidden=blocks();
     if(!TD){ el.hidden=true; return; }
     el.hidden=false;
     el.innerHTML=`<b>🏆 ${esc(TD.name)}</b><span>${esc(t().tSt[TD.st]||"")}</span><i>${esc(t().tBanner[TD.st]||"")} →</i>`;
-    const ib=$("ivBtn"); if(ib) ib.hidden=blocks();
   }
 
   // ---------- sala ----------
@@ -4934,7 +5069,7 @@ const TourAdmin = (()=>{
       [uR,uI,uRes].forEach(f=>f&&f()); uR=uI=uRes=null;
       if(tid){
         uR=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); watchRes(); render(); }, fail);
-        uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); }, fail);
+        uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); privNew(); }, fail);
         loadPriv();
       }
     }
@@ -4942,6 +5077,13 @@ const TourAdmin = (()=>{
     render();
   }
   async function loadPriv(){ try{ const qs=await A.getDocs(A.collection(A.db,"tourneys",tid,"priv")); PRIV={}; qs.forEach(d=>PRIV[d.id]=d.data()); render(); }catch(e){} }
+  // los datos de contacto de quienes se van inscribiendo (de a uno, sin releer todos)
+  async function privNew(){
+    const t0=tid, miss=Object.keys(INS).filter(u=>!(u in PRIV)); if(!miss.length) return;
+    miss.forEach(u=>PRIV[u]={});
+    await Promise.all(miss.map(async u=>{ try{ const s=await A.getDoc(A.doc(A.db,"tourneys",t0,"priv",u)); if(t0===tid && s.exists()) PRIV[u]=s.data(); }catch(e){} }));
+    if(t0===tid) render();
+  }
   // resultados de la ronda en curso, con el avance de cada uno (solo el organizador escucha todo)
   function watchRes(){
     const r=last(), id=r && r.st!=="closed" ? r.id : (r ? r.id : null);
@@ -4953,8 +5095,8 @@ const TourAdmin = (()=>{
 
   // ---------- el reloj del organizador: abre, cierra y programa rondas ----------
   async function tick(){
-    if(!A || !me || !TD || view!=="torneo-admin") return;
-    document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
+    if(!A || !me || !TD) return;
+    if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
     const r=last(), now=srv(); if(!r || busy || TD.st!=="live") return;
     try{
       if(r.st==="sched" && r.go && now>=tms(r.go)){ busy=true; await A.updateDoc(rref(r.id),{st:"live"}); }
@@ -4967,9 +5109,14 @@ const TourAdmin = (()=>{
   async function close(r){
     const L=tStand(r, RESL), q=L.slice(0, r.adv).map(x=>x.u), pos={};
     L.forEach((x,i)=>pos[x.u]=i+1);
-    await A.updateDoc(rref(r.id),{st:"closed", closed:A.serverTimestamp(), q, pos});
-    if(r.final || q.length<=1) await A.updateDoc(tref(),{st:"done", champ:q[0]||null});
-    say(`${r.final?"Final":"Ronda "+r.no} cerrada.`);
+    // con dos pestañas del panel abiertas, cierra una sola
+    const done=await A.runTransaction(A.db, async tx=>{
+      const s=await tx.get(rref(r.id)); if(!s.exists() || s.data().st!=="live") return false;
+      tx.update(rref(r.id),{st:"closed", closed:A.serverTimestamp(), q, pos});
+      if(r.final || q.length<=1) tx.update(tref(),{st:"done", champ:q[0]||null});
+      return true;
+    });
+    if(done) say(`${r.final?"Final":"Ronda "+r.no} cerrada.`);
   }
   // la ronda siguiente: la configuración que sigue; con 2 jugadores, la final
   async function next(prev, delay){
@@ -4986,10 +5133,14 @@ const TourAdmin = (()=>{
     const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
       pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
     if(c.g==="sopa"){ rd.s=opt.s; rd.m=c.m||"w"; } if(c.g==="semilla") rd.w=opt.w; if(c.dif) rd.dif=c.dif; if(c.g==="ahorcado") rd.n=opt.n;
-    const b=A.writeBatch(A.db);
-    b.set(rref(no), rd); b.set(A.doc(A.db,"tourneys",tid,"rounds",String(no),"data","p"), {d});
-    b.update(tref(), {cur:no, st:"live"});
-    await b.commit();
+    // una sola vez por ronda, aunque haya dos pestañas del panel abiertas
+    const ok=await A.runTransaction(A.db, async tx=>{
+      const s=await tx.get(rref(no)); if(s.exists()) return false;
+      tx.set(rref(no), rd); tx.set(A.doc(A.db,"tourneys",tid,"rounds",String(no),"data","p"), {d});
+      tx.update(tref(), {cur:no, st:"live"});
+      return true;
+    });
+    if(!ok) return;
     say(`${fin?"Final":"Ronda "+no} programada: arranca a las ${new Date(loc0(go)).toLocaleTimeString("es-AR")}.`);
   }
   const loc0=ms=>ms-(Live.now()-Date.now());
@@ -5020,7 +5171,7 @@ const TourAdmin = (()=>{
       if(!r) return;
       if(a==="pause" && r.st==="sched"){ await A.updateDoc(rref(r.id),{st:"ready", left:Math.max(5000, tms(r.go)-now), go:null, end:null}); return; }
       if(a==="resume" && r.st==="ready"){ const go=now+(r.left||NEXT); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
-      if(a==="now" && (r.st==="sched"||r.st==="ready")){ const go=now+10000; await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
+      if(a==="now" && (r.st==="sched"||r.st==="ready")){ const go=now+10000; say(`${r.final?"Final":"Ronda "+r.no}: arranca en 10 segundos.`); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
       if(a==="regen" && (r.st==="ready" || (r.st==="sched" && now<tms(r.go)-5000))){
         const c={g:r.g, lang:r.lang, s:r.s, w:r.w, dif:r.dif, n:r.n}, opt={L:r.lang}; if(r.s) opt.s=r.s; if(r.w) opt.w=r.w; if(r.dif) opt.dif=r.dif; if(r.n) opt.n=r.n;
         await A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p"), {d:await Reg.genFor(c.g, opt)}); prevD=null; say("Partida nueva generada."); renderLive(); return; }
@@ -5230,7 +5381,7 @@ try {
     const aapp = initializeApp(cfg, "admin"), aauth = getAuth(aapp), prov = new GoogleAuthProvider();
     prov.setCustomParameters({ login_hint: "claudia@rodo.es", prompt: "select_account" });
     window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs, doc, setDoc, deleteDoc, serverTimestamp,
-      getDoc, updateDoc, onSnapshot, writeBatch, Timestamp, query, where,
+      getDoc, updateDoc, onSnapshot, writeBatch, runTransaction, Timestamp, query, where,
       login: () => signInWithPopup(aauth, prov), logout: () => signOut(aauth), onState: cb => onAuthStateChanged(aauth, cb) });
   }catch(e){ window.__adminResolve(null); }
   const auth = getAuth(app);

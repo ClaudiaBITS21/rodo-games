@@ -284,7 +284,8 @@ service cloud.firestore {
     }
     function tour(tid) { return get(/databases/$(database)/documents/tourneys/$(tid)).data; }
     function validTour(d) {
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto'])
+      // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 80
         && d.st in ['draft', 'open', 'checkin', 'live', 'done']
         && d.cap is int && d.cap >= 2 && d.cap <= 64
@@ -368,6 +369,37 @@ service cloud.firestore {
         && d.ok is bool && d.done is bool && (!d.ok || d.done)
         && o.done == false
         && d.x == !(uid in R.pl);
+    }
+    // Avisos push: cada jugador guarda las suscripciones de sus dispositivos (hasta 5). Las lee la Function (admin SDK).
+    function pushSub(s) {
+      return s is map && s.keys().hasOnly(['endpoint', 'keys'])
+        && s.endpoint is string && s.endpoint.size() <= 1024 && s.endpoint.matches('https://.+')
+        && s['keys'] is map && s['keys'].keys().hasOnly(['p256dh', 'auth'])
+        && s['keys'].p256dh is string && s['keys'].p256dh.size() <= 200
+        && s['keys'].auth is string && s['keys'].auth.size() <= 64;
+    }
+    function pushSubs(l) {
+      return l is list && l.size() <= 5
+        && (l.size() < 1 || pushSub(l[0])) && (l.size() < 2 || pushSub(l[1])) && (l.size() < 3 || pushSub(l[2]))
+        && (l.size() < 4 || pushSub(l[3])) && (l.size() < 5 || pushSub(l[4]));
+    }
+    match /pushsubs/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['subs', 'at'])
+        && pushSubs(request.resource.data.subs)
+        && request.resource.data.at == request.time;
+    }
+
+    // Configuración pública que escribe solo la Function (config/push.vapid: clave pública VAPID)
+    match /config/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Claves privadas de la Function: nadie desde la web (el admin SDK no pasa por las reglas)
+    match /_private/{id} {
+      allow read, write: if false;
     }
   }
 }
