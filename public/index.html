@@ -270,7 +270,7 @@ body.tester .testbadge{display:block}
 .gap{grid-column:1/-1;height:10px}
 .arrow{display:flex;justify-content:center;align-items:end;color:var(--btc);font-weight:800;font-size:1.1rem;height:22px}
 .rowclue{
-  grid-column:1/-1;width:0;min-width:100%;
+  grid-column:1/-1;width:0;min-width:min(100%,calc(100vw - 32px));justify-self:center;box-sizing:border-box;overflow-wrap:anywhere;
   background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);
   border-radius:8px;padding:6px 10px;margin:6px 0 2px;font-size:.95rem;line-height:1.35;
 }
@@ -1523,6 +1523,8 @@ const Acro = (()=>{
 
   function render(){
     const t=T[lang], grid=$("grid"); grid.innerHTML="";
+    // las casillas se achican para que la grilla entre en la pantalla (28 px de números + 3 px entre columnas)
+    grid.style.setProperty("--cell",`clamp(22px,calc((min(100vw,860px) - 32px - 28px - ${3*(P.W+1)}px)/${P.W}),40px)`);
     grid.style.gridTemplateColumns=`28px repeat(${P.W}, var(--cell))`;
     grid.appendChild(document.createElement("div"));
     for(let c=0;c<P.W;c++){ const d=document.createElement("div"); d.className="arrow"; if(c===P.L) d.textContent="₿"; grid.appendChild(d); }
