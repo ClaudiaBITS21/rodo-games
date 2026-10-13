@@ -16,7 +16,7 @@ service cloud.firestore {
         && request.auth.token.get('email_verified', false) == true;
     }
     function validKey(k) {
-      return k.matches('^(acrostico|ahorcado|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
+      return k.matches('^(acrostico|ahorcado|ahorcado6|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
     }
 
     // Contador por juego e idioma: solo sube de a uno, junto con la partida nueva
@@ -124,7 +124,7 @@ service cloud.firestore {
       // la administración ve todas; cada jugador, las suyas (para sus estadísticas)
       allow read: if isAdmin() || (signedIn() && resource.data.u == request.auth.uid);
       allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at', 'n'])
+        && request.resource.data.keys().hasOnly(['u', 'p', 'g', 'yes', 'duel', 'at', 'n', 'w'])
         && request.resource.data.u == request.auth.uid
         && id == request.auth.uid + '_' + request.resource.data.p
         && request.resource.data.p is string && request.resource.data.p.size() <= 80
@@ -132,6 +132,8 @@ service cloud.firestore {
         && request.resource.data.yes is bool && request.resource.data.duel is bool
         // n: cuántos conceptos nuevos (las palabras que le faltaron al rendirse)
         && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 40))
+        // w: los números de glosario de las palabras que marcó como aprendidas
+        && (!('w' in request.resource.data) || (request.resource.data.w is list && request.resource.data.w.size() <= 40))
         && request.resource.data.at == request.time
         && exists(/databases/$(database)/documents/puzzles/$(request.resource.data.p));
       allow delete: if false;
@@ -154,6 +156,19 @@ service cloud.firestore {
       let d = request.resource.data;
       return d.keys().hasOnly(['fails', 'level', 'at']) && d.fails == 0 && d.level == 0 && d.at == null
         && get(/databases/$(database)/documents/nicks/$(key)).data.uid == request.auth.uid;
+    }
+    // Errores al guardar (p. ej. crear usuario): solo se anotan; los lee la administración para diagnosticar.
+    match /errs/{id} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['u', 'w', 'c', 'n', 'ua', 'at'])
+        && request.resource.data.u == request.auth.uid
+        && request.resource.data.w is string && request.resource.data.w.size() <= 20
+        && request.resource.data.c is string && request.resource.data.c.size() <= 80
+        && (!('n' in request.resource.data) || (request.resource.data.n is string && request.resource.data.n.size() <= 30))
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 200
+        && request.resource.data.at == request.time;
+      allow update, delete: if false;
     }
     match /pinlocks/{key} {
       allow read: if true;

@@ -168,6 +168,11 @@ body.tester .testbadge{display:block}
 .userdlg .uavs{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:0 0 10px}
 .userdlg .uavs button{padding:4px 0;font-size:1.25rem;line-height:1.3;border-radius:8px}
 .userdlg .uavs button[aria-pressed="true"]{background:var(--btc-soft);border-color:var(--btc)}
+.userdlg .uavs .avplus{font-weight:700;color:var(--muted)}
+.userdlg .uavin{display:flex;flex-direction:column;gap:4px;margin:-4px 0 10px}
+.userdlg .uavin[hidden]{display:none}
+.userdlg .uavin input{text-align:center;font-size:1.1rem}
+.userdlg .uavin .lnote{font-size:.8rem;color:var(--muted);text-align:center}
 .userdlg .ume{font-size:1.15rem;font-weight:700;margin:0 0 10px}
 .userdlg .unote{font-size:.82rem;color:var(--muted);margin:0 0 4px}
 .userdlg .unote:empty{display:none}
@@ -176,6 +181,8 @@ body.tester .testbadge{display:block}
 .cell.miss,.scell.miss{color:var(--bad);background:var(--bad-soft)}
 .giveup{color:var(--bad)}
 .giveup:disabled{color:inherit}
+button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.surenote{flex-basis:100%;margin:6px 0 0;font-size:.85rem;color:var(--bad);text-align:center}
 .ppen{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;color:var(--bad);opacity:0;margin-left:-4px}
 .ppen.show{animation:penflash 1.6s ease-out}
 @keyframes penflash{0%{opacity:1;transform:translateY(0)}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -193,7 +200,24 @@ body.tester .testbadge{display:block}
 .wlearn.wmiss{flex-direction:column;align-items:stretch;text-align:left}
 .missl{margin:0;padding:0 0 0 18px;font-size:.86rem;line-height:1.4}
 .missl li{margin:2px 0}
+.lchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.lchips button,.win .lchips button{padding:4px 10px;font:600 .8rem "IBM Plex Mono",ui-monospace,monospace;border-radius:999px;background:transparent;color:#1A1E23;border:1.5px solid #1A1E23}
+.lchips button[aria-pressed="true"],.win .lchips button[aria-pressed="true"]{background:#1A1E23;color:#fff}
+.wlearn.wmiss > *{max-width:100%;min-width:0}
+.lcar{display:flex;gap:10px;overflow-x:auto;width:100%;min-width:0;scroll-snap-type:x mandatory;margin:10px 0 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.lcar::-webkit-scrollbar{display:none}
+.lcar[hidden]{display:none}
+.lcard{flex:0 0 100%;box-sizing:border-box;scroll-snap-align:start;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.55);text-align:left;font-size:.88rem;line-height:1.45;color:#1A1E23}
+.lcard b{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.lcard p{margin:4px 0 0;font-size:.88rem!important;font-weight:400!important}
+.ldots{display:flex;gap:7px;justify-content:center;margin-top:8px}
+.ldots button,.win .ldots button{width:9px;height:9px;min-height:0;padding:0;border-radius:50%;border:0;background:rgba(26,30,35,.3)}
+.ldots button.on,.win .ldots button.on{background:#1A1E23}
+.stgloss{margin:0;line-height:1.45}
+.stgloss dt{font:700 .9rem "IBM Plex Mono",ui-monospace,monospace;margin-top:10px}
+.stgloss dd{margin:2px 0 0;color:var(--muted);font-size:.92rem}
 .win.lose .wlearn{background:var(--paper)}
+.win.induel .row > button:first-child{display:none}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
 .wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
 .wback button,.wduel button{padding:7px 12px;font-size:.88rem}
@@ -345,7 +369,7 @@ body.tester .testbadge{display:block}
 .gap{grid-column:1/-1;height:10px}
 .arrow{display:flex;justify-content:center;align-items:end;color:var(--btc);font-weight:800;font-size:1.1rem;height:22px}
 .rowclue{
-  grid-column:1/-1;width:0;min-width:100%;
+  grid-column:1/-1;width:0;min-width:min(100%,calc(100vw - 32px));justify-self:center;box-sizing:border-box;overflow-wrap:anywhere;
   background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);
   border-radius:8px;padding:6px 10px;margin:6px 0 2px;font-size:.95rem;line-height:1.35;
 }
@@ -678,13 +702,15 @@ body.tester .testbadge{display:block}
       <div class="row"><button id="hAgain"></button><button id="hShare"></button></div>
       <p class="note" id="hNote"></p>
     </div>
-    <div class="score" id="hScore" hidden></div>
+    <div id="hPlay">
+    <div class="score" id="hScore"></div>
     <svg class="blocks" id="hBlocks" viewBox="0 0 520 80" aria-hidden="true"></svg>
     <p class="lives" id="hLives" aria-live="polite"></p>
-    <div class="actions"><button id="hClueBtn"></button></div>
+    <div class="actions"><button id="hClueBtn"></button><button id="hSkip"></button><button class="giveup" id="hEnd"></button></div>
     <div class="hclue" id="hClue"></div>
     <div class="hword" id="hWord" aria-live="polite"></div>
     <div class="keys" id="hKeys"></div>
+    </div>
     <footer id="hFoot"></footer>
   </section>
 
@@ -767,7 +793,7 @@ body.tester .testbadge{display:block}
       <div class="aslots" id="aSlots"></div>
       <div class="atiles" id="aTiles"></div>
       <div class="actions">
-        <button id="aHint"></button><button id="aErase"></button><button id="aShuffle"></button><button id="aSkip"></button>
+        <button id="aHint"></button><button id="aErase"></button><button id="aShuffle"></button><button id="aSkip"></button><button class="giveup" id="aEnd"></button>
       </div>
     </div>
     <footer id="aFoot"></footer>
@@ -900,7 +926,8 @@ body.tester .testbadge{display:block}
   <div class="seg utabs" id="uTabs" role="group"><button data-t="new"></button><button data-t="old"></button></div>
   <p class="ume" id="uMeName" hidden></p>
   <label class="ufield" id="uNameRow"><span id="uNameL"></span><input id="uName" maxlength="24" autocomplete="username"></label>
-  <div id="uAvRow"><span class="ulabel" id="uAvL"></span><div class="uavs" id="uAvs"></div></div>
+  <div id="uAvRow"><span class="ulabel" id="uAvL"></span><div class="uavs" id="uAvs"></div>
+    <div class="uavin" id="uAvBox" hidden><input id="uAvIn" type="text" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><span class="lnote" id="uAvHint"></span></div></div>
   <label class="ufield" id="uPinRow"><span id="uPinL"></span><input id="uPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password"></label>
   <label class="ufield" id="uPin2Row"><span id="uPin2L"></span><input id="uPin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"></label>
   <p class="unote" id="uNote"></p>
@@ -1422,16 +1449,16 @@ const T = {
     menuTitle:"Juegos", menuBtn:"Menú",
     menuIntro:"Juegos de palabras bitcoiners. Elegí uno; cada partida se genera al azar.",
     acroName:"Acróstico", acroDesc:"Completá las filas y descubrí la frase escondida en la columna naranja.",
-    hangName:"Ahorcado", hangDesc:"Adiviná la palabra bitcoiner antes de que se rompan los 6 bloques.",
+    hangName:"Ahorcado", hangDesc:"6 palabras bitcoiners: adiviná cada una antes de que se rompan sus 6 bloques. Podés pasar y volver.",
     sopaName:"Sopa de letras", sopaDesc:"Encontrá los términos escondidos en la grilla, en cualquier dirección.",
     acroTitle:"Acrósticos", hangTitle:"Ahorcado", sopaTitle:"Sopa de letras",
     // acróstico
     newBtn:"Nuevo acróstico", acroNext:"Siguiente acróstico", check:"Comprobar +5 s", print:"Imprimir", clues:"Pistas",
     hint:n=>`Revelar letra +60 s (quedan ${n})`,
-    foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Tenés 5 letras de ayuda por acróstico.",
+    foot:"La columna naranja, leída de arriba hacia abajo, forma la frase escondida. Las letras de ayuda dependen del largo de la frase: más larga, más ayudas.",
     metaP:(w,l)=>`Frase escondida: ${w} palabras, ${l} letras.`, metaW:l=>`Palabra escondida: ${l} letras.`,
     wrong:n=>`Hay ${n} letra${n>1?"s":""} mal (en rojo).`, empty:n=>`Vas bien. Faltan ${n} casilla${n>1?"s":""}.`,
-    noHints:"Ya usaste las 5 letras de ayuda.", winLabel:"¡Resuelto! La frase era",
+    noHints:"Ya usaste todas las letras de ayuda.", winLabel:"¡Resuelto! La frase era",
     stats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin letras reveladas":h+" letra"+(h>1?"s":"")+" revelada"+(h>1?"s":"")}.`,
     given:"Letra regalada", cellLabel:(r,k)=>`Fila ${r}, letra ${k}`,
     imgSolved:"Resuelto en", imgHints:h=>h===0?"sin ayuda":`${h} letra${h>1?"s":""} revelada${h>1?"s":""}`,
@@ -1439,11 +1466,10 @@ const T = {
     share:"Compartir imagen", shared:"Imagen lista.", shareFail:"No se pudo compartir la imagen.",
     shareText:"Jugué a RODO ₿ Games",
     // ahorcado
-    hNew:"Nueva palabra", hClueBtn:"Ver pista +60 s (rompe 1 bloque)", hMeta:l=>`${l} letras.`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
-    hWin:"¡Adivinaste!", hLose:"Se rompió la cadena. Era", hAgain:"Otra palabra",
-    hStats:(e,s)=>`${e} error${e===1?"":"es"}. Racha: ${s}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla.",
-    hCardWin:(e)=>`Adiviné con ${e} error${e===1?"":"es"}`, hCardLose:"Se rompió la cadena", hStreak:s=>`Racha: ${s}`,
-    hMetaN:(i,n,l)=>`Palabra ${i} de ${n} · ${l} letras`, hMWin:(s,n)=>`${s} de ${n}`, hMStats:e=>`${e} error${e===1?"":"es"}.`,
+    hNew:"Nueva partida", hClueBtn:"Ver pista +60 s (rompe 1 bloque)", hMeta:(i,n,l,s)=>`Palabra ${i} de ${n} · ${l} letras · Resueltas: ${s}.`, hSkip:"Pasar a la siguiente", hEnd:"Terminar", hEndQ:n=>`Te ${n===1?"queda 1 palabra":`quedan ${n} palabras`} sin resolver: van a contar como falladas. ¿Terminás?`, hLives:n=>n===1?"Te queda 1 bloque.":`Te quedan ${n} bloques.`,
+    hWin:(s,n)=>`${s} de ${n} palabras`, hAgain:"Otra partida",
+    hStats:t=>`Tiempo ${t}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla. Pasar no cuesta nada: las que quedan sin resolver al terminar suman tiempo, como en el anagrama.",
+    hCard:(s,n,t)=>`${s} de ${n} palabras en ${t}`,
     // sopa
     sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
     sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
@@ -1455,25 +1481,24 @@ const T = {
     menuTitle:"Games", menuBtn:"Menu",
     menuIntro:"Bitcoin word games. Pick one; every round is generated at random.",
     acroName:"Acrostic", acroDesc:"Fill in the rows and uncover the phrase hidden in the orange column.",
-    hangName:"Hangman", hangDesc:"Guess the Bitcoin word before all 6 blocks break.",
+    hangName:"Hangman", hangDesc:"6 Bitcoin words: guess each one before its 6 blocks break. You can skip and come back.",
     sopaName:"Word search", sopaDesc:"Find the terms hidden in the grid, in any direction.",
     acroTitle:"Acrostics", hangTitle:"Hangman", sopaTitle:"Word search",
     newBtn:"New acrostic", acroNext:"Next acrostic", check:"Check +5s", print:"Print", clues:"Clues",
     hint:n=>`Reveal letter +60s (${n} left)`,
-    foot:"Read top to bottom, the orange column spells the hidden phrase. You get 5 helper letters per acrostic.",
+    foot:"Read top to bottom, the orange column spells the hidden phrase. Longer phrases get more helper letters.",
     metaP:(w,l)=>`Hidden phrase: ${w} words, ${l} letters.`, metaW:l=>`Hidden word: ${l} letters.`,
     wrong:n=>`${n} letter${n>1?"s are":" is"} wrong (in red).`, empty:n=>`Looking good. ${n} square${n>1?"s":""} to go.`,
-    noHints:"You've used all 5 helper letters.", winLabel:"Solved! The phrase was",
+    noHints:"You've used all your helper letters.", winLabel:"Solved! The phrase was",
     stats:(t,h)=>`Time ${t}. ${h===0?"No letters revealed":h+" letter"+(h>1?"s":"")+" revealed"}.`,
     given:"Free letter", cellLabel:(r,k)=>`Row ${r}, letter ${k}`,
     imgSolved:"Solved in", imgHints:h=>h===0?"no help":`${h} letter${h>1?"s":""} revealed`,
     share:"Share image", shared:"Image ready.", shareFail:"Couldn't share the image.",
     shareText:"I played RODO ₿ Games",
-    hNew:"New word", hClueBtn:"Show clue +60s (breaks 1 block)", hMeta:l=>`${l} letters.`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
-    hWin:"You got it!", hLose:"The chain broke. It was", hAgain:"Another word",
-    hStats:(e,s)=>`${e} mistake${e===1?"":"s"}. Streak: ${s}.`, hFoot:"Use your physical keyboard or the one on screen.",
-    hCardWin:(e)=>`Guessed it with ${e} mistake${e===1?"":"s"}`, hCardLose:"The chain broke", hStreak:s=>`Streak: ${s}`,
-    hMetaN:(i,n,l)=>`Word ${i} of ${n} · ${l} letters`, hMWin:(s,n)=>`${s} of ${n}`, hMStats:e=>`${e} mistake${e===1?"":"s"}.`,
+    hNew:"New game", hClueBtn:"Show clue +60s (breaks 1 block)", hMeta:(i,n,l,s)=>`Word ${i} of ${n} · ${l} letters · Solved: ${s}.`, hSkip:"Skip to the next", hEnd:"Finish", hEndQ:n=>`${n===1?"1 word is":`${n} words are`} still unsolved and will count as missed. Finish?`, hLives:n=>n===1?"1 block left.":`${n} blocks left.`,
+    hWin:(s,n)=>`${s} of ${n} words`, hAgain:"Another game",
+    hStats:t=>`Time ${t}.`, hFoot:"Use your physical keyboard or the one on screen. Skipping is free: words left unsolved when you finish add time, like in the anagram.",
+    hCard:(s,n,t)=>`${s} of ${n} words in ${t}`,
     sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
     sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
@@ -1500,6 +1525,11 @@ const CLUES={ seen:{es:new Set(),en:new Set()}, use:{es:{},en:{}}, duel:false, t
 const clueKey=id=>"c"+id.replace(".","_");
 const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
 // devuelve [palabra, pista elegida, código, todas sus pistas]
+// número de cada palabra del glosario (1..218, el mismo del código de pista) y sus definiciones (se bajan solo cuando hacen falta)
+const GW={es:new Map(G_ES.map(([w],i)=>[w,i+1])), en:new Map(G_EN.map(([w],i)=>[w,i+1]))};
+const gWord=(L,n)=>((L==="en"?G_EN:G_ES)[n-1]||[""])[0];
+const DEFS={};
+const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; }));
 const gloss = () => {
   const L=lang, seen=CLUES.seen[L];
   let list=(L==="en" ? G_EN : G_ES).map(([w,cs],i)=>{
@@ -1583,7 +1613,8 @@ const nearLen = (list,n,lo,hi,pen) => list.map(x=>{ const l=x[0].length; return 
 // ACRÓSTICO
 // =====================================================================
 const Acro = (()=>{
-  const MAX_HINTS = 5;
+  // letras de ayuda según el largo de la frase (una cada 2,5 filas): 4 letras → 2, 12 → 5, 23 → 8
+  const maxHints=()=>P ? Math.min(8, Math.max(2, Math.round(P.phrase.replace(/ /g,"").length/2.5))) : 5;
   let P=null, active=-1, hintsUsed=0, startTime=0, elapsed=0, solved=false, lastPhrase="";
   const rowClue = document.createElement("div");
   rowClue.className="rowclue"; rowClue.setAttribute("aria-live","polite");
@@ -1618,7 +1649,7 @@ const Acro = (()=>{
     $("winLabel").textContent=t.winLabel; $("acroGiveUp").textContent=t.giveUp; updateHintBtn();
   }
   function updateHintBtn(){
-    const left=MAX_HINTS-hintsUsed;
+    const left=maxHints()-hintsUsed;
     $("hintBtn").textContent=T[lang].hint(left);
     $("hintBtn").disabled = left<=0 || solved; $("checkBtn").disabled = solved; $("acroGiveUp").disabled = solved;
   }
@@ -1628,6 +1659,8 @@ const Acro = (()=>{
 
   function render(){
     const t=T[lang], grid=$("grid"); grid.innerHTML="";
+    // las casillas se achican para que la grilla entre en la pantalla (28 px de números + 3 px entre columnas)
+    grid.style.setProperty("--cell",`clamp(22px,calc((min(100vw,860px) - 32px - 28px - ${3*(P.W+1)}px)/${P.W}),40px)`);
     grid.style.gridTemplateColumns=`28px repeat(${P.W}, var(--cell))`;
     grid.appendChild(document.createElement("div"));
     for(let c=0;c<P.W;c++){ const d=document.createElement("div"); d.className="arrow"; if(c===P.L) d.textContent="₿"; grid.appendChild(d); }
@@ -1698,8 +1731,8 @@ const Acro = (()=>{
     if(!checkWin()) $("current").textContent = wrong?T[lang].wrong(wrong):empty?T[lang].empty(empty):"";
   }
   function hint(){
-    if(solved || !Reg.canHelp("acrostico")) return;
-    if(hintsUsed>=MAX_HINTS){ $("current").textContent=T[lang].noHints; return; }
+    if(solved) return;
+    if(hintsUsed>=maxHints()){ $("current").textContent=T[lang].noHints; return; }
     const needs=c=>!c.readOnly && c.value!==solOf(c);
     let cell=document.activeElement;
     if(!(cell&&cell.classList&&cell.classList.contains("cell")&&needs(cell)))
@@ -1708,12 +1741,12 @@ const Acro = (()=>{
     cell.value=solOf(cell); realRows()[+cell.dataset.r].entry[+cell.dataset.k]=cell.value;
     cell.classList.remove("ok","bad"); cell.classList.add("rev");
     hintsUsed++; updateHintBtn(); Reg.pen("acrostico","h");
-    if(hintsUsed>=MAX_HINTS) $("current").textContent=T[lang].noHints;
+    if(hintsUsed>=maxHints()) $("current").textContent=T[lang].noHints;
     if(!checkWin()) move(cell,1);
   }
   // "Me rindo": muestra la solución y la partida queda como no resuelta
   function giveUp(){
-    if(solved || !P || !confirm(T[lang].giveUpQ)) return;
+    if(solved || !P || !sure($("acroGiveUp"), T[lang].giveUpQ)) return;
     solved=true; elapsed=Date.now()-startTime-Reg.wait("acrostico");
     Reg.missed("acrostico", realRows().filter(r=>!r.given && r.entry.join("")!==r.word).map(r=>({w:r.word, clue:r.clue})));
     document.querySelectorAll("#grid .cell").forEach(c=>{ if(!c.readOnly && c.value!==solOf(c)){ c.value=solOf(c); c.classList.remove("ok","bad"); c.classList.add("miss"); } c.readOnly=true; });
@@ -1801,145 +1834,122 @@ const Acro = (()=>{
   $("hintBtn").addEventListener("click",hint);
   $("printBtn").addEventListener("click",()=>window.print());
   $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
-  return {texts, create, gen, load, started:()=>!!P, progress, difs:DIFS};
+  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P, progress, difs:DIFS};
 })();
 
 // =====================================================================
 // AHORCADO
 // =====================================================================
 const Hang = (()=>{
-  const LIVES=6;
-  let word="", clue="", guessed=new Set(), wrong=0, over=false, recent=[], clueUsed=false;
-  // torneo: varias palabras seguidas. multi=[{word,clue}], wi=la que se juega, res="ok"/"skip" por palabra,
-  // hits=adivinadas, errs=bloques rotos en total, tok=invalida la pausa entre palabras si se carga otra partida
-  let multi=null, wi=0, res=[], hits=0, errs=0, done=false, tok=0, free=new Set();
+  // 6 palabras por partida, cada una con sus 6 bloques. "Pasar" va a la siguiente sin costo y se puede volver;
+  // una palabra se pierde al romperse sus 6 bloques. Las que quedan sin resolver al terminar cuentan como falladas.
+  const LIVES=6, ROUNDS=6;
   const ROWS = { es:["QWERTYUIOP","ASDFGHJKLÑ","ZXCVBNM"], en:["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"] };
+  // dificultad (torneo): largo de las palabras
   const LEN = {facil:[4,6], media:[6,9], dificil:[8,12]};
+  let list=[], st=[], i=0, over=false, recent=[], start=0, elapsed=0;
+  const N=()=>list.length||ROUNDS;   // palabras de la partida (6; en el torneo, las que elija el organizador)
+  const W=()=>list[i]||{w:"",c:""}, S=()=>st[i];
+  const solved=()=>st.filter(x=>x.r==="ok").length;
+  const pending=()=>st.map((x,k)=>x.r?-1:k).filter(k=>k>=0);
 
   function texts(){
     const t=T[lang];
     $("hNew").textContent=t.hNew; $("hAgain").textContent=t.hAgain; $("hShare").textContent=t.share;
-    $("hFoot").textContent=t.hFoot; updClue(); if(multi && word) meta();
+    $("hSkip").textContent=t.hSkip; $("hEnd").textContent=t.hEnd; $("hFoot").textContent=t.hFoot; if(list.length){ updClue(); meta(); drawBlocks(); }
   }
-  const meta=()=>{ $("hMeta").textContent = multi ? T[lang].hMetaN(wi+1, multi.length, word.length) : T[lang].hMeta(word.length); };
-  const streak = () => +(store.get("rodo-hang-streak")||0);
+  const meta=()=>{ if(list.length && !over) $("hMeta").textContent=T[lang].hMeta(i+1, N(), W().w.length, solved()); };
+  function dots(){ scoreDots($("hScore"), N(), st.map(x=>x.r==="ok"?"ok":x.r==="lost"?"skip":""), over?-1:i); }
   function drawBlocks(){
-    const svg=$("hBlocks"); let h="";
+    const svg=$("hBlocks"), wrong=S()?S().wrong:0; let h="";
     const bw=64, gap=20, total=LIVES*bw+(LIVES-1)*gap, ox=(520-total)/2;
-    for(let i=0;i<LIVES;i++){
-      const x=ox+i*(bw+gap), broken = i >= LIVES-wrong;
-      if(i<LIVES-1){ const lx=x+bw, nb = (i+1) >= LIVES-wrong;
+    for(let k=0;k<LIVES;k++){
+      const x=ox+k*(bw+gap), broken = k >= LIVES-wrong;
+      if(k<LIVES-1){ const lx=x+bw, nb = (k+1) >= LIVES-wrong;
         h+=`<line x1="${lx}" y1="40" x2="${lx+gap}" y2="40" stroke="${nb||broken?'var(--bad)':'var(--line)'}" stroke-width="4" ${nb?'stroke-dasharray="4 5"':''}/>`; }
       h+=`<rect x="${x}" y="8" width="${bw}" height="64" rx="8" fill="${broken?'var(--bad-soft)':'var(--btc)'}" stroke="${broken?'var(--bad)':'#C76F00'}" stroke-width="2"/>`;
       if(broken) h+=`<path d="M${x+18} 20 L${x+34} 38 L${x+26} 44 L${x+46} 62" fill="none" stroke="var(--bad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
       else h+=`<text x="${x+bw/2}" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="20" fill="#1A1E23">₿</text>`;
     }
     svg.innerHTML=h;
-    $("hLives").textContent=T[lang].hLives(LIVES-wrong);
+    $("hLives").textContent=list.length ? T[lang].hLives(LIVES-wrong) : "";
     updClue();
   }
   function drawWord(){
-    $("hWord").innerHTML=[...word].map(ch=>{
-      const show=guessed.has(ch)||over, miss=over&&!guessed.has(ch);
+    const s=S(), w=W().w, done=!!(s&&s.r);
+    $("hWord").innerHTML=[...w].map(ch=>{
+      const show=s.g.has(ch)||done, miss=done&&!s.g.has(ch);
       return `<span class="hl${miss?' miss':''}">${show?ch:""}</span>`;
     }).join("");
   }
   function drawKeys(){
+    const s=S(), w=W().w, off=over||!s||!!s.r;
     $("hKeys").innerHTML=ROWS[lang].map(r=>`<div class="krow">${[...r].map(ch=>{
-      const cls = guessed.has(ch) ? (word.includes(ch)?" hit":" miss") : "";
-      return `<button class="key${cls}" data-k="${ch}" ${guessed.has(ch)||over?"disabled":""} aria-label="${ch}">${ch}</button>`;
+      const cls = s && s.g.has(ch) ? (w.includes(ch)?" hit":" miss") : "";
+      return `<button class="key${cls}" data-k="${ch}" ${(s&&s.g.has(ch))||off?"disabled":""} aria-label="${ch}">${ch}</button>`;
     }).join("")}</div>`).join("");
   }
-  let hStart=0;
-  const remember=w=>{ recent.push(w); if(recent.length>25) recent.shift(); };
-  // gen() o gen({dif}): una palabra, {word, clue}. gen({n, dif}): n palabras distintas para el torneo, {words:[{word, clue}]}
+  function draw(){ drawBlocks(); drawWord(); drawKeys(); dots(); meta();
+    const s=S(); $("hClue").textContent=W().c; $("hClue").style.display=s&&s.clue?"":"none";
+    $("hSkip").disabled=over||pending().length<2; $("hEnd").disabled=over; }
+  // gen() o gen({n, dif}): n palabras (6 por defecto); con dif, del largo que corresponde (si faltan, las más cercanas)
   function gen(a,b){
-    const o=genOpts(a,b), [lo,hi]=LEN[o.dif]||[4,12], all=()=>gloss().filter(([w])=>w.length>=4 && w.length<=12);
-    if(o.n>0) return {words:shuffle(nearLen(all(), Math.floor(o.n), lo, hi, x=>recent.includes(x[0])?0.5:0)).map(([w,c])=>{ remember(w); return {word:w, clue:c}; })};
-    let pool=gloss().filter(([w])=>w.length>=lo && w.length<=hi && !recent.includes(w));
-    if(!pool.length) pool=nearLen(all(), 1, lo, hi);
-    const [w,c]=rand(pool); remember(w);
-    return {word:w, clue:c};
+    const o=genOpts(a,b), n=o.n>0 ? Math.floor(o.n) : ROUNDS, R=LEN[o.dif];
+    const all=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
+    const pool=R ? shuffle(nearLen(all, n, R[0], R[1])) : shuffle(all).slice(0,n);
+    pool.forEach(([w])=>{ recent.push(w); if(recent.length>40) recent.shift(); });
+    return {list:pool.map(([w,c])=>({w,c}))};
   }
   function create(){ Reg.newGame("ahorcado"); }
   // acepta {word, clue} (una palabra) o {words:[{word, clue}]} (varias, en orden)
   function load(d){
-    tok++; hStart=Date.now(); done=false;
-    multi = d.words ? d.words.map(x=>({word:x.word, clue:x.clue})) : null;
-    wi=0; res=[]; hits=0; errs=0; $("hScore").hidden=!multi;
-    $("hWin").style.display="none"; $("hWin").classList.remove("lose");
-    setWord(multi ? multi[0] : d);
+    list = d.list ? d.list : [{w:d.word, c:d.clue}];
+    st=list.map(o=>{ const g=new Set(); [...o.w].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) g.add(ch); }); return {g, wrong:0, clue:false, r:""}; });
+    i=0; over=false; start=Date.now(); elapsed=0;
+    $("hWin").style.display="none"; $("hWin").classList.remove("lose"); $("hPlay").style.display="";
+    draw();
   }
-  function setWord(d){
-    word=d.word; clue=d.clue;
-    guessed=new Set(); wrong=0; over=false;
-    // letras fuera del teclado (por ejemplo Ñ en inglés) se regalan
-    [...word].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) guessed.add(ch); });
-    free=new Set(guessed);
-    $("hClue").textContent=clue; $("hClue").style.display="none"; clueUsed=false; meta();
-    if(multi) scoreDots($("hScore"), multi.length, res, wi);
-    drawBlocks(); drawWord(); drawKeys();
+  // la siguiente palabra sin resolver (dando la vuelta); si no queda ninguna, termina
+  function next(){
+    const p=pending(); if(!p.length) return finish();
+    i = p.find(k=>k>i) ?? p[0]; draw();
   }
   function guess(ch){
-    if(over||guessed.has(ch)||!word) return;
-    guessed.add(ch);
-    if(!word.includes(ch)){ wrong++; Reg.pen("ahorcado","e"); }
-    const won=[...word].every(c=>guessed.has(c)), lost=wrong>=LIVES;
-    if(won||lost) (multi ? endWord : finish)(won);
-    drawBlocks(); drawWord(); drawKeys();
+    const s=S(); if(over||!s||s.r||s.g.has(ch)) return;
+    s.g.add(ch);
+    if(!W().w.includes(ch)){ s.wrong++; Reg.pen("ahorcado","e"); }
+    if([...W().w].every(c=>s.g.has(c))) s.r="ok";
+    else if(s.wrong>=LIVES) s.r="lost";
+    draw();
+    if(s.r) setTimeout(next, s.r==="ok"?700:1500);
   }
-  // varias palabras: se anota esta y, tras una pausa (más larga si perdió, para ver la palabra), sigue la próxima o termina
-  function endWord(won){
-    over=true; errs+=wrong; res[wi]=won?"ok":"skip";
-    if(won) hits++; else Reg.pen("ahorcado","r");
-    scoreDots($("hScore"), multi.length, res, -1);
-    const t=tok;
-    setTimeout(()=>{ if(t!==tok) return; if(++wi<multi.length) setWord(multi[wi]); else finishAll(); }, won?800:1500);
+  function skip(){ if(over||S().r||pending().length<2) return; next(); }
+  function end(){
+    if(over) return; const p=pending();
+    if(p.length && !sure($("hEnd"), T[lang].hEndQ(p.length))) return;
+    p.forEach(k=>st[k].r="lost"); finish();
   }
-  function finishAll(){
-    done=true; const t=T[lang], n=multi.length;
-    $("hWinLabel").textContent=t.hMWin(hits,n); $("hWinWord").textContent=""; $("hWinStats").textContent=t.hMStats(errs);
-    $("hWin").classList.toggle("lose", !hits); $("hShare").style.display="none";
+  function finish(){
+    over=true; elapsed=Date.now()-start-Reg.wait("ahorcado"); const t=T[lang], n=solved();
+    $("hPlay").style.display="none"; $("hMeta").textContent="";
+    $("hWinLabel").textContent=t.hWin(n,N());
+    $("hWinWord").textContent=list.map((o,k)=>(st[k].r==="ok"?"✓ ":"✗ ")+o.w).join("  ");
+    $("hWinStats").textContent=t.hStats(fmt(elapsed));
+    $("hWin").classList.toggle("lose", n===0);
     $("hNote").textContent=""; $("hWin").style.display="block";
     $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
-    Reg.finish("ahorcado",{ok:hits>0, s:hits, h:errs, ms:Date.now()-hStart-Reg.wait("ahorcado")});
-  }
-  // avance: letras distintas adivinadas (sin las regaladas); con varias palabras, (adivinadas + fracción de la actual) / total
-  const frac=()=>{ const L=[...new Set(word)].filter(c=>!free.has(c)); return L.length ? L.filter(c=>guessed.has(c)).length/L.length : 1; };
-  function progress(){
-    if(!word) return {p:0, s:0};
-    if(!multi) return {p:frac(), s:0};
-    return {p:(hits+(over?0:frac()))/multi.length, s:hits};
-  }
-  function finish(won){
-    over=true; const t=T[lang];
-    const s = won ? streak()+1 : 0; store.set("rodo-hang-streak", s);
-    $("hWinLabel").textContent = won ? t.hWin : t.hLose;
-    $("hWinWord").textContent = word;
-    $("hWinStats").textContent = t.hStats(wrong, s);
-    $("hWin").classList.toggle("lose", !won);
-    $("hShare").style.display = won ? "" : "none";
-    $("hNote").textContent=""; $("hWin").style.display="block";
-    $("hWin").scrollIntoView({block:"nearest",behavior:"smooth"});
-    Reg.finish("ahorcado",{ok:won,s:0,h:wrong,ms:Date.now()-hStart-Reg.wait("ahorcado")});
+    Reg.missed("ahorcado", list.filter((o,k)=>st[k].r!=="ok").map(o=>({w:o.w, clue:o.c})));
+    Reg.finish("ahorcado",{ok:n>0, s:n, ms:elapsed});
   }
   async function image(){
-    try{ await document.fonts.ready; }catch(e){}
-    const t=T[lang], size=44, g=6, n=word.length;
-    const W=Math.max(600, n*(size+g)+80), H=330;
-    const {cv,x}=canvasBase(W,H,t.hangTitle);
-    let ox=(W-(n*(size+g)-g))/2;
-    [...word].forEach((ch,i)=>tile(x, ox+i*(size+g), 130, size, ch, "#FFFFFF", "#B9C2CB"));
-    const bw=40, bg=14, tot=LIVES*bw+(LIVES-1)*bg; ox=(W-tot)/2;
-    for(let i=0;i<LIVES;i++) tile(x, ox+i*(bw+bg), 200, bw, i>=LIVES-wrong?"✕":"₿", i>=LIVES-wrong?"#F6D5D1":"#F7931A", i>=LIVES-wrong?"#C2362B":"#C76F00", i>=LIVES-wrong?"#C2362B":"#1A1E23");
-    x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`;
-    x.fillText(`${t.hCardWin(wrong)}. ${t.hStreak(streak())}`, 40, H-36);
-    return toBlob(cv);
+    const t=T[lang];
+    return cardImage(t.hangTitle, t.hWin(solved(),N()), t.hCard(solved(),N(),fmt(elapsed)), st.map(x=>x.r==="ok"?"ok":"skip"));
   }
-  // la pista está oculta: pedirla rompe un bloque (cuenta como un error)
-  function updClue(){ const b=$("hClueBtn"); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=clueUsed?"none":""; b.disabled = over || !word || LIVES-wrong<=1; }
-  $("hClueBtn").addEventListener("click",()=>{ if(over||clueUsed||LIVES-wrong<=1||!Reg.canHelp("ahorcado")) return; clueUsed=true; wrong++; Reg.pen("ahorcado","h"); $("hClue").style.display=""; drawBlocks(); });
+  // la pista está oculta: pedirla rompe un bloque de esa palabra y suma 60 s
+  function updClue(){ const b=$("hClueBtn"), s=S(); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=s&&s.clue?"none":""; b.disabled = over || !s || !!s.r || LIVES-s.wrong<=1; }
+  $("hClueBtn").addEventListener("click",()=>{ const s=S(); if(over||!s||s.r||s.clue||LIVES-s.wrong<=1) return; s.clue=true; s.wrong++; Reg.pen("ahorcado","h"); draw(); });
   $("hKeys").addEventListener("click",e=>{ const b=e.target.closest(".key"); if(b) guess(b.dataset.k); });
+  $("hSkip").addEventListener("click",skip); $("hEnd").addEventListener("click",end);
   document.addEventListener("keydown",e=>{
     if(view!=="ahorcado"||e.metaKey||e.ctrlKey||e.altKey) return;
     if(e.target.tagName==="INPUT") return;
@@ -1949,8 +1959,14 @@ const Hang = (()=>{
   $("hNew").addEventListener("click",create);
   $("hAgain").addEventListener("click",create);
   $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
-  return {texts, create, gen, load, started:()=>!!word, redrawLives:()=>{ if(word) $("hLives").textContent=T[lang].hLives(LIVES-wrong); },
-    progress, rounds:()=>multi?multi.length:1, difs:DIFS};
+  // avance (torneo): palabras adivinadas más lo adivinado de las que siguen pendientes (las perdidas no suman)
+  function progress(){
+    if(!list.length) return {p:0, s:0};
+    const part=st.reduce((a,x,k)=>{ if(x.r==="ok") return a+1; if(x.r) return a; const u=[...new Set(list[k].w)]; return a+u.filter(ch=>x.g.has(ch)).length/u.length; },0);
+    return {p:part/list.length, s:solved()};
+  }
+  return {texts, create, gen, load, words:()=>list.map(o=>o.w), started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); },
+    progress, rounds:()=>list.length||ROUNDS, difs:DIFS};
 })();
 
 // =====================================================================
@@ -2056,7 +2072,7 @@ const Sopa = (()=>{
     if(found.size===words.length) finish();
   }
   function giveUp(){
-    if(done || !words.length || !confirm(T[lang].giveUpQ)) return;
+    if(done || !words.length || !sure($("sGiveUp"), T[lang].giveUpQ)) return;
     done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
     words.forEach(o=>{ if(!found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("miss")); });
     Reg.missed("sopa", words.filter(o=>!found.has(o.w)).map(o=>({w:o.w, clue:o.clue})));
@@ -2126,7 +2142,7 @@ const Sopa = (()=>{
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
-  return {texts, create, gen, load, setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag,
+  return {texts, create, gen, load, words:()=>words.map(o=>o.w), setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag,
     // avance: palabras encontradas (las que marca "Me rindo" no entran en found)
     progress:()=>({p:words.length ? found.size/words.length : 0, s:0})};
 })();
@@ -2223,7 +2239,7 @@ Object.assign(T.es,{
   cAgain:"Otro criptograma", cFoot:"Las frases en inglés están traducidas al castellano.",
   cCard:(t,h)=>`Descifrado en ${t}${h?`, con ${h} ayuda${h>1?"s":""}`:", sin ayuda"}`,
   // anagrama
-  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar +90 s", aHint:n=>n?`Ver pista +60 s (usadas: ${n})`:"Ver pista +60 s", aAgain:"Jugar de nuevo",
+  aNew:"Nueva partida", aErase:"Borrar", aShuffle:"Mezclar", aSkip:"Pasar a la siguiente", aEnd:"Terminar", aEndQ:n=>`Te ${n===1?"queda 1 palabra":`quedan ${n} palabras`} sin resolver: van a contar como falladas. ¿Terminás?`, aHint:n=>n?`Ver pista +60 s (usadas: ${n})`:"Ver pista +60 s", aAgain:"Jugar de nuevo",
   aMeta:(i,n,s)=>`Ronda ${i} de ${n}. Aciertos: ${s}.`, aWin:(s,n)=>`${s} de ${n}`, aStats:(t,h)=>`Tiempo ${t}. ${h===0?"Sin pistas":h+" pista"+(h>1?"s":"")}.`,
   aFoot:"Tocá las letras en orden, o escribilas con el teclado. Tocá una casilla de arriba para devolver la letra. Las pistas son libres, pero cuentan para el ranking.",
   aCard:(s,n,t)=>`${s} de ${n} anagramas en ${t}`
@@ -2264,12 +2280,22 @@ Object.assign(T.en,{
   cWin:"Decoded!", cStats:(t,h)=>`Time ${t}. ${h===0?"No help":h+" letter"+(h>1?"s":"")+" revealed"}.`,
   cAgain:"Another cryptogram", cFoot:"Original quotes in English.",
   cCard:(t,h)=>`Decoded in ${t}${h?`, with ${h} hint${h>1?"s":""}`:", no help"}`,
-  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip +90s", aHint:n=>n?`Show clue +60s (used: ${n})`:"Show clue +60s", aAgain:"Play again",
+  aNew:"New game", aErase:"Clear", aShuffle:"Shuffle", aSkip:"Skip to the next", aEnd:"Finish", aEndQ:n=>`${n===1?"1 word is":`${n} words are`} still unsolved and will count as missed. Finish?`, aHint:n=>n?`Show clue +60s (used: ${n})`:"Show clue +60s", aAgain:"Play again",
   aMeta:(i,n,s)=>`Round ${i} of ${n}. Score: ${s}.`, aWin:(s,n)=>`${s} of ${n}`, aStats:(t,h)=>`Time ${t}. ${h===0?"No clues":h+" clue"+(h>1?"s":"")}.`,
   aFoot:"Tap the letters in order, or type them. Tap a filled square to send the letter back. Clues are unlimited, but they count in the leaderboard.",
   aCard:(s,n,t)=>`${s} of ${n} anagrams in ${t}`
 });
 
+// confirmación dentro de la página (algunos navegadores, como los de WhatsApp o Instagram, bloquean confirm() en silencio):
+// el primer toque muestra la pregunta y cambia el botón; el segundo, dentro de 8 s, confirma
+function sure(btn, q){
+  if(btn._sure && Date.now()-btn._sure.t<8000){ btn._sure.undo(); return true; }
+  const old=btn.textContent, note=document.createElement("p"); note.className="surenote"; note.textContent=q;
+  btn.insertAdjacentElement("afterend", note); btn.textContent=T[lang].sureAgain; btn.classList.add("sure");
+  const undo=()=>{ clearTimeout(tm); btn.textContent=old; btn.classList.remove("sure"); note.remove(); btn._sure=null; };
+  const tm=setTimeout(undo, 8000); btn._sure={t:Date.now(), undo};
+  return false;
+}
 function scoreDots(el, n, results, cur){
   el.innerHTML = Array.from({length:n},(_,i)=>`<i class="${results[i]||(i===cur?"cur":"")}"></i>`).join("");
 }
@@ -2505,7 +2531,7 @@ const Cripto = (()=>{
   }
   function updateHint(){ $("cHint").textContent=T[lang].cHint(MAX_HINTS-hints); $("cHint").disabled = hints>=MAX_HINTS||solved; $("cCheck").disabled=solved; $("cGiveUp").disabled=solved; }
   function giveUp(){
-    if(solved || !q || !confirm(T[lang].giveUpQ)) return;
+    if(solved || !q || !sure($("cGiveUp"), T[lang].giveUpQ)) return;
     solved=true; elapsed=Date.now()-start-Reg.wait("criptograma"); const t=T[lang];
     cells.forEach(x=>{ if(x.el.value!==x.p){ x.el.value=x.p; x.el.classList.remove("ok","bad"); x.el.classList.add("miss"); } x.el.readOnly=true; x.el.classList.remove("inrow"); });
     $("cStatus").textContent=""; updateHint();
@@ -2597,7 +2623,7 @@ const Cripto = (()=>{
   $("cHint").addEventListener("mousedown",e=>e.preventDefault());
   $("cGiveUp").addEventListener("click",giveUp);
   $("cHint").addEventListener("click",()=>{
-    if(solved || !Reg.canHelp("criptograma")) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
+    if(solved) return; if(hints>=MAX_HINTS){ $("cStatus").textContent=T[lang].cNoHints; return; }
     const needs=c=>group(c).some(x=>x.el.value!==x.p);
     const c = (focusC && needs(focusC)) ? focusC : (cells.find(x=>x.el.value!==x.p)||{}).c;
     if(!c) return;
@@ -2631,17 +2657,20 @@ const Cripto = (()=>{
 // =====================================================================
 const Ana = (()=>{
   const ROUNDS=10;
-  let list=[], i=0, tiles=[], picks=[], results=[], score=0, start=0, elapsed=0, locked=false, hints=0, shown=false;
+  // "Pasar" va a la siguiente sin costo y se puede volver; las que quedan sin resolver al terminar cuentan como falladas
+  let list=[], i=0, tiles=[], picks=[], results=[], score=0, start=0, elapsed=0, locked=false, hints=0, shown=false, seenClue=new Set(), over=false;
   const MAXH=3;
   const ACR=/sigla|acronym|abreviatura|short form|\(short\)|abreviado/i;
   function texts(){
     const t=T[lang];
     $("aNew").textContent=t.aNew; $("aErase").textContent=t.aErase; $("aShuffle").textContent=t.aShuffle;
-    $("aSkip").textContent=t.aSkip; updHint(); $("aAgain").textContent=t.aAgain; $("aShare").textContent=t.share; $("aFoot").textContent=t.aFoot; meta();
+    $("aSkip").textContent=t.aSkip; $("aEnd").textContent=t.aEnd; updHint(); $("aAgain").textContent=t.aAgain; $("aShare").textContent=t.share; $("aFoot").textContent=t.aFoot; meta();
   }
-  const meta=()=>{ if(list.length && i<ROUNDS) $("aMeta").textContent=T[lang].aMeta(i+1,ROUNDS,score); };
+  const meta=()=>{ if(list.length && !over) $("aMeta").textContent=T[lang].aMeta(i+1,ROUNDS,score); };
+  const pending=()=>list.map((_,k)=>results[k]?-1:k).filter(k=>k>=0);
   const word=()=>list[i][0];
-  function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length; }
+  function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length || over;
+    $("aSkip").disabled = over || locked || pending().length<2; $("aEnd").disabled = over; }
   function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
   // dif: largo de las palabras; si no alcanzan 10 en el rango, se completa con las de largo más cercano (siempre entre 4 y 10)
   const LEN={facil:[4,6], media:[6,8], dificil:[8,10]};
@@ -2651,13 +2680,14 @@ const Ana = (()=>{
   }
   function create(){ Reg.newGame("anagrama"); }
   function load(d){
-    list=d.list.map(o=>[o.w,o.c]); hints=0;
+    list=d.list.map(o=>[o.w,o.c]); hints=0; seenClue=new Set(); over=false;
     i=0; results=[]; score=0; start=Date.now();
     $("aWin").style.display="none"; $("aPlay").style.display=""; round();
   }
   function round(){
     locked=false; tiles=scramble(word()); picks=[];
-    shown=false; $("aClue").textContent=list[i][1]; $("aClue").style.display="none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
+    // la pista ya pagada de esta palabra sigue visible al volver
+    shown=seenClue.has(i); $("aClue").textContent=list[i][1]; $("aClue").style.display=shown?"":"none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
   }
   function draw(cls){
     const w=word();
@@ -2677,13 +2707,17 @@ const Ana = (()=>{
       setTimeout(advance,800);
     } else { draw("bad"); Reg.pen("anagrama","e"); setTimeout(()=>{ if(!locked) draw(); },400); }
   }
-  function skip(){
-    if(locked) return; locked=true; results[i]="skip"; Reg.pen("anagrama","r");
-    const w=word(); tiles=[...w]; picks=tiles.map((_,k)=>k); draw("skip"); scoreDots($("aScore"),ROUNDS,results,-1);
-    setTimeout(advance,1500);
+  function skip(){ if(locked||over||pending().length<2) return; advance(); }
+  // la siguiente sin resolver (dando la vuelta); si no queda ninguna, termina
+  function advance(){ const p=pending(); if(!p.length) return finish(); i = p.find(k=>k>i) ?? p[0]; round(); }
+  function end(){
+    if(over) return; const p=pending();
+    if(p.length && !sure($("aEnd"), T[lang].aEndQ(p.length))) return;
+    p.forEach(k=>results[k]="skip"); finish();
   }
-  function advance(){ i++; if(i>=ROUNDS) finish(); else round(); }
   function finish(){
+    over=true; updHint();
+    Reg.missed("anagrama", list.filter((_,k)=>results[k]!=="ok").map(([w,c])=>({w, clue:c})));
     elapsed=Date.now()-start-Reg.wait("anagrama"); const t=T[lang];
     $("aPlay").style.display="none"; $("aMeta").textContent="";
     showWin("a", t.aWin(score,ROUNDS), t.aStats(fmt(elapsed),hints));
@@ -2693,8 +2727,8 @@ const Ana = (()=>{
   $("aSlots").addEventListener("click",e=>{ const b=e.target.closest(".aslot"); if(!b||locked) return; const j=+b.dataset.j; if(picks[j]===undefined) return; picks.splice(j,1); draw(); });
   $("aErase").addEventListener("click",()=>{ if(locked) return; picks=[]; draw(); });
   $("aShuffle").addEventListener("click",()=>{ if(locked) return; picks=[]; tiles=scramble(word()); draw(); });
-  $("aSkip").addEventListener("click",skip);
-  $("aHint").addEventListener("click",()=>{ if(locked||shown||!Reg.canHelp("anagrama")) return; hints++; shown=true; Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
+  $("aSkip").addEventListener("click",skip); $("aEnd").addEventListener("click",end);
+  $("aHint").addEventListener("click",()=>{ if(locked||shown||over) return; hints++; shown=true; seenClue.add(i); Reg.pen("anagrama","h"); $("aClue").style.display=""; updHint(); });
   document.addEventListener("keydown",e=>{
     if(view!=="anagrama"||locked||e.metaKey||e.ctrlKey||e.altKey||e.target.tagName==="INPUT") return;
     if(e.key==="Backspace"){ e.preventDefault(); picks.pop(); draw(); return; }
@@ -2704,8 +2738,8 @@ const Ana = (()=>{
   $("aNew").addEventListener("click",create); $("aAgain").addEventListener("click",create);
   $("aShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
-  return {texts, create, gen, load, started:()=>list.length>0, difs:DIFS,
-    // avance: rondas acertadas (las pasadas no suman)
+  return {texts, create, gen, load, words:()=>list.map(x=>x[0]), started:()=>list.length>0, difs:DIFS,
+    // avance (torneo): palabras acertadas (las pasadas no suman)
     progress:()=>({p:list.length ? score/ROUNDS : 0, s:score})};
 })();
 
@@ -2731,6 +2765,8 @@ Object.assign(T.es,{
   rkHelp:h=>h===0?"sin ayuda":`${h} ayuda${h>1?"s":""}`, rkErr:h=>`${h} error${h===1?"":"es"}`,
   rkYourPos:(p,m)=>`Tu puesto: ${p}, ${m}.`, rkYouFailed:"Tu intento no llegó a completarse.",
   rkNoNum:"Sin número", rkLocal:"Sin conexión con el servidor: esta partida no tiene número ni ranking.", rkNick:"Tu apodo en el ranking:", rkNickSave:"Guardar", rkNickSaved:"Apodo guardado.", rkNickTaken:"Ese apodo ya lo usa otra persona. Probá con otro.", rkNickBad:"Ese apodo no sirve: sin barras ni espacios al principio o al final.",
+  nickOffline:"No hay conexión con el servidor. Revisá internet (o si tenés un bloqueador de contenido) y tocá de nuevo.",
+  nickFail:c=>`No se pudo guardar el usuario. Probá de nuevo en un rato. (Código: ${c})`,
   rkNoPerm:"Tu acceso es de solo lectura: podés jugar los números que ya existen, pero no crear nuevos ni guardar resultados.",
   rkNotFound:n=>`Todavía no existe el #${n} en este juego e idioma.`,
   rkPlayed:"Ya jugaste este número: en el ranking cuenta tu primer resultado.",
@@ -2747,6 +2783,8 @@ Object.assign(T.en,{
   rkHelp:h=>h===0?"no help":`${h} hint${h>1?"s":""}`, rkErr:h=>`${h} mistake${h===1?"":"s"}`,
   rkYourPos:(p,m)=>`Your rank: ${p}, ${m}.`, rkYouFailed:"Your attempt wasn't completed.",
   rkNoNum:"No number", rkLocal:"No connection to the server: this game has no number or leaderboard.", rkNick:"Your leaderboard nickname:", rkNickSave:"Save", rkNickSaved:"Nickname saved.", rkNickTaken:"Someone else already uses that nickname. Try another one.", rkNickBad:"That nickname won't work: no slashes or leading/trailing spaces.",
+  nickOffline:"Can't reach the server. Check your connection (or any content blocker) and tap again.",
+  nickFail:c=>`Couldn't save the username. Try again in a while. (Code: ${c})`,
   rkNoPerm:"You have read-only access: you can play existing numbers, but not create new ones or save results.",
   rkNotFound:n=>`There's no #${n} yet for this game and language.`,
   rkPlayed:"You already played this number: your first result is the one that counts.",
@@ -2759,12 +2797,12 @@ Object.assign(T.en,{
 // =====================================================================
 // PUNTAJE: tiempo ajustado = tiempo + 10 s por error (20 s en el ahorcado) + 60 s por ayuda + 5 s por cada "Comprobar"
 // + (15 min / rondas) por ronda fallada.
-// Puntos = 100 por resolverla + (900 − segundos ajustados, mínimo 0). Sin resolver: 0.
+// Puntos = 1000 − segundos ajustados (mínimo 1 si la resolviste; sin resolver: 0). Así cada ayuda o error siempre resta, aun pasados los 15 minutos.
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
 const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tamaño de sopa
-const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, HELP_LOCK:7*60000, ROUNDS:{anagrama:10, placa:10, esbip:20}};
-const errCost=k=> k==="ahorcado" ? 20 : SCORE.ERR;
+const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20, ahorcado6:6}};
+const errCost=k=> k.startsWith("ahorcado") ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
 // segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas (R: rondas de la partida, si no son las de siempre)
 const penSecs=(k,e,h,c,r,R)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*(R ? SCORE.CAP/R : roundCost(k));
@@ -2774,7 +2812,7 @@ function scoreOf(k, r){
   const R=SCORE.ROUNDS[k], fails=R ? Math.max(0, R-(r.s||0)) : 0;
   const pen=penSecs(k, e, h, r.c||0, fails);
   const adj=(r.ms||0)/1000 + pen, ok=R ? (r.s||0)>0 : !!r.ok;
-  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? SCORE.BONUS + Math.max(0, Math.round(SCORE.CAP-adj)) : 0};
+  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)) : 0};
 }
 // Duelo: quién ganó una partida. a y b son los resultados de cada uno (o undefined si no terminó).
 // timedOut: pasaron más de 15 minutos desde que se creó la partida. Devuelve "a", "b", "tie", "void" o null (en juego).
@@ -2931,13 +2969,6 @@ const Reg = (()=>{
     const c=cur[g]; if(!c || c.tour) return;
     c.t0=c.load=Date.now(); c.wait=0; c.fz=null; c.e=c.h=c.c=c.r=0; tick();
   }
-  // en duelo, las ayudas se habilitan a los 7 minutos de juego
-  function canHelp(g){
-    const c=cur[g]; if(!c || !c.duel) return true;
-    const t=c.t0 ? (c.fz||Date.now())-c.t0 : 0;
-    if(t>=SCORE.HELP_LOCK) return true;
-    msg(g, T[lang].duHelpLock(fmt(SCORE.HELP_LOCK-t))); return false;
-  }
   // duelo: sin botón Iniciar; los dos arrancan a la vez con una cuenta regresiva
   function syncStart(g, at){
     const u=ui[g], c=cur[g]; if(!u || !u.gate || !c) return;
@@ -2954,7 +2985,7 @@ const Reg = (()=>{
   // línea con lo que cuesta cada cosa en este juego (y el aviso de duelo)
   function setCost(g){
     const u=ui[g]; if(!u) return; const t=T[lang], c=cur[g];
-    u.cost.textContent=(t.cost[g]||"")+(c && c.duel && t.costDuel[g] ? " "+t.costDuel[g] : "");
+    u.cost.textContent=t.cost[g]||"";
   }
   function thaw(g){
     const c=cur[g]; if(!c || !c.fz) return;
@@ -3000,7 +3031,7 @@ const Reg = (()=>{
     if(v.includes("/")||/^\.+$/.test(v)||/^__.*__$/.test(v)) return "bad";
     const key=nickKey(v), ref=fb.doc(fb.db,"nicks",key);
     try{
-      const s=await fb.getDoc(ref);
+      const s=await withRetry(()=>fb.getDoc(ref));
       if(s.exists() && s.data().uid!==uid) return "taken";
       const b=fb.writeBatch(fb.db), a=opt.av||myAv;
       b.set(fb.doc(fb.db,"names",uid), a ? {name:v, av:a} : {name:v});
@@ -3010,11 +3041,26 @@ const Reg = (()=>{
         const o=await fb.getDoc(fb.doc(fb.db,"nicks",nickKey(nick)));
         if(o.exists() && o.data().uid===uid) b.delete(o.ref);
       }
-      await b.commit();
+      await withRetry(()=>b.commit());
       nick=v; names[uid]=v; if(a){ myAv=a; avs[uid]=a; store.set("rodo-av",a); } store.set("rodo-nick",v); KEYS.forEach(renderRank); return "ok";
-    }catch(e){ return "fail"; }
+    }catch(e){ lastErr=e.code||e.message||"?"; logErr("nick", lastErr, v); return "fail"; }
   }
-  const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]||T[lang].rkFail);
+  // un corte de conexión (frecuente en el celular) se reintenta dos veces antes de dar error
+  async function withRetry(f){
+    for(let i=0;;i++){
+      try{ return await f(); }
+      catch(e){ if(i>=2 || !/unavailable|deadline|offline|network/i.test((e.code||"")+" "+(e.message||""))) throw e; await sleep(1500*(i+1)); }
+    }
+  }
+  // anota el error para que la administración lo vea en el panel (si hay conexión)
+  function logErr(w, c, n){
+    if(!fb || !uid) return;
+    const d={u:uid, w, c:String(c).slice(0,80), ua:navigator.userAgent.slice(0,200), at:fb.serverTimestamp()}; if(n) d.n=String(n).slice(0,30);
+    fb.setDoc(fb.doc(fb.collection(fb.db,"errs")), d).catch(()=>{});
+  }
+  let lastErr="";
+  const nickMsg=r=>({ok:T[lang].rkNickSaved, taken:T[lang].rkNickTaken, bad:T[lang].rkNickBad}[r]
+    || (/unavailable|offline|network|deadline/i.test(lastErr) ? T[lang].nickOffline : T[lang].nickFail(lastErr)));
   // el apodo guardado manda sobre el del navegador; si todavía no estaba reservado, se reserva
   async function loadNick(){
     try{
@@ -3150,7 +3196,8 @@ const Reg = (()=>{
     if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; }
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
     if(c && c.tour){ $("view-"+g).classList.remove("tourmode"); if(ui[g]){ ui[g].win.classList.remove("rkonly"); slot(g,"wlearn").hidden=true; const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; if(u0(g)) u0(g).hidden=true; } showBack(g); duelNote(g,""); if(Reg.onTour) Reg.onTour(g, rec, c); return; }
-    if(ui[g]){ ui[g].win.classList.remove("rkonly"); showPts(g, rec); showLearn(g); }
+    // en duelo no hay "Siguiente": se sigue con "Revancha" (invita al mismo rival)
+    if(ui[g]){ ui[g].win.classList.remove("rkonly"); ui[g].win.classList.toggle("induel", !!(cur[g] && cur[g].duel)); showPts(g, rec); showLearn(g); }
     showBack(g);
     duelNote(g,"");
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
@@ -3181,22 +3228,46 @@ const Reg = (()=>{
   function showLearn(g){
     const c=cur[g], el=slot(g,"wlearn"), t=T[lang];
     el.hidden=!(fb && c && c.n); if(el.hidden) return;
-    const pid=`${c.k}-${c.lang}-${c.n}`, miss=(c.missed||[]).slice(0,40);
-    // al rendirse: las palabras que faltaban, con su pista, y se anotan como conceptos nuevos (se puede destildar)
-    el.classList.toggle("wmiss", miss.length>0);
-    el.innerHTML = miss.length
-      ? `<p>${esc(t.missT(miss.length))}</p><ul class="missl">${miss.map(m=>`<li><b>${esc(m.w)}</b>${m.clue?" — "+esc(m.clue):""}</li>`).join("")}</ul>`+
-        `<label><input type="checkbox" checked> ${esc(t.learnN(miss.length))}</label><span class="lnote" aria-live="polite"></span>`
-      : `<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
-    const box=el.querySelector("input");
-    const save=async()=>{
-      const note=el.querySelector(".lnote"), d={u:uid, p:pid, g:c.k, yes:box.checked, duel:!!c.duel, at:fb.serverTimestamp()};
-      if(miss.length) d.n=box.checked ? miss.length : 0;
-      try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`), d); note.textContent=box.checked ? (miss.length ? t.learnedN(miss.length) : t.learnThanks) : ""; }
-      catch(err){ note.textContent=t.rkFail; }
+    const pid=`${c.k}-${c.lang}-${c.n}`, L=c.lang;
+    // palabras del glosario que aparecieron en la partida (en el criptograma y la semilla no hay: queda el tilde simple)
+    const ws=[...new Set(GAMES[g].words ? GAMES[g].words() : [])].filter(w=>GW[L].has(w)).slice(0,40);
+    el.classList.toggle("wmiss", ws.length>0);
+    if(!ws.length){
+      el.innerHTML=`<p>${esc(t.learnQ)}</p><label><input type="checkbox"> ${esc(t.learnYes)}</label><span class="lnote" aria-live="polite"></span>`;
+      const box=el.querySelector("input");
+      box.addEventListener("change",async()=>{ const note=el.querySelector(".lnote");
+        try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:box.checked, duel:!!c.duel, at:fb.serverTimestamp()}); note.textContent=box.checked ? t.learnThanks : ""; }
+        catch(err){ note.textContent=t.rkFail; } });
+      return;
+    }
+    // ninguna viene marcada (no resolver una palabra no quiere decir no conocerla); cada palabra marcada suma una tarjeta
+    // con su definición en un carrusel horizontal con puntitos
+    const marked=[];
+    el.innerHTML=`<p>${esc(t.learnQWords)}</p><div class="lchips"></div><div class="lcar" hidden></div><div class="ldots"></div><span class="lnote" aria-live="polite"></span>`;
+    const chips=el.querySelector(".lchips"), car=el.querySelector(".lcar"), dots=el.querySelector(".ldots"), note=el.querySelector(".lnote");
+    let timer=null;
+    const active=()=>car.clientWidth ? Math.round(car.scrollLeft/car.clientWidth) : 0;
+    const paintDots=()=>{ const a=active(); dots.querySelectorAll("button").forEach((b,i)=>b.classList.toggle("on", i===a)); };
+    const draw=async(focus)=>{
+      chips.innerHTML=ws.map(w=>`<button type="button" data-w="${esc(w)}" aria-pressed="${marked.includes(w)}">${marked.includes(w)?"✓ ":""}${esc(w)}</button>`).join("");
+      car.hidden=!marked.length;
+      const D=marked.length ? await defsOf(L) : null;
+      car.innerHTML=marked.map(w=>`<div class="lcard"><b>${esc(w)}</b><p>${esc(D ? D[GW[L].get(w)-1]||"" : t.defsLoading)}</p></div>`).join("");
+      dots.innerHTML=marked.length>1 ? marked.map((w,i)=>`<button type="button" data-i="${i}" aria-label="${esc(w)}"></button>`).join("") : "";
+      const i=focus ? marked.indexOf(focus) : -1;
+      if(i>=0) car.scrollTo({left:i*car.clientWidth, behavior:"smooth"});
+      paintDots();
     };
-    box.addEventListener("change",save);
-    if(miss.length) save();
+    const save=()=>{ clearTimeout(timer); timer=setTimeout(async()=>{
+      const w=marked.map(x=>GW[L].get(x));
+      try{ await fb.setDoc(fb.doc(fb.db,"learned",`${uid}_${pid}`),{u:uid, p:pid, g:c.k, yes:w.length>0, duel:!!c.duel, n:w.length, w, at:fb.serverTimestamp()});
+        note.textContent = w.length ? t.learnedN(w.length) : ""; }
+      catch(err){ note.textContent=t.rkFail; } }, 500); };
+    chips.addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; const w=b.dataset.w, k=marked.indexOf(w);
+      if(k>=0) marked.splice(k,1); else marked.push(w); draw(k>=0 ? null : w); save(); });
+    dots.addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) car.scrollTo({left:+b.dataset.i*car.clientWidth, behavior:"smooth"}); });
+    car.addEventListener("scroll",()=>requestAnimationFrame(paintDots),{passive:true});
+    draw();
   }
   // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
@@ -3295,23 +3366,20 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, gameName, busyList, freeze, thaw, inviteGame, genFor, playTour, onTour:null, testers:()=>testers, tick, closeWin, winShow:(g,only)=>{ const u=ui[g]; if(!u) return; u.win.classList.toggle("tonly",!!only); u.win.style.display="block"; }, restartClock, canHelp, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, freeze, thaw, inviteGame, genFor, playTour, onTour:null, testers:()=>testers, tick, closeWin, winShow:(g,only)=>{ const u=ui[g]; if(!u) return; u.win.classList.toggle("tonly",!!only); u.win.style.display="block"; }, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
   rkTabP:"Esta partida", rkTabG:"General", rkLoading:"Cargando…",
-  rkScoreHow:"Puntos: 100 por resolverla más 1 por cada segundo antes de los 15 minutos. Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
+  rkScoreHow:"Puntos: 1000 menos los segundos que marca el reloj (si la resolvés, al menos 1). Los errores, las ayudas y cada \"Comprobar\" suman segundos al reloj (lo que cuesta cada cosa está debajo de la barra del juego). Gana quien tiene más puntos.",
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
-    ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s.",
+    ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +150 s.",
     sopa:"Gana el tiempo. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
     criptograma:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
-    anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar +90 s.",
+    anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +90 s.",
     semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
     esbip:"Cada respuesta equivocada suma 45 s al reloj.", placa:"Cada intento equivocado suma 10 s al reloj · Pasar +90 s."},
-  costDuel:{acrostico:"En duelo, las ayudas se habilitan a los 7 minutos.", ahorcado:"En duelo, la pista se habilita a los 7 minutos.",
-    criptograma:"En duelo, las ayudas se habilitan a los 7 minutos.", anagrama:"En duelo, las pistas se habilitan a los 7 minutos."},
-  duHelpLock:t=>`En duelo, las ayudas se habilitan a los 7 minutos. Faltan ${t}.`,
   sModeLocked:"El modo se elige antes de empezar. Terminá esta sopa o pedí una nueva para cambiarlo.", sModeTag:"con pistas",
   ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`,
   rkGenTitle:g=>`Ranking general de ${g}`,
@@ -3322,18 +3390,15 @@ Object.assign(T.es,{
 });
 Object.assign(T.en,{
   rkTabP:"This game", rkTabG:"Overall", rkLoading:"Loading…",
-  rkScoreHow:"Points: 100 for solving it plus 1 for every second under 15 minutes. Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
+  rkScoreHow:"Points: 1000 minus the seconds on the clock (at least 1 if you solve it). Mistakes, hints and each \"Check\" add seconds to the clock (the cost of each is shown under the game bar). Most points wins.",
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
-    ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s.",
+    ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +150s.",
     sopa:"Time wins. Pick the mode (words or clues) before you start; each has its own leaderboard.",
     criptograma:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
-    anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skip +90s.",
+    anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +90s.",
     semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
     esbip:"Each wrong answer adds 45s to the clock.", placa:"Each wrong try adds 10s to the clock · Skip +90s."},
-  costDuel:{acrostico:"In a duel, help unlocks at 7 minutes.", ahorcado:"In a duel, the clue unlocks at 7 minutes.",
-    criptograma:"In a duel, help unlocks at 7 minutes.", anagrama:"In a duel, clues unlock at 7 minutes."},
-  duHelpLock:t=>`In a duel, help unlocks at 7 minutes. ${t} to go.`,
   sModeLocked:"Pick the mode before you start. Finish this one or start a new one to change it.", sModeTag:"with clues",
   ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`,
   rkGenTitle:g=>`${g} overall leaderboard`,
@@ -3371,9 +3436,9 @@ Object.assign(T.es,{
   ivWordsL:"Palabras", ivSize:n=>`de ${n}×${n}`, ivWithClues:"con pistas", ivWithWords:"viendo las palabras", ivWords:n=>`de ${n} palabras`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Elegir otro juego",
   learnQ:"¿Aprendiste alguna palabra nueva?", learnYes:"Sí, aprendí algo", learnThanks:"¡Anotado, gracias!",
-  missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
-  learnedN:n=>n===1?"¡Sumaste 1 concepto nuevo!":`¡Sumaste ${n} conceptos nuevos!`,
-  giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
+  missT:n=>n===1?"Te faltaba esta palabra:":`Te faltaban estas ${n} palabras:`, learnQWords:"Marcá las palabras que no conocías.", learnQMiss:"Las que te faltaron ya están marcadas como aprendidas (tocalas para desmarcar). Marcá también las que no conocías.", defsLoading:"Cargando definición…", learnN:n=>n===1?"Aprendí 1 concepto nuevo":`Aprendí ${n} conceptos nuevos`,
+  learnedN:n=>n===1?"Sumaste 1 palabra a tu glosario (está en 📊 Mis estadísticas).":`Sumaste ${n} palabras a tu glosario (está en 📊 Mis estadísticas).`,
+  sureAgain:"Tocá de nuevo para confirmar", giveUp:"Me rindo", giveUpQ:"¿Te rendís? Vas a ver la solución y la partida queda como no resuelta (0 puntos).",
   giveUpAcro:"Te rendiste. La frase era", giveUpOther:"Te rendiste. Esta era la solución.", giveUpStats:t=>`Lo dejaste a los ${t}.`,
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
   ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
@@ -3413,9 +3478,9 @@ Object.assign(T.en,{
   ivWordsL:"Words", ivSize:n=>`${n}×${n}`, ivWithClues:"with clues", ivWithWords:"showing the words", ivWords:n=>`with ${n} words`,
   ivDesc:(g,p)=>`${g} ${p.join(", ")}`.trim(), ivBackPick:"← Pick another game",
   learnQ:"Did you learn a new word?", learnYes:"Yes, I learned something", learnThanks:"Noted, thanks!",
-  missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
-  learnedN:n=>n===1?"You added 1 new concept!":`You added ${n} new concepts!`,
-  giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
+  missT:n=>n===1?"You were missing this word:":`You were missing these ${n} words:`, learnQWords:"Mark the words you didn\u2019t know.", learnQMiss:"The ones you missed are already marked as learned (tap to unmark). Also mark any you didn\u2019t know.", defsLoading:"Loading definition…", learnN:n=>n===1?"I learned 1 new concept":`I learned ${n} new concepts`,
+  learnedN:n=>n===1?"You added 1 word to your glossary (see 📊 My stats).":`You added ${n} words to your glossary (see 📊 My stats).`,
+  sureAgain:"Tap again to confirm", giveUp:"I give up", giveUpQ:"Give up? You'll see the solution and the game counts as unsolved (0 points).",
   giveUpAcro:"You gave up. The phrase was", giveUpOther:"You gave up. Here's the solution.", giveUpStats:t=>`You stopped at ${t}.`,
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
   ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
@@ -3882,7 +3947,9 @@ const Live = (()=>{
 // =====================================================================
 Object.assign(T.es,{
   uBtn:"Elegí tu usuario", uTitleNew:"Elegí tu usuario", uTitleOld:"Volvé a tu usuario", uTitleMe:"Tu usuario",
-  uTabNew:"Soy nuevo", uTabOld:"Ya tengo usuario", uName:"Nombre de usuario", uAv:"Avatar", uPin:"PIN de 6 números", uPin2:"Repetí el PIN",
+  uTabNew:"Soy nuevo", uTabOld:"Ya tengo usuario", uName:"Nombre de usuario", uAv:"Avatar", uAvMore:"Elegir otro emoji", uAvPh:"Tocá acá y elegí un emoji 🙂",
+  uAvHint:"En el celular, abrí los emojis del teclado. En la compu: Windows + punto, o Ctrl + Cmd + Espacio en Mac.",
+  uAvNone:"Eso no es un emoji. Probá con uno del teclado de emojis.", uAvLong:"Ese emoji es muy largo. Probá con otro.", uPin:"PIN de 6 números", uPin2:"Repetí el PIN",
   uNoteNew:"Con el PIN volvés a tu usuario desde otro celu o compu. Anotalo: no lo podemos recuperar.",
   uNoteOld:"Escribí tu nombre de usuario y tu PIN.",
   uGoNew:"Crear usuario", uGoOld:"Entrar", uSkip:"Jugar sin usuario", uOut:"Salir de este usuario",
@@ -3898,7 +3965,9 @@ Object.assign(T.es,{
 });
 Object.assign(T.en,{
   uBtn:"Pick your username", uTitleNew:"Pick your username", uTitleOld:"Back to your username", uTitleMe:"Your username",
-  uTabNew:"I'm new", uTabOld:"I have a username", uName:"Username", uAv:"Avatar", uPin:"6-digit PIN", uPin2:"Repeat the PIN",
+  uTabNew:"I'm new", uTabOld:"I have a username", uName:"Username", uAv:"Avatar", uAvMore:"Pick another emoji", uAvPh:"Tap here and pick an emoji 🙂",
+  uAvHint:"On your phone, open the keyboard's emoji panel. On a computer: Windows + period, or Ctrl + Cmd + Space on a Mac.",
+  uAvNone:"That's not an emoji. Try one from the emoji keyboard.", uAvLong:"That emoji is too long. Try another one.", uPin:"6-digit PIN", uPin2:"Repeat the PIN",
   uNoteNew:"Your PIN takes you back to your username from another phone or computer. Write it down: we can't recover it.",
   uNoteOld:"Type your username and your PIN.",
   uGoNew:"Create username", uGoOld:"Sign in", uSkip:"Play without a username", uOut:"Sign out of this username",
@@ -3913,7 +3982,7 @@ Object.assign(T.en,{
   uPlaying:(a,n)=>`Playing as ${a} ${n}`, rkUserBtn:"Pick a username to show up by name", ivNickBtn:"Pick a username to invite people"
 });
 const User = (()=>{
-  const AV=["🦊","🐻","🐂","🐋","🦉","🐢","🦁","🐙","🐝","🦄","🚀","⚡","🔑","🧠","🌕","🍕","🎲","🛠️","🎩","🌵"];
+  const AV=["🦊","🐻","🐂","🐋","🦉","🐢","🦁","🐙","🐝","🦄","🚀","⚡","🔑","🧠","🌕","🍕","🎲","🛠️","🎩"];   // el último lugar es "+": cualquier emoji
   const HOURS=[24,48];   // primer y segundo bloqueo; el tercero queda hasta que lo destrabe la administración
   let fb=null, mode="new", av="", busy=false;
   const t=()=>T[lang], dlg=$("userDlg");
@@ -3932,7 +4001,9 @@ const User = (()=>{
     b.classList.toggle("set", !!n);
   }
   function avs(){
-    $("uAvs").innerHTML=AV.map(a=>`<button type="button" data-a="${a}" aria-pressed="${a===av}">${a}</button>`).join("");
+    const own=av && !AV.includes(av);
+    $("uAvs").innerHTML=AV.map(a=>`<button type="button" data-a="${a}" aria-pressed="${a===av}">${a}</button>`).join("")+
+      `<button type="button" class="avplus" data-plus="1" aria-pressed="${own}" aria-label="${t().uAvMore}" title="${t().uAvMore}">${own?av:"+"}</button>`;
   }
   function render(){
     const T0=t(), me=mode==="me", nw=mode==="new", old=mode==="old", setPin=me && !hasPin();
@@ -3954,7 +4025,7 @@ const User = (()=>{
   async function open(){
     await Reg.ready; fb=Reg.fb(); if(!fb || dlg.open) return;
     mode = Reg.nick() ? "me" : "new"; av=Reg.av()||AV[Math.floor(Math.random()*AV.length)];
-    $("uName").value=""; $("uPin").value=""; $("uPin2").value=""; msgU(""); render();
+    $("uName").value=""; $("uPin").value=""; $("uPin2").value=""; $("uAvBox").hidden=true; msgU(""); render();
     dlg.showModal(); (mode==="me" ? $("uX") : $("uName")).focus();
   }
   // vincula el jugador actual a una cuenta "nombre + PIN" (sin perder lo jugado)
@@ -3963,7 +4034,7 @@ const User = (()=>{
     const r=await Reg.setNick(name, {av, ver}); if(r!=="ok") return Reg.nickMsg(r);
     const cred=fb.EmailAuthProvider.credential(await emailOf(k,ver), pin);
     try{ await fb.linkWithCredential(fb.auth.currentUser, cred); }
-    catch(e){ return e.code==="auth/operation-not-allowed" ? t().uOff : t().uFail; }
+    catch(e){ Reg.logErr("pin", e.code||e.message||"?", name); return e.code==="auth/operation-not-allowed" ? t().uOff : t().uFail; }
     return "";
   }
   async function create(){
@@ -4026,7 +4097,7 @@ const User = (()=>{
         Usuario:name, Detalle:"Tercer bloqueo por PIN incorrecto (9 intentos fallidos). Queda bloqueado hasta que se destrabe desde el panel de administración.", Idioma:lang})}).catch(()=>{});
   }
   async function signout(){
-    if(!confirm(t().uOutWarn)) return;
+    if(!sure($("uOut"), t().uOutWarn)) return;
     await Push.forget(); await fb.signOut(fb.auth); location.reload();
   }
   async function go(){
@@ -4041,10 +4112,26 @@ const User = (()=>{
   $("uGo").addEventListener("click",go);
   ["uName","uPin","uPin2"].forEach(id=>$(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } }));
   $("uTabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; mode=b.dataset.t; msgU(""); render(); });
-  $("uAvs").addEventListener("click",async e=>{
-    const b=e.target.closest("button"); if(!b) return; av=b.dataset.a; avs();
-    if(mode==="me"){ const r=await Reg.setNick(Reg.nick(), {av}); msgU(r==="ok" ? t().uAvSaved : Reg.nickMsg(r)); head(); render(); }
+  const saveAv=async()=>{ avs(); if(mode==="me"){ const r=await Reg.setNick(Reg.nick(), {av}); msgU(r==="ok" ? t().uAvSaved : Reg.nickMsg(r)); head(); render(); } };
+  $("uAvs").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    // "+": se escribe o se elige del teclado de emojis del celular (en la compu: Windows + .  /  Mac: Ctrl + Cmd + Espacio)
+    if(b.dataset.plus){ const x=$("uAvBox"); x.hidden=false; $("uAvIn").value=""; $("uAvIn").placeholder=t().uAvPh; $("uAvHint").textContent=t().uAvHint; $("uAvIn").focus(); return; }
+    $("uAvBox").hidden=true; av=b.dataset.a; saveAv();
   });
+  // primer emoji de lo escrito (incluye banderas, tonos de piel y combinados); hasta 8 unidades, lo que aceptan las reglas
+  function firstEmoji(s){
+    const parts = typeof Intl!=="undefined" && Intl.Segmenter ? [...new Intl.Segmenter().segment(s)].map(x=>x.segment) : Array.from(s);
+    return parts.find(g=>/\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(g)) || "";
+  }
+  $("uAvIn").addEventListener("input",()=>{
+    const v=$("uAvIn").value; if(!v.trim()) return;
+    const e=firstEmoji(v);
+    if(!e){ $("uAvHint").textContent=t().uAvNone; $("uAvIn").value=""; return; }
+    if(e.length>8){ $("uAvHint").textContent=t().uAvLong; $("uAvIn").value=""; return; }
+    av=e; $("uAvBox").hidden=true; $("uAvIn").blur(); saveAv();
+  });
+  $("uAvIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("uAvIn").blur(); } });
   (async()=>{ await Reg.ready; fb=Reg.fb(); head(); })();
   return {open, texts:()=>{ head(); if(dlg.open) render(); }};
 })();
@@ -4060,7 +4147,7 @@ Object.assign(T.es,{
   stByGame:"Por juego", stCols:["Juego","Jugadas","Resueltas","Mejor","Promedio","Mejor tiempo"],
   stDuels:"Competencias", stDuelK:["duelos","partidas en duelo","ganadas","perdidas","empates","invitaciones mandadas"],
   stNoDuels:"Todavía no jugaste duelos. Desde la portada, \"Invitar a jugar\" te junta con alguien conectado.", stLast:"Últimas partidas", stLastCols:["Cuándo","Juego","Resultado","Puntos","Tiempo"], stNone:"Todavía no terminaste ninguna partida.",
-  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`, stConcepts:n=>`Al rendirte sumaste ${n} concepto${n===1?"":"s"} nuevo${n===1?"":"s"}.`,
+  stLearned:n=>`Dijiste que aprendiste algo nuevo en ${n} partida${n===1?"":"s"}.`, stConcepts:n=>`Marcaste ${n} palabra${n===1?"":"s"} como aprendida${n===1?"":"s"}.`, stGloss:n=>`Mi glosario (${n} palabra${n===1?"":"s"})`,
   ndT:"Armá tu usuario en menos de 30 segundos", ndP:"Creá un alias, elegí un PIN y usalo en cualquier dispositivo. Además vas a poder seguir tu rendimiento.",
   ndGo:"Crear mi usuario", ndLater:"Recordar más tarde", ndNo:"Cancelar"
 });
@@ -4071,7 +4158,7 @@ Object.assign(T.en,{
   stByGame:"By game", stCols:["Game","Played","Solved","Best","Average","Best time"],
   stDuels:"Competitions", stDuelK:["duels","duel games","won","lost","ties","invitations sent"],
   stNoDuels:"No duels yet. From the home page, \"Invite to play\" matches you with someone online.", stLast:"Recent games", stLastCols:["When","Game","Result","Points","Time"], stNone:"You haven't finished a game yet.",
-  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`, stConcepts:n=>`Giving up added ${n} new concept${n===1?"":"s"}.`,
+  stLearned:n=>`You said you learned something new in ${n} game${n===1?"":"s"}.`, stConcepts:n=>`You marked ${n} word${n===1?"":"s"} as learned.`, stGloss:n=>`My glossary (${n} word${n===1?"":"s"})`,
   ndT:"Set up your username in under 30 seconds", ndP:"Create an alias, pick a PIN and use it on any device. You'll also be able to track your performance.",
   ndGo:"Create my username", ndLater:"Remind me later", ndNo:"Cancel"
 });
@@ -4080,7 +4167,7 @@ const Stats = (()=>{
   const t=()=>T[lang];
   const ms=x=> x&&x.toMillis ? x.toMillis() : null;
   // nombre de cada clave de partida: "sopagrande" → "Sopa de letras (grande)"
-  const kName=k=>{ const T0=t(); if(k.startsWith("sopa")){ const s=k==="sopa"?"media":k.slice(4); return T0.gName.sopa+(s==="media"?"":` (${T0.sSize[s].toLowerCase()})`); } return T0.gName[k]||k; };
+  const kName=k=>{ const T0=t(); if(k.startsWith("sopa")){ const s=k==="sopa"?"media":k.slice(4); return T0.gName.sopa+(s==="media"?"":` (${T0.sSize[s].toLowerCase()})`); } return T0.gName[k==="ahorcado6"?"ahorcado":k]||k; };
   const hrs=v=>{ const m=Math.round(v/60000); return m<60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; };
   const when=v=> v ? new Date(v).toLocaleString(lang==="en"?"en-US":"es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "–";
   const table=(head,rows)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
@@ -4119,12 +4206,15 @@ const Stats = (()=>{
     }catch(e){}
     let inv=0, learned=0;
     try{ const f=await fb.getDoc(fb.doc(fb.db,"fichas",uid)); inv=(f.exists()&&f.data().inv)||0; }catch(e){}
-    let concepts=0;
+    let concepts=0; const gl=new Map();   // glosario propio: "es:12" → {L, n}
     try{ const ds=(await fb.getDocs(fb.query(fb.collection(fb.db,"learned"), fb.where("u","==",uid)))).docs.map(d=>d.data()).filter(d=>d.yes);
-      learned=ds.length; concepts=ds.reduce((a,d)=>a+(d.n||0),0); }catch(e){}
-    render(res, duels.length, dg, inv, learned, concepts);
+      learned=ds.length; concepts=ds.reduce((a,d)=>a+(d.n||0),0);
+      ds.forEach(d=>{ const L=String(d.p).split("-")[1]; (d.w||[]).forEach(n=>gl.set(`${L}:${n}`,{L,n})); }); }catch(e){}
+    const Ls=[...new Set([...gl.values()].map(x=>x.L))], D={};
+    await Promise.all(Ls.map(async L=>{ D[L]=await defsOf(L); }));
+    render(res, duels.length, dg, inv, learned, concepts, [...gl.values()].map(x=>({...x, w:gWord(x.L,x.n), d:(D[x.L]||[])[x.n-1]||""})));
   }
-  function render(res, nDuels, dg, inv, learned, concepts){
+  function render(res, nDuels, dg, inv, learned, concepts, gl=[]){
     const T0=t(), box=$("stBody");
     const solved=res.filter(x=>x.sc.ok), pts=res.reduce((a,x)=>a+x.sc.pts,0), best=res.reduce((a,x)=>Math.max(a,x.sc.pts),0);
     const time=res.reduce((a,x)=>a+Math.min(x.r.ms||0, 3*3600000),0), days=new Set(res.filter(x=>x.at).map(x=>new Date(x.at).toDateString())).size;
@@ -4147,6 +4237,11 @@ const Stats = (()=>{
     const last=[...res].sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,10);
     h+=`<h2>${esc(T0.stLast)}</h2>`+table(T0.stLastCols, last.map(x=>[when(x.at), `${esc(kName(x.k))} ${x.L.toUpperCase()} #${x.pid.split("-")[2]}`, x.sc.ok?"✓":"✗", x.sc.pts, fmt(x.r.ms||0)+(x.sc.pen?` + ${fmt(x.sc.pen*1000)}`:"")]));
     if(learned) h+=`<p class="m">${esc(T0.stLearned(learned)+(concepts?" "+T0.stConcepts(concepts):""))}</p>`;
+    // mi glosario: las palabras que marcó como aprendidas, con su definición (primero las del idioma de la página)
+    if(gl.length){
+      gl.sort((a,b)=>(a.L===lang?0:1)-(b.L===lang?0:1) || a.w.localeCompare(b.w));
+      h+=`<h2>${esc(T0.stGloss(gl.length))}</h2><dl class="stgloss">${gl.map(x=>`<dt>${esc(x.w)}${x.L!==lang?` <span class="small">(${x.L.toUpperCase()})</span>`:""}</dt><dd>${esc(x.d)}</dd>`).join("")}</dl>`;
+    }
     box.innerHTML=h;
   }
   $("statsBtn").addEventListener("click",()=>{ location.hash="stats"; });
@@ -4268,7 +4363,7 @@ const Admin = (()=>{
   const pct=(a,b)=> b ? Math.round(100*a/b)+"%" : "–";
   const median=a=>{ if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), i=b.length>>1; return b.length%2?b[i]:(b[i-1]+b[i])/2; };
   const dt=t=> t ? new Date(t).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "–";
-  const NAMES={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa mediana",sopachica:"Sopa chica",sopagrande:"Sopa grande",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"};
+  const NAMES={acrostico:"Acróstico",ahorcado:"Ahorcado (1 palabra, viejo)",ahorcado6:"Ahorcado",sopa:"Sopa mediana",sopachica:"Sopa chica",sopagrande:"Sopa grande",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"};
   const gname=k=>NAMES[k]||k;
   const table=(head,body)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 
@@ -4303,6 +4398,7 @@ const Admin = (()=>{
         A.getDocs(A.collection(A.db,"fichas")), A.getDocs(A.collectionGroup(A.db,"players")),
         A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned")), A.getDocs(A.collection(A.db,"pinlocks"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
+    let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
     N.forEach(d=>names[d.id]=d.data().name);
@@ -4392,6 +4488,11 @@ const Admin = (()=>{
           `<button class="unlock" data-k="${esc(l.k)}">Destrabar</button>`]));
       h+=`<p class="m small">Destrabar vuelve a cero los intentos. Si la persona olvidó el PIN, no se puede recuperar: tiene que crear un usuario nuevo con otro nombre.</p>`;
     }
+
+    // errores que vieron los jugadores al guardar (p. ej. crear usuario)
+    const errs=ER.map(x=>({...x, at:ms(x.at)})).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,20);
+    if(errs.length) h+=`<h2>Errores recientes</h2>`+table(["Cuándo","Dónde","Código","Nombre","Navegador",""],
+      errs.map(x=>[dt(x.at), esc(x.w), esc(x.c), esc(x.n||""), `<span class="small">${esc(x.ua.replace(/^Mozilla\/5\.0 /,"").slice(0,90))}</span>`, esc(names[x.u]||"")]));
 
     // últimos resultados
     const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);
@@ -4564,8 +4665,9 @@ Reg.ready.then(()=>{ try{ if("Notification" in window && Notification.permission
 // La partida de cada ronda es secreta hasta que arranca (reglas). El tiempo lo pone el servidor: desde el arranque
 // de la ronda hasta que se guarda el resultado. Cada jugador va guardando su avance (p) para el puntaje parcial
 // si se acaba el tiempo. Las rondas las arma y las cierra el organizador desde su panel (#torneo-admin).
-// Puntos: quien termina, 100 × fracción resuelta + (900 − segundos ajustados, mínimo 0); quien no termina,
-// 100 × fracción resuelta − penalidades/10. Más puntos gana; empates: más resuelto, menos tiempo ajustado.
+// Puntos: quien termina, 1000 − segundos ajustados (mínimo 1, como en el resto del sitio; en los de rondas, las palabras
+// sin resolver al terminar suman 900/rondas s cada una); quien no termina, 100 × fracción resuelta − penalidades/10.
+// Más puntos gana; empates: más resuelto, menos tiempo ajustado.
 // =====================================================================
 Object.assign(T.es,{
   tTitle:"Torneo", tNone:"No hay ningún torneo anunciado por ahora.",
@@ -4679,17 +4781,17 @@ async function tourImage(TD){
 // la dificultad y las palabras del ahorcado, para generar la partida de cada ronda
 const TOUR_GEN=o=>({dif:o.dif, n:o.n});
 // rondas que tiene cada partida, para el puntaje (anagrama 10; ahorcado del torneo, las palabras que tenga)
-const tourRounds=c=> c.g==="anagrama" ? 10 : c.g==="ahorcado" ? (c.n||1)>1 ? c.n : 0 : 0;
+const tourRounds=c=> c.g==="anagrama" ? 10 : c.g==="ahorcado" ? (c.n||6) : 0;
 const tms=x=> x && x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
 const pow2below=n=>{ let p=1; while(p*2<n) p*=2; return p; };
 // puntaje de una ronda: rd = la ronda, r = el resultado guardado de un jugador
 function tScore(rd, r){
   if(!r) return {pts:-1, p:0, ok:false, pen:0, adj:Infinity, fin:false};
-  const nr=rd.nr||0, k=rd.k||rd.g, pen=penSecs(k, r.e||0, r.h||0, r.c||0, r.f||0, nr);
+  const nr=rd.nr||0, k=rd.k||rd.g, fails=r.done && r.ok && nr ? Math.max(r.f||0, nr-(r.s||0)) : (r.f||0), pen=penSecs(k, r.e||0, r.h||0, r.c||0, fails, nr);
   const go=tms(rd.go), at=tms(r.at), secs=go&&at ? Math.max(0,(at-go)/1000) : 0, adj=secs+pen;
   // quien completó una partida de rondas: aciertos / rondas; quien no terminó: su avance (incluye la palabra a medias)
   const p=Math.max(0, Math.min(1, r.done && r.ok ? (nr ? (r.s||0)/nr : 1) : (r.p||0)));
-  if(r.done && r.ok) return {pts:Math.round(100*p)+Math.max(0, Math.round(SCORE.CAP-adj)), p, ok:true, pen, adj, fin:true};
+  if(r.done && r.ok) return {pts:Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)), p, ok:true, pen, adj, fin:true};
   return {pts:Math.max(0, Math.round(100*p-pen/10)), p, ok:false, pen, adj, fin:!!r.done};
 }
 // tabla de una ronda: los que compiten (pl), ordenados. res = {uid: resultado}
@@ -4707,7 +4809,8 @@ function tDecided(rd, res, now){
   const fixed=L.filter(x=>x.r && x.r.done).map(x=>x.sc.pts).sort((a,b)=>b-a);
   if(fixed.length<rd.adv) return false;
   const el=(now-go)/1000-2, open=L.filter(x=>!(x.r && x.r.done));
-  const best=Math.max(-1, ...open.map(x=>SCORE.BONUS+Math.max(0, SCORE.CAP-(el+(x.sc.pen||0)))));
+  // si no termina a tiempo, a lo sumo saca 99 (avance parcial)
+  const best=Math.max(99, ...open.map(x=>SCORE.BONUS+SCORE.CAP-(el+(x.sc.pen||0))));
   return fixed[rd.adv-1] > best;
 }
 // "Ahorcado de 6 palabras, dificultad media, en castellano"
@@ -4847,7 +4950,7 @@ const Tour = (()=>{
   Reg.onTour=(g, rec, c)=>{
     if(!play || !c.tour || c.tour.rid!==play.id || play.done) return;
     const r=RS[play.id]||{}, nr=r.nr||0, pr=prog(g);
-    const fin = nr ? {ok:true, done:true, s:Math.min(20,rec.s||pr.s||0), p:Math.min(1,(rec.s||0)/nr)} : {ok:!!rec.ok, done:true, p:rec.ok ? 1 : Math.round(pr.p*1000)/1000};
+    const fin = nr ? {ok:(rec.s||0)>0, done:true, s:Math.min(20,rec.s||pr.s||0), p:Math.min(1,(rec.s||0)/nr)} : {ok:!!rec.ok, done:true, p:rec.ok ? 1 : Math.round(pr.p*1000)/1000};
     play.done=true; sync(true, fin);
     winSlot(true);
   };
@@ -5059,7 +5162,7 @@ const Tour = (()=>{
         pushState();
       }catch(err){ m.textContent=T0.tJoinFail; b.disabled=false; }
     }
-    if(a==="leave" && confirm(T0.tLeaveQ)){ try{ await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid)); await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid)); }catch(err){} }
+    if(a==="leave" && sure(b, T0.tLeaveQ)){ try{ await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid)); await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid)); }catch(err){} }
     if(a==="ck"){ b.disabled=true; try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid),{ck:fb.serverTimestamp()}); }catch(err){ b.disabled=false; flash=T0.tCkFail; render(); } }
     if(a==="push"){ b.disabled=true; try{ pushSt=await Push.enable(); }catch(err){} render(); }
     if(a==="copy"){ try{ await navigator.clipboard.writeText(TD.lnurl); b.textContent=T0.tCopied; }catch(err){} }
@@ -5197,7 +5300,7 @@ const TourAdmin = (()=>{
     const L=c.lang||TD.lang||"es", opt={L};
     if(c.g==="sopa") opt.s=c.s||"media"; if(c.g==="semilla") opt.w=c.w||12; if(c.dif) opt.dif=c.dif; if(c.g==="ahorcado") opt.n=c.n||6;
     const d=await Reg.genFor(c.g, opt), go=srv()+delay;
-    const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
+    const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
       pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
     if(c.g==="sopa"){ rd.s=opt.s; rd.m=c.m||"w"; } if(c.g==="semilla") rd.w=opt.w; if(c.dif) rd.dif=c.dif; if(c.g==="ahorcado") rd.n=opt.n;
     // una sola vez por ronda, aunque haya dos pestañas del panel abiertas
@@ -5231,14 +5334,14 @@ const TourAdmin = (()=>{
         if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){ say("Escribí un mail válido.", true); return; }
         const o=[...new Set([...(TD.orgs||[]), m])]; if(o.length>10){ say("Hasta 10 administradores por torneo.", true); return; }
         await A.updateDoc(tref(),{orgs:o}); $("taAdmIn").value=""; say(`${m} ya puede manejar este torneo.`); return; }
-      if(a==="admdel"){ const m=el.dataset.m; if(!confirm(`¿Sacarle a ${m} el acceso a este torneo?`)) return; await A.updateDoc(tref(),{orgs:(TD.orgs||[]).filter(x=>x!==m)}); return; }
+      if(a==="admdel"){ const m=el.dataset.m; if(!sure(el, `¿Sacarle a ${m} el acceso a este torneo?`)) return; await A.updateDoc(tref(),{orgs:(TD.orgs||[]).filter(x=>x!==m)}); return; }
       // ensayo: copia del torneo que no ve el público
       if(a==="mktest"){
         const ref=A.doc(A.collection(A.db,"tourneys")), me0=Reg.uid();
         await A.setDoc(ref,{name:(TD.name+" · ensayo").slice(0,80), st:"open", cap:TD.cap, fee:TD.fee||0, lnurl:TD.lnurl||"", when:null, orgs:TD.orgs||[], bases:TD.bases||"", lang:TD.lang||"es",
           cur:0, rounds:TD.rounds, champ:null, auto:true, test:true, src:tid, inv:me0?[me0]:[], at:A.serverTimestamp()});
         cfgFor=null; pickT(ref.id); say("Ensayo armado: no lo ve el público. Sumá jugadores falsos, invitá gente y arrancalo cuando quieras."); return; }
-      if(a==="deltest" && TD.test){ if(!confirm("¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
+      if(a==="deltest" && TD.test){ if(!sure(el, "¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
       if(a==="bots" && TD.test){
         const n=Math.max(1,Math.min(63,parseInt($("taBotsN").value,10)||0)), have=Object.keys(INS).filter(isBot).map(u=>+u.slice(4));
         let k=have.length ? Math.max(...have) : 0; const b=A.writeBatch(A.db);
@@ -5257,11 +5360,11 @@ const TourAdmin = (()=>{
       if(a==="save") return save();
       if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
-      if(a==="st"){ const s=el.dataset.s; if(s==="done" && !confirm("¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
+      if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
       if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
       if(a==="start"){
         const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
-        if(!confirm(`Arranca con ${pl.length} jugador${pl.length===1?"":"es"}. La ${pl.length<=2?"final":"ronda 1"} empieza en 5 minutos. ¿Seguimos?`)) return;
+        if(!sure(el, `Arranca con ${pl.length} jugador${pl.length===1?"":"es"}. La ${pl.length<=2?"final":"ronda 1"} empieza en 5 minutos.`)) return;
         await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, NEXT); return; }
       if(!r) return;
       if(a==="pause" && r.st==="sched"){ await A.updateDoc(rref(r.id),{st:"ready", left:Math.max(5000, tms(r.go)-now), go:null, end:null}); return; }
@@ -5271,7 +5374,7 @@ const TourAdmin = (()=>{
         const c={g:r.g, lang:r.lang, s:r.s, w:r.w, dif:r.dif, n:r.n}, opt={L:r.lang}; if(r.s) opt.s=r.s; if(r.w) opt.w=r.w; if(r.dif) opt.dif=r.dif; if(r.n) opt.n=r.n;
         await A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p"), {d:await Reg.genFor(c.g, opt)}); prevD=null; say("Partida nueva generada."); renderLive(); return; }
       if(a==="peek"){ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p")); prevD=s.exists()?{id:r.id, d:s.data().d}:null; renderLive(); return; }
-      if(a==="close" && r.st==="live" && confirm("¿Cerrar la ronda ahora con la tabla como está?")){ await close(r); return; }
+      if(a==="close" && r.st==="live" && sure(el, "¿Cerrar la ronda ahora con la tabla como está?")){ await close(r); return; }
       if(a==="next" && r.st==="closed" && !r.final){ await next(r, el.dataset.ms ? +el.dataset.ms : NEXT); return; }
     }catch(e){ fail(e); }
   }
@@ -5408,7 +5511,7 @@ const TourAdmin = (()=>{
     if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
     // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
     const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });
-    $("taPick").innerHTML=h+admHtml()+testHtml();
+    const ph=h+admHtml()+testHtml(); if($("taPick").dataset.h!==ph){ $("taPick").dataset.h=ph; $("taPick").innerHTML=ph; }
     // estado y botones
     const st=TD.st, r=last(), nIns=Object.values(INS).filter(x=>!x.out).length, nCk=Object.values(INS).filter(x=>x.ck&&!x.out).length;
     let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · cupo ${TD.cap}</span></div>
@@ -5420,15 +5523,16 @@ const TourAdmin = (()=>{
     if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
     if(st==="live") c+=`<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, programar sola la siguiente (5 min de cuenta regresiva)</label><button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
-    $("taCtl").innerHTML=c;
+    if($("taCtl").dataset.h!==c){ $("taCtl").dataset.h=c; $("taCtl").innerHTML=c; }
     Object.entries(keep).forEach(([i,[v,f]])=>{ const el=$(i); if(el){ el.value=v; if(f) el.focus(); } });
     renderLive();
     if(cfgFor!==tid+JSON.stringify(TD.rounds)+TD.st){ cfgFor=tid+JSON.stringify(TD.rounds)+TD.st; $("taCfg").innerHTML=cfgHtml(); }
     // inscriptos
     const L=Object.entries(INS).sort((a,b)=>(tms(a[1].ck)||9e15)-(tms(b[1].ck)||9e15)||(tms(a[1].at)||0)-(tms(b[1].at)||0));
-    $("taIns").innerHTML=`<h2>Inscriptos (${L.length})</h2><div class="row"><button data-ta="priv">Actualizar mails y teléfonos</button><button data-ta="csv">Descargar CSV</button></div>`+
+    const ih=`<h2>Inscriptos (${L.length})</h2><div class="row"><button data-ta="priv">Actualizar mails y teléfonos</button><button data-ta="csv">Descargar CSV</button></div>`+
       table(["#","Jugador","Mail","Teléfono","Inscripción","Check-in","Aportó","Descalificado",""], L.map(([u,x],i)=>[i+1, esc((x.av?x.av+" ":"")+x.nm), esc((PRIV[u]||{}).mail||"–"), esc((PRIV[u]||{}).tel||"–"), dt(tms(x.at)), dt(tms(x.ck)),
         `<input type="checkbox" data-ins="paid" data-u="${u}"${x.paid?" checked":""}>`, `<input type="checkbox" data-ins="out" data-u="${u}"${x.out?" checked":""}>`, `<button data-ins="del" data-u="${u}">Borrar</button>`]));
+    if($("taIns").dataset.h!==ih){ $("taIns").dataset.h=ih; $("taIns").innerHTML=ih; }
     // rondas jugadas
     $("taHist").innerHTML=rounds().filter(x=>x.st==="closed").reverse().map(x=>`<details><summary>${x.final?"Final":"Ronda "+x.no} · ${esc(GN[x.g])} · pasaron ${(x.q||[]).length} de ${(x.pl||[]).length}</summary>`+
       table(["#","Jugador","Pasó"], (x.pl||[]).map(u=>[x.pos?x.pos[u]:"–", esc(nm(u)), (x.q||[]).includes(u)?"✓":""]).sort((a,b)=>a[0]-b[0]))+`</details>`).join("");
@@ -5477,7 +5581,7 @@ const TourAdmin = (()=>{
     if(b.dataset.ta==="csv") return csv();
     if(b.dataset.ins){ const u=b.dataset.u, ref=A.doc(A.db,"tourneys",tid,"ins",u);
       try{
-        if(b.dataset.ins==="del"){ if(confirm(`¿Borrar a ${nm(u)} del torneo?`)){ await A.deleteDoc(ref); await A.deleteDoc(A.doc(A.db,"tourneys",tid,"priv",u)).catch(()=>{}); } }
+        if(b.dataset.ins==="del"){ if(sure(b, `¿Borrar a ${nm(u)} del torneo?`)){ await A.deleteDoc(ref); await A.deleteDoc(A.doc(A.db,"tourneys",tid,"priv",u)).catch(()=>{}); } }
         else { const x=INS[u]; await A.updateDoc(ref,{paid:b.dataset.ins==="paid"?b.checked:!!x.paid, out:b.dataset.ins==="out"?b.checked:!!x.out}); }
       }catch(err){ fail(err); }
       return; }
