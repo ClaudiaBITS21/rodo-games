@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rompecabezas · RODO ₿ Games</title>
+<meta name="description" content="Rompecabezas bitcoiners premium de madera, 1000 piezas: la lista BIP39, el whitepaper de Bitcoin y la tapa de The Times del bloque génesis.">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<meta name="theme-color" content="#F7931A">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RODO ₿ Games">
+<meta property="og:title" content="Rompecabezas bitcoiners de 1000 piezas">
+<meta property="og:description" content="Madera premium. BIP39, el whitepaper y The Times del bloque génesis. Encargá el tuyo.">
+<meta property="og:url" content="https://games.rodo.es/rompecabezas">
+<meta property="og:image" content="https://games.rodo.es/img/rompecabezas/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EAEE; --paper:#F7F8F9; --ink:#1A1E23; --muted:#5B6672; --line:#B9C2CB;
+  --btc:#F7931A; --btc-soft:#FDE6C6; --ok:#2E7D4F; --bad:#C2362B; --cell-bg:#FFFFFF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171B; --paper:#1C2026; --ink:#E9ECEF; --muted:#98A3AE; --line:#3A424C;
+    --btc-soft:#4A3215; --ok:#5CC48A; --bad:#F07167; --cell-bg:#11141A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171B; --paper:#1C2026; --ink:#E9ECEF; --muted:#98A3AE; --line:#3A424C;
+  --btc-soft:#4A3215; --ok:#5CC48A; --bad:#F07167; --cell-bg:#11141A;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:28px 28px; background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:0;background:var(--bg);opacity:.86;z-index:-1}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 110px}
+@media (max-width:640px){ .wrap{padding-top:64px} }
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{font-size:.95rem;color:var(--muted);font-weight:600;text-decoration:none}
+.brand b{color:var(--btc)}
+h1{margin:0;font-size:clamp(2.2rem,8.5vw,4.2rem);line-height:.95;font-weight:800;letter-spacing:-.03em}
+h2{font-size:1.5rem;margin:34px 0 10px;font-weight:800;letter-spacing:-.01em}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--cell-bg)}
+.lang button{border:0;border-radius:0;padding:10px 12px;background:transparent}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+button,.btn{
+  font:inherit;font-weight:600;cursor:pointer;border-radius:10px;padding:10px 16px;
+  border:1px solid var(--line);background:var(--cell-bg);color:var(--ink);text-decoration:none;display:inline-block;
+}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:var(--btc)!important;border-color:var(--btc)!important;color:#1A1E23!important}
+button:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--btc);outline-offset:2px}
+.intro{color:var(--muted);margin:0 0 6px;max-width:62ch;font-size:1.05rem}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 22px}
+.badge{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 12px;font-size:.88rem;font-weight:600}
+.badge.o{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+
+/* ---------- Productos ---------- */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.prod{display:flex;flex-direction:column;border-radius:14px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
+.prod.sel{border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+.shot{all:unset;cursor:zoom-in;display:flex;align-items:center;justify-content:center;background:#0E1013;height:300px;position:relative}
+.shot img{max-width:100%;max-height:100%;display:block}
+.shot:focus-visible{outline:3px solid var(--btc);outline-offset:-3px}
+.shot .zoom{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:2px 8px;font-size:.8rem}
+.pbody{display:flex;flex-direction:column;gap:8px;padding:16px 18px 18px;flex:1}
+.pnum{font:700 .8rem "IBM Plex Mono",ui-monospace,monospace;color:var(--btc)}
+.prod h3{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.prod p{margin:0;color:var(--muted);font-size:.95rem}
+.specs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0}
+.specs span{font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted)}
+.buy{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.price{font:700 1.15rem "IBM Plex Mono",ui-monospace,monospace}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--cell-bg)}
+.qty button{border:0;border-radius:0;padding:8px 14px;font-size:1.1rem;line-height:1;background:transparent}
+.qty output{min-width:2.2em;text-align:center;font:700 1rem "IBM Plex Mono",ui-monospace,monospace}
+.add{width:100%}
+
+/* ---------- Pedido ---------- */
+.order{border-radius:14px;background:var(--paper);border:1px solid var(--line);padding:18px}
+.sum{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:.95rem}
+.sum td{padding:6px 0;border-bottom:1px solid var(--line)}
+.sum td:last-child{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;white-space:nowrap}
+.sum tr.tot td{font-weight:800;border-bottom:0;font-size:1.05rem}
+.empty{color:var(--muted);margin:0 0 14px}
+form{display:grid;gap:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){ .two{grid-template-columns:1fr} }
+label,.lab{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+label small,.lab small{font-weight:400;color:var(--muted)}
+input,textarea{font:400 1rem "Bricolage Grotesque",system-ui,sans-serif;padding:10px 12px;border:1px solid var(--line);
+  border-radius:10px;background:var(--cell-bg);color:var(--ink);width:100%}
+textarea{min-height:5em;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--btc);box-shadow:0 0 0 2px var(--btc-soft)}
+input:user-invalid{border-color:var(--bad)}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--cell-bg);cursor:pointer;font-weight:600}
+.seg label:has(input:checked){border-color:var(--btc);background:var(--btc-soft)}
+.seg input{width:auto;margin:0;accent-color:var(--btc)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fine{color:var(--muted);font-size:.85rem;margin:0}
+.msg{margin:0;font-size:.95rem;min-height:1.4em}
+.msg.bad{color:var(--bad)}
+
+/* ---------- Confirmación ---------- */
+.done{border-radius:14px;background:var(--paper);border:2px solid var(--btc);padding:20px}
+.done h3{margin:0 0 4px;font-size:1.5rem;font-weight:800}
+.code{font:700 1.2rem "IBM Plex Mono",ui-monospace,monospace;background:var(--btc-soft);padding:2px 8px;border-radius:6px}
+.payb{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0;background:var(--cell-bg)}
+.payb b{display:block;margin-bottom:4px}
+.copy{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.copy code{font:500 .95rem "IBM Plex Mono",ui-monospace,monospace;word-break:break-all}
+.copy button{padding:4px 10px;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
+/* ---------- Barra fija ---------- */
+.cartbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;gap:14px;
+  box-shadow:0 -6px 20px rgba(0,0,0,.12)}
+.cartbar[hidden]{display:none}
+.cartbar span{font-weight:600}
+
+/* ---------- Lightbox ---------- */
+dialog.lb{padding:0;border:0;background:transparent;max-width:100vw;max-height:100vh;width:100vw;height:100%}
+dialog.lb::backdrop{background:rgba(0,0,0,.88)}
+.lbin{width:100%;height:100%;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(56px + env(safe-area-inset-top,0px)) 8px 16px}
+.lbin img{max-width:none;width:min(1280px,100%);height:auto;display:block;margin:auto}
+.lbx{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:2}
+footer{margin-top:40px;color:var(--muted);font-size:.85rem;text-align:center}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="brand" href="/">RODO <b>₿</b> Games</a>
+      <h1 id="title"></h1>
+    </div>
+    <div class="tools">
+      <a class="btn" href="/" id="backBtn"></a>
+      <div class="lang" role="group" aria-label="Idioma / Language">
+        <button data-lang="es" aria-pressed="true">ES</button>
+        <button data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <p class="intro" id="intro"></p>
+  <div class="badges" id="badges"></div>
+
+  <div class="prods" id="prods"></div>
+
+  <h2 id="orderT"></h2>
+  <div class="order" id="orderBox">
+    <div id="sumBox"></div>
+    <form id="form" novalidate>
+      <div class="two">
+        <label><span id="nameL"></span><input id="fName" maxlength="80" autocomplete="name" required></label>
+        <label><span id="mailL"></span><input id="fMail" type="email" maxlength="120" autocomplete="email" required></label>
+      </div>
+      <div class="two">
+        <label><span id="phoneL"></span><input id="fPhone" type="tel" maxlength="40" autocomplete="tel" required></label>
+        <label><span id="placeL"></span><input id="fPlace" maxlength="120" autocomplete="address-level2" required></label>
+      </div>
+      <div class="lab"><span id="shipL"></span>
+        <div class="seg">
+          <label><input type="radio" name="ship" value="envio" checked> <span id="shipA"></span></label>
+          <label><input type="radio" name="ship" value="retiro"> <span id="shipB"></span></label>
+        </div>
+      </div>
+      <div class="lab"><span id="payL"></span>
+        <div class="seg">
+          <label><input type="radio" name="pay" value="btc" checked> <span id="payA"></span></label>
+          <label><input type="radio" name="pay" value="ars"> <span id="payB"></span></label>
+        </div>
+      </div>
+      <label><span><span id="noteL"></span> <small id="optL"></small></span><textarea id="fNote" maxlength="1000"></textarea></label>
+      <div class="hp" aria-hidden="true"><input type="text" id="fHp" tabindex="-1" autocomplete="off"></div>
+      <p class="fine" id="fine"></p>
+      <div class="row"><button class="primary" type="submit" id="send"></button></div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+  <div class="done" id="done" hidden></div>
+
+  <footer><a href="/" id="footBack"></a></footer>
+</div>
+
+<div class="cartbar" id="cartbar" hidden><span id="cartTxt"></span><a class="btn primary" href="#orderT" id="cartGo"></a></div>
+
+<dialog class="lb" id="lb">
+  <button class="lbx" id="lbX"></button>
+  <div class="lbin" id="lbIn"><img id="lbImg" alt=""></div>
+</dialog>
+
+<script>
+// =====================================================================
+// CONFIGURACIÓN: precio, datos de pago y contacto (cambiar acá)
+// =====================================================================
+const CFG = {
+  PRICE_ARS: 75000,                                  // precio por rompecabezas, en pesos
+  PRESALE: true,                                     // muestra "Preventa" en el encabezado
+  LN_ADDRESS: "rodolfobits@walletofsatoshi.com",     // pago en bitcoin (Lightning)
+  ARS_ALIAS: "RodolfoBITS",                          // alias de Mercado Pago o banco
+  WHATSAPP: "",                                      // número con código de país, solo dígitos (ej. 5491100000000). Vacío = sin botón
+  MAIL_TO: "claudia@rodo.es",                        // aviso de cada pedido por FormSubmit
+  MAX_QTY: 10
+};
+
+const PRODUCTS = [
+  { id:"bip39", img:"bip39", n:"01",
+    es:{ name:"BIP39 Wordlist", desc:"Las 2048 palabras de la lista BIP39 en inglés: las mismas con las que se arma cualquier semilla de Bitcoin. Doce o veinticuatro de ellas custodian tus sats.", orient:"Horizontal" },
+    en:{ name:"BIP39 Wordlist", desc:"All 2048 words of the BIP39 English list: the very words every Bitcoin seed is made of. Twelve or twenty-four of them guard your sats.", orient:"Landscape" } },
+  { id:"whitepaper", img:"whitepaper", n:"02",
+    es:{ name:"The White Paper", desc:"“Bitcoin: A Peer-to-Peer Electronic Cash System” de Satoshi Nakamoto, entero y en inglés, diagramado en una sola lámina.", orient:"Vertical" },
+    en:{ name:"The White Paper", desc:"Satoshi Nakamoto’s “Bitcoin: A Peer-to-Peer Electronic Cash System”, complete and in English, laid out as a single sheet.", orient:"Portrait" } },
+  { id:"times", img:"times", n:"03",
+    es:{ name:"The Times, 03/01/2009", desc:"La tapa del diario que quedó eternizada en el bloque génesis de Bitcoin: “Chancellor on brink of second bailout for banks”.", orient:"Vertical" },
+    en:{ name:"The Times, 03/Jan/2009", desc:"The front page immortalized in Bitcoin’s genesis block: “Chancellor on brink of second bailout for banks”.", orient:"Portrait" } }
+];
+
+const T = {
+  es:{ title:"Rompecabezas", back:"← Juegos", footBack:"Volver a los juegos",
+    intro:"Tres piezas de la historia de Bitcoin para armar con las manos, de a una ficha, sin apuro. Rompecabezas premium de madera, de 1000 piezas cada uno.",
+    badges:["1000 piezas","Madera premium","Pago en bitcoin o en pesos"], presale:"Preventa",
+    specs:["1000 piezas","Madera"], zoom:"Ampliar", each:"c/u", add:"Lo quiero", less:"Quitar uno", more:"Sumar uno",
+    orderT:"Encargá el tuyo", empty:"Todavía no elegiste ningún rompecabezas. Tocá “Lo quiero” en el que te guste.",
+    total:"Total", nameL:"Nombre y apellido", mailL:"Email", phoneL:"WhatsApp o teléfono", placeL:"Ciudad y provincia (o país)",
+    shipL:"¿Cómo lo recibís?", shipA:"Envío a domicilio", shipB:"Retiro en persona",
+    payL:"¿Cómo pagás?", payA:"Bitcoin (Lightning)", payB:"Pesos (transferencia o Mercado Pago)",
+    noteL:"Comentarios", optL:"(opcional)",
+    fine:"Encargar no te cobra nada. Te escribimos para confirmar el pedido y coordinar el envío, que se cotiza aparte según el destino.",
+    send:"Encargar", sending:"Enviando…",
+    errEmpty:"Elegí al menos un rompecabezas.", errFields:"Completá nombre, email, teléfono y ciudad.", errMail:"Revisá el email.",
+    errSend:"No se pudo enviar el pedido. Revisá la conexión y probá de nuevo.",
+    cart:(n,t)=>`${n} rompecabezas · ${t}`, cartGo:"Encargar",
+    doneT:"¡Pedido recibido!", doneCode:"Tu número de pedido es",
+    doneP:"Te vamos a escribir para confirmarlo y coordinar el envío. Si querés, ya podés pagar con estos datos y mandarnos el comprobante con tu número de pedido:",
+    payBtc:"Bitcoin por Lightning", payBtcN:t=>`Te pasamos el monto exacto en sats al cambio del día (${t}).`,
+    payArs:"Pesos: transferencia o Mercado Pago", payArsN:t=>`Alias. Monto: ${t}.`,
+    copy:"Copiar", copied:"Copiado", wa:"Avisar por WhatsApp", again:"Hacer otro pedido",
+    waMsg:(c,l)=>`Hola, hice el pedido ${c} de rompecabezas: ${l}.`, close:"Cerrar ✕" },
+  en:{ title:"Puzzles", back:"← Games", footBack:"Back to the games",
+    intro:"Three pieces of Bitcoin history to put together by hand, one piece at a time, no rush. Premium wooden jigsaw puzzles, 1000 pieces each.",
+    badges:["1000 pieces","Premium wood","Pay in bitcoin or pesos"], presale:"Pre-order",
+    specs:["1000 pieces","Wood"], zoom:"Zoom", each:"each", add:"I want it", less:"One less", more:"One more",
+    orderT:"Order yours", empty:"You haven’t picked a puzzle yet. Tap “I want it” on the one you like.",
+    total:"Total", nameL:"Full name", mailL:"Email", phoneL:"WhatsApp or phone", placeL:"City and province (or country)",
+    shipL:"How do you get it?", shipA:"Home delivery", shipB:"Pick up in person",
+    payL:"How do you pay?", payA:"Bitcoin (Lightning)", payB:"Argentine pesos (bank or Mercado Pago)",
+    noteL:"Comments", optL:"(optional)",
+    fine:"Ordering doesn’t charge you anything. We’ll write to confirm the order and arrange shipping, quoted separately by destination.",
+    send:"Place order", sending:"Sending…",
+    errEmpty:"Pick at least one puzzle.", errFields:"Fill in name, email, phone and city.", errMail:"Check the email.",
+    errSend:"The order couldn’t be sent. Check your connection and try again.",
+    cart:(n,t)=>`${n} puzzle${n>1?"s":""} · ${t}`, cartGo:"Order",
+    doneT:"Order received!", doneCode:"Your order number is",
+    doneP:"We’ll write to confirm it and arrange shipping. If you like, you can pay now and send us the receipt with your order number:",
+    payBtc:"Bitcoin via Lightning", payBtcN:t=>`We’ll send you the exact amount in sats at the day’s rate (${t}).`,
+    payArs:"Pesos: bank transfer or Mercado Pago", payArsN:t=>`Alias. Amount: ${t}.`,
+    copy:"Copy", copied:"Copied", wa:"Message on WhatsApp", again:"Place another order",
+    waMsg:(c,l)=>`Hi, I placed puzzle order ${c}: ${l}.`, close:"Close ✕" }
+};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={ get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+let lang = store.get("rodo-lang")==="en" ? "en" : "es";
+const qty = Object.fromEntries(PRODUCTS.map(p=>[p.id,0]));
+const qs = new URLSearchParams(location.search).get("p");      // ?p=bip39 preselecciona uno
+if(qs && qty[qs]!==undefined) qty[qs]=1;
+const ars = n => "$ " + n.toLocaleString("es-AR") + " ARS";
+const count = () => Object.values(qty).reduce((a,b)=>a+b,0);
+const totalARS = () => count()*CFG.PRICE_ARS;
+const lines = L => PRODUCTS.filter(p=>qty[p.id]).map(p=>`${qty[p.id]} × ${p[L].name}`).join(", ");
+
+function renderProducts(){
+  const t=T[lang];
+  $("prods").innerHTML = PRODUCTS.map(p=>{ const P=p[lang], q=qty[p.id];
+    return `<article class="prod${q?" sel":""}" data-id="${p.id}">
+      <button class="shot" data-img="${p.img}" aria-label="${esc(t.zoom+": "+P.name)}">
+        <img src="/img/rompecabezas/${p.img}-640.webp" alt="${esc(P.name)}" loading="lazy" decoding="async"><span class="zoom">🔍 ${esc(t.zoom)}</span></button>
+      <div class="pbody">
+        <span class="pnum">${p.n}</span>
+        <h3>${esc(P.name)}</h3>
+        <p>${esc(P.desc)}</p>
+        <div class="specs">${t.specs.map(s=>`<span>${esc(s)}</span>`).join("")}<span>${esc(P.orient)}</span></div>
+        <div class="buy">
+          <span class="price">${ars(CFG.PRICE_ARS)} <small style="font-weight:400;color:var(--muted)">${t.each}</small></span>
+          ${q ? `<span class="qty"><button data-d="-1" aria-label="${esc(t.less)}">−</button><output>${q}</output><button data-d="1" aria-label="${esc(t.more)}"${q>=CFG.MAX_QTY?" disabled":""}>+</button></span>`
+              : `<button class="primary add" data-d="1">${esc(t.add)}</button>`}
+        </div>
+      </div></article>`; }).join("");
+}
+function renderSummary(){
+  const t=T[lang], n=count();
+  $("sumBox").innerHTML = n
+    ? `<table class="sum"><tbody>${PRODUCTS.filter(p=>qty[p.id]).map(p=>`<tr><td>${qty[p.id]} × ${esc(p[lang].name)}</td><td>${ars(qty[p.id]*CFG.PRICE_ARS)}</td></tr>`).join("")}
+        <tr class="tot"><td>${t.total}</td><td>${ars(totalARS())}</td></tr></tbody></table>`
+    : `<p class="empty">${esc(t.empty)}</p>`;
+  $("cartbar").hidden = !n || !$("done").hidden;
+  $("cartTxt").textContent = n ? t.cart(n, ars(totalARS())) : "";
+}
+function texts(){
+  const t=T[lang];
+  document.documentElement.lang=lang;
+  $("title").textContent=t.title; $("backBtn").textContent=t.back; $("footBack").textContent=t.footBack; $("intro").textContent=t.intro;
+  $("badges").innerHTML=(CFG.PRESALE?`<span class="badge o">${esc(t.presale)}</span>`:"")+t.badges.map(b=>`<span class="badge">${esc(b)}</span>`).join("");
+  ["orderT","nameL","mailL","phoneL","placeL","shipL","shipA","shipB","payL","payA","payB","noteL","optL","fine","send","cartGo"].forEach(k=>$(k).textContent=t[k]);
+  $("lbX").textContent=t.close;
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
+  renderProducts(); renderSummary();
+  if(lastOrder) renderDone(lastOrder);
+}
+document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{ lang=b.dataset.lang; store.set("rodo-lang",lang); texts(); }));
+
+$("prods").addEventListener("click",e=>{
+  const shot=e.target.closest(".shot");
+  if(shot){ const p=PRODUCTS.find(x=>x.img===shot.dataset.img); $("lbImg").src=`/img/rompecabezas/${shot.dataset.img}.webp`; $("lbImg").alt=p[lang].name; $("lb").showModal(); $("lbIn").scrollTop=0; return; }
+  const b=e.target.closest("button[data-d]"); if(!b) return;
+  const id=b.closest(".prod").dataset.id;
+  qty[id]=Math.max(0,Math.min(CFG.MAX_QTY, qty[id]+ +b.dataset.d));
+  renderProducts(); renderSummary(); $("msg").textContent="";
+  const again=document.querySelector(`.prod[data-id="${id}"] .qty button[data-d="${b.dataset.d}"], .prod[data-id="${id}"] .add`); again && again.focus();
+});
+$("lbX").addEventListener("click",()=>$("lb").close());
+$("lb").addEventListener("click",e=>{ if(e.target.id==="lbIn") $("lb").close(); });
+
+// ---------- Pedido ----------
+const ALPH="23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+const newCode=()=>"R"+Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>ALPH[b%ALPH.length]).join("");
+const FB = new Promise(r=>{ window.__fbResolve=r; setTimeout(()=>r(null),8000); });
+let sending=false, lastOrder=null;
+
+$("form").addEventListener("submit", async e=>{
+  e.preventDefault(); if(sending) return;
+  const t=T[lang], msg=$("msg"); msg.className="msg bad";
+  if($("fHp").value) return;                                   // robot
+  if(!count()) { msg.textContent=t.errEmpty; $("prods").scrollIntoView({block:"start"}); return; }
+  const f={ name:$("fName").value.trim(), email:$("fMail").value.trim(), phone:$("fPhone").value.trim(), place:$("fPlace").value.trim(),
+    ship:document.querySelector("input[name=ship]:checked").value, pay:document.querySelector("input[name=pay]:checked").value, note:$("fNote").value.trim() };
+  if(f.name.length<2 || !f.email || f.phone.length<6 || f.place.length<2){ msg.textContent=t.errFields; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)){ msg.textContent=t.errMail; $("fMail").focus(); return; }
+  sending=true; $("send").disabled=true; $("send").textContent=t.sending; msg.className="msg"; msg.textContent="";
+  const items={}; PRODUCTS.forEach(p=>{ if(qty[p.id]) items[p.id]=qty[p.id]; });
+  const order={ ...f, items, total:totalARS(), lang, code:newCode() };
+  let saved=false, mailed=false;
+  // 1) base de datos (la ve el panel de administración)
+  const fb=await FB;
+  if(fb){
+    for(let i=0;i<2 && !saved;i++){
+      try{ await fb.setDoc(fb.doc(fb.db,"orders",order.code),{ items, name:f.name, email:f.email, phone:f.phone, place:f.place, ship:f.ship, pay:f.pay,
+             note:f.note, total:order.total, lang, u:fb.uid, st:"nuevo", at:fb.serverTimestamp() }); saved=true; }
+      catch(err){ console.warn("Pedido:",err); if(err.code==="permission-denied") order.code=newCode(); else break; }
+    }
+  }
+  // 2) aviso por mail
+  try{
+    const r=await fetch(`https://formsubmit.co/ajax/${CFG.MAIL_TO}`,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({ _subject:`🧩 Pedido ${order.code}: ${lines("es")} (${ars(order.total)})`, _replyto:f.email, _template:"table", _captcha:"false",
+        Pedido:order.code, Rompecabezas:lines("es"), Total:ars(order.total), Nombre:f.name, Email:f.email, Telefono:f.phone, Lugar:f.place,
+        Entrega:f.ship==="envio"?"Envío a domicilio":"Retiro en persona", Pago:f.pay==="btc"?"Bitcoin (Lightning)":"Pesos", Comentarios:f.note||"-",
+        Idioma:lang, Guardado:saved?"sí, en el panel":"NO (solo este mail)" })});
+    mailed=r.ok;
+  }catch(err){ console.warn("Mail:",err); }
+  sending=false; $("send").disabled=false; $("send").textContent=t.send;
+  if(!saved && !mailed){ msg.className="msg bad"; msg.textContent=t.errSend; return; }
+  order.lines={es:lines("es"), en:lines("en")};
+  lastOrder=order; renderDone(order);
+  $("orderBox").hidden=true; $("done").hidden=false; renderSummary();
+  $("done").scrollIntoView({block:"start"});
+});
+
+function renderDone(o){
+  const t=T[lang], tot=ars(o.total);
+  const btc=`<div class="payb"><b>₿ ${esc(t.payBtc)}</b><div class="copy"><code>${esc(CFG.LN_ADDRESS)}</code><button data-copy="${esc(CFG.LN_ADDRESS)}">${t.copy}</button></div><p class="fine">${esc(t.payBtcN(tot))}</p></div>`;
+  const arsb=`<div class="payb"><b>$ ${esc(t.payArs)}</b><div class="copy"><code>${esc(CFG.ARS_ALIAS)}</code><button data-copy="${esc(CFG.ARS_ALIAS)}">${t.copy}</button></div><p class="fine">${esc(t.payArsN(tot))}</p></div>`;
+  const wa = CFG.WHATSAPP ? `<a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/${CFG.WHATSAPP}?text=${encodeURIComponent(t.waMsg(o.code,o.lines[lang]))}">${esc(t.wa)}</a>` : "";
+  $("done").innerHTML=`<h3>${esc(t.doneT)}</h3>
+    <p>${esc(t.doneCode)} <span class="code">${o.code}</span> · ${esc(o.lines[lang])} · <b>${tot}</b></p>
+    <p>${esc(t.doneP)}</p>${o.pay==="btc" ? btc+arsb : arsb+btc}
+    <div class="row">${wa}<button id="againBtn">${esc(t.again)}</button></div>`;
+}
+$("done").addEventListener("click",async e=>{
+  const c=e.target.closest("button[data-copy]");
+  if(c){ try{ await navigator.clipboard.writeText(c.dataset.copy); c.textContent=T[lang].copied; setTimeout(()=>c.textContent=T[lang].copy,1500); }catch(err){} return; }
+  if(e.target.id==="againBtn"){ lastOrder=null; PRODUCTS.forEach(p=>qty[p.id]=0); $("form").reset(); $("done").hidden=true; $("orderBox").hidden=false; texts(); $("prods").scrollIntoView({block:"start"}); }
+});
+
+texts();
+</script>
+<script type="module">
+// Firebase: el mismo jugador anónimo de los juegos; el pedido se guarda en orders/{código} (solo lo lee la administración)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+try{
+  const res=await fetch("/__/firebase/init.json"); if(!res.ok) throw new Error("sin configuración");
+  const app=initializeApp(await res.json()), auth=getAuth(app);
+  const user=await new Promise((ok,ko)=>{ const off=onAuthStateChanged(auth,u=>{ off(); if(u) ok(u); else signInAnonymously(auth).then(c=>ok(c.user)).catch(ko); }); });
+  window.__fbResolve({ db:getFirestore(app), uid:user.uid, doc, setDoc, serverTimestamp });
+}catch(e){ console.warn("Rompecabezas sin servidor:", e.message); window.__fbResolve(null); }
+</script>
+</body>
+</html>

@@ -262,6 +262,18 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 }
 .card:hover{border-color:var(--btc);transform:translateY(-2px)}
 .card[hidden]{display:none}
+.shop{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:center;margin-top:22px;padding:18px;border-radius:14px;
+  background:var(--paper);border:2px solid var(--btc);color:var(--ink);text-decoration:none;transition:transform .15s}
+.shop:hover{transform:translateY(-2px)}
+.shopimgs{display:flex;align-items:center;justify-content:center;gap:6px;height:170px}
+.shopimgs img{height:100%;width:auto;max-width:34%;object-fit:contain;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.shopimgs img:nth-child(2){height:62%;max-width:40%}
+.shop .btn{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+.shoptxt{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.shoptag{font:700 .78rem "IBM Plex Mono",ui-monospace,monospace;color:var(--btc);text-transform:uppercase;letter-spacing:.06em}
+.shop h3{margin:0;font-size:1.6rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.shop p{margin:0;color:var(--muted);font-size:.95rem}
+@media (max-width:600px){ .shop{grid-template-columns:1fr} .shopimgs{height:140px} }
 .card h3{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.02em}
 .card p{margin:0;color:var(--muted);font-size:.95rem}
 .mini{display:grid;gap:3px;justify-content:start;min-height:96px;align-content:center}
@@ -473,7 +485,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 @media print{
   body{background:#fff;color:#000}
   .view.locked>*{filter:none!important;opacity:1!important}
-  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.win,.gate,.rowclue,.pfind,.prk,.pmsg,.rank,.nick,.ptime,.pjump,.opts,.privnote{display:none!important}
+  body::before,.tools,.actions,.bar,.current,footer,.buzon,.credit,.shop,.win,.gate,.rowclue,.pfind,.prk,.pmsg,.rank,.nick,.ptime,.pjump,.opts,.privnote{display:none!important}
   #grid .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cq .cell{border-color:#000;background:#fff!important;color:transparent!important}
   .cell.key{border-width:3px}
@@ -576,6 +588,13 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
         <h3 id="cPlateName"></h3><p id="cPlateDesc"></p>
       </a>
     </div>
+    <!-- Rompecabezas físicos: página aparte, /rompecabezas -->
+    <a class="shop" href="/rompecabezas">
+      <div class="shopimgs" aria-hidden="true">
+        <img src="img/rompecabezas/whitepaper-640.webp" alt="" loading="lazy"><img src="img/rompecabezas/bip39-640.webp" alt="" loading="lazy"><img src="img/rompecabezas/times-640.webp" alt="" loading="lazy">
+      </div>
+      <div class="shoptxt"><span class="shoptag" id="shopTag"></span><h3 id="shopName"></h3><p id="shopDesc"></p><span class="btn primary" id="shopGo"></span></div>
+    </a>
   </section>
 
   <!-- ===== Acróstico ===== -->
@@ -4149,6 +4168,8 @@ const Buzon = (()=>{
 // =====================================================================
 T.es.privNote=PRIV.es; T.en.privNote=PRIV.en;
 T.es.adminLink="Entrar como administrador"; T.en.adminLink="Admin sign-in";
+Object.assign(T.es,{shopTag:"Nuevo · físico", shopName:"Rompecabezas de 1000 piezas", shopDesc:"Madera premium. La lista BIP39, el whitepaper y la tapa de The Times del bloque génesis, para armar con las manos.", shopGo:"Ver y encargar"});
+Object.assign(T.en,{shopTag:"New · physical", shopName:"1000-piece jigsaw puzzles", shopDesc:"Premium wood. The BIP39 list, the whitepaper and The Times front page from the genesis block, to build by hand.", shopGo:"See and order"});
 
 // =====================================================================
 // ADMINISTRACIÓN: estadísticas de jugadores y partidas
@@ -4200,6 +4221,8 @@ const Admin = (()=>{
         A.getDocs(A.collection(A.db,"counters")), A.getDocs(A.collection(A.db,"names")), A.getDocs(A.collection(A.db,"testers")), A.getDocs(A.collection(A.db,"duels")), A.getDocs(A.collection(A.db,"learned")), A.getDocs(A.collection(A.db,"pinlocks"))]);
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
     let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
+    // pedidos de rompecabezas (games.rodo.es/rompecabezas)
+    let OR=null; try{ OR=[]; (await A.getDocs(A.collection(A.db,"orders"))).forEach(d=>OR.push({code:d.id, ...d.data()})); }catch(e){ OR=null; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
     N.forEach(d=>names[d.id]=d.data().name);
@@ -4248,6 +4271,8 @@ const Admin = (()=>{
       <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
+
+    h=ordersHtml(OR)+h;
 
     // por juego e idioma
     const G={};
@@ -4302,6 +4327,36 @@ const Admin = (()=>{
     h+=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
     $("admBody").innerHTML=h;
   }
+  // ---------- Pedidos de rompecabezas ----------
+  const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
+  const ST=["nuevo","confirmado","pagado","enviado","entregado","cancelado"];
+  const ars=n=>"$ "+(n||0).toLocaleString("es-AR");
+  function ordersHtml(OR){
+    if(OR===null) return `<h2>Pedidos de rompecabezas</h2><p class="m small">No se pudieron leer los pedidos. ¿Están publicadas las reglas nuevas?</p>`;
+    const list=OR.map(o=>({...o, at:ms(o.at)})).sort((a,b)=>(b.at||0)-(a.at||0));
+    const open=list.filter(o=>o.st!=="cancelado"&&o.st!=="entregado"), units={};
+    list.filter(o=>o.st!=="cancelado").forEach(o=>Object.entries(o.items||{}).forEach(([k,v])=>units[k]=(units[k]||0)+v));
+    let h=`<h2>Pedidos de rompecabezas</h2>`;
+    if(!list.length) return h+`<p class="m small">Todavía no hay pedidos. La página es <a href="/rompecabezas">games.rodo.es/rompecabezas</a>.</p>`;
+    h+=`<div class="kpis">
+      <div class="kpi"><b>${open.length}</b><span>pedidos abiertos · ${list.length} en total</span></div>
+      <div class="kpi"><b>${list.filter(o=>o.st==="nuevo").length}</b><span>nuevos, sin confirmar</span></div>
+      ${Object.keys(PUZ).map(k=>`<div class="kpi"><b>${units[k]||0}</b><span>${PUZ[k]} pedidos (sin cancelados)</span></div>`).join("")}
+      <div class="kpi"><b>${ars(open.reduce((a,o)=>a+(o.total||0),0))}</b><span>en pedidos abiertos</span></div>
+    </div>`;
+    h+=table(["Cuándo","Pedido","Estado","Rompecabezas","Total","Nombre","Contacto","Lugar","Entrega","Pago","Comentarios"],
+      list.map(o=>[dt(o.at), `<b>${esc(o.code)}</b>`,
+        `<select class="ordst" data-k="${esc(o.code)}">${ST.map(x=>`<option${x===o.st?" selected":""}>${x}</option>`).join("")}</select>`,
+        Object.entries(o.items||{}).map(([k,v])=>`${v} × ${esc(PUZ[k]||k)}`).join("<br>"), ars(o.total), esc(o.name),
+        `<a href="mailto:${esc(o.email)}?subject=${encodeURIComponent("Tu pedido "+o.code+" de rompecabezas")}">${esc(o.email)}</a><br><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(o.phone)}</a>`,
+        esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?"₿ Lightning":"Pesos", `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
+    return h;
+  }
+  $("admBody").addEventListener("change",async e=>{
+    const s=e.target.closest(".ordst"); if(!s||!A) return;
+    try{ await A.setDoc(A.doc(A.db,"orders",s.dataset.k),{st:s.value},{merge:true}); s.style.outline="2px solid var(--ok)"; setTimeout(()=>s.style.outline="",1200); }
+    catch(err){ $("admErr").textContent="No se pudo cambiar el estado: "+(err.code||err.message); }
+  });
   function csv(){
     const head=["jugador","apodo","juego","idioma","partida","exito","aciertos","ayudas","errores","tiempo_seg","penalidad_seg","puntos","fecha"];
     const q=s=>`"${String(s||"").replace(/"/g,'""')}"`;
@@ -4330,6 +4385,7 @@ function applyTexts(){
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
   Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts(); Stats.texts();
   $("adminLink").textContent=t.adminLink;
+  ["shopTag","shopName","shopDesc","shopGo"].forEach(k=>$(k).textContent=t[k]);
   if(view==="admin") return setTitle("Administración");
   if(view==="stats") return setTitle(t.stTitle);
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);

@@ -261,6 +261,37 @@ service cloud.firestore {
     // Duelos: la serie de partidas entre dos personas que empezó con una invitación aceptada.
     // id = uid de quien invitó + '_' + primera partida. games: partidas jugadas; last: quién eligió la última.
     // Los resultados no se guardan acá: se calculan con los de cada partida, que no se pueden tocar.
+    // Pedidos de rompecabezas (games.rodo.es/rompecabezas): cualquiera autenticado crea uno; solo la administración los lee y les cambia el estado
+    function orderQty(m, k) { return !(k in m) || (m[k] is int && m[k] >= 1 && m[k] <= 10); }
+    function trimmed(s, lo, hi) { return s is string && s.size() >= lo && s.size() <= hi; }
+    match /orders/{code} {
+      allow create: if signedIn()
+        && code.matches('^R[2-9A-HJ-NP-Z]{6}$')
+        && request.resource.data.keys().hasOnly(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'note', 'total', 'lang', 'u', 'st', 'at'])
+        && request.resource.data.keys().hasAll(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'total', 'lang', 'u', 'st', 'at'])
+        && request.resource.data.u == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.st == 'nuevo'
+        && request.resource.data.items is map
+        && request.resource.data.items.keys().hasOnly(['bip39', 'whitepaper', 'times'])
+        && request.resource.data.items.size() >= 1
+        && orderQty(request.resource.data.items, 'bip39') && orderQty(request.resource.data.items, 'whitepaper') && orderQty(request.resource.data.items, 'times')
+        && trimmed(request.resource.data.name, 2, 80)
+        && trimmed(request.resource.data.email, 5, 120) && request.resource.data.email.matches('^[^ @]+@[^ @]+[.][^ @]+$')
+        && trimmed(request.resource.data.phone, 6, 40)
+        && trimmed(request.resource.data.place, 2, 120)
+        && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 1000
+        && request.resource.data.ship in ['envio', 'retiro']
+        && request.resource.data.pay in ['btc', 'ars']
+        && request.resource.data.lang in ['es', 'en']
+        && request.resource.data.total is int && request.resource.data.total >= 0;
+      allow read: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st'])
+        && request.resource.data.st in ['nuevo', 'confirmado', 'pagado', 'enviado', 'entregado', 'cancelado'];
+      allow delete: if false;
+    }
+
     function invPid(inv) { return inv.k + '-' + inv.lang + '-' + string(inv.n); }
     match /duels/{id} {
       allow read: if signedIn() && (request.auth.uid in resource.data.p || isAdmin());
