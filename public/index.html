@@ -122,6 +122,9 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivwho .seg button{border:0;border-radius:0;padding:7px 12px;background:transparent;font-size:.9rem}
 .ivwho .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 .ivnamebox{width:100%;max-width:300px}
+.ivlinkbox{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:10px}
+.ivlinkbox[hidden]{display:none}
+.ivlinkbox input{width:100%;max-width:420px;font:500 .85rem "IBM Plex Mono",ui-monospace,monospace;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivnamebox input{width:100%;font:inherit;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivsugg{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;min-height:1.5em}
 .ivsugg button{padding:6px 10px;font-size:.9rem}
@@ -856,7 +859,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       </div>
     </div>
     <div class="ivnick" id="ivNickRow"><button id="ivNickBtn"></button></div>
-    <div class="row"><button class="primary" id="ivSend"></button></div>
+    <div class="row"><button class="primary" id="ivSend"></button><button id="ivLink"></button></div>
     <button class="ivoff" id="ivBackPick"></button>
   </div>
   <div id="ivWait" hidden>
@@ -865,8 +868,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     <div class="row"><button id="ivCancel"></button></div>
   </div>
   <div id="ivDone" hidden>
-    <div class="row"><button class="primary" id="ivAgain"></button><button id="ivSolo"></button></div>
+    <div class="row"><button class="primary" id="ivAgain"></button><button id="ivLink2"></button><button id="ivSolo"></button></div>
   </div>
+  <div class="ivlinkbox" id="ivLinkBox" hidden><input id="ivLinkUrl" readonly><button id="ivLinkSolo"></button></div>
   <p class="ivmsg" id="ivOutMsg" aria-live="polite"></p>
 </dialog>
 
@@ -3244,7 +3248,10 @@ Object.assign(T.es,{
   ivBtn:"Invitar a jugar", ivRecv:"Recibir invitaciones", ivClose:"Cerrar",
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
-  ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Probá en un rato.",
+  ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Podés copiar un link y mandárselo a quien quieras.",
+  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"Link copiado. Compartilo donde quieras: quien lo abra juega esta misma partida y se comparan en su ranking.", ivLinkCopy:"Copiá este link y compartilo donde quieras:",
+  lnkIn:(who,g)=>`${who?cap(who)+" te invitó":"Te invitaron"} a jugar ${g}. Elegí tu usuario para aparecer en el ranking, o cerrá esta ventana y jugá sin usuario.`,
+  lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
   ivYesOut:who=>`¡${cap(who)} aceptó! A jugar.`, ivNoOut:who=>`${cap(who)} no aceptó esta vez.`,
   ivBusyOut:who=>`${cap(who)} estaba ocupado.`, ivExpOut:who=>`${cap(who)} no respondió a tiempo.`,
@@ -3252,7 +3259,7 @@ Object.assign(T.es,{
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
   ivFz:"Tu cronómetro quedó congelado. Si aceptás, al terminar podés volver a tu partida.",
   ivYes:"Aceptar", ivNo:"No, gracias", ivOff:"Rechazar todas",
-  ivNext:"Probando con otra persona…", ivNoneLeft:"No hay nadie más disponible por ahora.", ivLate:"La invitación ya venció.",
+  ivNext:"Probando con otra persona…", ivNoneLeft:"No hay nadie más disponible por ahora. Podés copiar un link y mandárselo a quien quieras.", ivLate:"La invitación ya venció.",
   gName:{acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida",esbip:"¿Está en la lista?",placa:"Placa de acero"},
   ivWhoL:"¿A quién?", ivRandom:"Alguien al azar", ivByName:"Por nombre", ivNamePh:"Escribí un nombre…",
   ivNoMatch:"Nadie conectado con ese nombre.", ivNoneOnline:"No hay nadie con usuario conectado ahora.", ivPickName:"Elegí a alguien de la lista.",
@@ -3286,7 +3293,10 @@ Object.assign(T.en,{
   ivBtn:"Invite to play", ivRecv:"Receive invitations", ivClose:"Close",
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
-  ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. Try again soon.",
+  ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. You can copy a link and send it to anyone.",
+  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"Link copied. Share it anywhere: whoever opens it plays this same game and you compare on its leaderboard.", ivLinkCopy:"Copy this link and share it anywhere:",
+  lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
+  lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
   ivYesOut:who=>`${cap(who)} accepted! Let's play.`, ivNoOut:who=>`${cap(who)} declined this time.`,
   ivBusyOut:who=>`${cap(who)} was busy.`, ivExpOut:who=>`${cap(who)} didn't answer in time.`,
@@ -3294,7 +3304,7 @@ Object.assign(T.en,{
   ivInT:(who,g)=>`${who} invites you to play ${g}`,
   ivFz:"Your timer is frozen. If you accept, you can go back to your game when you finish.",
   ivYes:"Accept", ivNo:"No, thanks", ivOff:"Decline all",
-  ivNext:"Trying someone else…", ivNoneLeft:"Nobody else is available right now.", ivLate:"The invitation has expired.",
+  ivNext:"Trying someone else…", ivNoneLeft:"Nobody else is available right now. You can copy a link and send it to anyone.", ivLate:"The invitation has expired.",
   gName:{acrostico:"Acrostic",ahorcado:"Hangman",sopa:"Word search",criptograma:"Cryptogram",anagrama:"Anagram",semilla:"Lost seed",esbip:"Is it on the list?",placa:"Steel plate"},
   ivWhoL:"Who?", ivRandom:"Someone at random", ivByName:"By name", ivNamePh:"Type a name…",
   ivNoMatch:"Nobody online by that name.", ivNoneOnline:"Nobody with a username is online right now.", ivPickName:"Pick someone from the list.",
@@ -3374,6 +3384,7 @@ const Live = (()=>{
   // ---------- quien invita ----------
   const msgOut=s=>{ $("ivOutMsg").textContent=s||""; };
   function stage(s){
+    if(s==="pick" || s==="wait") $("ivLinkBox").hidden=true;
     $("ivPick").hidden=s!=="pick"; $("ivOpts").hidden=s!=="opts"; $("ivWait").hidden=s!=="wait"; $("ivDone").hidden=s!=="done";
     $("ivOutT").textContent = s==="pick" ? (direct ? t().ivRematchT(direct.who) : t().ivOutT) : cap(describe(curOpts()));
     $("ivAgain").hidden=!!direct;
@@ -3389,6 +3400,7 @@ const Live = (()=>{
   }
   // segundo paso: las opciones del juego elegido (la otra persona juega exactamente eso)
   function renderOpts(){
+    if(!game) $("ivLinkBox").hidden=true;   // otras opciones: el link anterior ya no corresponde
     const T0=t(), seg=(label,items)=>`<div class="seg" role="group" aria-label="${label}">${items.map(([k,v,on,txt])=>`<button data-${k}="${v}" aria-pressed="${on}">${txt}</button>`).join("")}</div>`;
     let o=seg(T0.ivLangL, ["es","en"].map(L=>["l",L,L===pickL,T0.ivLangName[L]]));
     if(pickG==="sopa") o+=seg(T0.sSizeL, ["chica","media","grande"].map(s=>["s",s,s===pickS,`${T0.sSize[s]} ${SOPA_N[s]}×${SOPA_N[s]}`]))+
@@ -3538,6 +3550,23 @@ const Live = (()=>{
     if(dOut.open) dOut.close();
   }
   function solo(){ const gm=game; game=null; dOut.close(); if(gm){ setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m); } }
+  // link para compartir: una partida recién creada que puede jugar cualquiera que lo abra (sin estar conectado ni tener usuario)
+  async function shareLink(){
+    if(out) return;
+    $("ivLink").disabled=$("ivLink2").disabled=true; msgOut(t().ivLinkMaking);
+    try{
+      const g=game ? game.g : pickG;
+      if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
+      const q=new URLSearchParams({j:`${game.k}-${game.lang}-${game.n}`}); if(game.m) q.set("m",game.m); q.set("de",uid);
+      const url=`${location.origin}/?${q}`;
+      $("ivLinkUrl").value=url; $("ivLinkBox").hidden=false; $("ivLinkSolo").textContent=t().ivSolo;
+      let ok=false; try{ await navigator.clipboard.writeText(url); ok=true; }catch(e){}
+      if(!ok){ $("ivLinkUrl").focus(); $("ivLinkUrl").select(); }
+      msgOut(ok ? t().ivLinkOk : t().ivLinkCopy);
+      fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
+    }catch(e){ msgOut(t().ivFail); }
+    finally{ $("ivLink").disabled=$("ivLink2").disabled=false; }
+  }
   $("ivAgain").hidden=false;
 
   // ---------- quien recibe ----------
@@ -3717,12 +3746,14 @@ const Live = (()=>{
     if(pickTo){ pickTo=null; $("ivName").value=""; $("ivName").focus(); }
     else { const x=onl.find(o=>o.to===b.dataset.to); if(x){ pickTo=x; $("ivName").value=x.who; } }
     game=null; msgOut(""); suggest(); });
-  $("ivSend").addEventListener("click",send);
+  $("ivSend").addEventListener("click",()=>send());
   $("ivNickBtn").addEventListener("click",()=>User.open());
   // al cerrar la ventana de usuario, la invitación muestra o esconde el botón de elegir usuario
   $("userDlg").addEventListener("close",()=>{ if(dOut.open) $("ivNickRow").hidden=!!Reg.nick(); });
-  $("ivAgain").addEventListener("click",send);
+  $("ivAgain").addEventListener("click",()=>send());
   $("ivSolo").addEventListener("click",solo);
+  $("ivLink").addEventListener("click",shareLink); $("ivLink2").addEventListener("click",shareLink); $("ivLinkSolo").addEventListener("click",solo);
+  $("ivLinkUrl").addEventListener("focus",e=>e.target.select());
   $("ivCancel").addEventListener("click",cancelOut);
   $("ivOutX").addEventListener("click",cancelOut);
   dOut.addEventListener("cancel",e=>{ e.preventDefault(); cancelOut(); });
@@ -3752,7 +3783,7 @@ const Live = (()=>{
     if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=direct ? T0.ivRematchT(direct.who) : T0.ivOutT;
     else if(!$("ivOpts").hidden) $("ivOutT").textContent=cap(describe(curOpts()));
     $("ivNickBtn").textContent=T0.ivNickBtn; $("ivSend").textContent=T0.ivSend;
-    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivBackPick").textContent=T0.ivBackPick;
+    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivLink").textContent=$("ivLink2").textContent=T0.ivLink; $("ivBackPick").textContent=T0.ivBackPick;
     $("ivYes").textContent=T0.ivYes; $("ivNo").textContent=T0.ivNo; $("ivOff").textContent=T0.ivOff;
     if(dOut.open && (!$("ivPick").hidden || !$("ivOpts").hidden)) renderPick();
     if(fb && sentLang!==lang) beat();
@@ -4418,6 +4449,24 @@ function setLang(L){
 }
 window.addEventListener("hashchange",route);
 route();
+// entrar por un link compartido: propone elegir usuario (se puede seguir sin) y abre esa misma partida
+(async()=>{
+  const q=new URLSearchParams(location.search), j=q.get("j"); if(!j) return;
+  const m=j.match(/^([a-z0-9]+)-(es|en)-(\d{1,6})$/); history.replaceState(null,"",location.pathname+location.hash);
+  if(!m) return;
+  const [,k,L,n]=m, g=k.startsWith("sopa") ? "sopa" : k.startsWith("ahorcado") ? "ahorcado" : k;
+  if(!GAMES[g] || HIDDEN.has(g)) return;
+  await Reg.ready; const fb=Reg.fb(); if(!fb) return;
+  let who=""; const de=q.get("de");
+  if(de && /^[A-Za-z0-9]{10,40}$/.test(de) && de!==Reg.uid()){ try{ const s=await fb.getDoc(fb.doc(fb.db,"names",de)); who=(s.exists()&&s.data().name)||""; }catch(e){} }
+  const play=()=>{ setLang(L); Reg.playInvite(g, k, +n, null, q.get("m")||undefined).then(()=>Reg.say(g, T[lang].lnkPlay(who))); };
+  if(Reg.nick()) return play();
+  setLang(L);
+  await User.open(); const dlg=$("userDlg");
+  if(!dlg.open) return play();
+  $("uMsg").textContent=T[lang].lnkIn(who, Reg.gameName(g));
+  dlg.addEventListener("close",play,{once:true});
+})();
 </script>
 <script type="module">
 // Firebase: autenticación anónima + Firestore
