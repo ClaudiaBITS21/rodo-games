@@ -49,7 +49,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
 
 ## Rompecabezas (venta física)
 - Página aparte `public/rompecabezas.html` → https://games.rodo.es/rompecabezas, bilingüe, mismo estilo. Acceso desde un recuadro al pie de la portada (`.shop`). `?p=bip39|whitepaper|times` preselecciona uno.
-- Tres productos premium de madera, 1000 piezas: BIP39 Wordlist, The White Paper, The Times 03/01/2009. Imágenes en `public/img/rompecabezas/` (versión 640 para tarjetas y completa para ampliar; `og.jpg` para compartir).
+- Tres productos premium de madera, 1000 piezas, caja de 24 × 18 × 5,5 cm (va en los `specs` de cada tarjeta), $90.000 cada uno: BIP39 Wordlist, The White Paper, The Times 03/01/2009. Imágenes en `public/img/rompecabezas/` (versión 640 para tarjetas y completa para ampliar; `og.jpg` para compartir).
 - Precio, Lightning Address, alias, WhatsApp y mail de aviso: objeto `CFG` al principio del script de la página.
 - Encargar no cobra: guarda `orders/{código}` (código `R` + 6 caracteres sin I ni O, estado `nuevo`) y avisa por FormSubmit a claudia@rodo.es. Después muestra los datos de pago. El envío se cotiza aparte.
 - Reglas: crea cualquiera autenticado con campos validados; lee y cambia solo el estado la administración. El panel de admin muestra "Pedidos de rompecabezas" arriba de todo, con selector de estado.
