@@ -23,7 +23,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const B=await mk('B'); await B.goto(url.replace(/^https?:\/\/[^/]+\//,URL)); await B.waitForSelector('#userDlg[open]',{timeout:20000});
   ok(/Ana te invitó a jugar Ahorcado/.test(await txt(B,'#uMsg')),'Beto ve: '+await txt(B,'#uMsg'));
   ok(!/\?j=/.test(await B.evaluate(()=>location.href)),'el link se limpia de la barra');
-  await user(B,'Beto'); await B.waitForFunction(()=>location.hash==='#ahorcado',null,{timeout:20000});
+  await user(B,'Beto'); await B.waitForSelector('#lnkDlg[open]',{timeout:20000}); ok(/Ana está en línea/.test(await txt(B,'#lnkT')),'a Beto se le ofrece jugar en vivo con Ana'); await B.click('#lnkSolo');
+  await B.waitForFunction(()=>location.hash==='#ahorcado',null,{timeout:20000});
   await B.waitForFunction(()=>/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
   ok((await txt(B,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Beto juega la misma partida #'+n);
   ok(/Partida compartida por Ana/.test(await txt(B,'#view-ahorcado .pmsg')),'aviso: '+await txt(B,'#view-ahorcado .pmsg'));

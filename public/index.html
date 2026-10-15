@@ -124,6 +124,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivnamebox{width:100%;max-width:300px}
 .ivlinkbox{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:10px}
 .ivlinkbox[hidden]{display:none}
+.ivsugg button.busy{opacity:.6}
 .ivnote{margin:12px 0 0;font-size:.9rem;color:var(--muted);text-align:center}
 .ivnote[hidden],.ivdlg button[hidden]{display:none}
 .ivlinkbox textarea{width:100%;max-width:420px;resize:none;font:400 .9rem/1.4 inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
@@ -844,6 +845,12 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
   <div class="row"><button class="primary" id="uGo"></button><button id="uOut"></button></div>
   <p class="ivmsg" id="uMsg" aria-live="polite"></p>
   <button class="ivoff" id="uSkip"></button>
+</dialog>
+
+<!-- ===== Entrar por un link con quien invitó en línea ===== -->
+<dialog class="ivdlg" id="lnkDlg" aria-labelledby="lnkT">
+  <h3 id="lnkT"></h3><p id="lnkP"></p>
+  <div class="row"><button class="primary" id="lnkLive"></button><button id="lnkSolo"></button></div>
 </dialog>
 
 <!-- ===== Invitaciones: quien invita ===== -->
@@ -3297,6 +3304,10 @@ Object.assign(T.es,{
   ivBackQ:g=>`Tu partida de ${g} quedó en pausa. ¿La retomás?`, ivBackGo:"Retomar mi partida",
   ivRematchT:who=>`Revancha con ${who}`, ivRematchIn:(who,g)=>`¡Revancha! ${who} te invita a jugar ${g}`,
   ivAway:who=>`${cap(who)} no está disponible ahora.`,
+  ivPlaying:"jugando ahora", ivAwayWhy:(who,w,g)=> w==="busy" ? `${cap(who)} está jugando una partida de ${g} ahora: probá con otro juego, o mandale el link y la juega cuando termine.`
+    : w==="off" ? `${cap(who)} no está recibiendo invitaciones ahora. Podés mandarle el link.` : `${cap(who)} ya no está conectado. Mandale el link y la juega cuando pueda.`,
+  lnkLiveT:who=>`${cap(who)} está en línea ahora`, lnkLiveP:"¿Jugamos en vivo? Arrancan los dos a la vez y gana quien saque más puntos. O jugá la partida del link cuando quieras.",
+  lnkLiveGo:who=>`⚔️ Jugar contra ${who} ahora`, lnkSoloGo:"Jugar la del link",
   duTitle:who=>`Duelo con ${who}`, duScore:(w,l,who)=>`Vos ${w} – ${l} ${who}`, duTies:n=>` · ${n} empate${n>1?"s":""}`,
   duPlayed:n=>`${n} partida${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} todavía está jugando…`,
   duWon:"¡Ganaste esta!", duLost:who=>`Esta la ganó ${who}.`, duTie:"Esta terminó empatada.", duVoid:"Esta no contó.",
@@ -3342,6 +3353,10 @@ Object.assign(T.en,{
   ivBackQ:g=>`Your ${g} game is paused. Pick it back up?`, ivBackGo:"Resume my game",
   ivRematchT:who=>`Rematch with ${who}`, ivRematchIn:(who,g)=>`Rematch! ${who} invites you to play ${g}`,
   ivAway:who=>`${cap(who)} isn't available right now.`,
+  ivPlaying:"playing now", ivAwayWhy:(who,w,g)=> w==="busy" ? `${cap(who)} is playing a game of ${g} right now: try another game, or send the link and they'll play it when done.`
+    : w==="off" ? `${cap(who)} isn't taking invitations right now. You can send them the link.` : `${cap(who)} is no longer online. Send the link and they'll play when they can.`,
+  lnkLiveT:who=>`${cap(who)} is online now`, lnkLiveP:"Play live? You both start at the same time and the most points wins. Or play the link's game whenever you like.",
+  lnkLiveGo:who=>`⚔️ Play against ${who} now`, lnkSoloGo:"Play the link's game",
   duTitle:who=>`Duel with ${who}`, duScore:(w,l,who)=>`You ${w} – ${l} ${who}`, duTies:n=>` · ${n} tie${n>1?"s":""}`,
   duPlayed:n=>`${n} game${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} is still playing…`,
   duWon:"You won this one!", duLost:who=>`${cap(who)} won this one.`, duTie:"This one was a tie.", duVoid:"This one didn't count.",
@@ -3491,16 +3506,19 @@ const Live = (()=>{
     const T0=t(), q=fold($("ivName").value.trim()), box=$("ivSugg");
     if(pickTo){ box.innerHTML=`<button class="on" data-to="${esc(pickTo.to)}">${esc((pickTo.av?pickTo.av+" ":"")+pickTo.who)} ✓</button>`; return; }
     await loadOnline();
-    const list=onl.filter(x=>!(x.busy||[]).includes(pickG) && (!q || fold(x.who).includes(q)))
+    // quien está jugando este juego aparece igual, marcado: al invitar se explica por qué no se puede
+    const list=onl.filter(x=>!q || fold(x.who).includes(q))
       .sort((a,b)=>(fold(a.who).startsWith(q)?0:1)-(fold(b.who).startsWith(q)?0:1)||a.who.localeCompare(b.who)).slice(0,6);
-    box.innerHTML = list.length ? list.map(x=>`<button data-to="${esc(x.to)}">${esc((x.av?x.av+" ":"")+x.who)}</button>`).join("")
+    box.innerHTML = list.length ? list.map(x=>`<button data-to="${esc(x.to)}"${(x.busy||[]).includes(pickG)?' class="busy"':""}>${esc((x.av?x.av+" ":"")+x.who)}${(x.busy||[]).includes(pickG)?` <small>· ${esc(T0.ivPlaying)}</small>`:""}</button>`).join("")
       : `<p>${esc(q ? T0.ivNoMatch : T0.ivNoneOnline)}</p>`;
   }
+  let awayWhy="";
   async function candidate(g){
     const one=direct || (whoMode==="name" ? pickTo : null);
     if(one){
       const s=await fb.getDoc(fb.doc(fb.db,"online",one.to)), x=s.exists()&&s.data();
-      return x && x.at && x.at.toMillis()>now()-FRESH && x.inv && !(x.busy||[]).includes(g) ? one.to : null;
+      awayWhy = !x || !x.at || x.at.toMillis()<=now()-FRESH ? "gone" : !x.inv ? "off" : (x.busy||[]).includes(g) ? "busy" : "";
+      return awayWhy ? null : one.to;
     }
     const s=await fb.getDocs(fresh());
     const list=s.docs.filter(d=>{ const x=d.data(); return d.id!==uid && x.inv && !(x.busy||[]).includes(g) && !tried.has(d.id) && !declinedBy.has(d.id); }).map(d=>d.id);
@@ -3515,7 +3533,7 @@ const Live = (()=>{
       if(!direct && whoMode==="name" && !pickTo){ msgOut(t().ivPickName); $("ivName").focus(); return; }
       const one=direct || (whoMode==="name" ? pickTo : null);
       const g=game ? game.g : pickG, to=await candidate(g);
-      if(!to){ msgOut(one ? t().ivAway(one.who) : auto ? lastWhy+" "+t().ivNoneLeft : t().ivNobody); stage(game?"done":"opts"); return; }
+      if(!to){ msgOut(one ? t().ivAwayWhy(one.who, awayWhy, T[lang].gName[g]) : auto ? lastWhy+" "+t().ivNoneLeft : t().ivNobody); stage(game?"done":"opts"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
       if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
       const ns=one ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
@@ -3617,7 +3635,9 @@ const Live = (()=>{
     const left=WIN-(now()-(d.at ? d.at.toMillis() : now()));
     if(left<=2000) return;
     if(d.r && iDeclined()) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"declined"}).catch(()=>{});
-    if(inc || out || anyOpen() || !want || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
+    // la ventanita de invitar abierta sin una invitación propia pendiente (por ejemplo, copiando el link) no cuenta como ocupado
+    if(dOut.open && !out && !dIn.open) dOut.close();
+    if(inc || out || anyOpen() || $("lnkDlg").open || !want || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
@@ -3823,7 +3843,23 @@ const Live = (()=>{
     if(fb && sentLang!==lang) beat();
     count();
   }
-  return {texts, beat};
+  // entrar por un link: si quien lo mandó está disponible, se le ofrece jugar en vivo contra esa persona
+  async function linkLive(o){
+    if(!fb || !Reg.nick() || !o.de || o.de===uid || anyOpen()) return false;
+    try{
+      const s=await fb.getDoc(fb.doc(fb.db,"online",o.de)), x=s.exists()&&s.data();
+      if(!x || !x.at || x.at.toMillis()<=now()-FRESH || !x.inv || (x.busy||[]).includes(o.g)) return false;
+    }catch(e){ return false; }
+    const d=$("lnkDlg"), T0=t();
+    $("lnkT").textContent=T0.lnkLiveT(o.who); $("lnkP").textContent=T0.lnkLiveP; $("lnkLive").textContent=T0.lnkLiveGo(o.who); $("lnkSolo").textContent=T0.lnkSoloGo;
+    const live=await new Promise(res=>{ $("lnkLive").onclick=()=>res(true); $("lnkSolo").onclick=()=>res(false); d.oncancel=e=>{ e.preventDefault(); res(false); }; d.showModal(); });
+    d.close(); if(!live) return false;
+    openOut({to:o.de, who:o.who});
+    pickG=o.g; pickL=o.L; if(o.g==="sopa"){ pickS=o.k==="sopa"?"media":o.k.slice(4); pickM=o.m||"w"; }
+    stage("opts"); renderOpts(); send();
+    return true;
+  }
+  return {texts, beat, linkLive};
 })();
 
 // =====================================================================
@@ -4494,12 +4530,14 @@ route();
   let who=""; const de=q.get("de");
   if(de && /^[A-Za-z0-9]{10,40}$/.test(de) && de!==Reg.uid()){ try{ const s=await fb.getDoc(fb.doc(fb.db,"names",de)); who=(s.exists()&&s.data().name)||""; }catch(e){} }
   const play=()=>{ setLang(L); Reg.playInvite(g, k, +n, null, q.get("m")||undefined).then(()=>Reg.say(g, T[lang].lnkPlay(who))); };
-  if(Reg.nick()) return play();
+  // con usuario y quien invitó en línea: se ofrece jugar en vivo; si no, la partida del link
+  const next=async()=>{ if(who && await Live.linkLive({de, who, g, k, L, m:q.get("m")||undefined})) return; play(); };
+  if(Reg.nick()) return next();
   setLang(L);
   await User.open(); const dlg=$("userDlg");
-  if(!dlg.open) return play();
+  if(!dlg.open) return next();
   $("uMsg").textContent=T[lang].lnkIn(who, Reg.gameName(g));
-  dlg.addEventListener("close",play,{once:true});
+  dlg.addEventListener("close",next,{once:true});
 })();
 </script>
 <script type="module">
