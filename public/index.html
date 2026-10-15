@@ -124,6 +124,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivnamebox{width:100%;max-width:300px}
 .ivlinkbox{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:10px}
 .ivlinkbox[hidden]{display:none}
+.ivnote{margin:12px 0 0;font-size:.9rem;color:var(--muted);text-align:center}
+.ivnote[hidden],.ivdlg button[hidden]{display:none}
 .ivlinkbox textarea{width:100%;max-width:420px;resize:none;font:400 .9rem/1.4 inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivnamebox input{width:100%;font:inherit;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivsugg{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;min-height:1.5em}
@@ -861,6 +863,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       </div>
     </div>
     <div class="ivnick" id="ivNickRow"><button id="ivNickBtn"></button></div>
+    <p class="ivnote" id="ivLinkNote" hidden></p>
     <div class="row"><button class="primary" id="ivSend"></button><button id="ivLink"></button></div>
     <button class="ivoff" id="ivBackPick"></button>
   </div>
@@ -3265,7 +3268,7 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 Object.assign(T.es,{
   liveN:n=> n===0 ? "Nadie disponible para jugar ahora" : n===1 ? "1 disponible para jugar" : `${n} disponibles para jugar`,
   liveMore:"Ver quiénes ▾", liveLess:"Ocultar ▴", liveAnon:n=>`y ${n} sin usuario`, liveNoNamed:"Nadie con usuario disponible ahora.", liveInv:"Invitar",
-  ivBtn:"Invitar a jugar", ivRecv:"Recibir invitaciones", ivClose:"Cerrar",
+  ivBtn:"Invitar a jugar", ivBtnLink:"🔗 Invitar con un link", ivLinkNote:"Ahora no hay nadie disponible: copiá el link y mandáselo a quien quieras.", ivRecv:"Recibir invitaciones", ivClose:"Cerrar",
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
   ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Podés copiar un link y mandárselo a quien quieras.",
@@ -3310,7 +3313,7 @@ Object.assign(T.es,{
 Object.assign(T.en,{
   liveN:n=> n===0 ? "Nobody available to play right now" : n===1 ? "1 available to play" : `${n} available to play`,
   liveMore:"See who ▾", liveLess:"Hide ▴", liveAnon:n=>`and ${n} without a username`, liveNoNamed:"Nobody with a username is available right now.", liveInv:"Invite",
-  ivBtn:"Invite to play", ivRecv:"Receive invitations", ivClose:"Close",
+  ivBtn:"Invite to play", ivBtnLink:"🔗 Invite with a link", ivLinkNote:"Nobody is available right now: copy the link and send it to anyone.", ivRecv:"Receive invitations", ivClose:"Close",
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
   ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. You can copy a link and send it to anyone.",
@@ -3396,10 +3399,13 @@ const Live = (()=>{
       try{ n=(await fb.getCountFromServer(fresh())).data().count - 1; }catch(e2){}
     }
     if(n===null) return;
-    avN=Math.max(0,n); $("liveN").textContent=t().liveN(avN); $("live").hidden=false;
+    avN=Math.max(0,n); $("liveN").textContent=t().liveN(avN); $("live").hidden=false; btnLabel();
+    if(linkOnly && avN>0 && dOut.open){ linkOnly=false; if(!$("ivOpts").hidden) renderOpts(); }
     $("liveMore").hidden=avN===0 && !panel;
   }
-  let avN=0, meAvail=false, panel=false;
+  let avN=0, meAvail=false, panel=false, linkOnly=false;
+  // sin nadie disponible, invitar solo puede ser con un link: el botón lo dice
+  const btnLabel=()=>{ $("ivBtn").textContent = avN>0 ? t().ivBtn : t().ivBtnLink; };
 
   // ---------- quien invita ----------
   const msgOut=s=>{ $("ivOutMsg").textContent=s||""; };
@@ -3435,12 +3441,19 @@ const Live = (()=>{
       $("ivNameBox").hidden=whoMode!=="name"; $("ivName").placeholder=T0.ivNamePh;
       if(whoMode==="name") suggest();
     }
-    $("ivNickRow").hidden=!!Reg.nick();
+    $("ivNickRow").hidden=!!Reg.nick() || linkOnly;
+    // sin nadie disponible: solo el link (sin "¿A quién?" ni "Invitar"), como botón principal
+    if(linkOnly){ $("ivWho").hidden=true; $("ivSend").hidden=true; }
+    else $("ivSend").hidden=false;
+    $("ivLink").classList.toggle("primary", linkOnly);
+    $("ivLinkNote").hidden=!linkOnly;
   }
   // dir: revancha con alguien en particular {to, who, d}
   function openOut(dir){
     if(!fb || anyOpen()) return;
     direct=dir&&dir.to ? dir : null; whoMode="rnd"; pickTo=null; onlAt=0; $("ivName").value="";
+    linkOnly=!dir && avN===0;
+    if(linkOnly) count();   // el contador se actualiza cada 30 s: al abrir se vuelve a contar
     // invitar a alguien elegido de la lista de la portada: queda como "Por nombre" con esa persona
     if(dir && dir.pick){ direct=null; whoMode="name"; pickTo=dir.pick; $("ivName").value=dir.pick.who; }
     rewatch();
@@ -3799,11 +3812,11 @@ const Live = (()=>{
 
   function texts(){
     const T0=t();
-    $("ivBtn").textContent=T0.ivBtn; $("liveMore").textContent=panel ? T0.liveLess : T0.liveMore; renderPanel(); $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
+    btnLabel(); $("liveMore").textContent=panel ? T0.liveLess : T0.liveMore; renderPanel(); $("ivRecvL").textContent=T0.ivRecv; $("ivOutX").setAttribute("aria-label",T0.ivClose); $("ivOutX").textContent="×";
     if(!dOut.open || !$("ivPick").hidden) $("ivOutT").textContent=direct ? T0.ivRematchT(direct.who) : T0.ivOutT;
     else if(!$("ivOpts").hidden) $("ivOutT").textContent=cap(describe(curOpts()));
     $("ivNickBtn").textContent=T0.ivNickBtn; $("ivSend").textContent=T0.ivSend;
-    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivLink").textContent=$("ivLink2").textContent=T0.ivLink; $("ivBackPick").textContent=T0.ivBackPick;
+    $("ivAgain").textContent=T0.ivAgain; $("ivSolo").textContent=T0.ivSolo; $("ivLink").textContent=$("ivLink2").textContent=T0.ivLink; $("ivLinkNote").textContent=T0.ivLinkNote; $("ivBackPick").textContent=T0.ivBackPick;
     $("ivYes").textContent=T0.ivYes; $("ivNo").textContent=T0.ivNo; $("ivOff").textContent=T0.ivOff;
     if(dOut.open && (!$("ivPick").hidden || !$("ivOpts").hidden)) renderPick();
     if(fb && sentLang!==lang) beat();
