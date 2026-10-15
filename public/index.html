@@ -340,6 +340,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
        font:700 calc(var(--s)*.5)/1 "IBM Plex Mono",ui-monospace,monospace}
 .scell.found{background:var(--btc-soft);border-color:var(--btc)}
 .scell.sel{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+.scell.first{box-shadow:inset 0 0 0 3px var(--btc);font-weight:800;color:var(--btc)}
 .scell.anchor{box-shadow:0 0 0 2px var(--ink) inset}
 .wlist{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
 .wlist.clue{grid-template-columns:1fr}
@@ -658,6 +659,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     </div>
     <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
     <div class="actions">
+      <button id="sHint"></button>
       <button class="giveup" id="sGiveUp"></button>
       <button id="sPrint"></button>
     </div>
@@ -1381,7 +1383,7 @@ const T = {
     sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
     sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
     sWin:"¡Encontraste todas!", sStats:(n,t)=>`${n} términos en ${t}.`, sAgain:"Otra sopa",
-    sFoot:"Arrastrá sobre las letras, o tocá la primera y después la última.",
+    sFoot:"Arrastrá sobre las letras, o tocá la primera y después la última.", sHint:n=>`Revelar primera letra +60 s (quedan ${n})`,
     sCard:(n,t)=>`${n} términos en ${t}`
   },
   en:{
@@ -1409,7 +1411,7 @@ const T = {
     sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
     sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
-    sFoot:"Drag across the letters, or tap the first one and then the last.",
+    sFoot:"Drag across the letters, or tap the first one and then the last.", sHint:n=>`Reveal first letter +60s (${n} left)`,
     sCard:(n,t)=>`${n} terms in ${t}`
   }
 };
@@ -1852,13 +1854,13 @@ const Sopa = (()=>{
   let size=store.get("rodo-sopa-size")||"media"; if(!SIZES[size]) size="media";
   let N=SIZES[size].n, COUNT=SIZES[size].count;
   const DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
-  let grid=[], words=[], found=new Set(), start=0, elapsed=0, done=false, showClues=store.get("rodo-sopa-mode")==="c";
+  let grid=[], words=[], found=new Set(), first=new Set(), tried=new Set(), start=0, elapsed=0, done=false, showClues=store.get("rodo-sopa-mode")==="c";
   let anchor=null, dragging=false, dragStart=null, path=[];
 
   function texts(){
     const t=T[lang];
     $("sNew").textContent=t.sNew; $("sAgain").textContent=t.sAgain; $("sShare").textContent=t.share;
-    $("sPrint").textContent=t.print; $("sGiveUp").textContent=t.giveUp; $("sFoot").textContent=t.sFoot; updateMode();
+    $("sPrint").textContent=t.print; $("sGiveUp").textContent=t.giveUp; updHint(); $("sFoot").textContent=t.sFoot; updateMode();
   }
   function updateMode(){
     const t=T[lang];
@@ -1907,19 +1909,19 @@ const Sopa = (()=>{
     N=d.n||d.grid.length;
     grid=d.grid.map(r=>[...r]);
     words=d.words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(i=>[Math.floor(i/N),i%N])}));
-    found=new Set(); done=false; anchor=null; start=Date.now();
+    found=new Set(); first=new Set(); tried=new Set(); usedFirst=0; done=false; anchor=null; start=Date.now(); updHint();
     $("sWin").style.display="none"; render();
   }
   function render(){
     const g=$("sGrid"); g.style.gridTemplateColumns=`repeat(${N}, var(--s))`; g.style.setProperty("--s",`clamp(20px,calc((100vw - 52px)/${N}),38px)`);
     g.innerHTML = grid.map((row,r)=>row.map((ch,c)=>`<div class="scell" data-r="${r}" data-c="${c}">${ch}</div>`).join("")).join("");
-    words.forEach(o=>{ if(found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("found")); });
+    words.forEach(o=>{ if(found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("found")); else if(first.has(o.w)) cellAt(...o.cells[0]).classList.add("first"); });
     renderList();
   }
   function renderList(){
     const ul=$("sList"); ul.classList.toggle("clue", showClues);
     ul.innerHTML = words.map(o=>`<li class="${found.has(o.w)?"got":""}">${
-      showClues ? (found.has(o.w)?`<span class="w">${o.w}</span> `:"")+`${o.clue} <span class="len">(${o.w.length})</span>`
+      showClues ? (found.has(o.w)?`<span class="w">${o.w}</span> `:first.has(o.w)?`<span class="w">${o.w[0]}…</span> `:"")+`${o.clue} <span class="len">(${o.w.length})</span>`
                 : `<span class="w">${o.w}</span>`}</li>`).join("");
     $("sMeta").textContent=T[lang].sMeta(found.size, words.length);
   }
@@ -1940,23 +1942,41 @@ const Sopa = (()=>{
     if(!cells||cells.length<2) return;
     const s=cells.map(p=>grid[p.r][p.c]).join(""), rev=[...s].reverse().join("");
     const hit=words.find(o=>!found.has(o.w)&&(o.w===s||o.w===rev));
-    if(!hit) return;
-    found.add(hit.w);
-    cells.forEach(p=>cellAt(p.r,p.c).classList.add("found"));
+    // trazo equivocado de 3 letras o más: +10 s (una vez por trazo, para que probar combinaciones no salga gratis)
+    if(!hit){
+      const key=[s,rev].sort()[0];
+      if(cells.length>=3 && !words.some(o=>o.w===s||o.w===rev) && !tried.has(key)){ tried.add(key); Reg.pen("sopa","e"); }
+      return;
+    }
+    found.add(hit.w); first.delete(hit.w);
+    cells.forEach(p=>{ const e=cellAt(p.r,p.c); e.classList.remove("first"); e.classList.add("found"); });
+    updHint();
     renderList();
     if(found.size===words.length) finish();
   }
+  // revelar la primera letra de una palabra que falta, al azar: +60 s; una cada 3 palabras (redondeando para arriba)
+  const maxFirst=()=>Math.ceil(words.length/3);
+  function updHint(){ const b=$("sHint"); if(!b) return;
+    b.textContent=T[lang].sHint(Math.max(0,maxFirst()-usedFirst)); b.disabled = done || !words.length || usedFirst>=maxFirst() || !words.some(o=>!found.has(o.w)&&!first.has(o.w)); }
+  let usedFirst=0;
+  function revealFirst(){
+    if(done || usedFirst>=maxFirst()) return;
+    const pool=words.filter(o=>!found.has(o.w)&&!first.has(o.w)); if(!pool.length) return;
+    const o=rand(pool); first.add(o.w); usedFirst++; Reg.pen("sopa","h");
+    const e=cellAt(...o.cells[0]); e.classList.add("first"); e.scrollIntoView({block:"nearest",behavior:"smooth"});
+    renderList(); updHint();
+  }
   function giveUp(){
     if(done || !words.length || !sure($("sGiveUp"), T[lang].giveUpQ)) return;
-    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
+    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang]; updHint();
     words.forEach(o=>{ if(!found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("miss")); });
     Reg.missed("sopa", words.filter(o=>!found.has(o.w)).map(o=>({w:o.w, clue:o.clue})));
     showWin("s", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
     Reg.finish("sopa",{ok:false,s:0,h:0,ms:elapsed});
   }
-  $("sGiveUp").addEventListener("click",giveUp);
+  $("sGiveUp").addEventListener("click",giveUp); $("sHint").addEventListener("click",revealFirst);
   function finish(){
-    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang];
+    done=true; elapsed=Date.now()-start-Reg.wait("sopa"); const t=T[lang]; updHint();
     $("sWin").classList.remove("lose"); $("sWinLabel").textContent=t.sWin; $("sWinStats").textContent=t.sStats(words.length, fmt(elapsed));
     $("sNote").textContent=""; $("sWin").style.display="block";
     $("sWin").scrollIntoView({block:"nearest",behavior:"smooth"});
@@ -3203,7 +3223,7 @@ Object.assign(T.es,{
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
     ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +150 s.",
-    sopa:"Gana el tiempo. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
+    sopa:"Cada trazo equivocado (3 letras o más) suma 10 s · Revelar primera letra +60 s. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
     criptograma:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
     anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +90 s.",
     semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
@@ -3222,7 +3242,7 @@ Object.assign(T.en,{
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
     ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +150s.",
-    sopa:"Time wins. Pick the mode (words or clues) before you start; each has its own leaderboard.",
+    sopa:"Each wrong trace (3+ letters) adds 10s · Reveal first letter +60s. Pick the mode (words or clues) before you start; each has its own leaderboard.",
     criptograma:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
     anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +90s.",
     semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
