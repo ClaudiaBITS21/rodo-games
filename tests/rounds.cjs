@@ -1,0 +1,46 @@
+const { chromium } = require(process.env.PLAYWRIGHT||'/opt/node22/lib/node_modules/playwright');
+const URL='http://localhost:5055/', FS='http://127.0.0.1:8080/v1/projects/demo-rodo/databases/(default)/documents/';
+let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fails++; };
+const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}})).json();
+(async()=>{
+  const br=await chromium.launch(); const p=await (await br.newContext()).newPage(); p.on('pageerror',e=>console.log('pageerror',e.message)); p.on('dialog',d=>{ console.log('DIALOG '+d.message()); d.accept(); });
+  const txt=s=>p.$eval(s,e=>e.textContent.trim());
+  // ---- ahorcado
+  await p.goto(URL+'#ahorcado'); await p.waitForFunction(()=>/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
+  const n=(await txt('#view-ahorcado .pid')).match(/\d+/)[0];
+  const pz=await rest(`puzzles/ahorcado6-es-${n}`); const L=pz.fields.data.mapValue.fields.list.arrayValue.values.map(v=>v.mapValue.fields.w.stringValue);
+  ok(L.length===6 && new Set(L).size===6,'6 palabras distintas: '+L.join(' '));
+  await p.click('#view-ahorcado .gatecard button');
+  ok(/Palabra 1 de 6/.test(await txt('#hMeta')),'meta: '+await txt('#hMeta'));
+  const all=[...'QWERTYUIOPASDFGHJKLÑZXCVBNM'], press=async c=>{ await p.click(`#hKeys button[data-k="${c}"]`); await p.waitForTimeout(60); };
+  const solve=async w=>{ for(const c of [...new Set(w)].filter(c=>all.includes(c))) await press(c); await p.waitForTimeout(900); };
+  await solve(L[0]); ok(/Palabra 2 de 6/.test(await txt('#hMeta')),'resuelta la 1, pasa a la 2');
+  await p.click('#hSkip'); ok(/Palabra 3 de 6/.test(await txt('#hMeta')),'pasar la 2 (gratis): '+await txt('#view-ahorcado .ptime'));
+  for(const c of all.filter(c=>!L[2].includes(c)).slice(0,6)) await press(c); await p.waitForTimeout(1800);
+  ok(/Palabra 4 de 6/.test(await txt('#hMeta')),'la 3 se perdió con 6 errores y pasa a la 4');
+  await p.click('#hSkip'); await p.click('#hSkip'); await p.click('#hSkip');
+  ok(/Palabra 2 de 6/.test(await txt('#hMeta')),'dando la vuelta vuelve a la 2 (saltea la 3 perdida): '+await txt('#hMeta'));
+  await solve(L[1]); ok(/Palabra 4 de 6/.test(await txt('#hMeta')),'resuelta la 2 al volver');
+  await p.click('#hEnd'); await p.waitForTimeout(300);
+  ok(!(await p.isVisible('#hWin')) && /Tocá de nuevo/.test(await txt('#hEnd')) && /van a contar como falladas/.test(await txt('#view-ahorcado .surenote')),'un toque: pregunta en la página, no termina: '+await txt('#view-ahorcado .surenote'));
+  await p.click('#hEnd'); await p.waitForSelector('#hWin',{state:'visible'});
+  ok(/2 de 6 palabras/.test(await txt('#hWinLabel')),'resultado: '+await txt('#hWinLabel')+' | '+await txt('#hWinWord'));
+  await p.waitForTimeout(1500);
+  const sc=await rest(`scores/ahorcado6-es-${n}/players`); const f=sc.documents[0].fields;
+  ok(+f.s.integerValue===2 && f.ok.booleanValue && +f.e.integerValue===6,'guardado: s=2, 6 errores');
+  const pts=await txt('#view-ahorcado .wpts'); ok(/puntos/.test(pts),'puntos: '+pts);
+  ok((await p.$$eval('#hWin .lchips button',b=>b.length))===6 && (await p.$$eval('#hWin .lchips button[aria-pressed="true"]',b=>b.length))===0,'6 palabras para marcar, ninguna marcada de antemano');
+  // ---- anagrama
+  await p.evaluate(()=>location.hash='anagrama'); await p.waitForFunction(()=>/\d/.test(document.querySelector('#view-anagrama .pid').textContent),null,{timeout:20000});
+  const an=(await txt('#view-anagrama .pid')).match(/\d+/)[0];
+  const az=await rest(`puzzles/anagrama-es-${an}`); const A=az.fields.data.mapValue.fields.list.arrayValue.values.map(v=>v.mapValue.fields.w.stringValue);
+  await p.click('#view-anagrama .gatecard button');
+  await p.click('#aSkip'); ok(/Ronda 2 de 10/.test(await txt('#aMeta')),'anagrama: pasar gratis a la 2: '+await txt('#view-anagrama .ptime'));
+  const type=async w=>{ for(const c of w){ if(c==='Ñ'){ await p.evaluate(()=>{ const b=[...document.querySelectorAll('#aTiles .atile:not(.used)')].find(x=>x.textContent==='Ñ'); b.click(); }); } else await p.keyboard.press(c.toLowerCase()); } await p.waitForTimeout(1000); };
+  await type(A[1]); ok(/Ronda 3 de 10/.test(await txt('#aMeta')),'resuelta la 2');
+  for(let k=0;k<8;k++) await p.click('#aSkip');
+  ok(/Ronda 1 de 10/.test(await txt('#aMeta')),'vuelve a la 1: '+await txt('#aMeta'));
+  await type(A[0]); await p.click('#aEnd'); await p.click('#aEnd'); await p.waitForSelector('#aWin',{state:'visible'});
+  ok(/2 de 10/.test(await txt('#aWinLabel')),'anagrama: '+await txt('#aWinLabel'));
+  await br.close(); console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
+})().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
