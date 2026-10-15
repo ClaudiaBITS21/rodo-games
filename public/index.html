@@ -124,7 +124,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivnamebox{width:100%;max-width:300px}
 .ivlinkbox{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:10px}
 .ivlinkbox[hidden]{display:none}
-.ivlinkbox input{width:100%;max-width:420px;font:500 .85rem "IBM Plex Mono",ui-monospace,monospace;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
+.ivlinkbox textarea{width:100%;max-width:420px;resize:none;font:400 .9rem/1.4 inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivnamebox input{width:100%;font:inherit;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--cell-bg);color:var(--ink)}
 .ivsugg{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;min-height:1.5em}
 .ivsugg button{padding:6px 10px;font-size:.9rem}
@@ -872,7 +872,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
   <div id="ivDone" hidden>
     <div class="row"><button class="primary" id="ivAgain"></button><button id="ivLink2"></button><button id="ivSolo"></button></div>
   </div>
-  <div class="ivlinkbox" id="ivLinkBox" hidden><input id="ivLinkUrl" readonly><button id="ivLinkSolo"></button></div>
+  <div class="ivlinkbox" id="ivLinkBox" hidden><textarea id="ivLinkUrl" readonly rows="4"></textarea><button id="ivLinkSolo"></button></div>
   <p class="ivmsg" id="ivOutMsg" aria-live="polite"></p>
 </dialog>
 
@@ -3269,7 +3269,7 @@ Object.assign(T.es,{
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
   ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Podés copiar un link y mandárselo a quien quieras.",
-  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"Link copiado. Compartilo donde quieras: quien lo abra juega esta misma partida y se comparan en su ranking.", ivLinkCopy:"Copiá este link y compartilo donde quieras:",
+  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"Invitación copiada. Compartila donde quieras: quien abra el link juega esta misma partida y se comparan en su ranking.", ivLinkCopy:"Copiá este mensaje y compartilo donde quieras:", ivLinkText:(d,u)=>`¡Te invito a jugar en RODO ₿ Games una partida de ${d}! Entrá con este link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" te invitó":"Te invitaron"} a jugar ${g}. Elegí tu usuario para aparecer en el ranking, o cerrá esta ventana y jugá sin usuario.`,
   lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
@@ -3314,7 +3314,7 @@ Object.assign(T.en,{
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
   ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. You can copy a link and send it to anyone.",
-  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"Link copied. Share it anywhere: whoever opens it plays this same game and you compare on its leaderboard.", ivLinkCopy:"Copy this link and share it anywhere:",
+  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"Invitation copied. Share it anywhere: whoever opens it plays this same game and you compare on its leaderboard.", ivLinkCopy:"Copy this message and share it anywhere:", ivLinkText:(d,u)=>`Join me on RODO ₿ Games for a game of ${d}! Play with this link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
   lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
@@ -3578,9 +3578,9 @@ const Live = (()=>{
       const g=game ? game.g : pickG;
       if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
       const q=new URLSearchParams({j:`${game.k}-${game.lang}-${game.n}`}); if(game.m) q.set("m",game.m); q.set("de",uid);
-      const url=`${location.origin}/?${q}`;
-      $("ivLinkUrl").value=url; $("ivLinkBox").hidden=false; $("ivLinkSolo").textContent=t().ivSolo;
-      let ok=false; try{ await navigator.clipboard.writeText(url); ok=true; }catch(e){}
+      const url=`${location.origin}/?${q}`, text=t().ivLinkText(describe(game), url);
+      $("ivLinkUrl").value=text; $("ivLinkBox").hidden=false; $("ivLinkSolo").textContent=t().ivSolo;
+      let ok=false; try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){}
       if(!ok){ $("ivLinkUrl").focus(); $("ivLinkUrl").select(); }
       msgOut(ok ? t().ivLinkOk : t().ivLinkCopy);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
