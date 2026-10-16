@@ -120,7 +120,7 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
   - A. Publicar el torneo integrado (esta rama, `torneo-integrado`, a `main`).
   - B. "Invitar a jugar" (al azar o por nombre) también abre una sala para varios, no un duelo 1 a 1; desde la sala se puede invitar a más.
   - C. Pantalla del torneo: entrada tipo Kahoot (avatares que van entrando y total), cuenta regresiva que aparece 10 min antes ("arranca a las 21:50" si se entra antes), "Arrancar ya" del organizador, entre etapas quiénes siguen y quiénes quedaron afuera, y gran final con los dos finalistas en grande.
-  - D. Ventanita del link después de copiar: sacar el texto repetido de abajo ("Invitación copiada…"), poner "⏳ Esperando que se sumen jugadores…" y, cuando entra el primero, pasar en esa misma ventanita a la cuenta regresiva de la sala con cuántos se sumaron e "Iniciar ya".
+  - D. Ventanita del link después de copiar: sacar el texto repetido de abajo ("Invitación copiada…"), poner "⏳ Esperando que se sume el primer jugador…" (texto de la dueña) y, cuando entra el primero, pasar en esa misma ventanita a la cuenta regresiva de la sala con cuántos se sumaron e "Iniciar ya".
 - **Torneo:**
   - Pasar a Blaze y dar los permisos de IAM para publicar las Functions de avisos.
   - Aporte al pozo automático por Lightning (hoy se marca a mano).
