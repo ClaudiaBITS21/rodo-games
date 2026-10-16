@@ -262,6 +262,43 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Salas: varias personas juegan a la vez la misma partida (nacen del link para compartir).
+    // id = uid de quien la armó. p: quiénes están ({uid: {nm, av}}); go: arranque (hora del servidor), null mientras se espera.
+    // games: las partidas de cada ronda (la actual es la última). Las rondas nuevas las abre solo quien armó la sala.
+    function salaMe(e) {
+      return e is map && e.keys().hasOnly(['nm', 'av'])
+        && e.nm == (exists(/databases/$(database)/documents/names/$(request.auth.uid)) ? get(/databases/$(database)/documents/names/$(request.auth.uid)).data.name : '')
+        && e.av is string && e.av.size() <= 8;
+    }
+    function salaOpen(h) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['h', 'g', 'k', 'lang', 'n', 'm', 'w', 'games', 'p', 'at', 'go'])
+        && d.h == h && d.at == request.time && d.go == null
+        && d.g is string && d.g.size() <= 20 && d.n is int
+        && d.p is map && d.p.keys().hasOnly([h]) && d.p.size() == 1 && salaMe(d.p[h])
+        && d.games is list && d.games.size() >= 1 && d.games.size() <= 60
+        && d.games[d.games.size() - 1] == d.k + '-' + d.lang + '-' + string(d.n)
+        && exists(/databases/$(database)/documents/puzzles/$(d.games[d.games.size() - 1]));
+    }
+    match /salas/{h} {
+      allow read: if signedIn();
+      // abrir la sala o una ronda nueva: solo quien la arma, sola/o adentro
+      allow create, update: if signedIn() && request.auth.uid == h && salaOpen(h);
+      // sumarse o salir: cada uno solo a sí mismo, antes del arranque y dentro del minuto de espera (más un margen)
+      allow update: if signedIn() && resource.data.go == null
+        && request.time < resource.data.at + duration.value(90, 's')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['p'])
+        && request.resource.data.p.diff(resource.data.p).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.p.size() <= 30
+        && (!(request.auth.uid in request.resource.data.p) || salaMe(request.resource.data.p[request.auth.uid]));
+      // arrancar: quien la armó, cuando quiera; cualquiera de adentro, pasado el minuto (por si quien la armó se fue)
+      allow update: if signedIn() && resource.data.go == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['go'])
+        && request.resource.data.go == request.time
+        && (request.auth.uid == h || (request.auth.uid in resource.data.p && request.time > resource.data.at + duration.value(60, 's')));
+      allow delete: if false;
+    }
+
     // Duelos: la serie de partidas entre dos personas que empezó con una invitación aceptada.
     // id = uid de quien invitó + '_' + primera partida. games: partidas jugadas; last: quién eligió la última.
     // Los resultados no se guardan acá: se calculan con los de cada partida, que no se pueden tocar.

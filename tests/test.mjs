@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, where, serverTimestamp, Timestamp, getCountFromServer, writeBatch } from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, where, serverTimestamp, Timestamp, getCountFromServer, writeBatch, deleteField } from "firebase/firestore";
 import fs from "fs";
 
 const env = await initializeTestEnvironment({
@@ -219,6 +219,29 @@ await t("lk con apodo ajeno no", assertFails(setDoc(doc(C, "invites/C"), { ...li
 // sopa: palabras extra encontradas (b)
 await t("resultado con b=2", assertSucceeds(setDoc(doc(C, "scores/ahorcado-es-7/players/C"), { g: "ahorcado", ok: true, s: 0, h: 0, e: 0, c: 0, b: 2, ms: 60000, at: serverTimestamp() })));
 await t("b fuera de rango no", assertFails(setDoc(doc(B, "scores/ahorcado-es-7/players/B"), { g: "ahorcado", ok: true, s: 0, h: 0, e: 0, c: 0, b: 9, ms: 60000, at: serverTimestamp() })));
+// salas: varias personas en la misma partida del link
+await env.withSecurityRulesDisabled(async c => { const f = c.firestore(); await setDoc(doc(f, "names/A"), { name: "Ana" }); await deleteDoc(doc(f, "names/B")).catch(() => {}); });
+const sala = (o = {}) => ({ h: "A", g: "ahorcado", k: "ahorcado", lang: "es", n: 7, games: ["ahorcado-es-7"], p: { A: { nm: "Ana", av: "" } }, at: serverTimestamp(), go: null, ...o });
+await t("sala: quien la arma la abre", assertSucceeds(setDoc(doc(A, "salas/A"), sala())));
+await t("sala: no abre la de otro", assertFails(setDoc(doc(B, "salas/A"), sala({ h: "A" }))));
+await t("sala: no abre con otros adentro", assertFails(setDoc(doc(A, "salas/A"), sala({ p: { A: { nm: "Ana", av: "" }, B: { nm: "", av: "" } } }))));
+await t("sala: no abre con nombre falso", assertFails(setDoc(doc(A, "salas/A"), sala({ p: { A: { nm: "Otra", av: "" } } }))));
+await t("sala: no abre con partida que no existe", assertFails(setDoc(doc(A, "salas/A"), sala({ n: 99, games: ["ahorcado-es-99"] }))));
+await t("sala: cualquiera la lee", assertSucceeds(getDoc(doc(B, "salas/A"))));
+await t("sala: B (sin usuario) se suma", assertSucceeds(updateDoc(doc(B, "salas/A"), { "p.B": { nm: "", av: "" } })));
+await t("sala: C se suma con su nombre", assertSucceeds(updateDoc(doc(C, "salas/A"), { "p.C": { nm: "Caro", av: "🦊" } })));
+await t("sala: no se suma con nombre ajeno", assertFails(updateDoc(doc(B, "salas/A"), { "p.B": { nm: "Ana", av: "" } })));
+await t("sala: no suma a otro", assertFails(updateDoc(doc(B, "salas/A"), { "p.Z": { nm: "", av: "" } })));
+await t("sala: no saca a otro", assertFails(updateDoc(doc(B, "salas/A"), { "p.C": deleteField() })));
+await t("sala: sale ella misma", assertSucceeds(updateDoc(doc(C, "salas/A"), { "p.C": deleteField() })));
+await t("sala: un jugador no arranca antes del minuto", assertFails(updateDoc(doc(B, "salas/A"), { go: serverTimestamp() })));
+await t("sala: quien la armó arranca", assertSucceeds(updateDoc(doc(A, "salas/A"), { go: serverTimestamp() })));
+await t("sala: arrancada, nadie se suma", assertFails(updateDoc(doc(C, "salas/A"), { "p.C": { nm: "Caro", av: "" } })));
+await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { go: null, at: Timestamp.fromMillis(Date.now() - 70e3) }); });
+await t("sala: pasado el minuto, uno de adentro arranca", assertSucceeds(updateDoc(doc(B, "salas/A"), { go: serverTimestamp() })));
+await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { go: null }); });
+await t("sala: pasado el minuto, alguien de afuera no", assertFails(updateDoc(doc(C, "salas/A"), { go: serverTimestamp() })));
+await t("sala: otra ronda (solo ella adentro)", assertSucceeds(setDoc(doc(A, "salas/A"), sala({ games: ["ahorcado-es-7", "ahorcado-es-7"] }))));
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

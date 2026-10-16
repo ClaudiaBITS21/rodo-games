@@ -9,7 +9,7 @@ http.createServer((q,r)=>{
   if(u==="/"||u==="/index.html"){
     let h=fix(fs.readFileSync(PUB+"/index.html","utf8"));
     h=h.replace("signInWithEmailAndPassword }","signInWithEmailAndPassword, connectAuthEmulator }")
-       .replace("Timestamp, writeBatch } from","Timestamp, writeBatch, connectFirestoreEmulator } from")
+       .replace("writeBatch, deleteField } from","writeBatch, deleteField, connectFirestoreEmulator } from")
        .replace("const auth = getAuth(app);","const auth = getAuth(app); connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});")
        .replace("const db = getFirestore(app);","const db = getFirestore(app); connectFirestoreEmulator(db,'127.0.0.1',8080);");
     const et=fs.existsSync(path.join(HERE,"etag.txt"))?fs.readFileSync(path.join(HERE,"etag.txt"),"utf8").trim():"v1";

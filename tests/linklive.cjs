@@ -18,25 +18,23 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const B=await mk('B'); await B.goto(url);
   await B.waitForSelector('#lnkDlg[open]',{timeout:20000});
   ok(/Ana está en línea/.test(await txt(B,'#lnkT')) && /Jugar contra Ana ahora/.test(await txt(B,'#lnkLive')),'Mati (sin usuario) ve: '+await txt(B,'#lnkT')+' / '+await txt(B,'#lnkLive'));
-  const D=await mk('D'); await D.goto(url); await D.waitForSelector('#lnkDlg[open]',{timeout:20000});
   await B.click('#lnkLive');
-  // Ana no toca nada: arranca sola (tenía abierta la ventanita del link y no estaba jugando)
+  // Ana no toca nada: se le abre la sala sola, con Mati adentro
+  await A.waitForFunction(()=>document.getElementById('salaDlg').open && /2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});
+  ok(/Tu sala/.test(await txt(A,'#salaT')),'a Ana se le abre la sala sola: '+await txt(A,'#salaWho'));
+  await B.waitForFunction(()=>document.getElementById('salaDlg').open,null,{timeout:20000});
+  ok(/Sala de Ana/.test(await txt(B,'#salaT')) && /Jugador 2 \(vos\)/.test(await txt(B,'#salaWho')),'Mati (sin usuario) espera en la sala: '+await txt(B,'#salaWho'));
+  ok(await B.isHidden('#salaGo'),'solo Ana tiene «Iniciar ya»');
+  await A.click('#salaGo');
   await A.waitForFunction(()=>location.hash==='#sopa'&&/Empieza en/.test(document.body.textContent),null,{timeout:20000});
-  ok(true,'a Ana le arranca solo el duelo, con cuenta regresiva');
-  await D.click('#lnkLive');
-  await B.waitForFunction(()=>/Ana aceptó tu invitación/.test(document.body.textContent),null,{timeout:20000});
-  ok(/entró por tu link/.test(await A.evaluate(()=>document.body.textContent)),'Mati ve "Ana aceptó tu invitación" y Ana "entró por tu link"');
-  await D.waitForFunction(()=>/ya está jugando con otra persona/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:20000});
-  ok(true,'Dani, segundo: '+await txt(D,'#ivOutMsg'));
-  ok(/Jugar la del link/.test(await txt(D,'#ivSolo')) && /Crear mi link/.test(await txt(D,'#ivLink2')),'Dani puede jugar la del link o crear su link: '+await txt(D,'#ivSolo')+' / '+await txt(D,'#ivLink2'));
-  await D.click('#ivSolo');
-  await D.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
-  ok((await txt(D,'#view-sopa .pid')).replace(/\D/g,'')===url.match(/sopa-es-(\d+)/)[1],'Dani juega la partida del link');
+  await B.waitForFunction(()=>/Sala de Ana: 2 jugadores/.test(document.body.textContent),null,{timeout:20000});
+  ok(true,'arrancan los dos a la vez, con cuenta regresiva');
   await A.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
   await B.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
   const na=await txt(A,'#view-sopa .pid'), nb=await txt(B,'#view-sopa .pid');
-  ok(na.replace(/\D/g,'')===nb.replace(/\D/g,''),'duelo en vivo, misma partida: '+na);
-  ok(await A.evaluate(()=>!!Reg.cur('sopa').duel) && await B.evaluate(()=>!!Reg.cur('sopa').duel),'los dos en duelo');
+  ok(na.replace(/\D/g,'')===nb.replace(/\D/g,''),'en vivo, misma partida: '+na);
+  ok(await A.evaluate(()=>!!Reg.cur('sopa').sala) && await B.evaluate(()=>!!Reg.cur('sopa').sala),'los dos en la sala');
+  await A.waitForTimeout(6000);
   // Carla abre el mismo link sin usuario: juega la del link (no se le ofrece en vivo)
   const C=await mk('C'); await C.goto(url); await C.waitForTimeout(2500); if(await C.$('#lnkDlg[open]')) await C.click('#lnkSolo');
   await C.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
@@ -44,10 +42,10 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await C.click('#view-sopa .gatecard button'); await C.waitForTimeout(1500);
   await C.click('#userBtn'); await user(C,'Carla'); await C.waitForTimeout(2500); if(await C.$('#userDlg[open]')) await C.click('#uX');
   await C.evaluate(()=>Live.beat && Live.beat()); await C.waitForTimeout(1500);
-  // Mati termina su duelo con "Me rindo" y lo invita por nombre a Carla, que está jugando una sopa: dice el motivo
+  // Mati termina su partida con "Me rindo" y lo invita por nombre a Carla, que está jugando una sopa: dice el motivo
   await B.click('#sGiveUp'); await B.click('#sGiveUp'); await B.waitForTimeout(800);
   await B.waitForSelector('#sWin .wuser:not([hidden])',{timeout:10000}); await B.click('#sWin .wuser button'); await user(B,'Mati'); await B.waitForTimeout(2500); if(await B.$('#userDlg[open]')) await B.click('#uX');
-  ok(/Mati/.test(await txt(B,'#userBtn')),'Mati eligió usuario al terminar el duelo');
+  ok(/Mati/.test(await txt(B,'#userBtn')),'Mati eligió usuario al terminar');
   await B.evaluate(()=>location.hash=''); await B.waitForTimeout(600);
   await B.click('#ivBtn'); await B.click('#ivGames button[data-g="sopa"]');
   if(await B.isVisible('#ivWhoSeg button[data-who="name"]')){
