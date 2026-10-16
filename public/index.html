@@ -3540,7 +3540,7 @@ Object.assign(T.es,{
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
   ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Podés copiar un link y mandárselo a quien quieras.",
-  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"Invitación copiada. Compartila donde quieras: quien abra el link juega esta misma partida y se comparan en su ranking.", ivLinkCopy:"Copiá este mensaje y compartilo donde quieras:", gBit:g=>`${g} Bitcoiner`, ivLinkText:(d,u)=>`¡Te invito a jugar en RODO ₿ Games una partida de ${d}! Entrá con este link: ${u}`,
+  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"✓ Invitación copiada. ⏳ Esperando que se sume el primer jugador…", ivLinkOkOff:"✓ Invitación copiada. Para jugar en vivo con quien entre, tildá «Recibir invitaciones» en la portada.", ivLinkCopy:"Copiá este mensaje y compartilo donde quieras:", gBit:g=>`${g} Bitcoiner`, ivLinkText:(d,u)=>`¡Te invito a jugar en RODO ₿ Games una partida de ${d}! Entrá con este link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" te invitó":"Te invitaron"} a jugar ${g}. Elegí tu usuario para aparecer en el ranking, o cerrá esta ventana y jugá sin usuario.`,
   lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
@@ -3603,7 +3603,7 @@ Object.assign(T.en,{
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
   ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. You can copy a link and send it to anyone.",
-  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"Invitation copied. Share it anywhere: whoever opens it plays this same game and you compare on its leaderboard.", ivLinkCopy:"Copy this message and share it anywhere:", gBit:g=>`Bitcoiner ${g}`, ivLinkText:(d,u)=>`Join me on RODO ₿ Games for a game of ${d}! Play with this link: ${u}`,
+  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"✓ Invitation copied. ⏳ Waiting for the first player to join…", ivLinkOkOff:"✓ Invitation copied. To play live with whoever comes in, tick “Receive invitations” on the home page.", ivLinkCopy:"Copy this message and share it anywhere:", gBit:g=>`Bitcoiner ${g}`, ivLinkText:(d,u)=>`Join me on RODO ₿ Games for a game of ${d}! Play with this link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
   lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
@@ -3933,7 +3933,7 @@ const Live = (()=>{
       store.set("rodo-linkat", String(Date.now()));   // durante una semana acepta invitaciones de quien llegue por el link, aunque no tenga usuario
       let ok=false; try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){}
       if(!ok){ $("ivLinkUrl").focus(); $("ivLinkUrl").select(); }
-      msgOut(ok ? t().ivLinkOk : t().ivLinkCopy);
+      msgOut(ok ? (want ? t().ivLinkOk : t().ivLinkOkOff) : t().ivLinkCopy);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
     }catch(e){ msgOut(t().ivFail); }
     finally{ $("ivLink").disabled=$("ivLink2").disabled=false; }

@@ -15,6 +15,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await D.click('#userBtn'); await user(D,'Dani'); await D.waitForTimeout(2500); if(await D.$('#userDlg[open]')) await D.click('#uX');
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="sopa"]');
   await A.click('#ivLink'); await A.waitForFunction(()=>/Invitación copiada/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:15000});
+  ok(/Esperando que se sume el primer jugador/.test(await txt(A,'#ivOutMsg')),'después de copiar: '+await txt(A,'#ivOutMsg'));
   const url=(await A.evaluate(()=>navigator.clipboard.readText())).match(/https?:\S+/)[0].replace(/^https?:\/\/[^/]+\//,URL);
   // Mati (sin usuario) entra y juega en vivo: se abre la sala
   const B=await mk('B'); await B.goto(url); await B.waitForSelector('#lnkDlg[open]',{timeout:20000}); await B.click('#lnkLive');
