@@ -20,15 +20,18 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/Ana está en línea/.test(await txt(B,'#lnkT')) && /Jugar contra Ana ahora/.test(await txt(B,'#lnkLive')),'Mati (sin usuario) ve: '+await txt(B,'#lnkT')+' / '+await txt(B,'#lnkLive'));
   const D=await mk('D'); await D.goto(url); await D.waitForSelector('#lnkDlg[open]',{timeout:20000});
   await B.click('#lnkLive');
-  await A.waitForSelector('#ivIn[open]',{timeout:20000});
-  ok(/Alguien abrió tu link y te invita a jugar Sopa de letras/.test(await txt(A,'#ivInT')),'a Ana le llega aunque tenía abierta la ventanita del link: '+await txt(A,'#ivInT'));
+  // Ana no toca nada: arranca sola (tenía abierta la ventanita del link y no estaba jugando)
+  await A.waitForFunction(()=>location.hash==='#sopa'&&/Empieza en/.test(document.body.textContent),null,{timeout:20000});
+  ok(true,'a Ana le arranca solo el duelo, con cuenta regresiva');
   await D.click('#lnkLive');
-  await D.waitForFunction(()=>/no puede jugar en vivo ahora/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:20000});
+  await B.waitForFunction(()=>/Ana aceptó tu invitación/.test(document.body.textContent),null,{timeout:20000});
+  ok(/entró por tu link/.test(await A.evaluate(()=>document.body.textContent)),'Mati ve "Ana aceptó tu invitación" y Ana "entró por tu link"');
+  await D.waitForFunction(()=>/ya está jugando con otra persona/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:20000});
   ok(true,'Dani, segundo: '+await txt(D,'#ivOutMsg'));
+  ok(/Jugar la del link/.test(await txt(D,'#ivSolo')) && /Crear mi link/.test(await txt(D,'#ivLink2')),'Dani puede jugar la del link o crear su link: '+await txt(D,'#ivSolo')+' / '+await txt(D,'#ivLink2'));
   await D.click('#ivSolo');
   await D.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
   ok((await txt(D,'#view-sopa .pid')).replace(/\D/g,'')===url.match(/sopa-es-(\d+)/)[1],'Dani juega la partida del link');
-  await A.click('#ivYes');
   await A.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
   await B.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
   const na=await txt(A,'#view-sopa .pid'), nb=await txt(B,'#view-sopa .pid');

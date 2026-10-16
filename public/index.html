@@ -2874,6 +2874,8 @@ const Reg = (()=>{
   // partidas en curso: empezadas y sin terminar
   const going=g=>{ const c=cur[g]; return !!(c && c.t0 && !c.t1); };
   const busyList=()=>KEYS.filter(going);
+  // un duelo cargando o en cuenta regresiva (todavía sin t0)
+  const starting=()=>KEYS.some(g=>{ const c=cur[g]; return !!(c && !c.t0 && (c.loading || c.sync)); });
   // congelar: el tiempo congelado se suma a la espera, que los juegos descuentan de su resultado
   function freeze(){
     const t=Date.now(), list=KEYS.filter(g=>going(g) && !cur[g].fz);
@@ -2886,9 +2888,10 @@ const Reg = (()=>{
     c.t0=c.load=Date.now(); c.wait=0; c.fz=null; c.e=c.h=c.c=c.r=0; tick();
   }
   // duelo: sin botón Iniciar; los dos arrancan a la vez con una cuenta regresiva
-  function syncStart(g, at){
+  // who: el rival ("¡Ana aceptó tu invitación! Los dos arrancan a la vez.")
+  function syncStart(g, at, who){
     const u=ui[g], c=cur[g]; if(!u || !u.gate || !c) return;
-    u.gateBtn.disabled=true; c.sync=at; u.gateNote.textContent=T[lang].duSyncNote;
+    u.gateBtn.disabled=true; c.sync=at; u.gateNote.textContent=who ? who.text : T[lang].duSyncNote;
     const step=()=>{
       if(cur[g]!==c){ u.gateBtn.disabled=false; return; }
       const left=at-Date.now();
@@ -3048,13 +3051,13 @@ const Reg = (()=>{
     return r;
   }
   // abrir la partida de una invitación; duel: el duelo al que pertenece
-  async function playInvite(g, k, n, duel, m, at){
+  async function playInvite(g, k, n, duel, m, at, who){
     if(GAMES[g].setKey) GAMES[g].setKey(k);
     if(m && GAMES[g].setMode) GAMES[g].setMode(m);
     cur[g]={lang, k, n:null, loading:true}; setPid(g);
     if(location.hash!=="#"+g) location.hash=g;
     await open(g, n);
-    if(cur[g] && cur[g].n===n && duel){ cur[g].duel=duel; setCost(g); if(at) syncStart(g, at); if(Reg.onDuelStart) Reg.onDuelStart(g, duel); }
+    if(cur[g] && cur[g].n===n && duel){ cur[g].duel=duel; setCost(g); if(at) syncStart(g, at, who); if(Reg.onDuelStart) Reg.onDuelStart(g, duel); }
   }
   // un lugar propio dentro del cartel final (duelo, retomar partida)
   function slot(g, cls){
@@ -3266,7 +3269,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, freeze, thaw, inviteGame, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, starting, freeze, thaw, inviteGame, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3326,8 +3329,10 @@ Object.assign(T.es,{
   lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
   ivYesOut:who=>`¡${cap(who)} aceptó! A jugar.`, ivNoOut:who=>`${cap(who)} no aceptó esta vez.`,
-  ivBusyOut:who=>`${cap(who)} estaba ocupado.`, ivLinkBusy:who=>`${cap(who)} no puede jugar en vivo ahora (quizás ya está jugando con otra persona). Jugá la partida del link y comparan puntajes.`,
+  ivBusyOut:who=>`${cap(who)} estaba ocupado.`, ivLinkBusy:(who,others)=>`${cap(who)} ya está jugando con otra persona. Podés jugar la partida del link (y comparan puntajes)${others?", invitar a otro jugador":""} o crear tu propio link para compartir.`,
+  ivOther:"Invitar a otro jugador", ivLinkPlay:"Jugar la del link", ivOwnLink:"🔗 Crear mi link",
   ivInLink:(who,g)=>`${who?cap(who):"Alguien"} abrió tu link y te invita a jugar ${g}`,
+  ivLinkGo:who=>`¡${who?cap(who):"Alguien"} entró por tu link! Arranca el duelo…`,
   saveUserQ:"¿Querés guardar este resultado y tus estadísticas? Elegí un nombre y un PIN: es un solo paso.", saveUserGo:"Elegir mi usuario", ivExpOut:who=>`${cap(who)} no respondió a tiempo.`,
   ivAgain:"Invitar a otro", ivSolo:"Jugarla solo", ivFail:"No se pudo enviar la invitación. Probá de nuevo.",
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
@@ -3355,7 +3360,7 @@ Object.assign(T.es,{
   duTitle:who=>`Duelo con ${who}`, duScore:(w,l,who)=>`Vos ${w} – ${l} ${who}`, duTies:n=>` · ${n} empate${n>1?"s":""}`,
   duPlayed:n=>`${n} partida${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} todavía está jugando…`,
   duWon:"¡Ganaste esta!", duLost:who=>`Esta la ganó ${who}.`, duTie:"Esta terminó empatada.", duVoid:"Esta no contó.",
-  duStartIn:s=>`Empieza en ${s}…`, duSyncNote:"Duelo: los dos arrancan a la vez.", duOppPlaying:who=>`${cap(who)} está jugando…`, duOppDone:(who,p)=>`⚡ ${cap(who)} ya terminó: ${p} puntos`,
+  duStartIn:s=>`Empieza en ${s}…`, duSyncNote:"Duelo: los dos arrancan a la vez.", duAccOut:who=>`¡${cap(who)} aceptó tu invitación! Los dos arrancan a la vez.`, duLinkIn:who=>`¡${who?cap(who):"Alguien"} entró por tu link! Los dos arrancan a la vez.`, duOppPlaying:who=>`${cap(who)} está jugando…`, duOppDone:(who,p)=>`⚡ ${cap(who)} ya terminó: ${p} puntos`,
   duBeatIn:(who,p,tm)=>`⚡ ${cap(who)} ya terminó: ${p} puntos. Para ganarle tenés que terminar en menos de ${tm} (cada error o ayuda te lo acorta).`,
   duOppWon:(who,p)=>`${cap(who)} ya ganó esta: terminó con ${p} puntos y ya no la alcanzás. Igual podés terminarla.`,
   duOppFailed:who=>`${cap(who)} no la resolvió: si la resolvés, ganás.`,
@@ -3376,8 +3381,10 @@ Object.assign(T.en,{
   lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
   lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
-  ivLinkBusy:who=>`${cap(who)} can't play live right now (maybe already playing someone else). Play the link's game and compare scores.`,
+  ivLinkBusy:(who,others)=>`${cap(who)} is already playing someone else. You can play the link's game (and compare scores)${others?", invite another player":""} or create your own link to share.`,
+  ivOther:"Invite another player", ivLinkPlay:"Play the link's game", ivOwnLink:"🔗 Create my link",
   ivInLink:(who,g)=>`${who?cap(who):"Someone"} opened your link and invites you to play ${g}`,
+  ivLinkGo:who=>`${who?cap(who):"Someone"} came in through your link! The duel is starting…`,
   saveUserQ:"Want to keep this result and your stats? Pick a name and a PIN: it's one step.", saveUserGo:"Pick my username",
   ivYesOut:who=>`${cap(who)} accepted! Let's play.`, ivNoOut:who=>`${cap(who)} declined this time.`,
   ivBusyOut:who=>`${cap(who)} was busy.`, ivExpOut:who=>`${cap(who)} didn't answer in time.`,
@@ -3407,7 +3414,7 @@ Object.assign(T.en,{
   duTitle:who=>`Duel with ${who}`, duScore:(w,l,who)=>`You ${w} – ${l} ${who}`, duTies:n=>` · ${n} tie${n>1?"s":""}`,
   duPlayed:n=>`${n} game${n>1?"s":""}`, duWaitOpp:who=>`${cap(who)} is still playing…`,
   duWon:"You won this one!", duLost:who=>`${cap(who)} won this one.`, duTie:"This one was a tie.", duVoid:"This one didn't count.",
-  duStartIn:s=>`Starts in ${s}…`, duSyncNote:"Duel: you both start at the same time.", duOppPlaying:who=>`${cap(who)} is playing…`, duOppDone:(who,p)=>`⚡ ${cap(who)} already finished: ${p} points`,
+  duStartIn:s=>`Starts in ${s}…`, duSyncNote:"Duel: you both start at the same time.", duAccOut:who=>`${cap(who)} accepted your invitation! You both start at the same time.`, duLinkIn:who=>`${who?cap(who):"Someone"} came in through your link! You both start at the same time.`, duOppPlaying:who=>`${cap(who)} is playing…`, duOppDone:(who,p)=>`⚡ ${cap(who)} already finished: ${p} points`,
   duBeatIn:(who,p,tm)=>`⚡ ${cap(who)} already finished: ${p} points. To beat them you must finish in under ${tm} (each mistake or hint shortens it).`,
   duOppWon:(who,p)=>`${cap(who)} already won this one: they finished with ${p} points and you can't catch up. You can still finish it.`,
   duOppFailed:who=>`${cap(who)} didn't solve it: solve it and you win.`,
@@ -3475,8 +3482,15 @@ const Live = (()=>{
     if(s==="pick" || s==="wait") $("ivLinkBox").hidden=true;
     $("ivPick").hidden=s!=="pick"; $("ivOpts").hidden=s!=="opts"; $("ivWait").hidden=s!=="wait"; $("ivDone").hidden=s!=="done";
     $("ivOutT").textContent = s==="pick" ? (direct ? t().ivRematchT(direct.who) : t().ivOutT) : cap(describe(curOpts()));
-    $("ivAgain").hidden=!!direct;
+    $("ivAgain").hidden=!!direct && !(direct.lk && avN>0);
+    $("ivAgain").textContent= direct && direct.lk ? t().ivOther : t().ivAgain;
+    $("ivSolo").textContent= direct && direct.lk ? t().ivLinkPlay : t().ivSolo;
+    $("ivLink2").textContent= direct && direct.lk ? t().ivOwnLink : t().ivLink;
   }
+  // llegó por un link y quien lo mandó ya está jugando: jugar la del link, invitar a otro (si hay gente) o crear su propio link
+  function linkBusy(who){ msgOut(t().ivLinkBusy(who, avN>0)); stage("done"); }
+  // deja de ser "el link de Ana": misma elección de juego, pero para invitar a otro o crear un link propio
+  function unlink(){ direct=null; game=null; whoMode="rnd"; pickTo=null; linkOnly=avN===0; }
   // lo que se elige: juego, idioma y, si corresponde, tamaño y modo (sopa) o cantidad de palabras (semilla)
   const curOpts=()=> game ? {g:game.g, k:game.k, lang:game.lang, m:game.m, w:game.w} :
     {g:pickG, lang:pickL, k:pickG==="sopa" ? (pickS==="media"?"sopa":"sopa"+pickS) : pickG, m:pickG==="sopa"?pickM:undefined, w:pickG==="semilla"?pickW:undefined};
@@ -3560,6 +3574,8 @@ const Live = (()=>{
       : `<p>${esc(q ? T0.ivNoMatch : T0.ivNoneOnline)}</p>`;
   }
   let awayWhy="";
+  // hora del último duelo aceptado: mientras carga y corre la cuenta regresiva todavía no figura como "jugando"
+  let accAt=0;
   async function candidate(g){
     const one=direct || (whoMode==="name" ? pickTo : null);
     if(one){
@@ -3581,7 +3597,7 @@ const Live = (()=>{
       if(!direct && whoMode==="name" && !pickTo){ msgOut(t().ivPickName); $("ivName").focus(); return; }
       const one=direct || (whoMode==="name" ? pickTo : null);
       const g=game ? game.g : pickG, to=await candidate(g);
-      if(!to && direct && direct.lk){ msgOut(t().ivLinkBusy(direct.who)); stage("done"); return; }
+      if(!to && direct && direct.lk){ linkBusy(direct.who); return; }
       if(!to){ msgOut(one ? t().ivAwayWhy(one.who, awayWhy, T[lang].gName[g]) : auto ? lastWhy+" "+t().ivNoneLeft : t().ivNobody); stage(game?"done":"opts"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
       if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
@@ -3619,7 +3635,7 @@ const Live = (()=>{
   function answered(st){
     const o=stopOut(); if(!o) return;
     if(st==="accepted"){
-      msgOut(t().ivYesOut(o.who)); const gm=game; game=null;
+      accAt=Date.now(); msgOut(t().ivYesOut(o.who)); const gm=game; game=null;
       const pid=`${gm.k}-${gm.lang}-${gm.n}`;
       (async()=>{
         // el duelo: se crea con la primera partida, o se le suma la revancha
@@ -3634,7 +3650,7 @@ const Live = (()=>{
           }
           watchDuel(id);
         }catch(e){ id=null; }
-        setTimeout(()=>{ if(dOut.open) dOut.close(); setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m, startAt(o.go)); }, 400);
+        setTimeout(()=>{ if(dOut.open) dOut.close(); setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, id, gm.m, startAt(o.go), {text:t().duAccOut(o.who)}); }, 400);
       })();
       return;
     }
@@ -3644,7 +3660,7 @@ const Live = (()=>{
     // al azar: se sigue invitando a otro disponible, con la misma partida, hasta que alguien acepte
     lastWhy=why;
     if(o.rnd && dOut.open){ msgOut(why+" "+t().ivNext); stage("wait"); $("ivWaitT").textContent=t().ivSearching; setTimeout(()=>{ if(dOut.open && !out) send(true); }, 1200); return; }
-    if(direct && direct.lk){ msgOut(t().ivLinkBusy(o.who)); stage("done"); return; }
+    if(direct && direct.lk){ linkBusy(o.who); return; }
     msgOut(why);
     stage("done");
   }
@@ -3693,7 +3709,7 @@ const Live = (()=>{
     if(!d.name && !(d.lk && Date.now()-(+store.get("rodo-linkat")||0) < 7*86400000)) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     // la ventanita de invitar abierta sin una invitación propia pendiente (por ejemplo, copiando el link) no cuenta como ocupado
     if(dOut.open && !out && !dIn.open) dOut.close();
-    if(inc || out || anyOpen() || $("lnkDlg").open || !want || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
+    if(inc || out || anyOpen() || $("lnkDlg").open || !want || (Date.now()-accAt < 20000 && Reg.starting()) || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
@@ -3703,6 +3719,8 @@ const Live = (()=>{
     $("ivYes").disabled=$("ivNo").disabled=$("ivOff").disabled=false;
     dIn.showModal(); $("ivYes").focus();
     inc.timer=setInterval(tickIn,1000); tickIn(); beat();
+    // alguien entró por mi link y quiere jugar en vivo: si no estoy jugando nada, arranca solo (cuenta regresiva en las dos puntas)
+    if(d.lk && !playing){ $("ivInT").textContent=t().ivLinkGo(d.name||""); $("ivYes").disabled=$("ivNo").disabled=$("ivOff").disabled=true; accept(); }
   }
   function tickIn(){
     if(!inc) return;
@@ -3733,8 +3751,8 @@ const Live = (()=>{
     }
     catch(e){ inc.answering=false; return late(); }
     const duel=d.d || `${id}_${d.k}-${d.lang}-${d.n}`;
-    endIn(false); watchDuel(duel);
-    setLang(d.lang); Reg.playInvite(d.g, d.k, d.n, duel, d.m, startAt(go));
+    accAt=Date.now(); endIn(false); watchDuel(duel);
+    setLang(d.lang); Reg.playInvite(d.g, d.k, d.n, duel, d.m, startAt(go), {text:d.lk ? t().duLinkIn(d.name||"") : t().duSyncNote});
   }
   function decline(){
     if(!inc || inc.answering) return;
@@ -3860,9 +3878,9 @@ const Live = (()=>{
   $("ivNickBtn").addEventListener("click",()=>User.open());
   // al cerrar la ventana de usuario, la invitación muestra o esconde el botón de elegir usuario
   $("userDlg").addEventListener("close",()=>{ if(dOut.open) $("ivNickRow").hidden=!!Reg.nick(); });
-  $("ivAgain").addEventListener("click",()=>send());
+  $("ivAgain").addEventListener("click",()=>{ if(direct && direct.lk){ unlink(); msgOut(""); stage("opts"); renderOpts(); } else send(); });
   $("ivSolo").addEventListener("click",solo);
-  $("ivLink").addEventListener("click",shareLink); $("ivLink2").addEventListener("click",shareLink); $("ivLinkSolo").addEventListener("click",solo);
+  $("ivLink").addEventListener("click",shareLink); $("ivLink2").addEventListener("click",()=>{ if(direct && direct.lk){ unlink(); stage("done"); } shareLink(); }); $("ivLinkSolo").addEventListener("click",solo);
   $("ivLinkUrl").addEventListener("focus",e=>e.target.select());
   $("ivCancel").addEventListener("click",cancelOut);
   $("ivOutX").addEventListener("click",cancelOut);

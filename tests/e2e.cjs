@@ -45,7 +45,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(pa===pb,`misma partida (${pa} / ${pb})`);
   ok(await B.evaluate(()=>document.documentElement.lang)==='en','B pasó a inglés');
   const qa=await A.$eval('#view-criptograma',e=>e.innerText.slice(0,4000)), qb=await B.$eval('#view-criptograma',e=>e.innerText.slice(0,4000));
-  const clean=s=>s.split('\n').filter(l=>!/jugando|terminó|Empieza|Iniciar|arranca|Duelo|playing|finished|Starts|Start|Duel/.test(l)).join('\n').replace(/\d+:\d+/g,'');
+  const clean=s=>s.split('\n').filter(l=>!/jugando|terminó|Empieza|Iniciar|arranca|Duelo|playing|finished|Starts|Start|Duel|aceptó|accepted|both start/.test(l)).join('\n').replace(/\d+:\d+/g,'');
   if(clean(qa)!==clean(qb)){ const x=clean(qa).split('\n'), y=clean(qb).split('\n'); x.forEach((l,i)=>{ if(l!==y[i]) console.log('DIFF',JSON.stringify(l),'|',JSON.stringify(y[i])); }); }
   ok(clean(qa)===clean(qb),'mismo contenido en las dos pantallas');
   // B vuelve al ahorcado: sigue desde donde quedó
