@@ -246,6 +246,96 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .privnote{margin:36px auto 8px;max-width:60ch;color:var(--muted);font-size:.72rem;line-height:1.4;text-align:center;opacity:.8}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 
+/* ---------- Torneo ---------- */
+.tbanner{--sq:23px;display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:-4px 0 18px;padding:16px 18px;border-radius:14px;background:var(--paper);color:var(--ink);text-decoration:none;
+  border:1px solid var(--line);border-left:6px solid var(--btc);transition:border-color .15s, transform .15s}
+.tbanner:hover{border-color:var(--btc);transform:translateY(-2px)}
+.tbanner[hidden]{display:none}
+.tbtx{display:flex;flex-direction:column;gap:4px;flex:1 1 150px;min-width:0}
+.tbtx b{font-size:1.35rem;line-height:1.1;font-weight:800;letter-spacing:-.02em}.tbtx span{color:var(--muted);font-size:.92rem}
+.tbtx em{font-style:normal;font-weight:700;background:#7B3FE4;color:#fff;border-radius:6px;padding:0 6px;font-size:.8rem}
+.tbtx i{font-style:normal;font-weight:700;color:var(--btc)}
+/* fichas de Scrabble */
+.scrab{display:grid;grid-template-columns:repeat(8,var(--sq,21px));grid-auto-rows:var(--sq,21px);gap:2px;flex:0 0 auto}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#F2D8A7;border:1px solid #C9A061;box-shadow:0 2px 0 rgba(0,0,0,.14);
+  font:700 calc(var(--sq,21px)*.56)/1 "IBM Plex Mono",ui-monospace,monospace;color:#3A2A14;padding-right:2px}
+.sq i{position:absolute;right:1.5px;bottom:1px;font:600 calc(var(--sq,21px)*.27)/1 "IBM Plex Mono",ui-monospace,monospace;font-style:normal}
+.sq.o{background:var(--btc);border-color:#C76F00;color:#1A1E23}
+.sq.e{background:transparent;border-color:transparent;box-shadow:none}
+.thead{display:flex;gap:14px 18px;align-items:center;flex-wrap:wrap;margin:0 0 6px;--sq:24px}
+.thead>div:last-child{flex:1 1 180px;min-width:0}
+.tshare{padding:6px 12px;font-size:.85rem;margin-top:4px}
+.ttest{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#EFE7FD;color:#4B2A99;font-weight:600;font-size:.92rem}
+.tabox{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px}
+.tabox h2{margin-top:2px!important}
+.tatest{border-left:5px solid #7B3FE4}
+.taadm{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.taadm li{display:flex;align-items:center;gap:6px;background:var(--cell-bg);border:1px solid var(--line);border-radius:8px;padding:3px 4px 3px 10px;font-size:.9rem}
+.taadm button,.tainv button{padding:2px 7px!important;font-size:.8rem!important;border:0;background:transparent}
+.tabox input{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+#taBotsN{width:4.5em}#taAdmIn,#taInvIn{min-width:16em}
+.tainv{display:inline-flex;align-items:center;background:var(--cell-bg);border:1px solid var(--line);border-radius:8px;padding:0 0 0 8px;margin:2px}
+#ivBtn[hidden]{display:none}
+.tname{font-size:clamp(1.5rem,6vw,2.2rem);line-height:1.05;margin:0 0 6px}
+.tsub{margin:0 0 14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.tpill{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--btc-soft);color:var(--ink);font-weight:700;font-size:.85rem}
+.tpill.st-live{background:var(--ok);color:#fff}.tpill.st-done{background:var(--line)}
+.tflash{margin:0 0 10px;font-weight:600}
+.tbox{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.tbox p{margin:0 0 8px}.tbox p:last-child{margin-bottom:0}
+.tform{display:grid;gap:10px}
+.tform label{display:grid;gap:4px;font-weight:600;font-size:.92rem}
+.tform input[type=email],.tform input[type=tel]{font:400 1rem "Bricolage Grotesque",system-ui,sans-serif;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cell-bg);color:var(--ink)}
+.tform .tchk{display:flex;align-items:center;gap:8px;font-weight:400}.tchk input{width:20px;height:20px;accent-color:var(--btc)}
+.tsmall{font-size:.85rem;color:var(--muted)}
+.tmsg{color:var(--bad);margin:0;min-height:1.2em;font-size:.9rem}
+.tok{color:var(--ok);font-weight:700}
+.tbig{font-size:1.15rem;padding:13px 26px}
+.tlink{background:transparent;border:0;color:var(--muted);text-decoration:underline;font-weight:400;font-size:.85rem;padding:4px 0}
+.tpush{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.tround{border-top:4px solid var(--btc)}
+.tbigt{font-size:1.15rem;font-weight:800}
+.tcount{font-size:1.1rem}.tcount b{font:700 1.6rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.tchamp{text-align:center;background:var(--btc);color:#1A1E23;border-color:var(--btc)}.tchamp .tbigt{font-size:1.5rem}
+.ttab tr.me td{font-weight:700;background:var(--btc-soft)}
+.ttab tr.cut td{border-bottom:3px solid var(--btc)}
+.ttab td:nth-child(2){text-align:left;white-space:normal}
+.tlist{margin:0 0 14px;padding-left:1.6em}.tlist li{margin:3px 0}
+.tpay{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tln{overflow-wrap:anywhere}
+.tbases{margin:0 0 14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.tbases summary{cursor:pointer;font-weight:700}.tbases p{margin:8px 0 0;font-size:.92rem;white-space:pre-line}
+.tbar{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:55;display:flex;align-items:center;gap:10px;width:max-content;
+  padding:9px 10px 9px 16px;border-radius:12px;background:var(--ink);color:var(--paper);box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:.95rem;max-width:calc(100vw - 32px);border-left:5px solid var(--btc)}
+.tbar[hidden]{display:none}
+.tbar b{font-family:"IBM Plex Mono",ui-monospace,monospace;margin-left:4px}
+.tbar button{padding:6px 14px}
+/* durante una ronda no se puede pedir otra partida ni cambiar de número */
+.view.tourmode .bar>button,.view.tourmode .win .row,.view.tourmode .opts{display:none!important}
+.win.tonly>:not(.wtour):not(.wclose){display:none!important}
+.win.tonly{background:var(--paper);color:var(--ink)}
+.wtour{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.4);text-align:center}
+.wtour[hidden]{display:none}
+.wtour .tpts{display:block;font-size:1.45rem;font-weight:800;line-height:1.1;margin:0 0 4px}
+.wtour p{font-size:.95rem!important;margin:2px 0 8px!important}
+.wtour .twhy{font-weight:700!important}
+.win.lose .wtour,.win.tonly .wtour{background:var(--bad-soft)}
+.win.tonly .wtour{background:transparent}
+/* panel del organizador */
+#view-torneo-admin h2{font-size:1.05rem;margin:18px 0 8px}
+#view-torneo-admin .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+#view-torneo-admin .row button,#view-torneo-admin .bar .btn,#view-torneo-admin .bar button{padding:7px 12px;font-size:.88rem}
+.tamsg{min-height:1.2em;margin:0 0 8px;color:var(--ok);font-weight:600}.tamsg.bad{color:var(--bad)}
+.tacfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 10px}
+.tacfg label{display:grid;gap:4px;font-size:.85rem;color:var(--muted);font-weight:600}
+.tacfg .wide{grid-column:1/-1}
+.tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.tacfg textarea{min-height:6em;resize:vertical}
+.tarounds input[type=number]{width:4.5em}
+.tarounds td{text-align:left!important}
+.taauto{display:flex;align-items:center;gap:8px;font-size:.9rem}
+#taHist details{margin:0 0 8px}#taHist summary{cursor:pointer;font-weight:600}
+
 /* ---------- Cartel de victoria (compartido) ---------- */
 .win{display:none;text-align:center;padding:18px 16px 16px;border-radius:14px;background:var(--btc);color:#1A1E23;margin:0;
      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;width:min(92vw,440px);max-height:88vh;overflow:auto;
@@ -345,6 +435,8 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .key{flex:1 1 0;max-width:46px;min-width:0;padding:12px 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;border-radius:8px}
 .key.hit{background:var(--ok);border-color:var(--ok);color:#fff}
 .key.miss{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+/* ahorcado de varias palabras */
+#hScore[hidden]{display:none}   /* puntitos de avance (.score les pone display:flex); en el ahorcado normal no se ven */
 
 /* ---------- Sopa de letras ---------- */
 .sgrid{display:grid;gap:2px;width:max-content;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;
@@ -537,6 +629,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
   <!-- ===== Menú ===== -->
   <section class="view" id="view-menu">
     <p class="intro" id="menuIntro"></p>
+    <a class="tbanner" id="tBanner" href="#torneo" hidden></a>
     <div class="live" id="live" hidden>
       <span class="dot" aria-hidden="true"></span><span id="liveN" aria-live="polite"></span>
       <button class="livemore" id="liveMore" aria-expanded="false"></button>
@@ -791,8 +884,30 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     <div id="stBody"></div>
   </section>
 
+  <!-- ===== Torneo en vivo: la sala de los jugadores ===== -->
+  <section class="view" id="view-torneo">
+    <div id="tHead"></div>
+    <div id="tMe"></div>
+    <div id="tRound"></div>
+    <div id="tTable"></div>
+    <div id="tMore"></div>
+  </section>
+
+  <!-- ===== Torneo: panel del organizador (los datos los protegen las reglas de Firestore) ===== -->
+  <section class="view" id="view-torneo-admin">
+    <div class="bar"><p class="meta" id="taWho"></p><span><a class="btn" href="#torneo">Ver la sala</a> <a class="btn" href="#">Ir a los juegos</a> <button id="taOut" hidden>Salir</button></span></div>
+    <div id="taLogin" class="admlogin">
+      <p>Organización de torneos: entrá con la cuenta de Google que figura como organizadora.</p>
+      <button class="primary" id="taIn">Entrar con Google</button>
+      <p class="m" id="taErr"></p>
+    </div>
+    <div id="taBody" hidden>
+      <div id="taPick"></div><div id="taCtl"></div><div id="taLive"></div><div id="taCfg"></div><div id="taIns"></div><div id="taHist"></div>
+    </div>
+  </section>
+
   <section class="view" id="view-admin">
-    <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
+    <div class="bar"><p class="meta" id="admWho"></p><span><a class="btn" href="#">Ir a los juegos</a> <a class="btn" href="#torneo-admin">Torneos</a> <button id="admTest"></button> <button id="admReload">Actualizar</button> <button id="admCsv">Descargar CSV</button> <button id="admOut">Salir</button></span></div>
     <div id="admLogin" class="admlogin">
       <p>Acceso restringido a la cuenta de administración.</p>
       <button class="primary" id="admIn">Entrar con Google</button>
@@ -835,6 +950,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 </div>
 
 <div class="testbadge" aria-hidden="true">PRUEBA</div>
+<div class="tbar" id="tBar" hidden role="status"></div>
 <div class="newver" id="newVer" hidden role="status"><span id="newVerT"></span> <button id="newVerB"></button></div>
 
 <!-- ===== Invitación a crear usuario (jugador recurrente) ===== -->
@@ -1385,8 +1501,8 @@ const ADMIN_READY = new Promise(r=>{ window.__adminResolve = r; });
 
 // ================= Textos =================
 const PRIV = {
-  es:"Guardamos un identificador anónimo de este navegador para numerar tus partidas y armar el ranking. No pedimos datos personales ni usamos rastreo ni publicidad.",
-  en:"We store an anonymous identifier for this browser to number your games and build the leaderboard. We don't ask for personal data or use tracking or ads."
+  es:"Guardamos un identificador anónimo de este navegador para numerar tus partidas y armar el ranking. No pedimos datos personales (salvo mail y teléfono si te inscribís en un torneo: los ven solo sus organizadores, para avisarte) ni usamos rastreo ni publicidad.",
+  en:"We store an anonymous identifier for this browser to number your games and build the leaderboard. We don't ask for personal data (except email and phone if you register for a tournament: only its organizers see them, to notify you) or use tracking or ads."
 };
 const T = {
   es:{
@@ -1528,13 +1644,13 @@ function tile(x,cx,cy,size,ch,fill,stroke,color){
   if (ch){ x.fillStyle=color||"#1A1E23"; x.font=`700 ${Math.round(size*.5)}px ${MONO}`; x.textAlign="center"; x.textBaseline="middle";
     x.fillText(ch, cx+size/2, cy+size/2+1); x.textAlign="left"; x.textBaseline="alphabetic"; }
 }
-async function shareBlob(blob, filename, noteEl, btn){
+async function shareBlob(blob, filename, noteEl, btn, text){
   const t=T[lang]; noteEl.textContent=""; btn.disabled=true;
   try{
     const file = new File([blob], filename, {type:"image/png"});
     try{
       if (navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], text:t.shareText}); noteEl.textContent=t.shared; return;
+        await navigator.share({files:[file], text:text||t.shareText}); noteEl.textContent=t.shared; return;
       }
     }catch(e){ if (e && e.name==="AbortError") return; }
     const url=URL.createObjectURL(blob), a=document.createElement("a");
@@ -1543,6 +1659,17 @@ async function shareBlob(blob, filename, noteEl, btn){
   } finally { btn.disabled=false; }
 }
 const toBlob = cv => new Promise(res => cv.toBlob(res,"image/png"));
+
+// ================= Dificultad al generar (torneo) =================
+// gen({dif}) o gen(x, {dif}); sin dif, la partida sale como siempre
+const DIFS = Object.freeze(["facil","media","dificil"]);
+const genOpts = (a,b) => (a && typeof a==="object") ? a : (b||{});
+// el tercio de la lista que toca según la dificultad (ordenada por f, de menor a mayor)
+const byThird = (list,f,dif) => { const i=DIFS.indexOf(dif); if(i<0) return list;
+  const s=[...list].sort((a,b)=>f(a)-f(b)), n=s.length; return s.slice(Math.round(i*n/3), Math.round((i+1)*n/3)); };
+// n entradas del glosario con largo entre lo y hi; si no alcanzan, las de largo más cercano (pen: castigo extra, entre 0 y 0,5)
+const nearLen = (list,n,lo,hi,pen) => list.map(x=>{ const l=x[0].length; return [x, (l<lo?lo-l:l>hi?l-hi:0)+(pen?pen(x):0)+Math.random()*0.4]; })
+  .sort((a,b)=>a[1]-b[1]).slice(0,n).map(x=>x[0]);
 
 // =====================================================================
 // ACRÓSTICO
@@ -1729,8 +1856,9 @@ const Acro = (()=>{
     x.fillText(`${t.imgSolved} ${fmt(elapsed)}, ${t.imgHints(hintsUsed)}`, pad, H-pad+6);
     return toBlob(cv);
   }
-  function gen(){
-    const pool=PHRASES[lang].filter(p=>p!==lastPhrase);
+  // dif: frase corta, mediana o larga (tercios por cantidad de letras)
+  function gen(a,b){
+    const pool=byThird(PHRASES[lang], p=>p.replace(/ /g,"").length, genOpts(a,b).dif).filter(p=>p!==lastPhrase);
     const phrase=rand(pool); lastPhrase=phrase;
     const g=generate(phrase);
     return {phrase:g.phrase, L:g.L, W:g.W, rows:g.rows.map(r=>r.gap?{gap:true}:{word:r.word,clue:r.clue,pos:r.pos,given:!!r.given})};
@@ -1741,6 +1869,12 @@ const Acro = (()=>{
     hintsUsed=0; solved=false; badSeen=new Set(); startTime=Date.now(); elapsed=0; updateHintBtn(); render();
   }
   function create(){ Reg.newGame("acrostico"); }
+  // avance: casillas no regaladas con la letra correcta (las reveladas con ayuda cuentan; lo que muestra "Me rindo" no, porque no toca entry)
+  function progress(){
+    if(!P) return {p:0, s:0};
+    let ok=0, n=0; realRows().forEach(r=>{ if(!r.given) [...r.word].forEach((ch,k)=>{ n++; if(r.entry[k]===ch) ok++; }); });
+    return {p:n?ok/n:0, s:0};
+  }
   // eventos
   const grid=$("grid");
   grid.addEventListener("focusin",e=>{ const t=e.target; if(!t.classList.contains("cell")) return;
@@ -1762,7 +1896,7 @@ const Acro = (()=>{
   $("hintBtn").addEventListener("click",hint);
   $("printBtn").addEventListener("click",()=>window.print());
   $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
-  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P};
+  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P, progress, difs:DIFS};
 })();
 
 // =====================================================================
@@ -1773,7 +1907,10 @@ const Hang = (()=>{
   // una palabra se pierde al romperse sus 6 bloques. Las que quedan sin resolver al terminar cuentan como falladas.
   const LIVES=6, ROUNDS=6;
   const ROWS = { es:["QWERTYUIOP","ASDFGHJKLÑ","ZXCVBNM"], en:["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"] };
+  // dificultad (torneo): largo de las palabras
+  const LEN = {facil:[4,6], media:[6,9], dificil:[8,12]};
   let list=[], st=[], i=0, over=false, recent=[], start=0, elapsed=0;
+  const N=()=>list.length||ROUNDS;   // palabras de la partida (6; en el torneo, las que elija el organizador)
   const W=()=>list[i]||{w:"",c:""}, S=()=>st[i];
   const solved=()=>st.filter(x=>x.r==="ok").length;
   const pending=()=>st.map((x,k)=>x.r?-1:k).filter(k=>k>=0);
@@ -1783,8 +1920,8 @@ const Hang = (()=>{
     $("hNew").textContent=t.hNew; $("hAgain").textContent=t.hAgain; $("hShare").textContent=t.share;
     $("hSkip").textContent=t.hSkip; $("hEnd").textContent=t.hEnd; $("hFoot").textContent=t.hFoot; if(list.length){ updClue(); meta(); drawBlocks(); }
   }
-  const meta=()=>{ if(list.length && !over) $("hMeta").textContent=T[lang].hMeta(i+1, ROUNDS, W().w.length, solved()); };
-  function dots(){ scoreDots($("hScore"), ROUNDS, st.map(x=>x.r==="ok"?"ok":x.r==="lost"?"skip":""), over?-1:i); }
+  const meta=()=>{ if(list.length && !over) $("hMeta").textContent=T[lang].hMeta(i+1, N(), W().w.length, solved()); };
+  function dots(){ scoreDots($("hScore"), N(), st.map(x=>x.r==="ok"?"ok":x.r==="lost"?"skip":""), over?-1:i); }
   function drawBlocks(){
     const svg=$("hBlocks"), wrong=S()?S().wrong:0; let h="";
     const bw=64, gap=20, total=LIVES*bw+(LIVES-1)*gap, ox=(520-total)/2;
@@ -1817,12 +1954,16 @@ const Hang = (()=>{
   function draw(){ drawBlocks(); drawWord(); drawKeys(); dots(); meta();
     const s=S(); $("hClue").textContent=W().c; $("hClue").style.display=s&&s.clue?"":"none";
     $("hSkip").disabled=over||pending().length<2; $("hEnd").disabled=over; }
-  function gen(){
-    const pool=shuffle(gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w))).slice(0,ROUNDS);
+  // gen() o gen({n, dif}): n palabras (6 por defecto); con dif, del largo que corresponde (si faltan, las más cercanas)
+  function gen(a,b){
+    const o=genOpts(a,b), n=o.n>0 ? Math.floor(o.n) : ROUNDS, R=LEN[o.dif];
+    const all=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
+    const pool=R ? shuffle(nearLen(all, n, R[0], R[1])) : shuffle(all).slice(0,n);
     pool.forEach(([w])=>{ recent.push(w); if(recent.length>40) recent.shift(); });
     return {list:pool.map(([w,c])=>({w,c}))};
   }
   function create(){ Reg.newGame("ahorcado"); }
+  // acepta {word, clue} (una palabra) o {words:[{word, clue}]} (varias, en orden)
   function load(d){
     list = d.list ? d.list : [{w:d.word, c:d.clue}];
     st=list.map(o=>{ const g=new Set(); [...o.w].forEach(ch=>{ if(!ROWS[lang].join("").includes(ch)) g.add(ch); }); return {g, wrong:0, clue:false, r:""}; });
@@ -1853,7 +1994,7 @@ const Hang = (()=>{
   function finish(){
     over=true; elapsed=Date.now()-start-Reg.wait("ahorcado"); const t=T[lang], n=solved();
     $("hPlay").style.display="none"; $("hMeta").textContent="";
-    $("hWinLabel").textContent=t.hWin(n,ROUNDS);
+    $("hWinLabel").textContent=t.hWin(n,N());
     $("hWinWord").textContent=list.map((o,k)=>(st[k].r==="ok"?"✓ ":"✗ ")+o.w).join("  ");
     $("hWinStats").textContent=t.hStats(fmt(elapsed));
     $("hWin").classList.toggle("lose", n===0);
@@ -1864,7 +2005,7 @@ const Hang = (()=>{
   }
   async function image(){
     const t=T[lang];
-    return cardImage(t.hangTitle, t.hWin(solved(),ROUNDS), t.hCard(solved(),ROUNDS,fmt(elapsed)), st.map(x=>x.r==="ok"?"ok":"skip"));
+    return cardImage(t.hangTitle, t.hWin(solved(),N()), t.hCard(solved(),N(),fmt(elapsed)), st.map(x=>x.r==="ok"?"ok":"skip"));
   }
   // la pista está oculta: pedirla rompe un bloque de esa palabra y suma 60 s
   function updClue(){ const b=$("hClueBtn"), s=S(); if(!b) return; b.textContent=T[lang].hClueBtn; b.style.display=s&&s.clue?"none":""; b.disabled = over || !s || !!s.r || LIVES-s.wrong<=1; }
@@ -1880,7 +2021,14 @@ const Hang = (()=>{
   $("hNew").addEventListener("click",create);
   $("hAgain").addEventListener("click",create);
   $("hShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"hangman-rodo-games.png":"ahorcado-rodo-games.png", $("hNote"), $("hShare")));
-  return {texts, create, gen, load, words:()=>list.map(o=>o.w), started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); }};
+  // avance (torneo): palabras adivinadas más lo adivinado de las que siguen pendientes (las perdidas no suman)
+  function progress(){
+    if(!list.length) return {p:0, s:0};
+    const part=st.reduce((a,x,k)=>{ if(x.r==="ok") return a+1; if(x.r) return a; const u=[...new Set(list[k].w)]; return a+u.filter(ch=>x.g.has(ch)).length/u.length; },0);
+    return {p:part/list.length, s:solved()};
+  }
+  return {texts, create, gen, load, words:()=>list.map(o=>o.w), started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); },
+    progress, rounds:()=>list.length||ROUNDS, difs:DIFS};
 })();
 
 // =====================================================================
@@ -2096,7 +2244,9 @@ const Sopa = (()=>{
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
-  return {texts, create, gen, load, words:()=>[...words.map(o=>o.w), ...bonus.map(o=>o.w)], setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
+  return {texts, create, gen, load, words:()=>[...words.map(o=>o.w), ...bonus.map(o=>o.w)], setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag,
+    // avance: palabras encontradas (las que marca "Me rindo" no entran en found)
+    progress:()=>({p:words.length ? found.size/words.length : 0, s:0})};
 })();
 
 
@@ -2348,7 +2498,9 @@ const Seed = (()=>{
   $("pAgain").addEventListener("click",create);
   $("pShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.seedTitle, t.pSize(words.length), t.pCard(words.length,errors,fmt(elapsed)), null), lang==="en"?"lost-seed-rodo-games.png":"semilla-rodo-games.png", $("pNote"), $("pShare")); });
-  return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end"};
+  return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end",
+    // avance: palabras bien ubicadas (mientras memoriza, 0)
+    progress:()=>({p:(stage==="play"||stage==="end") && words.length ? next/words.length : 0, s:0})};
 })();
 
 // =====================================================================
@@ -2488,8 +2640,9 @@ const Cripto = (()=>{
     showWin("c", t.giveUpOther, t.giveUpStats(fmt(elapsed)), true);
     Reg.finish("criptograma",{ok:false,s:0,h:hints,ms:elapsed});
   }
-  function gen(){
-    const pool=QUOTES[lang].filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
+  // dif: frase corta, mediana o larga (tercios por cantidad de letras)
+  function gen(a,b){
+    const pool=byThird(QUOTES[lang], x=>norm(x[0]).replace(/[^A-ZÑ]/g,"").length, genOpts(a,b).dif).filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
     const A=alpha(); let perm;
     do { perm=shuffle(A); } while (perm.some((c,i)=>c===A[i]));
     const m={}; A.forEach((c,i)=>m[c]=perm[i]);
@@ -2501,6 +2654,9 @@ const Cripto = (()=>{
     hints=0; solved=false; start=Date.now(); cells=[]; cBad=new Set();
     const text=norm(q[0]);
     const box=$("cQuote"); box.innerHTML="";
+    // en el celular, la palabra más larga tiene que entrar entera en el ancho de la pantalla
+    const L=Math.max(...text.split(" ").map(w=>[...w].length));
+    box.style.setProperty("--cell", `min(clamp(26px,7.6vw,36px), calc((100vw - 44px - ${3*(L-1)}px) / ${L}))`);
     text.split(" ").forEach(word=>{
       const wd=document.createElement("div"); wd.className="cw";
       for(const ch of word){
@@ -2593,7 +2749,9 @@ const Cripto = (()=>{
   $("cNew").addEventListener("click",create); $("cAgain").addEventListener("click",create);
   $("cPrint").addEventListener("click",()=>window.print());
   $("cShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"cryptogram-rodo-games.png":"criptograma-rodo-games.png", $("cNote"), $("cShare")));
-  return {texts, create, gen, load, started:()=>!!q};
+  return {texts, create, gen, load, started:()=>!!q, difs:DIFS,
+    // avance: casillas con la letra correcta (las que completa "Me rindo" quedan con la clase miss y no cuentan)
+    progress:()=>({p:q && cells.length ? cells.filter(x=>x.el.value===x.p && !x.el.classList.contains("miss")).length/cells.length : 0, s:0})};
 })();
 
 // =====================================================================
@@ -2616,7 +2774,12 @@ const Ana = (()=>{
   function updHint(){ const b=$("aHint"); b.textContent=T[lang].aHint(hints); b.disabled = shown || !list.length || over;
     $("aSkip").disabled = over || locked || pending().length<2; $("aEnd").disabled = over; }
   function scramble(w){ let s; do { s=shuffle([...w]); } while (s.join("")===w && new Set(w).size>1); return s; }
-  function gen(){ return {list:shuffle(gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)))).slice(0,ROUNDS).map(([w,c])=>({w,c}))}; }
+  // dif: largo de las palabras; si no alcanzan 10 en el rango, se completa con las de largo más cercano (siempre entre 4 y 10)
+  const LEN={facil:[4,6], media:[6,8], dificil:[8,10]};
+  function gen(a,b){
+    const R=LEN[genOpts(a,b).dif], pool=gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)));
+    return {list:(R ? shuffle(nearLen(pool,ROUNDS,R[0],R[1])) : shuffle(pool).slice(0,ROUNDS)).map(([w,c])=>({w,c}))};
+  }
   function create(){ Reg.newGame("anagrama"); }
   function load(d){
     list=d.list.map(o=>[o.w,o.c]); hints=0; seenClue=new Set(); over=false;
@@ -2677,7 +2840,9 @@ const Ana = (()=>{
   $("aNew").addEventListener("click",create); $("aAgain").addEventListener("click",create);
   $("aShare").addEventListener("click",async()=>{ const t=T[lang];
     shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
-  return {texts, create, gen, load, words:()=>list.map(x=>x[0]), started:()=>list.length>0};
+  return {texts, create, gen, load, words:()=>list.map(x=>x[0]), started:()=>list.length>0, difs:DIFS,
+    // avance (torneo): palabras acertadas (las pasadas no suman)
+    progress:()=>({p:list.length ? score/ROUNDS : 0, s:score})};
 })();
 
 function applyTexts2(){
@@ -2742,8 +2907,8 @@ const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tam
 const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, EXTRA:30, ROUNDS:{anagrama:10, placa:10, esbip:20, ahorcado6:6}};
 const errCost=k=> k.startsWith("ahorcado") ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
-// segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas; b palabras extra (restan)
-const penSecs=(k,e,h,c,r,b=0)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*roundCost(k) - b*SCORE.EXTRA;
+// segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas; b palabras extra (restan); R: rondas de la partida, si no son las de siempre (torneo)
+const penSecs=(k,e,h,c,r,b=0,R)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*(R ? SCORE.CAP/R : roundCost(k)) - b*SCORE.EXTRA;
 function scoreOf(k, r){
   let e=r.e, h=r.h||0;
   if(e===undefined){ if(k==="ahorcado"||k==="semilla"){ e=h; h=0; } else e=0; }
@@ -2835,15 +3000,19 @@ const Reg = (()=>{
   }
   function setPid(g){
     const u=ui[g]; if(!u) return; const c=cur[g], t=T[lang];
-    u.pid.textContent = c && c.n ? t.rkPart(c.n) : (c && c.loading ? "…" : t.rkNoNum);
-    u.jump.style.display = fb ? "" : "none"; if(!fb) u.find.hidden=true;
-    u.rkBtn.style.display = fb ? "" : "none";
+    const tr=!!(c && c.tour);
+    u.pid.textContent = tr ? "🏆 "+c.tour.label() : c && c.n ? t.rkPart(c.n) : (c && c.loading ? "…" : t.rkNoNum);
+    u.jump.style.display = fb && !tr ? "" : "none"; if(!fb||tr) u.find.hidden=true;
+    u.rkBtn.style.display = fb && !tr ? "" : "none";
+    $("view-"+g).classList.toggle("tourmode", tr && !c.t1);
   }
-  function closeWin(g){ const u=ui[g]; if(!u) return; u.win.style.display="none"; u.win.classList.remove("rkonly"); }
+  function closeWin(g){ const u=ui[g]; if(!u) return; u.win.style.display="none"; u.win.classList.remove("rkonly","tonly"); }
   document.addEventListener("keydown",e=>{ if(e.key==="Escape" && ui[view] && ui[view].win.style.display==="block") closeWin(view); });
   // cronómetro visible: con botón Iniciar arranca al tocarlo; si no, al cargar la partida. Se detiene al terminarla
   function startT(g){
     const c=cur[g], u=ui[g]; if(!c) return tick();
+    const sec=$("view-"+g); if(sec){ sec.classList.remove("tourmode"); [...sec.children].forEach(el=>{ el.inert=false; }); }
+    if(u) u.win.classList.remove("tonly");
     c.load=Date.now(); c.t1=null; c.wait=0; c.e=0; c.h=0; c.c=0; c.r=0;
     if(u && u.gate){ c.t0=null; lock(g,true); } else c.t0=c.load;
     tick();
@@ -2881,11 +3050,12 @@ const Reg = (()=>{
   }
   setInterval(tick,1000);
   // penalidades en vivo: el reloj suma 10 s por error, 60 s por ayuda y lo que vale cada ronda fallada
-  const penOf=g=>{ const c=cur[g]; return c ? penSecs(kid(g), c.e||0, c.h||0, c.c||0, c.r||0, c.b||0) : 0; };
+  const penOf=g=>{ const c=cur[g]; return c ? penSecs(kid(g), c.e||0, c.h||0, c.c||0, c.r||0, c.b||0, c.R) : 0; };
   function pen(g, kind){
     const c=cur[g], u=ui[g]; if(!c || c.t1) return;
+    if(kind==="b" && c.tour) return;   // en el torneo las palabras extra de la sopa no descuentan (tScore no las cuenta)
     c[kind]=(c[kind]||0)+1;
-    if(u){ const k=kid(g), s=Math.round(kind==="e"?errCost(k):kind==="h"?SCORE.HINT:kind==="c"?SCORE.CHECK:kind==="b"?-SCORE.EXTRA:roundCost(k));
+    if(u){ const k=kid(g), s=Math.round(kind==="e"?errCost(k):kind==="h"?SCORE.HINT:kind==="c"?SCORE.CHECK:kind==="b"?-SCORE.EXTRA:c.R?SCORE.CAP/c.R:roundCost(k));
       u.pen.textContent= s<0 ? `−${-s} s` : `+${s} s`; u.pen.classList.remove("show"); void u.pen.offsetWidth; u.pen.classList.add("show"); }
     tick();
   }
@@ -2902,7 +3072,7 @@ const Reg = (()=>{
   }
   // el reloj arranca de nuevo (Semilla: memorizar no cuenta, el tiempo corre desde que se arma la frase)
   function restartClock(g){
-    const c=cur[g]; if(!c) return;
+    const c=cur[g]; if(!c || c.tour) return;
     c.t0=c.load=Date.now(); c.wait=0; c.fz=null; c.e=c.h=c.c=c.r=0; tick();
   }
   // duelo: sin botón Iniciar; los dos arrancan a la vez con una cuenta regresiva
@@ -2932,13 +3102,14 @@ const Reg = (()=>{
   }
 
   // partidas vistas por este jugador (cuentan apenas se abren, aunque no se terminen)
-  function markSeen(k,L,n,d){
-    const key=`${k}-${L}`, arr=seen[key]=seen[key]||[], first=!arr.includes(n);
-    if(first) arr.push(n);
+  // n null (torneo): solo cuentan las pistas; first dice si es la primera vez que la abre
+  function markSeen(k,L,n,d,first0){
+    const key=`${k}-${L}`, arr=seen[key]=seen[key]||[], first=n===null ? !!first0 : !arr.includes(n);
+    if(first && n!==null) arr.push(n);
     // pistas de esta partida: el jugador ya las vio, y si es la primera vez que la abre, suman al uso general
     const ids=d ? cluesIn(d,L) : [], fresh=ids.filter(id=>!CLUES.seen[L].has(id));
     fresh.forEach(id=>CLUES.seen[L].add(id));
-    const upd={last:fb ? fb.serverTimestamp() : null, seen:{[key]: fb ? fb.arrayUnion(n) : n}};
+    const upd=n===null ? {last:fb ? fb.serverTimestamp() : null} : {last:fb ? fb.serverTimestamp() : null, seen:{[key]: fb ? fb.arrayUnion(n) : n}};
     if(fb && fresh.length) upd.cl={[L]:fb.arrayUnion(...fresh)};
     if(fb) fb.setDoc(fb.doc(fb.db,"fichas",uid),upd,{merge:true}).catch(()=>{});
     if(fb && first && ids.length){
@@ -3012,6 +3183,7 @@ const Reg = (()=>{
   // force: el usuario cambió el idioma a propósito (pasa a una partida del idioma nuevo)
   async function enter(g, force){
     const c=cur[g];
+    if(c && c.tour && !c.t1){ thaw(g); return; }
     if(c && c.k===kid(g) && (c.lang===lang || (!force && (going(g) || c.fz)))){ thaw(g); return; }
     cur[g]={lang, k:kid(g), n:null, loading:true}; setPid(g); msg(g,"");
     await ready;
@@ -3019,7 +3191,7 @@ const Reg = (()=>{
     await next(g);
   }
   // "Nuevo": la primera partida existente que este jugador todavía no vio; si las vio todas, una nueva
-  async function newGame(g){ if(busy) return; await ready; if(!fb) return localGame(g, T[lang].rkLocal); await next(g); }
+  async function newGame(g){ if(busy || (cur[g] && cur[g].tour && !cur[g].t1)) return; await ready; if(!fb) return localGame(g, T[lang].rkLocal); await next(g); }
   async function next(g){
     const k=kid(g), L=lang;
     try{
@@ -3068,6 +3240,28 @@ const Reg = (()=>{
     if(opt.m) r.m=opt.m; if(opt.w) r.w=opt.w;
     return r;
   }
+  // partida para una ronda de torneo: con las pistas menos usadas por todos (como las invitaciones), sin numerarla.
+  // opt: {L: idioma, s: tamaño de sopa, w: palabras de la semilla, dif: dificultad, n: palabras del ahorcado}
+  async function genFor(g, opt={}){
+    await ready; const L=opt.L||lang;
+    await loadClueUse(L);
+    const prev=lang; lang=L; CLUES.duel=true; CLUES.trimWords=g!=="acrostico";
+    try{ return g==="sopa" ? GAMES.sopa.gen(opt.s) : g==="semilla" ? GAMES.semilla.gen(opt.w) : GAMES[g].gen(TOUR_GEN(opt)); }
+    finally{ lang=prev; CLUES.duel=false; CLUES.trimWords=false; }
+  }
+  // jugar la partida de una ronda de torneo. ctx: {k, m, R (rondas de la partida), t0 (arranque de la ronda, en hora de este dispositivo), label(), seen}
+  function playTour(g, d, ctx){
+    if(GAMES[g].setKey && ctx.k) GAMES[g].setKey(ctx.k);
+    if(ctx.m && GAMES[g].setMode) GAMES[g].setMode(ctx.m);
+    if(subs[g]){ subs[g](); subs[g]=null; }
+    const c=cur[g]={lang, k:ctx.k||kid(g), n:null, tour:ctx, R:ctx.R||0};
+    [...$("view-"+g).children].forEach(el=>{ el.inert=false; });
+    closeWin(g); GAMES[g].load(d); setCost(g); duelNote(g,""); msg(g,"");
+    c.load=c.t0=ctx.t0; c.wait=0; c.t1=null; c.fz=null; c.e=c.h=c.c=c.r=0;
+    lock(g,false); setPid(g); tick();
+    if(fb) markSeen(c.k, lang, null, d, !ctx.seen);
+    if(location.hash!=="#"+g) location.hash=g;
+  }
   // abrir la partida de una invitación; duel: el duelo al que pertenece
   async function playInvite(g, k, n, duel, m, at, who){
     if(GAMES[g].setKey) GAMES[g].setKey(k);
@@ -3108,6 +3302,7 @@ const Reg = (()=>{
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
     if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; if(c.b) rec.b=c.b; }
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
+    if(c && c.tour){ $("view-"+g).classList.remove("tourmode"); if(ui[g]){ ui[g].win.classList.remove("rkonly"); slot(g,"wlearn").hidden=true; const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; if(u0(g)) u0(g).hidden=true; } showBack(g); duelNote(g,""); if(Reg.onTour) Reg.onTour(g, rec, c); return; }
     // en duelo no hay "Siguiente": se sigue con "Revancha" (invita al mismo rival)
     if(ui[g]){ ui[g].win.classList.remove("rkonly"); ui[g].win.classList.toggle("induel", !!(cur[g] && (cur[g].duel || cur[g].sala))); showPts(g, rec); showLearn(g); }
     showBack(g); showSaveUser(g);
@@ -3133,11 +3328,12 @@ const Reg = (()=>{
     }catch(e){ msg(g, T[lang].rkFail); }
     Object.keys(gcache).forEach(x=>{ if(x.startsWith(c.k)) delete gcache[x]; }); ui[g].rk.hidden=false; renderRank(g);
   }
+  const u0=g=>ui[g] && ui[g].pts;
   function showPts(g, rec){
     const u=ui[g], t=T[lang], c=cur[g], sc=scoreOf(c?c.k:g, rec);
     if(!u.pts){ u.pts=document.createElement("div"); u.pts.className="wpts"; const st=u.win.querySelector(".stats"); u.win.insertBefore(u.pts, st?st.nextSibling:u.rk); }
     const plus=sc.pen+sc.b*SCORE.EXTRA;
-    u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), plus?fmt(plus*1000):"")+(sc.b?t.ptsExtra(sc.b, fmt(sc.b*SCORE.EXTRA*1000)):""))}</span>`;
+    u.pts.hidden=false; u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), plus?fmt(plus*1000):"")+(sc.b?t.ptsExtra(sc.b, fmt(sc.b*SCORE.EXTRA*1000)):""))}</span>`;
   }
   // al terminar (ganando o perdiendo): "¿Aprendiste alguna palabra nueva?" para medir si el juego enseña
   function showLearn(g){
@@ -3289,7 +3485,7 @@ const Reg = (()=>{
   mount();
   return {enter, newGame, open, finish, texts, wait, pen,
     ready, fb:()=>fb, uid:()=>uid, nick:()=>nick, av:()=>myAv, seenMap:()=>seen, ficha:()=>ficha, isTester:()=>testers.has(uid),
-    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, starting, freeze, thaw, inviteGame, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, onSala:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
+    setTester:on=>{ if(on) testers.add(uid); else testers.delete(uid); document.body.classList.toggle("tester",on); Object.keys(gcache).forEach(k=>delete gcache[k]); }, setNick, nickMsg, logErr, gameName, busyList, starting, freeze, thaw, inviteGame, genFor, playTour, onTour:null, testers:()=>testers, tick, closeWin, winShow:(g,only)=>{ const u=ui[g]; if(!u) return; u.win.classList.toggle("tonly",!!only); u.win.style.display="block"; }, restartClock, duelNote, missed:(g,list)=>{ if(cur[g]) cur[g].missed=list; }, adjNow:g=>{ const c=cur[g]; if(!c||!c.t0||(GAMES[g].clockOff&&GAMES[g].clockOff())) return null; return ((c.t1||c.fz||Date.now())-c.t0)/1000+penOf(g); }, onDuelStart:null, onSala:null, playing:g=>going(g), say:(g,s)=>msg(g,s), playInvite, slot, cur:g=>cur[g], onDuel:null};
 })();
 
 Object.assign(T.es,{
@@ -3483,7 +3679,9 @@ const Live = (()=>{
 
   // ---------- conectados ----------
   const fresh=()=>fb.query(fb.collection(fb.db,"online"), fb.where("at",">",fb.Timestamp.fromMillis(now()-FRESH)));
-  const avail=()=>want && !inc && !out && document.visibilityState==="visible";
+  // durante un torneo en vivo no hay invitaciones (para nadie)
+  const tourBlock=()=>typeof Tour!=="undefined" && Tour.blocks();
+  const avail=()=>want && !inc && !out && document.visibilityState==="visible" && !tourBlock();
   async function beat(){
     if(!fb) return;
     const ref=fb.doc(fb.db,"online",uid);
@@ -3572,7 +3770,7 @@ const Live = (()=>{
   }
   // dir: revancha con alguien en particular {to, who, d}
   function openOut(dir){
-    if(!fb || anyOpen()) return;
+    if(!fb || anyOpen() || tourBlock()) return;
     direct=dir&&dir.to ? dir : null; whoMode="rnd"; pickTo=null; onlAt=0; $("ivName").value="";
     linkOnly=!dir && avN===0;
     if(linkOnly) count();   // el contador se actualiza cada 30 s: al abrir se vuelve a contar
@@ -3760,7 +3958,7 @@ const Live = (()=>{
     if(!d.name && !(d.lk && Date.now()-(+store.get("rodo-linkat")||0) < 7*86400000)) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     // la ventanita de invitar abierta sin una invitación propia pendiente (por ejemplo, copiando el link) no cuenta como ocupado
     if(dOut.open && !out && !dIn.open) dOut.close();
-    if(inc || out || anyOpen() || $("lnkDlg").open || !want || (Date.now()-accAt < 20000 && Reg.starting()) || Reg.busyList().some(g=>g===d.g || ((Reg.cur(g).duel || Reg.cur(g).sala) && Date.now()-Reg.cur(g).t0 < 16*60000)))
+    if(inc || out || anyOpen() || $("lnkDlg").open || !want || tourBlock() || (Date.now()-accAt < 20000 && Reg.starting()) || Reg.busyList().some(g=>g===d.g || ((Reg.cur(g).duel || Reg.cur(g).sala) && Date.now()-Reg.cur(g).t0 < 16*60000)))
       return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
@@ -4156,7 +4354,7 @@ const Live = (()=>{
     stage("opts"); renderOpts(); send();
     return true;
   }
-  return {texts, beat, linkLive};
+  return {texts, beat, linkLive, now, synced:()=>synced};
 })();
 
 // =====================================================================
@@ -4286,11 +4484,13 @@ const User = (()=>{
     const until=lk.level>=1 && lk.fails===0 && lk.at && lk.at.toMillis ? lk.at.toMillis()+HOURS[lk.level-1]*3600000 : 0;
     if(until>Date.now()) return msgU(t().uLocked(fmtDate(until)));
     try{
+      await Push.forget();   // los avisos de este dispositivo dejan de ir al jugador anterior
       await fb.signInWithEmailAndPassword(fb.auth, await emailOf(k, ns.data().v), pin);
       // entró: se borra el contador de intentos y se recarga la página con su usuario
       try{ await fb.setDoc(lref,{fails:0,level:0,at:null}); }catch(e){}
       msgU(t().uWelcome); setTimeout(()=>location.reload(), 400);
     }catch(e){
+      Push.sync();
       if(e.code==="auth/too-many-requests") return msgU(t().uTooMany);
       if(e.code==="auth/operation-not-allowed") return msgU(t().uOff);
       if(!/invalid-credential|wrong-password|invalid-login|user-not-found/.test(e.code||"")) return msgU(t().uFail);
@@ -4316,7 +4516,7 @@ const User = (()=>{
   }
   async function signout(){
     if(!sure($("uOut"), t().uOutWarn)) return;
-    await fb.signOut(fb.auth); location.reload();
+    await Push.forget(); await fb.signOut(fb.auth); location.reload();
   }
   async function go(){
     if(busy) return; busy=true; $("uGo").disabled=true;
@@ -4781,23 +4981,1087 @@ function applyTexts(){
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
-  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts(); Stats.texts();
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts(); Stats.texts(); Tour.texts();
   $("adminLink").textContent=t.adminLink;
   ["shopTag","shopName","shopDesc","shopGo"].forEach(k=>$(k).textContent=t[k]);
   if(view==="admin") return setTitle("Administración");
   if(view==="stats") return setTitle(t.stTitle);
+  if(view==="torneo") return setTitle(t.tTitle);
+  if(view==="torneo-admin") return setTitle("Torneo · organización");
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
 }
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
+
+// =====================================================================
+// AVISOS PUSH (torneo): el navegador se suscribe y guarda la suscripción en pushsubs/{uid}; las manda una Cloud Function.
+// Push.state() → "on" | "off" | "denied" | "unsupported" | "ios-install" | "unavailable"; Push.enable() se llama directo del toque.
+// =====================================================================
+const Push = (()=>{
+  const MAX = 5;
+  const ok = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const ios = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const bytes = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+  const sameKey = (s, k) => { const a = s.options && s.options.applicationServerKey; return !a || b64(a) === k; };
+  const fbx = async () => { await Reg.ready; return Reg.fb(); };
+  const uidOf = f => (Reg.uid && Reg.uid()) || f.uid;
+  let key = null; // clave pública VAPID (la crea la Function en config/push)
+
+  async function vapid(){
+    if (key) return key;
+    const f = await fbx(); if (!f) return null;
+    try { const s = await f.getDoc(f.doc(f.db, "config", "push")); key = (s.exists() && s.data().vapid) || null; } catch(e){ key = null; }
+    return key;
+  }
+  async function current(){
+    const r = await navigator.serviceWorker.getRegistration("/");
+    return r && r.pushManager ? r.pushManager.getSubscription() : null;
+  }
+  const item = s => { const j = s.toJSON(); return { endpoint: j.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth } }; };
+  // guarda este dispositivo primero; si quedan más de 5, se va el más viejo
+  async function save(s){
+    const f = await fbx(); if (!f) throw new Error("sin servidor");
+    const it = item(s), ref = f.doc(f.db, "pushsubs", uidOf(f));
+    await f.runTransaction(f.db, async tx => {
+      const d = await tx.get(ref), old = d.exists() ? (d.data().subs || []) : [];
+      tx.set(ref, { subs: [it, ...old.filter(o => o && o.endpoint !== it.endpoint)].slice(0, MAX), at: f.serverTimestamp() });
+    });
+  }
+  async function drop(ep){
+    const f = await fbx(); if (!f || !ep) return;
+    const ref = f.doc(f.db, "pushsubs", uidOf(f));
+    await f.runTransaction(f.db, async tx => {
+      const d = await tx.get(ref); if (!d.exists()) return;
+      const old = d.data().subs || [], subs = old.filter(o => o && o.endpoint !== ep);
+      if (subs.length === old.length) return;
+      if (subs.length) tx.set(ref, { subs, at: f.serverTimestamp() }); else tx.delete(ref);
+    });
+  }
+
+  async function state(){
+    if (!ok()) return ios() && navigator.standalone !== true ? "ios-install" : "unsupported";
+    if (Notification.permission === "denied") return "denied";
+    if (!(await vapid())) return "unavailable";
+    if (Notification.permission !== "granted") return "off";
+    return (await current().catch(() => null)) ? "on" : "off";
+  }
+
+  // sin async a propósito: el permiso se pide antes de cualquier espera (Safari lo exige pegado al toque)
+  function enable(){
+    if (!ok()) return state();
+    const perm = Notification.permission !== "default" ? Promise.resolve(Notification.permission)
+      : new Promise(res => { const p = Notification.requestPermission(res); if (p && p.then) p.then(res, () => res("default")); });
+    return (async () => {
+      const p = await perm;
+      if (p === "denied") return "denied";
+      if (p !== "granted") return "off";
+      const k = await vapid(); if (!k) return "unavailable";
+      let s = null, made = false;
+      try {
+        await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
+        const r = await navigator.serviceWorker.ready;
+        s = await r.pushManager.getSubscription();
+        if (s && !sameKey(s, k)) { await s.unsubscribe().catch(() => {}); s = null; } // era de una clave vieja
+        if (!s) { s = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(k) }); made = true; }
+        await save(s);
+        return "on";
+      } catch(e) {
+        console.warn("Push:", e);
+        if (s && made) await s.unsubscribe().catch(() => {}); // que no quede activo sin estar guardado
+        return state();
+      }
+    })();
+  }
+
+  async function disable(){
+    try {
+      const s = await current();
+      if (s) { const ep = s.endpoint; await s.unsubscribe().catch(() => {}); await drop(ep); }
+    } catch(e) { console.warn("Push:", e); }
+    return state();
+  }
+
+  async function sync(){
+    try {
+      if ((await state()) !== "on") return;
+      const k = await vapid();
+      let s = await current();
+      if (!sameKey(s, k)) { // la clave cambió: se renueva sola (con el permiso ya dado no hace falta un toque)
+        const r = await navigator.serviceWorker.ready;
+        await s.unsubscribe().catch(() => {});
+        s = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(k) });
+      }
+      const f = await fbx(), it = item(s);
+      const d = await f.getDoc(f.doc(f.db, "pushsubs", uidOf(f)));
+      const have = d.exists() && (d.data().subs || []).some(o => o && o.endpoint === it.endpoint && o.keys && o.keys.p256dh === it.keys.p256dh && o.keys.auth === it.keys.auth);
+      if (!have) await save(s);
+    } catch(e) { console.warn("Push:", e); }
+  }
+
+  async function forget(){
+    try { const s = ok() ? await current() : null; if (s) await drop(s.endpoint); } catch(e) { console.warn("Push:", e); }
+  }
+
+  // aviso tocado con el sitio abierto (lo manda /sw.js): ir al # del aviso
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
+    const d = e.data; if (!d || d.type !== "push-open") return;
+    try { const u = new URL(d.url, location.href); if (u.origin === location.origin && u.hash && u.hash !== location.hash) location.hash = u.hash; } catch(_) {}
+    window.dispatchEvent(new CustomEvent("rodo-push", { detail: d }));
+  });
+
+  return { state, enable, disable, sync, forget };
+})();
+// si este dispositivo ya tenía los avisos activados, se asegura de que la suscripción esté guardada (sin pedir nada)
+Reg.ready.then(()=>{ try{ if("Notification" in window && Notification.permission==="granted") Push.sync(); }catch(e){} });
+
+// =====================================================================
+// TORNEO EN VIVO (por ejemplo, BITCOIN.AR HALVING GAMES)
+// Rondas eliminatorias: todos juegan la misma partida a la vez y pasa la mitad; la final es 1 a 1.
+// La partida de cada ronda es secreta hasta que arranca (reglas). El tiempo lo pone el servidor: desde el arranque
+// de la ronda hasta que se guarda el resultado. Cada jugador va guardando su avance (p) para el puntaje parcial
+// si se acaba el tiempo. Las rondas las arma y las cierra el organizador desde su panel (#torneo-admin).
+// Puntos: quien termina, 1000 − segundos ajustados (mínimo 1, como en el resto del sitio; en los de rondas, las palabras
+// sin resolver al terminar suman 900/rondas s cada una); quien no termina, 100 × fracción resuelta − penalidades/10.
+// Más puntos gana; empates: más resuelto, menos tiempo ajustado.
+// =====================================================================
+Object.assign(T.es,{
+  tTitle:"Torneo", tNone:"No hay ningún torneo anunciado por ahora.",
+  tSt:{draft:"Borrador", open:"Inscripción abierta", checkin:"Check-in abierto", live:"En juego", done:"Terminado"},
+  tWhen:d=>`Arranca: ${d}`, tCount:(n,c)=>`${n} inscripto${n===1?"":"s"} · juegan ${c}`,
+  tNeedUser:"Para inscribirte necesitás un usuario (nombre y PIN). Se arma en menos de 30 segundos.", tUserBtn:"Elegí tu usuario",
+  tMail:"Mail", tTel:"Teléfono (con código de área)", tBasesOk:"Leí y acepto las bases y condiciones", tDataNote:"Tu mail y tu teléfono los ven solo los organizadores, para avisarte cuando arranca cada ronda.",
+  tJoin:"Inscribirme", tJoinBad:"Completá un mail y un teléfono válidos y aceptá las bases.", tJoinFail:"No se pudo completar la inscripción. Probá de nuevo.",
+  tJoined:n=>`Estás inscripto como ${n}.`, tLeave:"Darme de baja", tLeaveQ:"¿Seguro que querés darte de baja del torneo?",
+  tCk:"Estoy listo", tCkNote:"Juegan los primeros que confirman, hasta completar el cupo.", tCkFail:"No se pudo confirmar. Probá de nuevo.",
+  tCkIn:(p,c)=>`Confirmado: estás adentro (N° ${p} de ${c}).`, tCkWait:p=>`Confirmado, en lista de espera (N° ${p}). Si alguien no confirma, entrás.`,
+  tNoCk:"Cuando abra el check-in, confirmá que estás.",
+  tPushT:"Avisos", tPushOn:"Avisos activados en este dispositivo ✓", tPushOff:"Activá los avisos para enterarte cuando arranca cada ronda.", tPushBtn:"Activar avisos",
+  tPushDenied:"Bloqueaste los avisos de este sitio: se habilitan desde la configuración del navegador.", tPushUns:"Este navegador no permite avisos.",
+  tPushIos:"En iPhone: tocá Compartir → \"Agregar a inicio\", abrí RODO Games desde ese ícono y activá los avisos ahí.", tPushNA:"Los avisos al celular todavía no están disponibles.",
+  tPoolT:"Pozo", tPoolTxt:f=>`Aporte voluntario: ${f} sats. Solo puede ganar el pozo quien aportó; si el campeón no aportó, el pozo queda para el organizador. El premio se paga después del torneo.`,
+  tPool:(s,n)=>`Pozo: ${s} sats · ${n} aporte${n===1?"":"s"} confirmado${n===1?"":"s"}`,
+  tPay:"Aportar con Lightning", tCopy:"Copiar", tCopied:"Copiado ✓", tPaid:"Tu aporte está confirmado ✓", tPayNote:"Poné tu nombre de usuario en el comentario del pago, así el organizador lo confirma.",
+  tBases:"Bases y condiciones",
+  tBasesDef:"Este juego se hace con amor y buena intención, y puede fallar. La organización no se hace responsable por errores del juego, durante el juego ni por los aportes hechos al pozo. Quien acepta jugar lo hace por la diversión de jugar, y el aporte, si lo hay, también es por la diversión de jugarlo. Solo puede ganar el pozo quien aportó; si el campeón no aportó, el pozo queda para el organizador. El premio se paga después del torneo.",
+  tRounds:"Las rondas", tRoundN:n=>`Ronda ${n}`, tFinal:"Final", tDur:m=>m?`${m} min de juego`:"sin límite de tiempo",
+  tDif:{facil:"fácil", media:"dificultad media", dificil:"difícil"}, tHangN:n=>`de ${n} palabras`,
+  tStartsIn:"Arranca en", tPaused:"En pausa: el organizador la retoma en un rato.", tReady:"Preparando la ronda…",
+  tLeft:"Quedan", tAdv:(a,n)=>`Pasan ${a} de ${n}.`, tAdvFinal:"Gana quien saca más puntos.",
+  tYouComp:"Competís en esta ronda.", tYouOut:"No competís en esta ronda: podés jugarla igual y ver dónde habrías quedado.",
+  tPlay:"Jugar", tPlayX:"Jugarla sin competir", tEnter:"Entrar a la ronda (el tiempo ya corre)", tBack:"Volver a la ronda",
+  tDoneT:"Ya terminaste esta ronda.", tClosed:"Ronda terminada",
+  tPassed:p=>`¡Pasaste! Quedaste ${p}°.`, tOut:(p,n)=>`Quedaste ${p}° de ${n}. Podés seguir jugando las rondas sin competir.`, tWould:p=>`Habrías quedado ${p}°.`,
+  tTable:"Tabla", tColPos:"#", tColWho:"Jugador", tColPts:"Puntos", tColSt:"",
+  tPlaying:n=>`${n} todavía jugando…`, tNoShow:"no jugó", tCut:a=>`pasan los primeros ${a}`, tFinished:n=>`${n} terminaron`,
+  tChamp:w=>`🏆 Campeón: ${w}`, tChampPool:s=>`Gana el pozo de ${s} sats.`, tChampNoPool:"No aportó al pozo: el pozo queda para el organizador.",
+  tBarGo:(no,tm)=>`🏆 ${no} arranca en ${tm}`, tBarLive:no=>`🏆 ${no} en juego`, tBarBtn:"Ir", tBarPassed:no=>`🏆 ¡Pasaste a la ${no}!`,
+  tTimeUp:"⏱ Se terminó el tiempo de la ronda. Se guardó lo que llegaste a resolver.", tClosedMid:"La ronda terminó: ya se definieron los que pasan.",
+  tNote:(l,d,n,a)=>`⏱ ${l} · ${d} de ${n} terminaron · pasan ${a}`, tNoteNL:(d,n)=>`${d} de ${n} terminaron`, tNoteX:"Jugás sin competir.",
+  tPos:(p,n)=>`Puesto provisorio: ${p}° (de ${n} que terminaron).`, tSeeTable:"Ver la tabla", tPts:p=>`${p} puntos`,
+  tLoadFail:"No se pudo abrir la partida de la ronda. Probá de nuevo.", tWaitStart:"Abriendo la partida…",
+  tBanner:{open:"Inscribite", checkin:"Confirmá que estás", live:"En juego ahora", done:"Ver resultados"},
+  tTest:"🧪 Ensayo: lo ven solo los invitados. Los resultados no cuentan.", tTestPill:"Ensayo", tBarInv:n=>`🧪 Te invitaron a probar «${n}»`,
+  tShare:"Compartir imagen", tShareText:n=>`Sumate a ${n} en RODO ₿ Games`, tImgCta:"Inscribite en games.rodo.es/#torneo",
+  tScoreHow:"Puntos: si terminás, 100 por resolverla más 1 por cada segundo antes de los 15 minutos (errores y ayudas suman segundos, como siempre). Si se acaba el tiempo, 1 punto por cada 1 % resuelto, menos 1 por cada 10 segundos de penalidad. El tiempo corre para todos desde el arranque de la ronda."
+});
+Object.assign(T.en,{
+  tTitle:"Tournament", tNone:"No tournament has been announced yet.",
+  tSt:{draft:"Draft", open:"Registration open", checkin:"Check-in open", live:"Live", done:"Finished"},
+  tWhen:d=>`Starts: ${d}`, tCount:(n,c)=>`${n} registered · ${c} play`,
+  tNeedUser:"You need a username (name and PIN) to register. It takes less than 30 seconds.", tUserBtn:"Pick your username",
+  tMail:"Email", tTel:"Phone (with area code)", tBasesOk:"I've read and accept the rules", tDataNote:"Only the organizers see your email and phone, to let you know when each round starts.",
+  tJoin:"Register", tJoinBad:"Enter a valid email and phone and accept the rules.", tJoinFail:"Couldn't register. Please try again.",
+  tJoined:n=>`You're registered as ${n}.`, tLeave:"Unregister", tLeaveQ:"Are you sure you want to leave the tournament?",
+  tCk:"I'm ready", tCkNote:"The first ones to check in play, up to the limit.", tCkFail:"Couldn't check in. Please try again.",
+  tCkIn:(p,c)=>`Checked in: you're in (#${p} of ${c}).`, tCkWait:p=>`Checked in, on the waiting list (#${p}). If someone doesn't check in, you're in.`,
+  tNoCk:"When check-in opens, confirm you're here.",
+  tPushT:"Notifications", tPushOn:"Notifications on for this device ✓", tPushOff:"Turn on notifications to know when each round starts.", tPushBtn:"Turn on notifications",
+  tPushDenied:"You blocked notifications for this site: re-enable them in your browser settings.", tPushUns:"This browser doesn't support notifications.",
+  tPushIos:"On iPhone: tap Share → \"Add to Home Screen\", open RODO Games from that icon and turn notifications on there.", tPushNA:"Phone notifications aren't available yet.",
+  tPoolT:"Prize pool", tPoolTxt:f=>`Voluntary contribution: ${f} sats. Only contributors can win the pool; if the champion didn't contribute, the pool goes to the organizer. The prize is paid after the tournament.`,
+  tPool:(s,n)=>`Pool: ${s} sats · ${n} confirmed contribution${n===1?"":"s"}`,
+  tPay:"Contribute with Lightning", tCopy:"Copy", tCopied:"Copied ✓", tPaid:"Your contribution is confirmed ✓", tPayNote:"Put your username in the payment comment so the organizer can confirm it.",
+  tBases:"Rules",
+  tBasesDef:"This game is made with love and good intentions, and it may fail. The organizers aren't responsible for errors in or during the game, or for contributions to the pool. Whoever plays does it for the fun of playing, and contributions, if any, are also for the fun of it. Only contributors can win the pool; if the champion didn't contribute, the pool goes to the organizer. The prize is paid after the tournament.",
+  tRounds:"Rounds", tRoundN:n=>`Round ${n}`, tFinal:"Final", tDur:m=>m?`${m} min of play`:"no time limit",
+  tDif:{facil:"easy", media:"medium", dificil:"hard"}, tHangN:n=>`with ${n} words`,
+  tStartsIn:"Starts in", tPaused:"Paused: the organizer will resume it shortly.", tReady:"Getting the round ready…",
+  tLeft:"Left", tAdv:(a,n)=>`${a} of ${n} advance.`, tAdvFinal:"Most points wins.",
+  tYouComp:"You're competing in this round.", tYouOut:"You're not competing in this round: you can still play it and see where you'd have placed.",
+  tPlay:"Play", tPlayX:"Play it without competing", tEnter:"Join the round (the clock is already running)", tBack:"Back to the round",
+  tDoneT:"You've finished this round.", tClosed:"Round over",
+  tPassed:p=>`You're through! You placed #${p}.`, tOut:(p,n)=>`You placed #${p} of ${n}. You can keep playing the rounds without competing.`, tWould:p=>`You'd have placed #${p}.`,
+  tTable:"Standings", tColPos:"#", tColWho:"Player", tColPts:"Points", tColSt:"",
+  tPlaying:n=>`${n} still playing…`, tNoShow:"didn't play", tCut:a=>`top ${a} advance`, tFinished:n=>`${n} finished`,
+  tChamp:w=>`🏆 Champion: ${w}`, tChampPool:s=>`Wins the ${s} sats pool.`, tChampNoPool:"Didn't contribute to the pool: it goes to the organizer.",
+  tBarGo:(no,tm)=>`🏆 ${no} starts in ${tm}`, tBarLive:no=>`🏆 ${no} is live`, tBarBtn:"Go", tBarPassed:no=>`🏆 You're through to ${no}!`,
+  tTimeUp:"⏱ Time's up for this round. What you solved was saved.", tClosedMid:"The round is over: the qualifiers are decided.",
+  tNote:(l,d,n,a)=>`⏱ ${l} · ${d} of ${n} finished · ${a} advance`, tNoteNL:(d,n)=>`${d} of ${n} finished`, tNoteX:"You're playing without competing.",
+  tPos:(p,n)=>`Provisional rank: #${p} (of ${n} who finished).`, tSeeTable:"See standings", tPts:p=>`${p} points`,
+  tLoadFail:"Couldn't open the round's game. Please try again.", tWaitStart:"Opening the game…",
+  tBanner:{open:"Register", checkin:"Check in", live:"Live now", done:"See results"},
+  tTest:"🧪 Rehearsal: only invited players can see it. Results don't count.", tTestPill:"Rehearsal", tBarInv:n=>`🧪 You've been invited to try out «${n}»`,
+  tShare:"Share image", tShareText:n=>`Join ${n} on RODO ₿ Games`, tImgCta:"Register at games.rodo.es/#torneo",
+  tScoreHow:"Points: if you finish, 100 for solving it plus 1 for every second under 15 minutes (mistakes and hints add seconds, as usual). If time runs out, 1 point per 1% solved, minus 1 per 10 seconds of penalties. The clock runs for everyone from the start of the round."
+});
+// Imagen del torneo: fichas de Scrabble cruzadas (HALVING en naranja; BITCOIN, GAMES y AR en madera), con su puntaje
+const SCRAB_V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,L:1,M:3,N:1,O:1,P:3,Q:5,R:1,S:1,T:1,U:1,V:4,X:8,Y:4,Z:10};
+const SCRAB=(()=>{ const g=[...Array(7)].map(()=>Array(8).fill(null)), put=(w,r,c,dr,dc,o)=>[...w].forEach((ch,i)=>{ const x=g[r+dr*i][c+dc*i]; g[r+dr*i][c+dc*i]={ch, o:o||(x&&x.o)}; });
+  put("BITCOIN",0,4,1,0); put("GAMES",1,6,1,0); put("AR",2,6,0,1); put("HALVING",1,0,0,1,true); return g; })();
+const scrabHtml=()=>`<div class="scrab" aria-hidden="true">${SCRAB.map(row=>row.map(x=>x?`<span class="sq${x.o?" o":""}">${x.ch}<i>${SCRAB_V[x.ch]}</i></span>`:`<span class="sq e"></span>`).join("")).join("")}</div>`;
+// imagen para compartir el torneo (como las de los juegos)
+async function tourImage(TD){
+  try{ await document.fonts.ready; }catch(e){}
+  const W=1200, H=630, S=2, cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
+  const x=cv.getContext("2d"); x.scale(S,S);
+  x.fillStyle="#F7F8F9"; x.fillRect(0,0,W,H); x.fillStyle="#F7931A"; x.fillRect(0,0,W,10);
+  const sz=56, gp=6, ox=60, oy=110;
+  SCRAB.forEach((row,r)=>row.forEach((c,k)=>{ if(!c) return;
+    const X=ox+k*(sz+gp), Y=oy+r*(sz+gp);
+    x.fillStyle="rgba(0,0,0,.12)"; x.beginPath(); x.roundRect ? x.roundRect(X+2,Y+4,sz,sz,8) : x.rect(X+2,Y+4,sz,sz); x.fill();
+    x.fillStyle=c.o?"#F7931A":"#F2D8A7"; x.strokeStyle=c.o?"#C76F00":"#C9A061"; x.lineWidth=2;
+    x.beginPath(); x.roundRect ? x.roundRect(X,Y,sz,sz,8) : x.rect(X,Y,sz,sz); x.fill(); x.stroke();
+    x.fillStyle=c.o?"#1A1E23":"#3A2A14"; x.font=`700 32px ${MONO}`; x.textAlign="center"; x.textBaseline="middle"; x.fillText(c.ch, X+sz/2-3, Y+sz/2+1);
+    x.font=`600 13px ${MONO}`; x.textAlign="right"; x.textBaseline="alphabetic"; x.fillText(String(SCRAB_V[c.ch]), X+sz-6, Y+sz-6); }));
+  x.textAlign="left"; x.textBaseline="alphabetic";
+  const tx=ox+8*(sz+gp)+40, tw=W-tx-50;
+  x.fillStyle="#5B6672"; x.font=`600 22px ${SANS}`; x.fillText("RODO ₿ Games", tx, 150);
+  x.fillStyle="#1A1E23"; x.font=`800 52px ${SANS}`; let y=wrapText(x, TD.name, tx, 215, tw, 58);
+  const when=tms(TD.when);
+  if(when){ x.fillStyle="#C76F00"; x.font=`700 26px ${SANS}`; y=wrapText(x, new Date(when).toLocaleString(lang==="en"?"en-US":"es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}), tx, y+56, tw, 32); }
+  x.fillStyle="#1A1E23"; x.font=`600 24px ${SANS}`; wrapText(x, T[lang].tImgCta, tx, y+60, tw, 30);
+  x.fillStyle="#5B6672"; x.font=`400 18px ${SANS}`; x.fillText("Bitcoin.AR", tx, H-50);
+  return toBlob(cv);
+}
+// la dificultad y las palabras del ahorcado, para generar la partida de cada ronda
+const TOUR_GEN=o=>({dif:o.dif, n:o.n});
+// rondas que tiene cada partida, para el puntaje (anagrama 10; ahorcado del torneo, las palabras que tenga)
+const tourRounds=c=> c.g==="anagrama" ? 10 : c.g==="ahorcado" ? (c.n||6) : 0;
+const tms=x=> x && x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
+const pow2below=n=>{ let p=1; while(p*2<n) p*=2; return p; };
+// puntaje de una ronda: rd = la ronda, r = el resultado guardado de un jugador
+function tScore(rd, r){
+  if(!r) return {pts:-1, p:0, ok:false, pen:0, adj:Infinity, fin:false};
+  const nr=rd.nr||0, k=rd.k||rd.g, fails=r.done && r.ok && nr ? Math.max(r.f||0, nr-(r.s||0)) : (r.f||0), pen=penSecs(k, r.e||0, r.h||0, r.c||0, fails, 0, nr);
+  const go=tms(rd.go), at=tms(r.at), secs=go&&at ? Math.max(0,(at-go)/1000) : 0, adj=secs+pen;
+  // quien completó una partida de rondas: aciertos / rondas; quien no terminó: su avance (incluye la palabra a medias)
+  const p=Math.max(0, Math.min(1, r.done && r.ok ? (nr ? (r.s||0)/nr : 1) : (r.p||0)));
+  if(r.done && r.ok) return {pts:Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)), p, ok:true, pen, adj, fin:true};
+  return {pts:Math.max(0, Math.round(100*p-pen/10)), p, ok:false, pen, adj, fin:!!r.done};
+}
+// tabla de una ronda: los que compiten (pl), ordenados. res = {uid: resultado}
+function tStand(rd, res){
+  const L=(rd.pl||[]).map(u=>({u, r:res[u], sc:tScore(rd, res[u])}));
+  L.sort((a,b)=>(b.sc.pts-a.sc.pts)||((b.sc.ok?1:0)-(a.sc.ok?1:0))||(b.sc.p-a.sc.p)||(a.sc.adj-b.sc.adj)||((tms(a.r&&a.r.at)||9e15)-(tms(b.r&&b.r.at)||9e15))||(a.u<b.u?-1:1));
+  return L;
+}
+// ¿ya está definida la ronda? Todos terminaron, se acabó el tiempo, o nadie de los que siguen jugando puede
+// superar al último de los que pasan (como mucho sacan 100 + 900 − segundos desde el arranque − sus penalidades)
+function tDecided(rd, res, now){
+  const L=tStand(rd, res), go=tms(rd.go), end=tms(rd.end); if(!go || now<go) return false;
+  if(L.length && L.every(x=>x.r && x.r.done)) return true;
+  if(end && now>=end+22000) return true;
+  const fixed=L.filter(x=>x.r && x.r.done).map(x=>x.sc.pts).sort((a,b)=>b-a);
+  if(fixed.length<rd.adv) return false;
+  const el=(now-go)/1000-2, open=L.filter(x=>!(x.r && x.r.done));
+  // si no termina a tiempo, a lo sumo saca 99 (avance parcial)
+  const best=Math.max(99, ...open.map(x=>SCORE.BONUS+SCORE.CAP-(el+(x.sc.pen||0))));
+  return fixed[rd.adv-1] > best;
+}
+// "Ahorcado de 6 palabras, dificultad media, en castellano"
+function tDesc(c){
+  const T0=T[lang], p=[];
+  if(c.g==="sopa"){ const s=c.s||"media"; p.push(T0.ivSize(SOPA_N[s]||12)); p.push(c.m==="c"?T0.ivWithClues:T0.ivWithWords); }
+  if(c.g==="semilla") p.push(T0.ivWords(c.w||12));
+  if(c.g==="ahorcado" && (c.n||1)>1) p.push(T0.tHangN(c.n));
+  if(c.dif && T0.tDif[c.dif]) p.push(T0.tDif[c.dif]);
+  p.push(T0.ivIn[c.lang]||"");
+  return T0.ivDesc(T0.gName[c.g], p.filter(Boolean));
+}
+
+const Tour = (()=>{
+  const t=()=>T[lang];
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  let fb=null, uid=null, ALL={}, tid=null, TD=null;
+  let RS={}, rUnsub=null, mine=null, mUnsub=null, INS=null, iUnsub=null;
+  let RES={}, resId=null, resUnsub=null, closedRes={};
+  let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
+  const srv=()=>Live.now();                       // hora del servidor (estimada)
+  const loc=ms=>ms-(Live.now()-Date.now());       // hora del servidor → hora de este dispositivo
+  const rounds=()=>Object.values(RS).sort((a,b)=>a.no-b.no);
+  const curR=()=>{ const l=rounds(); return l.length ? l[l.length-1] : null; };
+  const rName=r=> r.final ? t().tFinal : t().tRoundN(r.no);
+  const comp=r=> !!(r && uid && (r.pl||[]).includes(uid));
+  const who=u=>{ const x=INS&&INS[u]; return x ? (x.av?x.av+" ":"")+x.nm : "…"; };
+  const set=(id,h)=>{ const el=$(id); if(el && el.innerHTML!==h) el.innerHTML=h; };
+  const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}` : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+  const blocks=()=>Object.values(ALL).some(x=>x.st==="live" && !x.test);
+
+  // ---------- suscripciones ----------
+  function pick(){
+    const vis=x=> x.test ? (x.inv||[]).includes(uid) : (!tms(x.pub) || srv()>=tms(x.pub));
+    const tst=x=> x.test && x.st!=="done" ? 0 : 1;   // un ensayo en curso al que me invitaron va primero
+    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && vis(x) && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
+      .sort((a,b)=>(tst(a[1])-tst(b[1]))||(pri[a[1].st]-pri[b[1].st])||((tms(b[1].at)||0)-(tms(a[1].at)||0)));
+    const id=l.length ? l[0][0] : null;
+    if(id!==tid){ tid=id; RS={}; mine=null; INS=null; RES={}; resId=null; closedRes={};
+      if(rUnsub){ rUnsub(); rUnsub=null; } if(mUnsub){ mUnsub(); mUnsub=null; } if(iUnsub){ iUnsub(); iUnsub=null; } if(resUnsub){ resUnsub(); resUnsub=null; }
+      if(tid){
+        rUnsub=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); onRounds(); }, ()=>{});
+        mUnsub=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid,"ins",uid), s=>{ mine=s.exists() ? s.data() : null; render(); }, ()=>{});
+      }
+      watchIns();
+    }
+    TD=tid ? ALL[tid] : null;
+    banner(); render();
+  }
+  // inscriptos: solo con la sala abierta (cada alta le llega a todos los que miran)
+  function watchIns(){
+    const on=!!(tid && view==="torneo");
+    if(!on){ if(iUnsub){ iUnsub(); iUnsub=null; } return; }
+    if(iUnsub) return;
+    iUnsub=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); }, ()=>{});
+  }
+  // resultados de la ronda que se muestra: en vivo solo los terminados (cada avance no le llega a nadie)
+  function watchRes(){
+    const r=curR(), on=!!(r && r.st==="live" && (view==="torneo" || (play && play.id===r.id)));
+    const id=on ? r.id : null;
+    if(id===resId) return;
+    if(resUnsub){ resUnsub(); resUnsub=null; } resId=id; RES={};
+    if(!id) return;
+    resUnsub=fb.onSnapshot(fb.query(fb.collection(fb.db,"tourneys",tid,"rounds",id,"res"), fb.where("done","==",true)), qs=>{
+      RES={}; qs.forEach(d=>RES[d.id]=d.data()); render(); winSlot(); }, ()=>{});
+  }
+  async function loadClosed(r){
+    if(closedRes[r.id]) return;
+    closedRes[r.id]={};
+    try{ const qs=await fb.getDocs(fb.collection(fb.db,"tourneys",tid,"rounds",r.id,"res")); const m={}; qs.forEach(d=>m[d.id]=d.data()); closedRes[r.id]=m; render(); winSlot(); }catch(e){ delete closedRes[r.id]; }
+  }
+  const mineAsked={};
+  async function loadMine(r){
+    if(mineAsked[r.id]) return; mineAsked[r.id]=1;
+    try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"res",uid)); myRes[r.id]=s.exists()?s.data():null; render(); }catch(e){ delete mineAsked[r.id]; }
+  }
+  function onRounds(){
+    const r=curR();
+    if(r){ loadMine(r); if(r.st==="closed"){ loadClosed(r); Object.values(RS).forEach(x=>{ if(x.st==="closed" && view==="torneo") loadClosed(x); }); } }
+    // el organizador cerró la ronda mientras la jugaba
+    if(play && RS[play.id] && RS[play.id].st==="closed" && !play.done){ stop(t().tClosedMid); }
+    if(play && RS[play.id] && RS[play.id].st==="closed") loadClosed(RS[play.id]);
+    watchRes(); render(); banner(); winSlot();
+  }
+
+  // ---------- jugar una ronda ----------
+  async function start(r, x){
+    if(play && play.id===r.id && !play.failed){ const c=Reg.cur(r.g); if(c && c.tour && c.tour.rid===r.id) location.hash=r.g; return; }
+    play={id:r.id, g:r.g, x, done:false, sent:"", at:0, loading:true};
+    flash=t().tWaitStart; render();
+    let d=null;
+    // la partida se puede leer recién desde el arranque (hora del servidor): reintenta por si los relojes difieren
+    for(let i=0;i<40 && !d;i++){
+      try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"data","p")); if(s.exists()) d=s.data().d; }catch(e){}
+      if(!d) await sleep(500);
+    }
+    flash="";
+    if(!d){ play.failed=true; flash=t().tLoadFail; render(); return; }
+    // si ya había empezado (recargó la página), sigue con sus errores y ayudas: no pueden bajar
+    let prev=null; try{ const s=await fb.getDoc(fb.doc(fb.db,"tourneys",tid,"rounds",r.id,"res",uid)); prev=s.exists()?s.data():null; }catch(e){}
+    if(prev && prev.done){ myRes[r.id]=prev; play.done=true; play.loading=false; render(); return; }
+    play.loading=false; play.base=prev||{};
+    Reg.freeze();                                    // otra partida en curso queda en pausa
+    if(r.lang) setLang(r.lang);
+    const sk=`rodo-tseen-${tid}-${r.id}`;
+    Reg.playTour(r.g, d, {k:r.k, m:r.m, R:r.nr||0, t0:loc(tms(r.go)), label:()=>rName(RS[r.id]||r), seen:store.get(sk)==="1", rid:r.id, x});
+    store.set(sk,"1");
+    const c=Reg.cur(r.g), b=play.base;
+    if(c && b.at){ c.e=b.e||0; c.h=b.h||0; c.c=b.c||0; c.r=b.f||0; Reg.tick(); }
+    watchRes(); sync(true);
+  }
+  const prog=g=>{ try{ const p=GAMES[g].progress ? GAMES[g].progress() : null; return p ? {p:+p.p||0, s:p.s|0} : {p:0, s:0}; }catch(e){ return {p:0, s:0}; } };
+  // guarda el avance (cada 5 s si cambió) o el resultado final (fin)
+  async function sync(force, fin){
+    if(!play || play.loading || (play.done && !fin)) return;
+    const r=RS[play.id]; if(!r || !(r.st==="live"||r.st==="sched")) return;
+    const c=Reg.cur(play.g); if(!c || !c.tour || c.tour.rid!==play.id) return;
+    const pr=prog(play.g);
+    const b=play.base||{}, mx=(v,k)=>Math.max(v, b[k]||0);
+    const rec={p:Math.round(Math.min(1,Math.max(0,pr.p))*1000)/1000, s:Math.min(20,mx(pr.s,"s")), e:mx(c.e||0,"e"), h:mx(c.h||0,"h"), c:mx(c.c||0,"c"), f:Math.min(20,mx(c.r||0,"f")), ok:false, done:false, x:!!play.x, at:fb.serverTimestamp()};
+    if(fin){ Object.assign(rec, fin); rec.s=Math.min(20, mx(rec.s,"s")); }
+    const key=JSON.stringify([rec.p,rec.s,rec.e,rec.h,rec.c,rec.f,rec.ok,rec.done]);
+    if(!force && !fin && key===play.sent) return;
+    play.sent=key;
+    for(let i=0;i<(fin?4:1);i++){
+      try{
+        const ref=fb.doc(fb.db,"tourneys",tid,"rounds",play.id,"res",uid), id=play.id;
+        await fb.setDoc(ref, rec);
+        if(fin){ try{ const s=await fb.getDoc(ref); myRes[id]=s.data(); }catch(e){} winSlot(); render(); }
+        return;
+      }
+      catch(e){ if(fin) await sleep(800); }
+    }
+  }
+  // terminó la partida (ganó, perdió, completó las rondas o se rindió)
+  Reg.onTour=(g, rec, c)=>{
+    if(!play || !c.tour || c.tour.rid!==play.id || play.done) return;
+    const r=RS[play.id]||{}, nr=r.nr||0, pr=prog(g);
+    const fin = nr ? {ok:(rec.s||0)>0, done:true, s:Math.min(20,rec.s||pr.s||0), p:Math.min(1,(rec.s||0)/nr)} : {ok:!!rec.ok, done:true, p:rec.ok ? 1 : Math.round(pr.p*1000)/1000};
+    play.done=true; sync(true, fin);
+    winSlot(true);
+  };
+  // se acabó el tiempo o se cerró la ronda: se frena el reloj y la partida queda bloqueada
+  function stop(why){
+    if(!play) return; const g=play.g, c=Reg.cur(g);
+    const was=play.done; play.done=true;
+    if(c && c.tour && c.tour.rid===play.id && !c.t1){ c.t1=Date.now(); Reg.tick(); }
+    const sec=$("view-"+g); sec.classList.remove("tourmode");
+    if(!was){ [...sec.children].forEach(el=>{ if(!el.matches(".pbar,.bar,.win,footer")) el.inert=true; }); play.why=why; Reg.winShow(g, true); winSlot(true); }
+  }
+  // cartel del torneo dentro del cartel final del juego
+  function winSlot(force){
+    if(!play) return; const g=play.g, c=Reg.cur(g); if(!c || !c.tour || c.tour.rid!==play.id) return;
+    if(!play.done && !force) return;
+    const r=RS[play.id]; if(!r) return;
+    const el=Reg.slot(g,"wtour"), T0=t(); el.hidden=false;
+    const mine=myRes[r.id] || RES[uid];
+    let h=play.why ? `<p class="twhy">${esc(play.why)}</p>` : "";
+    if(mine && mine.at){ const sc=tScore(r, mine); h+=`<b class="tpts">${esc(T0.tPts(sc.pts))}</b>`; }
+    if(r.st==="closed"){
+      const p=(r.pos||{})[uid];
+      if(comp(r) && p) h+=`<p>${esc((r.q||[]).includes(uid) ? T0.tPassed(p) : T0.tOut(p, (r.pl||[]).length))}</p>`;
+      else if(play.x && mine){ const res=closedRes[r.id]||{}; const L=tStand(r,res), me=tScore(r,mine); const pos=1+L.filter(x=>x.sc.pts>me.pts).length; h+=`<p>${esc(T0.tWould(pos))}</p>`; }
+    } else if(mine){
+      const L=tStand(r, RES).filter(x=>x.r), me=tScore(r, mine);
+      const pos=1+L.filter(x=>x.u!==uid && x.sc.pts>me.pts).length, n=L.filter(x=>x.u!==uid).length+1;
+      h+=`<p>${esc(play.x ? T0.tWould(pos) : T0.tPos(pos, n))}</p>`;
+    }
+    h+=`<button class="tgo">${esc(T0.tSeeTable)}</button>`;
+    if(el.innerHTML!==h){ el.innerHTML=h; el.querySelector(".tgo").addEventListener("click",()=>{ Reg.closeWin(g); location.hash="torneo"; }); }
+  }
+
+  // ---------- reloj de la sala ----------
+  function tick(){
+    if(!fb) return;
+    const r=curR(), now=srv();
+    // arranque automático para quien compite (si la pestaña está a la vista)
+    if(r && (r.st==="sched"||r.st==="live") && r.go && now>=tms(r.go) && comp(r) && (!play || play.id!==r.id) && document.visibilityState==="visible" && view!=="torneo-admin"
+       && myRes[r.id]!==undefined && !(myRes[r.id] && myRes[r.id].done) && (now-tms(r.go)<90000 || view==="torneo") && RS[r.id].st!=="closed" && !(play && play.failed && play.id===r.id)){
+      start(r, false);
+    }
+    if(play && RS[play.id]){
+      const pr=RS[play.id], end=tms(pr.end);
+      if(!play.done && end && now>=end){ sync(true, {done:true, ok:false}); stop(t().tTimeUp); }
+      // línea arriba del juego
+      const c=Reg.cur(play.g);
+      if(c && c.tour && c.tour.rid===play.id){
+        const n=(pr.pl||[]).length, d=Object.keys(RES).filter(u=>(pr.pl||[]).includes(u)).length;
+        Reg.duelNote(play.g, play.done ? "" : play.x ? t().tNoteX : end ? t().tNote(clock(end-now), d, n, pr.adv) : t().tNoteNL(d, n));
+      }
+    }
+    // cuentas regresivas de la sala
+    document.querySelectorAll("[data-cd]").forEach(el=>{ const ms=+el.dataset.cd-now; el.textContent=clock(ms); });
+    if(++ticks%15===0) pick();
+    bar();
+  }
+  let ticks=0;
+  setInterval(tick, 1000);
+  setInterval(()=>sync(false), 5000);
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") tick(); });
+
+  // franja fija en las demás pantallas: la ronda arranca / está en juego
+  function bar(){
+    const el=$("tBar"), r=curR(), now=srv();
+    let h="";
+    if(r && mine && view!=="torneo" && !(play && play.id===r.id && view===r.g)){
+      if(r.st==="sched" && r.go && comp(r)) h=`<span>${esc(t().tBarGo(rName(r), ""))}<b data-cd="${tms(r.go)}">${clock(tms(r.go)-now)}</b></span>`;
+      else if(r.st==="live" && comp(r) && !(myRes[r.id]&&myRes[r.id].done) && !(play && play.id===r.id && play.done)) h=`<span>${esc(t().tBarLive(rName(r)))}</span>`;
+    }
+    if(!h && TD && TD.test && !mine && (TD.st==="open"||TD.st==="checkin") && view!=="torneo") h=`<span>${esc(t().tBarInv(TD.name))}</span>`;
+    if(!h){ el.hidden=true; el.innerHTML=""; return; }
+    h+=`<button class="primary">${esc(t().tBarBtn)}</button>`;
+    if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
+    el.hidden=false;
+  }
+  $("tBar").addEventListener("click",e=>{ if(!e.target.closest("button")) return; const r=curR();
+    if(r && r.st==="live" && play && play.id===r.id && !play.done) location.hash=r.g; else location.hash="torneo"; });
+
+  // ---------- portada ----------
+  function banner(){
+    const el=$("tBanner"), ib=$("ivBtn"); if(!el) return;
+    if(ib) ib.hidden=blocks();
+    if(!TD){ el.hidden=true; return; }
+    el.hidden=false;
+    const h=scrabHtml()+`<div class="tbtx"><b>${esc(TD.name)}</b><span>${TD.test?`<em>${esc(t().tTestPill)}</em> `:""}${esc(t().tSt[TD.st]||"")}</span><i>${esc(t().tBanner[TD.st]||"")} →</i></div>`;
+    if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
+  }
+
+  // ---------- sala ----------
+  function render(){
+    if(view!=="torneo") return;
+    const T0=t();
+    if(!fb){ set("tHead",`<p class="intro">${esc(T0.rkLocal)}</p>`); ["tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
+    if(!TD){ set("tHead",`<p class="intro">${esc(T0.tNone)}</p>`); ["tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
+    const nIns=INS ? Object.values(INS).filter(x=>!x.out).length : null;
+    const when=tms(TD.when) ? new Date(tms(TD.when)).toLocaleString(lang==="en"?"en-US":"es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
+    set("tHead", `<div class="thead">${scrabHtml()}<div><h2 class="tname">${esc(TD.name)}</h2><button class="tshare" data-act="share">${esc(T0.tShare)}</button></div></div>`+(TD.test?`<p class="ttest">${esc(T0.tTest)}</p>`:"")+`<p class="tsub"><span class="tpill st-${esc(TD.st)}">${esc(T0.tSt[TD.st]||"")}</span>`+
+      `${when?` <span>${esc(T0.tWhen(when))}</span>`:""}${nIns!==null?` <span>· ${esc(T0.tCount(nIns, TD.cap))}</span>`:""}</p>`+(flash?`<p class="tflash">${esc(flash)}</p>`:""));
+    set("tMe", meBox());
+    set("tRound", roundBox());
+    set("tTable", tableBox());
+    set("tMore", moreBox());
+  }
+  function meBox(){
+    const T0=t(), st=TD.st;
+    let h="";
+    if(st==="open"||st==="checkin"){
+      if(!Reg.nick()) return `<div class="tbox"><p>${esc(T0.tNeedUser)}</p><button class="primary" data-act="user">${esc(T0.tUserBtn)}</button></div>`;
+      if(!mine) return `<div class="tbox tform"><label>${esc(T0.tMail)}<input id="tMail" type="email" autocomplete="email" maxlength="120"></label>`+
+        `<label>${esc(T0.tTel)}<input id="tTel" type="tel" autocomplete="tel" maxlength="30"></label>`+
+        `<label class="tchk"><input type="checkbox" id="tOk"> <span>${esc(T0.tBasesOk)}</span></label><p class="tsmall">${esc(T0.tDataNote)}</p>`+
+        `<button class="primary" data-act="join">${esc(T0.tJoin)}</button><p class="tmsg" id="tJoinMsg" aria-live="polite"></p></div>`;
+      h+=`<div class="tbox"><p><b>${esc(T0.tJoined((Reg.av()?Reg.av()+" ":"")+Reg.nick()))}</b></p>`;
+      if(st==="checkin"){
+        if(!mine.ck) h+=`<button class="primary tbig" data-act="ck">${esc(T0.tCk)}</button><p class="tsmall">${esc(T0.tCkNote)}</p>`;
+        else if(INS){ const l=Object.entries(INS).filter(([,x])=>x.ck && !x.out).sort((a,b)=>(tms(a[1].ck)||0)-(tms(b[1].ck)||0)).map(([u])=>u); const p=l.indexOf(uid)+1;
+          h+=`<p class="tok">${esc(p>0 && p<=TD.cap ? T0.tCkIn(p, TD.cap) : T0.tCkWait(Math.max(1,p-TD.cap)))}</p>`; }
+      } else h+=`<p class="tsmall">${esc(T0.tNoCk)}</p>`;
+      h+=pushBox()+`<button class="tlink" data-act="leave">${esc(T0.tLeave)}</button></div>`;
+      return h;
+    }
+    if(st==="live" && mine) return `<div class="tbox"><p>${esc(T0.tJoined((Reg.av()?Reg.av()+" ":"")+Reg.nick()))}</p>${pushBox()}</div>`;
+    return "";
+  }
+  function pushBox(){
+    const T0=t(), s=pushSt;
+    if(!s) return "";
+    const txt={on:T0.tPushOn, off:T0.tPushOff, denied:T0.tPushDenied, unsupported:T0.tPushUns, "ios-install":T0.tPushIos, unavailable:T0.tPushNA}[s]||"";
+    return `<div class="tpush"><p>${esc(txt)}</p>${s==="off"?`<button data-act="push">${esc(T0.tPushBtn)}</button>`:""}</div>`;
+  }
+  function roundBox(){
+    const T0=t(), r=curR(), now=srv();
+    if(TD.st==="done"){
+      const ch=TD.champ, paid=ch && INS && INS[ch] && INS[ch].paid, pool=poolSats();
+      return ch ? `<div class="tbox tchamp"><p class="tbigt">${esc(T0.tChamp(who(ch)))}</p>${INS?`<p>${esc(paid ? T0.tChampPool(pool) : T0.tChampNoPool)}</p>`:""}</div>` : "";
+    }
+    if(!r) return "";
+    const n=(r.pl||[]).length, inR=comp(r), mr=myRes[r.id];
+    let h=`<div class="tbox tround"><p class="tbigt">${esc(rName(r))} · ${esc(tDesc(r))}</p><p class="tsmall">${esc(T0.tDur(r.dur))} · ${esc(r.final ? T0.tAdvFinal : T0.tAdv(r.adv, n))}</p>`;
+    if(r.st==="ready") h+=`<p>${esc(r.left ? T0.tPaused : T0.tReady)}</p>`;
+    if(r.st==="sched" && r.go && now<tms(r.go)) h+=`<p class="tcount">${esc(T0.tStartsIn)} <b data-cd="${tms(r.go)}">${clock(tms(r.go)-now)}</b></p>`;
+    if(r.st==="live" || (r.st==="sched" && r.go && now>=tms(r.go))){
+      const end=tms(r.end);
+      if(end) h+=`<p class="tcount">${esc(T0.tLeft)} <b data-cd="${end}">${clock(end-now)}</b></p>`;
+      const mineDone=(mr && mr.done) || (play && play.id===r.id && play.done);
+      if(mineDone) h+=`<p>${esc(T0.tDoneT)}</p>`;
+      else if(play && play.id===r.id && !play.failed && !play.loading) h+=`<button class="primary tbig" data-act="back">${esc(T0.tBack)}</button>`;
+      else if(inR) h+=`<button class="primary tbig" data-act="play">${esc(now-tms(r.go)>5000 ? T0.tEnter : T0.tPlay)}</button>`;
+      else h+=`<button data-act="playx">${esc(T0.tPlayX)}</button>`;
+    }
+    if(r.st==="closed"){
+      const p=(r.pos||{})[uid];
+      h+=`<p><b>${esc(T0.tClosed)}</b></p>`;
+      if(inR && p) h+=`<p class="${(r.q||[]).includes(uid)?"tok":""}">${esc((r.q||[]).includes(uid) ? T0.tPassed(p) : T0.tOut(p, n))}</p>`;
+    }
+    if((r.st==="sched"||r.st==="ready") && mine) h+=`<p class="tsmall">${esc(inR ? T0.tYouComp : T0.tYouOut)}</p>`;
+    return h+`</div>`;
+  }
+  function tableBox(){
+    const T0=t(), r=curR(); if(!r || r.st==="sched" || r.st==="ready") return prevTable();
+    const res=r.st==="closed" ? (closedRes[r.id]||{}) : RES, L=tStand(r, res), n=L.length;
+    if(!INS) return "";
+    let rows=[], cut=r.final ? 1 : r.adv;
+    L.forEach((x,i)=>{
+      if(r.st==="live" && !(x.r && x.r.done)) return;
+      const st=!x.r ? T0.tNoShow : x.sc.ok ? "✓" : `${Math.round(x.sc.p*100)}%`;
+      rows.push(`<tr class="${x.u===uid?"me":""}${r.st==="closed" && i===cut-1 && i<n-1?" cut":""}"><td>${i+1}</td><td>${esc(who(x.u))}</td><td>${x.r?x.sc.pts:"–"}</td><td>${esc(st)}</td></tr>`);
+    });
+    const playing=r.st==="live" ? L.filter(x=>!(x.r && x.r.done)).length : 0;
+    return `<h2>${esc(T0.tTable)} · ${esc(rName(r))}</h2>`+(rows.length?`<div class="atabw"><table class="atab ttab"><thead><tr><th>${T0.tColPos}</th><th>${esc(T0.tColWho)}</th><th>${esc(T0.tColPts)}</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`:"")+
+      `<p class="tsmall">${playing?esc(T0.tPlaying(playing))+" ":""}${r.final?"":esc(T0.tCut(r.adv))}</p><p class="tsmall">${esc(T0.tScoreHow)}</p>`;
+  }
+  // con la ronda siguiente en espera, la tabla de la anterior
+  function prevTable(){
+    const l=rounds().filter(x=>x.st==="closed"); if(!l.length || !INS) return "";
+    const r=l[l.length-1], res=closedRes[r.id]; if(!res) return "";
+    const L=tStand(r, res);
+    return `<h2>${esc(t().tTable)} · ${esc(rName(r))}</h2><div class="atabw"><table class="atab ttab"><tbody>${L.map((x,i)=>`<tr class="${x.u===uid?"me":""}${i===r.adv-1&&i<L.length-1?" cut":""}"><td>${i+1}</td><td>${esc(who(x.u))}</td><td>${x.r?x.sc.pts:"–"}</td><td>${esc(!x.r?t().tNoShow:x.sc.ok?"✓":Math.round(x.sc.p*100)+"%")}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  const poolSats=()=> INS ? Object.values(INS).filter(x=>x.paid && !x.out).length*(TD.fee||0) : 0;
+  function moreBox(){
+    const T0=t();
+    let h=`<h2>${esc(T0.tRounds)}</h2><ol class="tlist">${(TD.rounds||[]).map((c,i,a)=>`<li>${i===a.length-1?`<b>${esc(T0.tFinal)}</b>: `:""}${esc(tDesc(c))} · ${esc(T0.tDur(c.dur))}</li>`).join("")}</ol>`;
+    if(TD.fee){
+      const nPaid=INS ? Object.values(INS).filter(x=>x.paid && !x.out).length : 0;
+      h+=`<h2>${esc(T0.tPoolT)}</h2><div class="tbox"><p>${esc(T0.tPoolTxt(TD.fee))}</p>`+(INS?`<p><b>${esc(T0.tPool(poolSats(), nPaid))}</b></p>`:"");
+      if(mine && mine.paid) h+=`<p class="tok">${esc(T0.tPaid)}</p>`;
+      else if(TD.lnurl && TD.st!=="done") h+=`<p class="tpay"><a class="btn primary" href="lightning:${esc(TD.lnurl)}">${esc(T0.tPay)}</a> <button data-act="copy">${esc(T0.tCopy)}</button></p><p class="tsmall mono tln">${esc(TD.lnurl)}</p><p class="tsmall">${esc(T0.tPayNote)}</p>`;
+      h+=`</div>`;
+    }
+    h+=`<details class="tbases"><summary>${esc(T0.tBases)}</summary><p>${esc(TD.bases||T0.tBasesDef)}</p></details>`;
+    return h;
+  }
+
+  // ---------- acciones ----------
+  $("view-torneo").addEventListener("click",async e=>{
+    const b=e.target.closest("[data-act]"); if(!b || !fb) return;
+    const a=b.dataset.act, T0=t(), r=curR();
+    if(a==="user") User.open();
+    if(a==="join"){
+      const mail=$("tMail").value.trim(), tel=$("tTel").value.trim(), ok=$("tOk").checked, m=$("tJoinMsg");
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail) || tel.replace(/\D/g,"").length<6 || !ok){ m.textContent=T0.tJoinBad; return; }
+      b.disabled=true;
+      try{
+        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid),{mail, tel, ok:true, at:fb.serverTimestamp()});
+        const d={nm:Reg.nick(), at:fb.serverTimestamp(), ck:null, paid:false, out:false}; if(Reg.av()) d.av=Reg.av();
+        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid), d);
+        pushState();
+      }catch(err){ m.textContent=T0.tJoinFail; b.disabled=false; }
+    }
+    if(a==="leave" && sure(b, T0.tLeaveQ)){ try{ await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid)); await fb.deleteDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid)); }catch(err){} }
+    if(a==="ck"){ b.disabled=true; try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid),{ck:fb.serverTimestamp()}); }catch(err){ b.disabled=false; flash=T0.tCkFail; render(); } }
+    if(a==="push"){ b.disabled=true; try{ pushSt=await Push.enable(); }catch(err){} render(); }
+    if(a==="copy"){ try{ await navigator.clipboard.writeText(TD.lnurl); b.textContent=T0.tCopied; }catch(err){} }
+    if(a==="share"){ const n=document.createElement("span"); shareBlob(await tourImage(TD), "torneo-rodo-games.png", n, b, T0.tShareText(TD.name)+" https://games.rodo.es/#torneo"); }
+    if(a==="play" && r) start(r, false);
+    if(a==="playx" && r) start(r, true);
+    if(a==="back" && r) location.hash=r.g;
+  });
+  async function pushState(){ try{ pushSt=typeof Push!=="undefined" ? await Push.state() : null; }catch(e){ pushSt=null; } render(); }
+
+  (async()=>{
+    await Reg.ready; fb=Reg.fb(); if(!fb) return render();
+    uid=Reg.uid();
+    fb.onSnapshot(fb.collection(fb.db,"tourneys"), qs=>{ ALL={}; qs.forEach(d=>ALL[d.id]=d.data()); pick(); }, ()=>{});
+  })();
+
+  return {
+    blocks, desc:tDesc,
+    show(){ setTitle(t().tTitle); watchIns(); watchRes(); if(fb && tid) Object.values(RS).forEach(x=>{ if(x.st==="closed") loadClosed(x); }); if(pushSt===null) pushState(); render(); },
+    route(){ watchIns(); watchRes(); banner(); bar(); },
+    texts(){ banner(); render(); winSlot(); bar(); }
+  };
+})();
+
+// =====================================================================
+// TORNEO: PANEL DEL ORGANIZADOR (#torneo-admin)
+// Entra con Google (la misma app separada de la administración). Crea torneos solo claudia@rodo.es; los manejan
+// ella y los organizadores que figuren en el torneo (orgs). Las reglas de Firestore son la seguridad real.
+// Con el panel abierto, la ronda en curso se abre a la hora, se cierra sola cuando ya se sabe quiénes pasan
+// (o se acaba el tiempo) y, si está activado, la siguiente se programa con 5 minutos de cuenta regresiva.
+// =====================================================================
+const TourAdmin = (()=>{
+  const SUPER="claudia@rodo.es", NEXT=5*60000;
+  const GS=["ahorcado","anagrama","sopa","acrostico","semilla","criptograma"];
+  const GN={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida"};
+  const DIFS=["","facil","media","dificil"], DIFN={"":"normal",facil:"fácil",media:"media",dificil:"difícil"};
+  const DEF_ROUNDS=[{g:"ahorcado",lang:"es",n:6,dif:"media",dur:10},{g:"anagrama",lang:"es",dif:"media",dur:10},{g:"sopa",lang:"es",s:"media",m:"w",dur:10},
+    {g:"acrostico",lang:"es",dur:10},{g:"semilla",lang:"es",w:12,dur:10},{g:"criptograma",lang:"es",dif:"dificil",dur:0}];
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const dt=ms=> ms ? new Date(ms).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "–";
+  const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+  const srv=()=>Live.now();
+  let A=null, me=null, ALL={}, tid=null, TD=null, RS={}, INS={}, PRIV={}, RESL={}, resFor=null, resOk=false;
+  let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="", onl=[], onlQ="", plan={};
+  const isBot=u=>/^bot-\d+$/.test(u);
+  const tref=()=>A.doc(A.db,"tourneys",tid), rref=id=>A.doc(A.db,"tourneys",tid,"rounds",String(id));
+  const rounds=()=>Object.values(RS).sort((a,b)=>a.no-b.no);
+  const last=()=>{ const l=rounds(); return l.length ? l[l.length-1] : null; };
+  const nm=u=>{ const x=INS[u]; return x ? (x.av?x.av+" ":"")+x.nm : u.slice(0,6); };
+  const isSuper=()=>!!(me && me.email===SUPER);
+  const mine=x=>isSuper() || (me && (x.orgs||[]).includes(me.email));
+  const say=(s,bad)=>{ msgT=s||""; const el=$("taMsg"); if(el){ el.textContent=msgT; el.classList.toggle("bad",!!bad); } };
+  const fail=e=>say("No se pudo: "+(e.code||e.message), true);
+
+  async function show(){
+    setTitle("Torneo · organización");
+    A = await Promise.race([ADMIN_READY, new Promise(r=>setTimeout(()=>r(null),9000))]);
+    if(!A){ $("taLogin").hidden=false; $("taIn").disabled=true; $("taErr").textContent="El panel solo funciona en el sitio publicado."; return; }
+    if(uT) return render();
+    A.onState(u=>{
+      me = u && u.emailVerified ? u : null;
+      $("taLogin").hidden=!!me; $("taBody").hidden=!me; $("taOut").hidden=!u; $("taWho").textContent=u ? u.email : "";
+      if(u && !u.emailVerified) $("taErr").textContent="Esa cuenta no tiene el mail verificado.";
+      if(me && !uT) uT=A.onSnapshot(A.collection(A.db,"tourneys"), qs=>{ ALL={}; qs.forEach(d=>ALL[d.id]=d.data()); pickT(tid); }, fail);
+      render();
+    });
+  }
+  function pickT(id){
+    const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>(tms(ALL[b].at)||0)-(tms(ALL[a].at)||0));
+    if(!id || !ok.includes(id)) id=ok[0]||null;
+    if(id!==tid){
+      tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null;
+      [uR,uI,uRes].forEach(f=>f&&f()); uR=uI=uRes=null;
+      if(tid){
+        uR=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); watchRes(); render(); }, fail);
+        uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); privNew(); }, fail);
+        loadPriv();
+      }
+    }
+    TD=tid ? ALL[tid] : null;
+    render();
+  }
+  async function loadPriv(){ try{ const qs=await A.getDocs(A.collection(A.db,"tourneys",tid,"priv")); PRIV={}; qs.forEach(d=>PRIV[d.id]=d.data()); render(); }catch(e){} }
+  // los datos de contacto de quienes se van inscribiendo (de a uno, sin releer todos)
+  async function privNew(){
+    const t0=tid, miss=Object.keys(INS).filter(u=>!(u in PRIV)); if(!miss.length) return;
+    miss.forEach(u=>PRIV[u]={});
+    await Promise.all(miss.map(async u=>{ try{ const s=await A.getDoc(A.doc(A.db,"tourneys",t0,"priv",u)); if(t0===tid && s.exists()) PRIV[u]=s.data(); }catch(e){} }));
+    if(t0===tid) render();
+  }
+  // resultados de la ronda en curso, con el avance de cada uno (solo el organizador escucha todo)
+  function watchRes(){
+    const r=last(), id=r && r.st!=="closed" ? r.id : (r ? r.id : null);
+    if(id===resFor) return;
+    if(uRes){ uRes(); uRes=null; } resFor=id; RESL={}; resOk=false;
+    if(!id) return;
+    uRes=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds",id,"res"), qs=>{ RESL={}; qs.forEach(d=>RESL[d.id]=d.data()); resOk=true; renderLive(); }, fail);
+  }
+
+  // ---------- el reloj del organizador: abre, cierra y programa rondas ----------
+  async function tick(){
+    if(!A || !me || !TD) return;
+    if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
+    const r=last(), now=srv(); if(!r || busy || TD.st!=="live") return;
+    if(TD.test) bots(r, now);
+    try{
+      if(r.st==="sched" && r.go && now>=tms(r.go)){ busy=true; await A.updateDoc(rref(r.id),{st:"live"}); }
+      else if(r.st==="live" && resOk && resFor===r.id && tDecided(r, RESL, now)){ busy=true; await close(r); }
+      else if(r.st==="closed" && TD.auto!==false && !r.final && (r.q||[]).length>1){ busy=true; await next(r, NEXT); }
+    }catch(e){ fail(e); } finally{ busy=false; }
+    renderLive();
+  }
+  setInterval(tick, 1000);
+  async function close(r){
+    const L=tStand(r, RESL), q=L.slice(0, r.adv).map(x=>x.u), pos={};
+    L.forEach((x,i)=>pos[x.u]=i+1);
+    // con dos pestañas del panel abiertas, cierra una sola
+    const done=await A.runTransaction(A.db, async tx=>{
+      const s=await tx.get(rref(r.id)); if(!s.exists() || s.data().st!=="live") return false;
+      tx.update(rref(r.id),{st:"closed", closed:A.serverTimestamp(), q, pos});
+      if(r.final || q.length<=1) tx.update(tref(),{st:"done", champ:q[0]||null});
+      return true;
+    });
+    if(done) say(`${r.final?"Final":"Ronda "+r.no} cerrada.`);
+  }
+  // la ronda siguiente: la configuración que sigue; con 2 jugadores, la final
+  async function next(prev, delay){
+    const pl=prev.q||[], n=TD.rounds.length;
+    let ci = pl.length<=2 ? n-1 : Math.min(prev.ci+1, n-2);
+    if(ci<0) ci=n-1;
+    await mk(prev.no+1, ci, pl, delay);
+  }
+  async function mk(no, ci, pl, delay){
+    const c=TD.rounds[ci], fin=ci===TD.rounds.length-1 || pl.length<=2;
+    const L=c.lang||TD.lang||"es", opt={L};
+    if(c.g==="sopa") opt.s=c.s||"media"; if(c.g==="semilla") opt.w=c.w||12; if(c.dif) opt.dif=c.dif; if(c.g==="ahorcado") opt.n=c.n||6;
+    const d=await Reg.genFor(c.g, opt), go=srv()+delay;
+    const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
+      pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
+    if(c.g==="sopa"){ rd.s=opt.s; rd.m=c.m||"w"; } if(c.g==="semilla") rd.w=opt.w; if(c.dif) rd.dif=c.dif; if(c.g==="ahorcado") rd.n=opt.n;
+    // una sola vez por ronda, aunque haya dos pestañas del panel abiertas
+    const ok=await A.runTransaction(A.db, async tx=>{
+      const s=await tx.get(rref(no)); if(s.exists()) return false;
+      tx.set(rref(no), rd); tx.set(A.doc(A.db,"tourneys",tid,"rounds",String(no),"data","p"), {d});
+      tx.update(tref(), {cur:no, st:"live"});
+      return true;
+    });
+    if(!ok) return;
+    say(`${fin?"Final":"Ronda "+no} programada: arranca a las ${new Date(loc0(go)).toLocaleTimeString("es-AR")}.`);
+  }
+  const loc0=ms=>ms-(Live.now()-Date.now());
+  // primera ronda: los primeros que confirmaron (o, si no hubo check-in, los primeros inscriptos), hasta el cupo
+  function firstPl(){
+    const l=Object.entries(INS).filter(([,x])=>!x.out), ck=l.filter(([,x])=>x.ck);
+    const src=ck.length ? ck.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||(tms(a[1].ck)-tms(b[1].ck))) : l.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||((tms(a[1].at)||0)-(tms(b[1].at)||0)));
+    return src.slice(0, TD.cap).map(([u])=>u);
+  }
+
+  // ---------- acciones ----------
+  async function act(a, el){
+    const r=last(), now=srv(); say("");
+    try{
+      if(a==="new"){ const ref=A.doc(A.collection(A.db,"tourneys"));
+        await A.setDoc(ref,{name:"BITCOIN.AR HALVING GAMES", st:"draft", cap:64, fee:2100, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS, champ:null, auto:true, at:A.serverTimestamp()});
+        cfgFor=null; pickT(ref.id); return; }
+      if(a==="pick"){ pickT(el.value); return; }
+      // administradores del torneo (solo claudia@rodo.es)
+      if(a==="admadd"){ const m=$("taAdmIn").value.trim().toLowerCase();
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){ say("Escribí un mail válido.", true); return; }
+        const o=[...new Set([...(TD.orgs||[]), m])]; if(o.length>10){ say("Hasta 10 administradores por torneo.", true); return; }
+        await A.updateDoc(tref(),{orgs:o}); $("taAdmIn").value=""; say(`${m} ya puede manejar este torneo.`); return; }
+      if(a==="admdel"){ const m=el.dataset.m; if(!sure(el, `¿Sacarle a ${m} el acceso a este torneo?`)) return; await A.updateDoc(tref(),{orgs:(TD.orgs||[]).filter(x=>x!==m)}); return; }
+      // ensayo: copia del torneo que no ve el público
+      if(a==="mktest"){
+        const ref=A.doc(A.collection(A.db,"tourneys")), me0=Reg.uid();
+        await A.setDoc(ref,{name:(TD.name+" · ensayo").slice(0,80), st:"open", cap:TD.cap, fee:TD.fee||0, lnurl:TD.lnurl||"", when:null, orgs:TD.orgs||[], bases:TD.bases||"", lang:TD.lang||"es",
+          cur:0, rounds:TD.rounds, champ:null, auto:true, test:true, src:tid, inv:me0?[me0]:[], at:A.serverTimestamp()});
+        cfgFor=null; pickT(ref.id); say("Ensayo armado: no lo ve el público. Sumá jugadores falsos, invitá gente y arrancalo cuando quieras."); return; }
+      if(a==="deltest" && TD.test){ if(!sure(el, "¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
+      if(a==="bots" && TD.test){
+        const n=Math.max(1,Math.min(63,parseInt($("taBotsN").value,10)||0)), have=Object.keys(INS).filter(isBot).map(u=>+u.slice(4));
+        let k=have.length ? Math.max(...have) : 0; const b=A.writeBatch(A.db);
+        for(let i=0;i<n;i++){ k++; b.set(A.doc(A.db,"tourneys",tid,"ins","bot-"+k),{nm:"Bot "+k, av:"🤖", bot:true, at:A.serverTimestamp(), ck:A.serverTimestamp(), paid:false, out:false}); }
+        await b.commit(); say(`${n} jugador${n===1?"":"es"} falso${n===1?"":"s"} anotado${n===1?"":"s"}, con check-in.`); return; }
+      if(a==="botsdel" && TD.test){ const b=A.writeBatch(A.db); Object.keys(INS).filter(isBot).forEach(u=>b.delete(A.doc(A.db,"tourneys",tid,"ins",u))); await b.commit(); return; }
+      if(a==="me" && TD.test){ const u=Reg.uid(); if(!u){ say("Este navegador no tiene jugador todavía: recargá la página.", true); return; }
+        const d={nm:Reg.nick()||"Organización", av:Reg.av()||"🎩", at:A.serverTimestamp(), ck:A.serverTimestamp(), paid:false, out:false};
+        await A.setDoc(A.doc(A.db,"tourneys",tid,"ins",u), d);
+        if(!(TD.inv||[]).includes(u)) await A.updateDoc(tref(),{inv:[...(TD.inv||[]), u]});
+        say("Ya estás entre los jugadores del ensayo. Cuando arranque la ronda, tocá Ir en el aviso de abajo (o jugá en otra pestaña)."); return; }
+      if(a==="inv" && TD.test){ const u=el.dataset.u, x=onl.find(o=>o.u===u); if(!u) return;
+        if(!(TD.inv||[]).includes(u)) await A.updateDoc(tref(),{inv:[...(TD.inv||[]), u].slice(-40)});
+        if(x) invNames[u]=x.nm; $("taInvIn").value=""; onlQ=""; say(`${x?x.nm:"Esa persona"} ya ve el ensayo: le aparece un aviso para sumarse.`); return; }
+      if(a==="invdel" && TD.test){ await A.updateDoc(tref(),{inv:(TD.inv||[]).filter(x=>x!==el.dataset.u)}); return; }
+      if(a==="save") return save();
+      if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
+      if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
+      if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
+      if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
+      if(a==="start"){
+        const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
+        if(!sure(el, `Arranca con ${pl.length} jugador${pl.length===1?"":"es"}. La ${pl.length<=2?"final":"ronda 1"} empieza en 5 minutos.`)) return;
+        await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, NEXT); return; }
+      if(!r) return;
+      if(a==="pause" && r.st==="sched"){ await A.updateDoc(rref(r.id),{st:"ready", left:Math.max(5000, tms(r.go)-now), go:null, end:null}); return; }
+      if(a==="resume" && r.st==="ready"){ const go=now+(r.left||NEXT); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
+      if(a==="now" && (r.st==="sched"||r.st==="ready")){ const go=now+10000; say(`${r.final?"Final":"Ronda "+r.no}: arranca en 10 segundos.`); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
+      if(a==="regen" && (r.st==="ready" || (r.st==="sched" && now<tms(r.go)-5000))){
+        const c={g:r.g, lang:r.lang, s:r.s, w:r.w, dif:r.dif, n:r.n}, opt={L:r.lang}; if(r.s) opt.s=r.s; if(r.w) opt.w=r.w; if(r.dif) opt.dif=r.dif; if(r.n) opt.n=r.n;
+        await A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p"), {d:await Reg.genFor(c.g, opt)}); prevD=null; say("Partida nueva generada."); renderLive(); return; }
+      if(a==="peek"){ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p")); prevD=s.exists()?{id:r.id, d:s.data().d}:null; renderLive(); return; }
+      if(a==="close" && r.st==="live" && sure(el, "¿Cerrar la ronda ahora con la tabla como está?")){ await close(r); return; }
+      if(a==="next" && r.st==="closed" && !r.final){ await next(r, el.dataset.ms ? +el.dataset.ms : NEXT); return; }
+    }catch(e){ fail(e); }
+  }
+  let prevD=null;
+  // ---------- administradores del torneo ----------
+  function admHtml(){
+    const o=TD.orgs||[];
+    let h=`<div class="tabox"><h2>Administradores de este torneo</h2><p class="m small">Además de ${SUPER}. Entran a este panel con su cuenta de Google y pueden manejar todo el torneo, menos esta lista.</p>`;
+    h+=o.length ? `<ul class="taadm">${o.map(m=>`<li><span>${esc(m)}</span>${isSuper()?`<button data-ta="admdel" data-m="${esc(m)}" title="Quitar">✕</button>`:""}</li>`).join("")}</ul>` : `<p class="m small">Todavía no hay otros administradores.</p>`;
+    if(isSuper()) h+=`<div class="row"><input id="taAdmIn" type="email" placeholder="mail@gmail.com" autocomplete="off"><button data-ta="admadd">Agregar</button></div>`;
+    return h+`</div>`;
+  }
+  // ---------- ensayo: invitados, jugadores falsos y la organizadora como jugadora ----------
+  const invNames={};
+  function testHtml(){
+    if(!TD.test) return "";
+    const bots=Object.keys(INS).filter(isBot).length, me0=Reg.uid(), inv=(TD.inv||[]).filter(u=>u!==me0);
+    let h=`<div class="tabox tatest"><h2>🧪 Ensayo</h2><p class="m small">No lo ve el público: solo vos y las personas que invites. Podés acortar los minutos de cada ronda en la configuración y usar "Arrancar ya" para no esperar la cuenta regresiva.</p>`;
+    h+=`<div class="row"><b>${bots}</b> jugador${bots===1?"":"es"} falso${bots===1?"":"s"} · <input id="taBotsN" type="number" min="1" max="63" value="${Math.min(63,Math.max(1,(TD.cap||64)-1-bots))}"> <button data-ta="bots">Sumar jugadores falsos</button>${bots?`<button data-ta="botsdel">Quitarlos</button>`:""}</div>`;
+    h+=`<div class="row">`+(me0 && INS[me0] ? `<span>Ya estás entre los jugadores ✓</span>` : `<button class="primary" data-ta="me">Sumarme a jugar</button>`)+`</div>`;
+    h+=`<p><b>Invitar a alguien conectado</b> (que tenga usuario):</p><div class="row"><input id="taInvIn" placeholder="Escribí un nombre…" autocomplete="off" value="${esc(onlQ)}"></div><div class="row tasugg">${suggHtml()}</div>`;
+    if(inv.length) h+=`<p class="m small">Invitados: ${inv.map(u=>`<span class="tainv">${esc(INS[u] ? nm(u)+" ✓" : invNames[u]||u.slice(0,6))} <button data-ta="invdel" data-u="${u}" title="Quitar">✕</button></span>`).join(" ")}</p>`;
+    return h+`<div class="row"><button data-ta="deltest">Borrar el ensayo</button></div></div>`;
+  }
+  function suggHtml(){
+    if(!onlQ) return `<span class="m small">Aparecen los conectados con usuario que coinciden.</span>`;
+    const f=x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""), q=f(onlQ), inv=new Set(TD.inv||[]);
+    const l=onl.filter(x=>!inv.has(x.u) && f(x.nm).includes(q)).slice(0,8);
+    return l.length ? l.map(x=>`<button data-ta="inv" data-u="${esc(x.u)}">${esc((x.av?x.av+" ":"")+x.nm)}</button>`).join("") : `<span class="m small">Nadie conectado con ese nombre.</span>`;
+  }
+  let onlAt=0;
+  async function searchOnline(){
+    onlQ=$("taInvIn").value.trim();
+    if(Date.now()-onlAt>20000){ onlAt=Date.now();
+      try{ const qs=await A.getDocs(A.query(A.collection(A.db,"online"), A.where("at",">",A.Timestamp.fromMillis(srv()-150000))));
+        onl=qs.docs.filter(d=>d.data().nm).map(d=>({u:d.id, nm:d.data().nm, av:d.data().av||""})); }catch(e){ onl=[]; } }
+    const box=$("view-torneo-admin").querySelector(".tasugg"); if(box) box.innerHTML=suggHtml();
+  }
+  // ---------- jugadores falsos: cada uno tiene su nivel y "juega" cada ronda con tiempos y errores al azar ----------
+  const BASE={ahorcado:20, anagrama:15, sopa:150, acrostico:240, semilla:110, criptograma:300};   // segundos típicos (por palabra en los de rondas)
+  const skill=u=>{ let h=7; for(const ch of u) h=(h*31+ch.charCodeAt(0))%9973; return 0.3+0.65*((Math.sin(h)*10000)%1+1)%1; };
+  function bots(r, now){
+    if(!(r.st==="sched"||r.st==="live") || !r.go || now<tms(r.go) || resFor!==r.id || !resOk) return;
+    const go=tms(r.go), end=tms(r.end), P=plan[r.id]=plan[r.id]||{}, nr=r.nr||0;
+    (r.pl||[]).filter(isBot).forEach(u=>{
+      const cur=RESL[u]; if(cur && cur.done) return;
+      let b=P[u];
+      if(!b){ const sk=skill(u), base=(BASE[r.g]||150)*(nr||1)*(r.s==="grande"?1.5:r.s==="chica"?0.7:1)*(r.w===24?1.8:1);
+        const ok=Math.random()<0.2+0.75*sk;
+        b=P[u]={t0:go+800+Math.random()*4000, t1:go+1000*base*(1.75-sk)*(0.6+0.8*Math.random())*(ok?1:0.7), ok, p:0.15+0.7*Math.random(),
+          e:Math.round(Math.random()*5*(1.15-sk)), h:Math.random()<0.3*(1.15-sk)?1:0, f:nr && ok && Math.random()<0.4*(1.1-sk) ? 1 : 0}; }
+      const stop=end ? Math.min(b.t1, end-2500) : b.t1;
+      if(!b.s0 && !cur && now>=b.t0){ b.s0=1; botWrite(r,u,{p:0,s:0,e:0,h:0,c:0,f:0,ok:false,done:false}); return; }
+      if(!b.s1 && cur && now>=stop){ b.s1=1;
+        const cut=end && b.t1>end-2500, ok=b.ok && !cut;
+        const rec= ok ? (nr ? {s:nr-b.f, f:b.f, p:(nr-b.f)/nr} : {s:0, f:0, p:1}) : (nr ? {s:Math.floor(b.p*nr), f:0, p:b.p} : {s:0, f:0, p:b.p});
+        botWrite(r,u,{...rec, e:b.e, h:b.h, c:0, ok, done:true}); }
+    });
+  }
+  function botWrite(r,u,d){ A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"res",u),{...d, x:false, at:A.serverTimestamp()}).catch(e=>console.warn("bot",u,e.code||e.message)); }
+  // resumen de la solución, para que el organizador vea qué partida salió
+  function solution(g, d){
+    if(!d) return "";
+    if(g==="acrostico") return d.phrase;
+    if(g==="ahorcado") return (d.words||[d]).map(x=>x.word).join(", ");
+    if(g==="sopa") return d.words.map(x=>x.w).join(", ");
+    if(g==="criptograma") return `${d.q[0]} — ${d.q[1]}`;
+    if(g==="anagrama") return d.list.map(x=>x.w).join(", ");
+    if(g==="semilla") return d.words.join(" ");
+    return "";
+  }
+
+  // ---------- configuración ----------
+  function cfgHtml(){
+    const T0=TD, ro=T0.st!=="draft" && T0.st!=="open" && T0.st!=="checkin";
+    const used=new Set(rounds().map(r=>r.ci));
+    const dtv=x=>tms(x) ? new Date(tms(x)-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : "", whenV=dtv(T0.when), pubV=dtv(T0.pub);
+    const sel=(name,opts,v,dis)=>`<select data-f="${name}"${dis?" disabled":""}>${opts.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v??"")?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
+    let h=`<h2>Configuración</h2><div class="tacfg">
+      <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
+      <label>Arranca (fecha y hora, informativa)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
+      <label>Cupo<input data-f="cap" type="number" min="2" max="64" value="${T0.cap}"></label>
+      <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
+      <label class="wide">LNURL o Lightning Address para el pozo<input data-f="lnurl" value="${esc(T0.lnurl||"")}" maxlength="400" spellcheck="false"></label>
+      <label class="wide">Bases y condiciones (vacío = el texto por defecto, en el idioma de cada jugador)<textarea data-f="bases" maxlength="3000" placeholder="${esc(T.es.tBasesDef)}">${esc(T0.bases||"")}</textarea></label>
+    </div><h2>Rondas</h2><p class="m small">La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. El idioma de cada ronda queda fijo cuando se genera su partida. Duración 0 = sin límite.</p>
+    <div class="atabw"><table class="atab tarounds"><thead><tr><th>#</th><th>Juego</th><th>Idioma</th><th>Opciones</th><th>Dificultad</th><th>Minutos</th><th></th></tr></thead><tbody>`;
+    T0.rounds.forEach((c,i)=>{
+      const lock=used.has(i) && rounds().some(r=>r.ci===i && r.st!=="sched" && r.st!=="ready");
+      const dis=lock||T0.st==="done";
+      let o="";
+      if(c.g==="sopa") o=sel("s",[["chica","10×10"],["media","12×12"],["grande","15×15"]],c.s||"media",dis)+sel("m",[["w","palabras"],["c","pistas"]],c.m||"w",dis);
+      else if(c.g==="semilla") o=sel("w",[[12,"12 palabras"],[24,"24 palabras"]],c.w||12,dis);
+      else if(c.g==="ahorcado") o=`<input data-f="n" type="number" min="1" max="12" value="${c.n||6}"${dis?" disabled":""}> palabras`;
+      const hasDif=["ahorcado","anagrama","criptograma","acrostico"].includes(c.g);
+      h+=`<tr data-i="${i}"><td>${i===T0.rounds.length-1?"Final":i+1}</td><td>${sel("g",GS.map(g=>[g,GN[g]]),c.g,dis)}</td><td>${sel("lang",[["es","ES"],["en","EN"]],c.lang||T0.lang||"es",dis)}</td>
+        <td class="taopt">${o}</td><td>${hasDif?sel("dif",DIFS.map(d=>[d,DIFN[d]]),c.dif||"",dis):""}</td><td><input data-f="dur" type="number" min="0" max="120" value="${c.dur||0}"${dis?" disabled":""}></td>
+        <td>${!dis && !ro && T0.rounds.length>1?`<button data-ta="delr" data-i="${i}" title="Quitar">✕</button>`:""}</td></tr>`;
+    });
+    h+=`</tbody></table></div><div class="row">${!ro && T0.rounds.length<8?`<button data-ta="addr">+ Ronda</button>`:""}<button class="primary" data-ta="save">Guardar configuración</button></div>`;
+    return h;
+  }
+  // lee el formulario (los cambios de juego regeneran las opciones al guardar)
+  function readCfg(){
+    const box=$("taCfg"), v=f=>{ const el=box.querySelector(`.tacfg [data-f="${f}"]`); return el ? el.value : ""; };
+    const rs=[...box.querySelectorAll(".tarounds tbody tr")].map((tr,i)=>{
+      const g=tr.querySelector('[data-f="g"]').value, q=f=>{ const el=tr.querySelector(`[data-f="${f}"]`); return el ? el.value : null; }, prev=TD.rounds[i]||{};
+      const c={g, lang:q("lang")||"es", dur:Math.max(0,Math.min(120,parseInt(q("dur"),10)||0))};
+      if(g!==prev.g){ if(g==="sopa"){ c.s="media"; c.m="w"; } if(g==="semilla") c.w=12; if(g==="ahorcado") c.n=6; return c; }
+      if(g==="sopa"){ c.s=q("s")||"media"; c.m=q("m")||"w"; }
+      if(g==="semilla") c.w=+(q("w")||12);
+      if(g==="ahorcado") c.n=Math.max(1,Math.min(12,parseInt(q("n"),10)||6));
+      const d=q("dif"); if(d) c.dif=d;
+      return c;
+    });
+    const w=v("when"), pb=v("pub"), ts=x=>x ? A.Timestamp.fromMillis(new Date(x).getTime()) : null;
+    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), cap:Math.max(2,Math.min(64,parseInt(v("cap"),10)||64)),
+      fee:Math.max(0,parseInt(v("fee"),10)||0), lnurl:v("lnurl").trim(), bases:v("bases").trim(), rounds:rs, lang:(rs[0]&&rs[0].lang)||"es"};
+    if(!TD.test) c.pub=ts(pb);
+    return c;
+  }
+  async function save(){
+    const c=readCfg();
+    try{ await A.updateDoc(tref(), c); cfgFor=null; say("Configuración guardada."); }catch(e){ fail(e); }
+  }
+
+  // ---------- pantalla ----------
+  function render(){
+    if(view!=="torneo-admin" || !me) return;
+    const ok=Object.keys(ALL).filter(k=>mine(ALL[k]));
+    let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
+      (isSuper()?` <button data-ta="new">Nuevo torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
+    if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
+    // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
+    const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });
+    const ph=h+admHtml()+testHtml(); if($("taPick").dataset.h!==ph){ $("taPick").dataset.h=ph; $("taPick").innerHTML=ph; }
+    // estado y botones
+    const st=TD.st, r=last(), nIns=Object.values(INS).filter(x=>!x.out).length, nCk=Object.values(INS).filter(x=>x.ck&&!x.out).length;
+    let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · cupo ${TD.cap}</span></div>
+      <div class="kpi"><b>${Object.values(INS).filter(x=>x.paid&&!x.out).length*(TD.fee||0)}</b><span>sats en el pozo (${Object.values(INS).filter(x=>x.paid&&!x.out).length} aportes)</span></div></div><div class="row">`;
+    if(st==="draft") c+=`<button class="primary" data-ta="st" data-s="open">Abrir la inscripción</button>`;
+    if(st==="open") c+=`<button class="primary" data-ta="st" data-s="checkin">Abrir el check-in</button><button data-ta="st" data-s="draft">Volver a borrador</button>`;
+    if(st==="checkin") c+=`<button data-ta="st" data-s="open">Cerrar el check-in</button>`;
+    if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button>`;
+    if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
+    if(st==="live") c+=`<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, programar sola la siguiente (5 min de cuenta regresiva)</label><button data-ta="st" data-s="done">Terminar el torneo</button>`;
+    c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
+    if($("taCtl").dataset.h!==c){ $("taCtl").dataset.h=c; $("taCtl").innerHTML=c; }
+    Object.entries(keep).forEach(([i,[v,f]])=>{ const el=$(i); if(el){ el.value=v; if(f) el.focus(); } });
+    renderLive();
+    if(cfgFor!==tid+JSON.stringify(TD.rounds)+TD.st){ cfgFor=tid+JSON.stringify(TD.rounds)+TD.st; $("taCfg").innerHTML=cfgHtml(); }
+    // inscriptos
+    const L=Object.entries(INS).sort((a,b)=>(tms(a[1].ck)||9e15)-(tms(b[1].ck)||9e15)||(tms(a[1].at)||0)-(tms(b[1].at)||0));
+    const ih=`<h2>Inscriptos (${L.length})</h2><div class="row"><button data-ta="priv">Actualizar mails y teléfonos</button><button data-ta="csv">Descargar CSV</button></div>`+
+      table(["#","Jugador","Mail","Teléfono","Inscripción","Check-in","Aportó","Descalificado",""], L.map(([u,x],i)=>[i+1, esc((x.av?x.av+" ":"")+x.nm), esc((PRIV[u]||{}).mail||"–"), esc((PRIV[u]||{}).tel||"–"), dt(tms(x.at)), dt(tms(x.ck)),
+        `<input type="checkbox" data-ins="paid" data-u="${u}"${x.paid?" checked":""}>`, `<input type="checkbox" data-ins="out" data-u="${u}"${x.out?" checked":""}>`, `<button data-ins="del" data-u="${u}">Borrar</button>`]));
+    if($("taIns").dataset.h!==ih){ $("taIns").dataset.h=ih; $("taIns").innerHTML=ih; }
+    // rondas jugadas
+    $("taHist").innerHTML=rounds().filter(x=>x.st==="closed").reverse().map(x=>`<details><summary>${x.final?"Final":"Ronda "+x.no} · ${esc(GN[x.g])} · pasaron ${(x.q||[]).length} de ${(x.pl||[]).length}</summary>`+
+      table(["#","Jugador","Pasó"], (x.pl||[]).map(u=>[x.pos?x.pos[u]:"–", esc(nm(u)), (x.q||[]).includes(u)?"✓":""]).sort((a,b)=>a[0]-b[0]))+`</details>`).join("");
+  }
+  const table=(head,body)=>`<div class="atabw"><table class="atab"><thead><tr>${head.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  // ronda en curso, con el avance de todos
+  function renderLive(){
+    if(view!=="torneo-admin" || !TD) return;
+    const r=last(), now=srv(), el=$("taLive");
+    if(!r){ el.innerHTML=""; return; }
+    let h=`<h2>${r.final?"Final":"Ronda "+r.no} · ${esc(tDesc(r))} · ${r.dur?r.dur+" min":"sin límite"} · pasan ${r.adv} de ${(r.pl||[]).length}</h2><div class="row">`;
+    if(r.st==="ready") h+=`<b>En pausa${r.left?` (quedaban ${clock(r.left)})`:""}</b> <button class="primary" data-ta="resume">Reanudar</button><button data-ta="now">Arrancar ya (10 s)</button>`;
+    if(r.st==="sched") h+=now<tms(r.go) ? `<b>Arranca en <span data-cd="${tms(r.go)}">${clock(tms(r.go)-now)}</span></b> <button data-ta="pause">Pausar</button><button data-ta="now">Arrancar ya (10 s)</button>` : `<b>Arrancando…</b>`;
+    if(r.st==="live") h+=`<b>En juego${r.end?` · quedan <span data-cd="${tms(r.end)}">${clock(tms(r.end)-now)}</span>`:""}</b> <button data-ta="close">Cerrar la ronda ahora</button>`;
+    if(r.st==="closed" && !r.final && TD.st==="live") h+=`<b>Cerrada.</b> ${TD.auto!==false?"La siguiente se programa sola.":`<button class="primary" data-ta="next">Programar la siguiente (5 min)</button><button data-ta="next" data-ms="10000">Siguiente ya (10 s)</button>`}`;
+    if(r.st==="closed" && (r.final || TD.st==="done")) h+=`<b>🏆 ${esc(TD.champ?nm(TD.champ):"–")}</b>`;
+    if(r.st==="sched"||r.st==="ready") h+=` <button data-ta="peek">Ver la partida</button>${r.st==="ready"||now<tms(r.go)-5000?`<button data-ta="regen">Generar otra</button>`:""}`;
+    h+=`</div>`;
+    if(prevD && prevD.id===r.id) h+=`<p class="m small mono">${esc(solution(r.g, prevD.d))}</p>`;
+    if(resFor===r.id){
+      const L=tStand(r, RESL), x=Object.keys(RESL).filter(u=>!(r.pl||[]).includes(u)).length;
+      h+=table(["#","Jugador","Puntos","Avance","Errores","Ayudas","Comprob.","Estado","Último dato"], L.map((y,i)=>{
+        const q=y.r, st=!q ? "no entró" : q.done ? (q.ok?"terminó ✓":"terminó") : "jugando";
+        return [`${i+1}${i===r.adv-1?" ✂":""}`, esc(nm(y.u)), q?y.sc.pts:"–", q?Math.round(y.sc.p*100)+"%":"–", q?q.e:"–", q?q.h:"–", q?q.c:"–", st, q?dt(tms(q.at)):"–"]; }))+
+        (x?`<p class="m small">Además, ${x} jugando sin competir.</p>`:"");
+    }
+    if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
+  }
+  function csv(){
+    const q=s=>`"${String(s==null?"":s).replace(/"/g,'""')}"`;
+    const lines=[["ronda","juego","puesto","jugador","mail","telefono","puntos","resuelta","avance","errores","ayudas","comprobaciones","rondas_falladas","paso","aporto"].join(",")];
+    const all=rounds();
+    Promise.all(all.map(r=>A.getDocs(A.collection(A.db,"tourneys",tid,"rounds",r.id,"res")).then(qs=>{ const m={}; qs.forEach(d=>m[d.id]=d.data()); return m; }).catch(()=>({})))).then(R=>{
+      all.forEach((r,j)=>tStand(r, R[j]).forEach((y,i)=>{ const x=y.r||{}; lines.push([r.final?"final":r.no, r.g, i+1, q(nm(y.u)), q((PRIV[y.u]||{}).mail), q((PRIV[y.u]||{}).tel), y.r?y.sc.pts:"", x.ok?1:0, Math.round(y.sc.p*100), x.e||0, x.h||0, x.c||0, x.f||0, (r.q||[]).includes(y.u)?1:0, INS[y.u]&&INS[y.u].paid?1:0].join(",")); }));
+      if(!all.length) Object.entries(INS).forEach(([u,x])=>lines.push(["","","",q(nm(u)),q((PRIV[u]||{}).mail),q((PRIV[u]||{}).tel),"","","","","","","","",x.paid?1:0].join(",")));
+      const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"})); a.download="torneo.csv"; a.click();
+    });
+  }
+
+  // ---------- eventos ----------
+  $("taIn").addEventListener("click",async()=>{ $("taErr").textContent=""; try{ await A.login(); }catch(e){ $("taErr").textContent="No se pudo entrar: "+(e.code||e.message); } });
+  $("taOut").addEventListener("click",()=>A&&A.logout());
+  $("view-torneo-admin").addEventListener("click",async e=>{
+    const b=e.target.closest("[data-ta],[data-ins]"); if(!b || !A) return;
+    if(b.dataset.ta==="priv") return loadPriv();
+    if(b.dataset.ta==="csv") return csv();
+    if(b.dataset.ins){ const u=b.dataset.u, ref=A.doc(A.db,"tourneys",tid,"ins",u);
+      try{
+        if(b.dataset.ins==="del"){ if(sure(b, `¿Borrar a ${nm(u)} del torneo?`)){ await A.deleteDoc(ref); await A.deleteDoc(A.doc(A.db,"tourneys",tid,"priv",u)).catch(()=>{}); } }
+        else { const x=INS[u]; await A.updateDoc(ref,{paid:b.dataset.ins==="paid"?b.checked:!!x.paid, out:b.dataset.ins==="out"?b.checked:!!x.out}); }
+      }catch(err){ fail(err); }
+      return; }
+    if(b.tagName!=="SELECT" && b.dataset.ta!=="auto") act(b.dataset.ta, b);
+  });
+  $("view-torneo-admin").addEventListener("input",e=>{ if(e.target.id==="taInvIn") searchOnline(); });
+  $("view-torneo-admin").addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.id==="taAdmIn"){ e.preventDefault(); act("admadd"); } });
+  $("view-torneo-admin").addEventListener("change",e=>{ const b=e.target.closest("[data-ta]"); if(!b) return;
+    if(b.dataset.ta==="pick"||b.dataset.ta==="auto") act(b.dataset.ta, b);
+    if(b.closest(".tarounds") && b.dataset.f==="g"){ /* el juego nuevo trae sus opciones al guardar */ } });
+  return {show};
+})();
+
 function route(){
   const h=location.hash.replace("#","");
-  view = h==="admin" ? "admin" : h==="stats" ? "stats" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
+  view = h==="admin" ? "admin" : h==="stats" ? "stats" : h==="torneo" ? "torneo" : h==="torneo-admin" ? "torneo-admin" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
   $("menuBtn").style.display = view==="menu" ? "none" : "";
   applyTexts();
   if(GAMES[view]) Reg.enter(view);
   if(view==="admin") Admin.show();
   if(view==="stats") Stats.show();
+  if(view==="torneo") Tour.show();
+  if(view==="torneo-admin") TourAdmin.show();
+  Tour.route();
   if(view==="menu") Nudge.maybe();
   window.scrollTo(0,0);
 }
@@ -4851,6 +6115,7 @@ try {
     const aapp = initializeApp(cfg, "admin"), aauth = getAuth(aapp), prov = new GoogleAuthProvider();
     prov.setCustomParameters({ login_hint: "claudia@rodo.es", prompt: "select_account" });
     window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs, doc, setDoc, deleteDoc, serverTimestamp,
+      getDoc, updateDoc, onSnapshot, writeBatch, runTransaction, Timestamp, query, where,
       login: () => signInWithPopup(aauth, prov), logout: () => signOut(aauth), onState: cb => onAuthStateChanged(aauth, cb) });
   }catch(e){ window.__adminResolve(null); }
   const auth = getAuth(app);

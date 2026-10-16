@@ -12,8 +12,8 @@ service cloud.firestore {
     // Administración: solo esta cuenta de Google (verificada) puede leer las fichas de todos
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'claudia@rodo.es'
-        && request.auth.token.email_verified == true;
+        && request.auth.token.get('email', '') == 'claudia@rodo.es'
+        && request.auth.token.get('email_verified', false) == true;
     }
     function validKey(k) {
       return k.matches('^(acrostico|ahorcado|ahorcado6|sopa|sopachica|sopagrande|criptograma|anagrama|semilla|esbip|placa)-(es|en)$');
@@ -360,6 +360,154 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/invites/$(request.auth.uid)).data.to in resource.data.p
         && invPid(get(/databases/$(database)/documents/invites/$(request.auth.uid)).data) == request.resource.data.games[resource.data.games.size()];
       allow delete: if false;
+    }
+
+    // ================= Torneos en vivo =================
+    // tourneys/{tid}: la configuración y el estado. Lo crea la administración; lo manejan ella y los organizadores (orgs).
+    // st: draft (borrador) → open (inscripción) → checkin (confirmar presencia) → live (rondas) → done.
+    // pub: desde cuándo se ve en la web (antes no se puede inscribir nadie).
+    // Ensayo (test): copia de un torneo (src) para probarlo; no lo ve el público, solo los invitados (inv, uids),
+    // y puede tener jugadores falsos (ins y res con id "bot-N") que maneja el panel del organizador.
+    function isOrg(tid) {
+      return isAdmin() || (request.auth != null && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') in get(/databases/$(database)/documents/tourneys/$(tid)).data.get('orgs', []));
+    }
+    function tour(tid) { return get(/databases/$(database)/documents/tourneys/$(tid)).data; }
+    function isTest(tid) { return tour(tid).get('test', false) == true; }
+    function validTour(d) {
+      // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv', 'test', 'src', 'inv'])
+        && (!('test' in d) || d.test is bool)
+        && (!('inv' in d) || (d.inv is list && d.inv.size() <= 40))
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.st in ['draft', 'open', 'checkin', 'live', 'done']
+        && d.cap is int && d.cap >= 2 && d.cap <= 64
+        && d.orgs is list && d.orgs.size() <= 10
+        && d.rounds is list && d.rounds.size() <= 8;
+    }
+    match /tourneys/{tid} {
+      allow read: if true;
+      allow create: if validTour(request.resource.data) && (isAdmin()
+        // un ensayo lo puede armar cualquier organizador del torneo original, con los mismos organizadores
+        || (request.resource.data.get('test', false) == true && request.resource.data.src is string
+          && isOrg(request.resource.data.src) && request.resource.data.orgs == tour(request.resource.data.src).get('orgs', [])));
+      allow update: if isOrg(tid) && validTour(request.resource.data)
+        // la lista de organizadores la cambia solo la administración; un ensayo no deja de serlo
+        && (isAdmin() || request.resource.data.orgs == resource.data.orgs)
+        && request.resource.data.get('test', false) == resource.data.get('test', false);
+      allow delete: if isAdmin() || (isOrg(tid) && resource.data.get('test', false) == true);
+
+      // Inscriptos (público: apodo y avatar). Hace falta usuario (apodo registrado). Cada uno se anota y confirma su presencia;
+      // el organizador marca quién aportó al pozo (paid) y puede descalificar (out).
+      match /ins/{uid} {
+        allow read: if true;
+        allow create: if (signedIn() && request.auth.uid == uid
+          && tour(tid).st in ['open', 'checkin']
+          // visible desde pub; un ensayo, solo para invitados
+          && (tour(tid).get('pub', null) == null || request.time >= tour(tid).pub)
+          && (!isTest(tid) || uid in tour(tid).get('inv', []))
+          && request.resource.data.keys().hasOnly(['nm', 'av', 'at', 'ck', 'paid', 'out'])
+          && request.resource.data.nm == get(/databases/$(database)/documents/names/$(uid)).data.name
+          && request.resource.data.get('av', '') == get(/databases/$(database)/documents/names/$(uid)).data.get('av', '')
+          && request.resource.data.at == request.time
+          && request.resource.data.ck == null && request.resource.data.paid == false && request.resource.data.out == false)
+          // en un ensayo, el organizador suma jugadores falsos (bot-N) o a sí mismo, ya con check-in
+          || (isOrg(tid) && isTest(tid)
+            && request.resource.data.keys().hasOnly(['nm', 'av', 'at', 'ck', 'paid', 'out', 'bot'])
+            && request.resource.data.nm is string && request.resource.data.nm.size() > 0 && request.resource.data.nm.size() <= 30
+            && request.resource.data.at == request.time && request.resource.data.ck == request.time
+            && request.resource.data.paid is bool && request.resource.data.out == false);
+        // check-in: una sola vez, con la hora del servidor, mientras está abierto
+        allow update: if (signedIn() && request.auth.uid == uid && tour(tid).st == 'checkin' && resource.data.ck == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ck'])
+            && request.resource.data.ck == request.time)
+          || (isOrg(tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'out'])
+            && request.resource.data.paid is bool && request.resource.data.out is bool);
+        // borrarse: antes de que arranque
+        allow delete: if (signedIn() && request.auth.uid == uid && tour(tid).st in ['open', 'checkin']) || isOrg(tid);
+      }
+      // Datos de contacto para avisar que arranca la ronda: solo los ven el dueño y los organizadores
+      match /priv/{uid} {
+        allow read: if (signedIn() && request.auth.uid == uid) || isOrg(tid);
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['mail', 'tel', 'ok', 'at'])
+          && request.resource.data.mail is string && request.resource.data.mail.size() <= 120 && request.resource.data.mail.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+          && request.resource.data.tel is string && request.resource.data.tel.size() >= 6 && request.resource.data.tel.size() <= 30
+          // ok: aceptó las bases y condiciones
+          && request.resource.data.ok == true
+          && request.resource.data.at == request.time;
+        allow delete: if (signedIn() && request.auth.uid == uid) || isOrg(tid);
+      }
+
+      // Rondas: las crea y maneja el organizador. pl: quienes compiten; adv: cuántos pasan; go/end: arranque y fin (hora del servidor).
+      match /rounds/{r} {
+        allow read: if true;
+        allow write: if isOrg(tid);
+        // La partida de la ronda: secreta hasta que arranca (por la hora, o porque el organizador ya la puso en juego)
+        match /data/{x} {
+          allow read: if isOrg(tid) || get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.st == 'live'
+            || (get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go != null
+              && request.time >= get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data.go);
+          allow write: if isOrg(tid);
+        }
+        // Resultado y avance de cada jugador. El tiempo lo pone el servidor (at - go). Errores, ayudas, comprobaciones y
+        // rondas falladas nunca bajan; una vez terminada (done) no se toca. x: juega sin competir (no está en pl).
+        match /res/{uid} {
+          allow read: if true;
+          allow create, update: if (signedIn() && request.auth.uid == uid && resOk(tid, r, uid))
+            // los jugadores falsos de un ensayo los mueve el panel del organizador
+            || (uid.matches('^bot-[0-9]+$') && isOrg(tid) && isTest(tid) && resOk(tid, r, uid));
+          allow delete: if isOrg(tid);
+        }
+      }
+    }
+    function resOk(tid, r, uid) {
+      let R = get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data;
+      let d = request.resource.data;
+      let o = resource == null ? {'p': 0, 's': 0, 'e': 0, 'h': 0, 'c': 0, 'f': 0, 'done': false} : resource.data;
+      return R.st in ['sched', 'live'] && R.go != null && request.time >= R.go
+        && (R.end == null || request.time <= R.end + duration.value(20, 's'))
+        && d.keys().hasOnly(['p', 's', 'e', 'h', 'c', 'f', 'ok', 'done', 'at', 'x'])
+        && d.keys().hasAll(['p', 's', 'e', 'h', 'c', 'f', 'ok', 'done', 'at', 'x'])
+        && d.at == request.time
+        && d.p is number && d.p >= 0 && d.p <= 1
+        && d.s is int && d.s >= o.s && d.s <= 20
+        && d.e is int && d.e >= o.e && d.h is int && d.h >= o.h
+        && d.c is int && d.c >= o.c && d.f is int && d.f >= o.f && d.f <= 20
+        && d.ok is bool && d.done is bool && (!d.ok || d.done)
+        && o.done == false
+        && d.x == !(uid in R.pl);
+    }
+    // Avisos push: cada jugador guarda las suscripciones de sus dispositivos (hasta 5). Las lee la Function (admin SDK).
+    function pushSub(s) {
+      return s is map && s.keys().hasOnly(['endpoint', 'keys'])
+        && s.endpoint is string && s.endpoint.size() <= 1024 && s.endpoint.matches('https://.+')
+        && s['keys'] is map && s['keys'].keys().hasOnly(['p256dh', 'auth'])
+        && s['keys'].p256dh is string && s['keys'].p256dh.size() <= 200
+        && s['keys'].auth is string && s['keys'].auth.size() <= 64;
+    }
+    function pushSubs(l) {
+      return l is list && l.size() <= 5
+        && (l.size() < 1 || pushSub(l[0])) && (l.size() < 2 || pushSub(l[1])) && (l.size() < 3 || pushSub(l[2]))
+        && (l.size() < 4 || pushSub(l[3])) && (l.size() < 5 || pushSub(l[4]));
+    }
+    match /pushsubs/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['subs', 'at'])
+        && pushSubs(request.resource.data.subs)
+        && request.resource.data.at == request.time;
+    }
+
+    // Configuración pública que escribe solo la Function (config/push.vapid: clave pública VAPID)
+    match /config/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Claves privadas de la Function: nadie desde la web (el admin SDK no pasa por las reglas)
+    match /_private/{id} {
+      allow read, write: if false;
     }
   }
 }
