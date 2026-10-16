@@ -296,6 +296,28 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tround{border-top:4px solid var(--btc)}
 .tbigt{font-size:1.15rem;font-weight:800}
 .tcount{font-size:1.1rem}.tcount b{font:700 1.6rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+/* escenario del torneo: cuenta regresiva, quiénes entran (tipo Kahoot), quiénes siguen y la gran final */
+.tstage{background:var(--ink);color:#fff;border-radius:16px;padding:18px 14px;margin:0 0 14px;text-align:center}
+.tstage .tsk{font-size:.95rem;opacity:.85;margin:0 0 4px}
+.tstage .tcd{font:800 3rem/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--btc);margin:4px 0 10px}
+.tstage .tnum{font:800 2.4rem/1 "IBM Plex Mono",ui-monospace,monospace;margin:6px 0 2px}
+.tstage .tnum small{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:.95rem;font-weight:600;line-height:1.3;opacity:.8;margin-top:6px}
+.tppl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:12px 0 4px}
+.tp{display:flex;flex-direction:column;align-items:center;width:64px}
+.tp .tav{width:48px;height:48px;border-radius:50%;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;font:700 1.5rem/1 system-ui,sans-serif;border:3px solid var(--btc)}
+.tp .tnm{font-size:.72rem;margin-top:4px;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp.me .tav{box-shadow:0 0 0 3px #fff}
+.tp.dim{opacity:.45}.tp.dim .tav{border-color:#7a8691}
+.tp.out{opacity:.4}.tp.out .tav{border-color:#7a8691;filter:grayscale(1)}.tp.out .tnm{text-decoration:line-through}
+.tp.fin .tav{border-color:var(--ok)}
+.tp.pop{animation:tpop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes tpop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.tp.pop{animation:none}}
+.tstage h3{margin:14px 0 0;font-size:.85rem;font-weight:700;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.tvs{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0 6px}
+.tvs .tp{width:auto}.tvs .tp .tav{width:96px;height:96px;font-size:3rem;border-width:4px}.tvs .tp .tnm{font-size:1rem;font-weight:700;max-width:120px}
+.tvs b{font-size:2rem}
+.tking .tp .tav{width:120px;height:120px;font-size:3.6rem;border-color:var(--btc);border-width:5px}.tking .tp .tnm{font-size:1.1rem;font-weight:800;max-width:180px}
 .tchamp{text-align:center;background:var(--btc);color:#1A1E23;border-color:var(--btc)}.tchamp .tbigt{font-size:1.5rem}
 .ttab tr.me td{font-weight:700;background:var(--btc-soft)}
 .ttab tr.cut td{border-bottom:3px solid var(--btc)}
@@ -887,6 +909,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
   <!-- ===== Torneo en vivo: la sala de los jugadores ===== -->
   <section class="view" id="view-torneo">
     <div id="tHead"></div>
+    <div id="tStage"></div>
     <div id="tMe"></div>
     <div id="tRound"></div>
     <div id="tTable"></div>
@@ -5153,6 +5176,10 @@ Object.assign(T.es,{
   tPassed:p=>`¡Pasaste! Quedaste ${p}°.`, tOut:(p,n)=>`Quedaste ${p}° de ${n}. Podés seguir jugando las rondas sin competir.`, tWould:p=>`Habrías quedado ${p}°.`,
   tTable:"Tabla", tColPos:"#", tColWho:"Jugador", tColPts:"Puntos", tColSt:"",
   tPlaying:n=>`${n} todavía jugando…`, tNoShow:"no jugó", tCut:a=>`pasan los primeros ${a}`, tFinished:n=>`${n} terminaron`,
+  tsCdAt:h=>`⏰ La cuenta regresiva arranca a las ${h}`, tsStartsAt:h=>`El torneo empieza a las ${h}.`, tsIn:"Arranca en", tsSoon:"Arrancando… en cualquier momento.",
+  tsIns:n=>`${n===1?"jugador":"jugadores"} ${n===1?"anotado":"anotados"}`, tsCk:(n,m)=>`confirmaron ${n===1?"su":"su"} presencia · ${m} ${m===1?"anotado":"anotados"}`,
+  tsPlay:n=>`${n===1?"compite":"compiten"}`, tsLeft:(n,m)=>`siguen ${n} de ${m}`, tsOut:"Quedaron afuera", tsDone:(d,n)=>`${d} de ${n} ya terminaron`,
+  tsFinal:"🏆 Gran final", tsChamp:"👑 Campeón",
   tChamp:w=>`🏆 Campeón: ${w}`, tChampPool:s=>`Gana el pozo de ${s} sats.`, tChampNoPool:"No aportó al pozo: el pozo queda para el organizador.",
   tBarGo:(no,tm)=>`🏆 ${no} arranca en ${tm}`, tBarLive:no=>`🏆 ${no} en juego`, tBarBtn:"Ir", tBarPassed:no=>`🏆 ¡Pasaste a la ${no}!`,
   tTimeUp:"⏱ Se terminó el tiempo de la ronda. Se guardó lo que llegaste a resolver.", tClosedMid:"La ronda terminó: ya se definieron los que pasan.",
@@ -5193,6 +5220,10 @@ Object.assign(T.en,{
   tPassed:p=>`You're through! You placed #${p}.`, tOut:(p,n)=>`You placed #${p} of ${n}. You can keep playing the rounds without competing.`, tWould:p=>`You'd have placed #${p}.`,
   tTable:"Standings", tColPos:"#", tColWho:"Player", tColPts:"Points", tColSt:"",
   tPlaying:n=>`${n} still playing…`, tNoShow:"didn't play", tCut:a=>`top ${a} advance`, tFinished:n=>`${n} finished`,
+  tsCdAt:h=>`⏰ The countdown starts at ${h}`, tsStartsAt:h=>`The tournament starts at ${h}.`, tsIn:"Starts in", tsSoon:"Starting… any moment now.",
+  tsIns:n=>`${n===1?"player":"players"} signed up`, tsCk:(n,m)=>`checked in · ${m} signed up`,
+  tsPlay:n=>`${n===1?"competing":"competing"}`, tsLeft:(n,m)=>`${n} of ${m} still in`, tsOut:"Knocked out", tsDone:(d,n)=>`${d} of ${n} already finished`,
+  tsFinal:"🏆 Grand final", tsChamp:"👑 Champion",
   tChamp:w=>`🏆 Champion: ${w}`, tChampPool:s=>`Wins the ${s} sats pool.`, tChampNoPool:"Didn't contribute to the pool: it goes to the organizer.",
   tBarGo:(no,tm)=>`🏆 ${no} starts in ${tm}`, tBarLive:no=>`🏆 ${no} is live`, tBarBtn:"Go", tBarPassed:no=>`🏆 You're through to ${no}!`,
   tTimeUp:"⏱ Time's up for this round. What you solved was saved.", tClosedMid:"The round is over: the qualifiers are decided.",
@@ -5499,16 +5530,67 @@ const Tour = (()=>{
   function render(){
     if(view!=="torneo") return;
     const T0=t();
-    if(!fb){ set("tHead",`<p class="intro">${esc(T0.rkLocal)}</p>`); ["tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
-    if(!TD){ set("tHead",`<p class="intro">${esc(T0.tNone)}</p>`); ["tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
+    if(!fb){ set("tHead",`<p class="intro">${esc(T0.rkLocal)}</p>`); ["tStage","tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
+    if(!TD){ set("tHead",`<p class="intro">${esc(T0.tNone)}</p>`); ["tStage","tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
     const nIns=INS ? Object.values(INS).filter(x=>!x.out).length : null;
     const when=tms(TD.when) ? new Date(tms(TD.when)).toLocaleString(lang==="en"?"en-US":"es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}) : "";
     set("tHead", `<div class="thead">${scrabHtml()}<div><h2 class="tname">${esc(TD.name)}</h2><button class="tshare" data-act="share">${esc(T0.tShare)}</button></div></div>`+(TD.test?`<p class="ttest">${esc(T0.tTest)}</p>`:"")+`<p class="tsub"><span class="tpill st-${esc(TD.st)}">${esc(T0.tSt[TD.st]||"")}</span>`+
       `${when?` <span>${esc(T0.tWhen(when))}</span>`:""}${nIns!==null?` <span>· ${esc(T0.tCount(nIns, TD.cap))}</span>`:""}</p>`+(flash?`<p class="tflash">${esc(flash)}</p>`:""));
+    set("tStage", stageBox());
     set("tMe", meBox());
     set("tRound", roundBox());
     set("tTable", tableBox());
     set("tMore", moreBox());
+  }
+  // ---------- escenario: cuenta regresiva, quiénes entran, quiénes siguen y la gran final ----------
+  const CD_LEAD=10*60000;                         // la cuenta regresiva grande aparece 10 min antes de la hora de arranque
+  const popSeen=new Set();                        // a quién ya se le hizo la animación de entrada
+  const hhmm=ms=>new Date(loc(ms)).toLocaleTimeString(lang==="en"?"en-US":"es-AR",{hour:"2-digit",minute:"2-digit",hourCycle:lang==="en"?"h12":"h23"});
+  function tile(u, cls=""){
+    const x=(INS&&INS[u])||{}, nm=x.nm||"…", av=x.av || (nm[0]||"?").toUpperCase();
+    const pop=popSeen.has(u) ? "" : " pop"; popSeen.add(u);
+    return `<div class="tp${u===uid?" me":""}${cls?" "+cls:""}${pop}"><span class="tav">${esc(av)}</span><span class="tnm">${esc(nm)}</span></div>`;
+  }
+  const tiles=(l, cls)=>`<div class="tppl">${l.map(u=>tile(u, typeof cls==="function" ? cls(u) : cls)).join("")}</div>`;
+  function stageBox(){
+    const T0=t(), st=TD.st, now=srv(); if(!INS) return "";
+    const live=Object.entries(INS).filter(([,x])=>!x.out);
+    // antes de arrancar: cuenta regresiva y la gente que va entrando
+    if(st==="open"||st==="checkin"){
+      const when=tms(TD.when); let h="";
+      if(when && now<when-CD_LEAD) h+=`<p class="tsk">${esc(T0.tsCdAt(hhmm(when-CD_LEAD)))}</p><p class="tsk">${esc(T0.tsStartsAt(hhmm(when)))}</p>`;
+      else if(when && now<when) h+=`<p class="tsk">${esc(T0.tsIn)}</p><p class="tcd" data-cd="${when}">${clock(when-now)}</p>`;
+      else if(when) h+=`<p class="tsk">${esc(T0.tsSoon)}</p>`;
+      const byAt=(a,b)=>(tms(a[1].ck)||tms(a[1].at)||0)-(tms(b[1].ck)||tms(b[1].at)||0);
+      if(st==="checkin"){
+        const ck=live.filter(([,x])=>x.ck).sort(byAt).map(([u])=>u), no=live.filter(([,x])=>!x.ck).sort(byAt).map(([u])=>u);
+        h+=`<p class="tnum">${ck.length}<small>${esc(T0.tsCk(ck.length, live.length))}</small></p>`+tiles(ck)+(no.length?tiles(no,"dim"):"");
+      } else {
+        const l=live.sort(byAt).map(([u])=>u);
+        h+=`<p class="tnum">${l.length}<small>${esc(T0.tsIns(l.length))}</small></p>`+tiles(l);
+      }
+      return `<div class="tstage">${h}</div>`;
+    }
+    const rs=rounds(), r=curR();
+    if(st==="done"){
+      const ch=TD.champ; if(!ch) return "";
+      return `<div class="tstage"><p class="tsk">${esc(T0.tsChamp)}</p><div class="tvs tking">${tile(ch)}</div></div>`;
+    }
+    if(st!=="live" || !r) return "";
+    const first=(rs[0]&&rs[0].pl)||[], outs=first.filter(u=>!(r.pl||[]).includes(u));
+    // la gran final: los dos, grandes, cara a cara
+    if(r.final && (r.pl||[]).length===2){
+      const [a,b]=r.pl, done=u=>RES[u] && RES[u].done ? "fin" : "";
+      return `<div class="tstage"><p class="tsk"><b>${esc(T0.tsFinal)}</b></p><div class="tvs">${tile(a, done(a))}<b>⚔️</b>${tile(b, done(b))}</div>`+
+        (outs.length?`<h3>${esc(T0.tsOut)}</h3>`+tiles(outs,"out"):"")+`</div>`;
+    }
+    // ronda cerrada: los que pasan a la siguiente
+    const pl=r.st==="closed" ? (r.q||[]) : (r.pl||[]), out2=r.st==="closed" ? first.filter(u=>!pl.includes(u)) : outs;
+    let h=`<p class="tnum">${pl.length}<small>${esc(r.no===1 && r.st!=="closed" ? T0.tsPlay(pl.length) : T0.tsLeft(pl.length, first.length))}</small></p>`;
+    if(r.st==="live"){ const d=pl.filter(u=>RES[u] && RES[u].done).length; if(d) h+=`<p class="tsk">${esc(T0.tsDone(d, pl.length))}</p>`; }
+    h+=tiles(pl, u=>r.st==="live" && RES[u] && RES[u].done ? "fin" : "");
+    if(out2.length) h+=`<h3>${esc(T0.tsOut)}</h3>`+tiles(out2,"out");
+    return `<div class="tstage">${h}</div>`;
   }
   function meBox(){
     const T0=t(), st=TD.st;
@@ -5721,7 +5803,15 @@ const TourAdmin = (()=>{
   async function tick(){
     if(!A || !me || !TD) return;
     if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
-    const r=last(), now=srv(); if(!r || busy || TD.st!=="live") return;
+    const r=last(), now=srv();
+    // a la hora de arranque (when), con este panel abierto, la ronda 1 se programa sola para esa hora (5 min antes)
+    const w=tms(TD.when);
+    if(!r && !busy && (TD.st==="open"||TD.st==="checkin") && TD.auto!==false && w && now>=w-NEXT && now<w+30*60000 && autoFor!==tid){
+      autoFor=tid; const pl=firstPl();
+      if(pl.length<2) say("Llegó la hora de arranque pero hay menos de 2 jugadores: arrancalo a mano cuando haya.", true);
+      else { busy=true; try{ await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, Math.max(10000, w-now)); say(`Arranca solo a la hora: ${pl.length} jugadores.`); }catch(e){ fail(e); } finally{ busy=false; } }
+    }
+    if(!r || busy || TD.st!=="live") return;
     if(TD.test) bots(r, now);
     try{
       if(r.st==="sched" && r.go && now>=tms(r.go)){ busy=true; await A.updateDoc(rref(r.id),{st:"live"}); }
@@ -5730,6 +5820,7 @@ const TourAdmin = (()=>{
     }catch(e){ fail(e); } finally{ busy=false; }
     renderLive();
   }
+  let autoFor=null;
   setInterval(tick, 1000);
   async function close(r){
     const L=tStand(r, RESL), q=L.slice(0, r.adv).map(x=>x.u), pos={};
@@ -5817,10 +5908,11 @@ const TourAdmin = (()=>{
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
       if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
-      if(a==="start"){
+      if(a==="start"||a==="startnow"){
         const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
-        if(!sure(el, `Arranca con ${pl.length} jugador${pl.length===1?"":"es"}. La ${pl.length<=2?"final":"ronda 1"} empieza en 5 minutos.`)) return;
-        await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, NEXT); return; }
+        const d=a==="startnow" ? 10000 : NEXT;
+        if(!sure(el, `Arranca con ${pl.length} jugador${pl.length===1?"":"es"}. La ${pl.length<=2?"final":"ronda 1"} empieza en ${a==="startnow"?"10 segundos":"5 minutos"}.`)) return;
+        autoFor=tid; await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, d); return; }
       if(!r) return;
       if(a==="pause" && r.st==="sched"){ await A.updateDoc(rref(r.id),{st:"ready", left:Math.max(5000, tms(r.go)-now), go:null, end:null}); return; }
       if(a==="resume" && r.st==="ready"){ const go=now+(r.left||NEXT); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
@@ -5910,7 +6002,7 @@ const TourAdmin = (()=>{
     const sel=(name,opts,v,dis)=>`<select data-f="${name}"${dis?" disabled":""}>${opts.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v??"")?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
     let h=`<h2>Configuración</h2><div class="tacfg">
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
-      <label>Arranca (fecha y hora, informativa)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      <label>Arranca (fecha y hora; con el panel abierto, arranca sola)<input data-f="when" type="datetime-local" value="${whenV}"></label>
       ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label>Cupo<input data-f="cap" type="number" min="2" max="64" value="${T0.cap}"></label>
       <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
@@ -5974,7 +6066,8 @@ const TourAdmin = (()=>{
     if(st==="draft") c+=`<button class="primary" data-ta="st" data-s="open">Abrir la inscripción</button>`;
     if(st==="open") c+=`<button class="primary" data-ta="st" data-s="checkin">Abrir el check-in</button><button data-ta="st" data-s="draft">Volver a borrador</button>`;
     if(st==="checkin") c+=`<button data-ta="st" data-s="open">Cerrar el check-in</button>`;
-    if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button>`;
+    if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button><button data-ta="startnow">Arrancar ya (10 s)</button>`+
+      (tms(TD.when) ? `<p class="m small">Con este panel abierto, arranca solo a la hora fijada (${new Date(tms(TD.when)).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}). Los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>` : `<p class="m small">Si ponés la hora de arranque en la configuración, arranca solo a esa hora y los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>`);
     if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
     if(st==="live") c+=`<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, programar sola la siguiente (5 min de cuenta regresiva)</label><button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
