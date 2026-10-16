@@ -208,6 +208,17 @@ await t("anota un error propio", assertSucceeds(setDoc(doc(collection(A,"errs"))
 await t("no anota por otro", assertFails(setDoc(doc(collection(A,"errs")), er("B"))));
 await t("campo extra no", assertFails(setDoc(doc(collection(A,"errs")), er("A",{x:1}))));
 await t("jugador no lee errores", assertFails(getDocs(collection(A,"errs"))));
+// invitación desde un link: quien lo abrió puede invitar sin apodo (lk), y solo así
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "puzzles/ahorcado-es-7"), { by: "C", at: serverTimestamp(), data: {} }); });
+const linv = (o = {}) => { const x = inv({ to: "A", k: "ahorcado", n: 7, lk: true, ...o }); delete x.name; return x; };
+await t("link: invitar sin apodo con lk", assertSucceeds(setDoc(doc(C, "invites/C"), linv())));
+await env.withSecurityRulesDisabled(async c => { await deleteDoc(doc(c.firestore(), "invites/C")); });
+await t("sin apodo y sin lk no", assertFails(setDoc(doc(C, "invites/C"), (() => { const x = linv(); delete x.lk; return x; })())));
+await t("lk falso no", assertFails(setDoc(doc(C, "invites/C"), linv({ lk: false }))));
+await t("lk con apodo ajeno no", assertFails(setDoc(doc(C, "invites/C"), { ...linv(), name: "Ana" })));
+// sopa: palabras extra encontradas (b)
+await t("resultado con b=2", assertSucceeds(setDoc(doc(C, "scores/ahorcado-es-7/players/C"), { g: "ahorcado", ok: true, s: 0, h: 0, e: 0, c: 0, b: 2, ms: 60000, at: serverTimestamp() })));
+await t("b fuera de rango no", assertFails(setDoc(doc(B, "scores/ahorcado-es-7/players/B"), { g: "ahorcado", ok: true, s: 0, h: 0, e: 0, c: 0, b: 9, ms: 60000, at: serverTimestamp() })));
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

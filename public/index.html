@@ -224,6 +224,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .stgloss dd{margin:2px 0 0;color:var(--muted);font-size:.92rem}
 .win.lose .wlearn{background:var(--paper)}
 .win.induel .row > button:first-child{display:none}
+.wuser{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
+.wuser[hidden]{display:none}
+.wuser p{margin:0!important;font-size:.9rem!important}
 .wback{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:8px 10px;flex-wrap:wrap}
 .wback p{font-size:.88rem!important;font-weight:400!important;margin:0!important}
 .wback button,.wduel button{padding:7px 12px;font-size:.88rem}
@@ -343,6 +346,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
        font:700 calc(var(--s)*.5)/1 "IBM Plex Mono",ui-monospace,monospace}
 .scell.found{background:var(--btc-soft);border-color:var(--btc)}
 .scell.sel{background:var(--btc);border-color:var(--btc);color:#1A1E23}
+.scell.extra{background:#DCEFE3;border-color:var(--ok)}
+.wlist li.xtra{grid-column:1/-1;color:var(--muted);font-size:.9rem}
+.snote2{min-height:1.3em;text-align:center;color:var(--ok);font-weight:600;margin:4px 0 0}
 .scell.first{box-shadow:inset 0 0 0 3px var(--btc);font-weight:800;color:var(--btc)}
 .scell.anchor{box-shadow:0 0 0 2px var(--ink) inset}
 .wlist{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
@@ -661,6 +667,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       <p class="note" id="sNote"></p>
     </div>
     <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
+    <p class="snote2" id="sNote2" aria-live="polite"></p>
     <div class="actions">
       <button id="sHint"></button>
       <button class="giveup" id="sGiveUp"></button>
@@ -1390,7 +1397,8 @@ const T = {
     hStats:t=>`Tiempo ${t}.`, hFoot:"Podés usar el teclado de la compu o el de pantalla. Pasar no cuesta nada: las que quedan sin resolver al terminar suman tiempo, como en el anagrama.",
     hCard:(s,n,t)=>`${s} de ${n} palabras en ${t}`,
     // sopa
-    sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sList:"Palabras", sListClue:"Pistas",
+    sNew:"Nueva sopa", sMeta:(f,n)=>`Encontraste ${f} de ${n}.`, sMetaX:n=>`Extra: ${n}.`, sExtraL:"Extra escondidas (−30 s cada una):",
+    sExtraOk:w=>`¡Palabra extra: ${w}! −30 s.`, sList:"Palabras", sListClue:"Pistas",
     sSize:{chica:"Chica",media:"Mediana",grande:"Grande"}, sSizeL:"Tamaño de la grilla", sModeL:"Qué mostrar en la lista",
     sWin:"¡Encontraste todas!", sStats:(n,t)=>`${n} términos en ${t}.`, sAgain:"Otra sopa",
     sFoot:"Arrastrá sobre las letras, o tocá la primera y después la última.", sHint:n=>`Revelar primera letra +60 s (quedan ${n})`,
@@ -1418,7 +1426,8 @@ const T = {
     hWin:(s,n)=>`${s} of ${n} words`, hAgain:"Another game",
     hStats:t=>`Time ${t}.`, hFoot:"Use your physical keyboard or the one on screen. Skipping is free: words left unsolved when you finish add time, like in the anagram.",
     hCard:(s,n,t)=>`${s} of ${n} words in ${t}`,
-    sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sList:"Words", sListClue:"Clues",
+    sNew:"New puzzle", sMeta:(f,n)=>`Found ${f} of ${n}.`, sMetaX:n=>`Extra: ${n}.`, sExtraL:"Hidden extras (−30s each):",
+    sExtraOk:w=>`Extra word: ${w}! −30s.`, sList:"Words", sListClue:"Clues",
     sSize:{chica:"Small",media:"Medium",grande:"Large"}, sSizeL:"Grid size", sModeL:"What to show in the list",
     sWin:"You found them all!", sStats:(n,t)=>`${n} terms in ${t}.`, sAgain:"Another puzzle",
     sFoot:"Drag across the letters, or tap the first one and then the last.", sHint:n=>`Reveal first letter +60s (${n} left)`,
@@ -1860,11 +1869,12 @@ const Hang = (()=>{
 // SOPA DE LETRAS
 // =====================================================================
 const Sopa = (()=>{
-  const SIZES={chica:{n:10,count:6}, media:{n:12,count:9}, grande:{n:15,count:12}};
+  // palabras por tamaño (ocupan alrededor del 60 % de la grilla) y 2 palabras extra escondidas, sin marcar
+  const SIZES={chica:{n:10,count:10}, media:{n:12,count:14}, grande:{n:15,count:20}}, EXTRAS=2, MAXB=5;
   let size=store.get("rodo-sopa-size")||"media"; if(!SIZES[size]) size="media";
   let N=SIZES[size].n, COUNT=SIZES[size].count;
   const DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
-  let grid=[], words=[], found=new Set(), first=new Set(), tried=new Set(), start=0, elapsed=0, done=false, showClues=store.get("rodo-sopa-mode")==="c";
+  let grid=[], words=[], hidden=[], bonus=[], found=new Set(), first=new Set(), tried=new Set(), start=0, elapsed=0, done=false, showClues=store.get("rodo-sopa-mode")==="c";
   let anchor=null, dragging=false, dragStart=null, path=[];
 
   function texts(){
@@ -1907,10 +1917,18 @@ const Sopa = (()=>{
       if(words.some(x=>x.w.includes(w)||w.includes(x.w))) continue;
       const cells=place(w); if(cells) words.push({w,clue,cells});
     }
+    // las extra: otras palabras del glosario, sin pista ni lista (se ven como "…")
+    const extra=[];
+    for(const [w] of pool){
+      if(extra.length>=EXTRAS) break;
+      if([...words,...extra].some(x=>x.w.includes(w)||w.includes(x.w))) continue;
+      const cells=place(w); if(cells) extra.push({w,cells});
+    }
     const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!grid[r][c]) grid[r][c]=rand([...alpha]);
     words.sort((a,b)=>a.w.localeCompare(b.w));
-    const out={n:N, grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)}))};
+    const out={n:N, grid:grid.map(r=>r.join("")), words:words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(([r,c])=>r*N+c)})),
+      bonus:extra.map(o=>({w:o.w,cells:o.cells.map(([r,c])=>r*N+c)}))};
     [N,COUNT,grid,words]=keep;
     return out;
   }
@@ -1919,6 +1937,7 @@ const Sopa = (()=>{
     N=d.n||d.grid.length;
     grid=d.grid.map(r=>[...r]);
     words=d.words.map(o=>({w:o.w,clue:o.clue,cells:o.cells.map(i=>[Math.floor(i/N),i%N])}));
+    hidden=(d.bonus||[]).map(o=>o.w); bonus=[]; $("sNote2").textContent="";
     found=new Set(); first=new Set(); tried=new Set(); usedFirst=0; done=false; anchor=null; start=Date.now(); updHint();
     $("sWin").style.display="none"; render();
   }
@@ -1926,14 +1945,17 @@ const Sopa = (()=>{
     const g=$("sGrid"); g.style.gridTemplateColumns=`repeat(${N}, var(--s))`; g.style.setProperty("--s",`clamp(20px,calc((100vw - 52px)/${N}),38px)`);
     g.innerHTML = grid.map((row,r)=>row.map((ch,c)=>`<div class="scell" data-r="${r}" data-c="${c}">${ch}</div>`).join("")).join("");
     words.forEach(o=>{ if(found.has(o.w)) o.cells.forEach(([r,c])=>cellAt(r,c).classList.add("found")); else if(first.has(o.w)) cellAt(...o.cells[0]).classList.add("first"); });
+    bonus.forEach(o=>o.cells.forEach(p=>cellAt(p.r,p.c).classList.add("extra")));
     renderList();
   }
   function renderList(){
     const ul=$("sList"); ul.classList.toggle("clue", showClues);
     ul.innerHTML = words.map(o=>`<li class="${found.has(o.w)?"got":""}">${
       showClues ? (found.has(o.w)?`<span class="w">${o.w}</span> `:first.has(o.w)?`<span class="w">${o.w[0]}…</span> `:"")+`${o.clue} <span class="len">(${o.w.length})</span>`
-                : `<span class="w">${o.w}</span>`}</li>`).join("");
-    $("sMeta").textContent=T[lang].sMeta(found.size, words.length);
+                : `<span class="w">${o.w}</span>`}</li>`).join("")+
+      // extra: las escondidas que faltan como "…", y las encontradas (escondidas o del glosario) con su palabra
+      `<li class="xtra">${T[lang].sExtraL} ${[...bonus.map(o=>`<span class="w">${o.w}</span>`), ...hidden.filter(w=>!bonus.some(o=>o.w===w)).map(()=>"<span>…</span>")].join(" ")}</li>`;
+    $("sMeta").textContent=T[lang].sMeta(found.size, words.length)+(bonus.length?" "+T[lang].sMetaX(bonus.length):"");
   }
   const cellAt=(r,c)=>document.querySelector(`#sGrid .scell[data-r="${r}"][data-c="${c}"]`);
   function line(a,b){
@@ -1952,10 +1974,19 @@ const Sopa = (()=>{
     if(!cells||cells.length<2) return;
     const s=cells.map(p=>grid[p.r][p.c]).join(""), rev=[...s].reverse().join("");
     const hit=words.find(o=>!found.has(o.w)&&(o.w===s||o.w===rev));
+    // palabra extra: una de las escondidas o cualquier otra del glosario que haya quedado formada (−30 s, hasta 5)
+    if(!hit){
+      const xw=[s,rev].find(w=>w.length>=4 && !words.some(o=>o.w===w) && !bonus.some(o=>o.w===w) && (hidden.includes(w) || GW[lang].has(w)));
+      if(xw && bonus.length<MAXB){
+        bonus.push({w:xw, cells}); cells.forEach(p=>cellAt(p.r,p.c).classList.add("extra")); Reg.pen("sopa","b");
+        $("sNote2").textContent=T[lang].sExtraOk(xw); renderList(); return;
+      }
+    }
     // trazo equivocado de 3 letras o más: +10 s (una vez por trazo, para que probar combinaciones no salga gratis)
     if(!hit){
       const key=[s,rev].sort()[0];
-      if(cells.length>=3 && !words.some(o=>o.w===s||o.w===rev) && !tried.has(key)){ tried.add(key); Reg.pen("sopa","e"); }
+      const real=w=>words.some(o=>o.w===w) || hidden.includes(w) || GW[lang].has(w);   // palabra existente: no es un error
+      if(cells.length>=3 && !real(s) && !real(rev) && !tried.has(key)){ tried.add(key); Reg.pen("sopa","e"); }
       return;
     }
     found.add(hit.w); first.delete(hit.w);
@@ -2047,7 +2078,7 @@ const Sopa = (()=>{
   // abrir una partida de otro tamaño (invitaciones): "sopa", "sopachica" o "sopagrande"
   function setKey(k){ const s = k==="sopa" ? "media" : k.slice(4); if(!SIZES[s]||s===size) return; size=s; store.set("rodo-sopa-size",size); updateMode(); }
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
-  return {texts, create, gen, load, words:()=>words.map(o=>o.w), setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
+  return {texts, create, gen, load, words:()=>[...words.map(o=>o.w), ...bonus.map(o=>o.w)], setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag};
 })();
 
 
@@ -2689,18 +2720,19 @@ Object.assign(T.en,{
 // Los resultados viejos no tienen "e": en ahorcado y semilla "h" eran errores; en el resto, ayudas.
 // =====================================================================
 const SOPA_N={chica:10, media:12, grande:15};   // lado de la grilla de cada tamaño de sopa
-const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, ROUNDS:{anagrama:10, placa:10, esbip:20, ahorcado6:6}};
+// EXTRA: segundos que descuenta cada palabra extra de la sopa (escondida sin marcar o del glosario que apareció de casualidad)
+const SCORE={ERR:10, HINT:60, CHECK:5, CAP:900, BONUS:100, EXTRA:30, ROUNDS:{anagrama:10, placa:10, esbip:20, ahorcado6:6}};
 const errCost=k=> k.startsWith("ahorcado") ? 20 : SCORE.ERR;
 const roundCost=k=> SCORE.ROUNDS[k] ? SCORE.CAP/SCORE.ROUNDS[k] : 0;
-// segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas
-const penSecs=(k,e,h,c,r)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*roundCost(k);
+// segundos de penalidad: e errores, h ayudas, c comprobaciones, r rondas falladas; b palabras extra (restan)
+const penSecs=(k,e,h,c,r,b=0)=> e*errCost(k) + h*SCORE.HINT + c*SCORE.CHECK + r*roundCost(k) - b*SCORE.EXTRA;
 function scoreOf(k, r){
   let e=r.e, h=r.h||0;
   if(e===undefined){ if(k==="ahorcado"||k==="semilla"){ e=h; h=0; } else e=0; }
   const R=SCORE.ROUNDS[k], fails=R ? Math.max(0, R-(r.s||0)) : 0;
-  const pen=penSecs(k, e, h, r.c||0, fails);
-  const adj=(r.ms||0)/1000 + pen, ok=R ? (r.s||0)>0 : !!r.ok;
-  return {e, h, c:r.c||0, fails, pen, adj, ok, pts: ok ? Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)) : 0};
+  const b=r.b||0, pen=penSecs(k, e, h, r.c||0, fails, b);
+  const adj=Math.max(0,(r.ms||0)/1000 + pen), ok=R ? (r.s||0)>0 : !!r.ok;
+  return {e, h, c:r.c||0, fails, b, pen, adj, ok, pts: ok ? Math.max(1, Math.round(SCORE.BONUS+SCORE.CAP-adj)) : 0};
 }
 // Duelo: quién ganó una partida. a y b son los resultados de cada uno (o undefined si no terminó).
 // timedOut: pasaron más de 15 minutos desde que se creó la partida. Devuelve "a", "b", "tie", "void" o null (en juego).
@@ -2831,12 +2863,12 @@ const Reg = (()=>{
   }
   setInterval(tick,1000);
   // penalidades en vivo: el reloj suma 10 s por error, 60 s por ayuda y lo que vale cada ronda fallada
-  const penOf=g=>{ const c=cur[g]; return c ? penSecs(kid(g), c.e||0, c.h||0, c.c||0, c.r||0) : 0; };
+  const penOf=g=>{ const c=cur[g]; return c ? penSecs(kid(g), c.e||0, c.h||0, c.c||0, c.r||0, c.b||0) : 0; };
   function pen(g, kind){
     const c=cur[g], u=ui[g]; if(!c || c.t1) return;
     c[kind]=(c[kind]||0)+1;
-    if(u){ const k=kid(g), s=Math.round(kind==="e"?errCost(k):kind==="h"?SCORE.HINT:kind==="c"?SCORE.CHECK:roundCost(k));
-      u.pen.textContent=`+${s} s`; u.pen.classList.remove("show"); void u.pen.offsetWidth; u.pen.classList.add("show"); }
+    if(u){ const k=kid(g), s=Math.round(kind==="e"?errCost(k):kind==="h"?SCORE.HINT:kind==="c"?SCORE.CHECK:kind==="b"?-SCORE.EXTRA:roundCost(k));
+      u.pen.textContent= s<0 ? `−${-s} s` : `+${s} s`; u.pen.classList.remove("show"); void u.pen.offsetWidth; u.pen.classList.add("show"); }
     tick();
   }
   // partidas en curso: empezadas y sin terminar
@@ -3053,11 +3085,11 @@ const Reg = (()=>{
   }
   async function finish(g, rec){
     const c=cur[g]; if(c && c.t0 && !c.t1){ c.t1=Date.now(); tick(); }
-    if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; }
+    if(c){ rec.e=c.e||0; rec.h=c.h||0; rec.c=c.c||0; if(c.b) rec.b=c.b; }
     if(GAMES[g].mode) rec.m=GAMES[g].mode();
     // en duelo no hay "Siguiente": se sigue con "Revancha" (invita al mismo rival)
     if(ui[g]){ ui[g].win.classList.remove("rkonly"); ui[g].win.classList.toggle("induel", !!(cur[g] && cur[g].duel)); showPts(g, rec); showLearn(g); }
-    showBack(g);
+    showBack(g); showSaveUser(g);
     duelNote(g,"");
     if(c && c.duel && c.n && Reg.onDuel) Reg.onDuel(g, c.duel, `${c.k}-${c.lang}-${c.n}`);
     else if(ui[g]){ const el=ui[g].win.querySelector(".wduel"); if(el) el.hidden=true; }
@@ -3070,6 +3102,7 @@ const Reg = (()=>{
         c.justSaved=true; c.notified=true;
         const doc1={g:c.k, ok:!!rec.ok, s:rec.s||0, h:rec.h||0, e:rec.e||0, c:rec.c||0, ms:Math.max(1000,Math.round(rec.ms)), at:fb.serverTimestamp()};
         if(rec.m) doc1.m=rec.m;
+        if(rec.b) doc1.b=rec.b;
         await fb.setDoc(ref,doc1);
         fb.setDoc(fb.doc(fb.db,"fichas",uid),{last:fb.serverTimestamp(), plays:{[`${c.k}-${c.lang}`]:fb.increment(1)}},{merge:true}).catch(()=>{});
         msg(g, T[lang].rkSaved);
@@ -3080,7 +3113,8 @@ const Reg = (()=>{
   function showPts(g, rec){
     const u=ui[g], t=T[lang], c=cur[g], sc=scoreOf(c?c.k:g, rec);
     if(!u.pts){ u.pts=document.createElement("div"); u.pts.className="wpts"; const st=u.win.querySelector(".stats"); u.win.insertBefore(u.pts, st?st.nextSibling:u.rk); }
-    u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), sc.pen?fmt(sc.pen*1000):""))}</span>`;
+    const plus=sc.pen+sc.b*SCORE.EXTRA;
+    u.pts.innerHTML=`<b>${esc(t.ptsLine(sc.pts))}</b><span>${esc(t.ptsDetail(fmt(rec.ms), plus?fmt(plus*1000):"")+(sc.b?t.ptsExtra(sc.b, fmt(sc.b*SCORE.EXTRA*1000)):""))}</span>`;
   }
   // al terminar (ganando o perdiendo): "¿Aprendiste alguna palabra nueva?" para medir si el juego enseña
   function showLearn(g){
@@ -3126,6 +3160,14 @@ const Reg = (()=>{
     dots.addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) car.scrollTo({left:+b.dataset.i*car.clientWidth, behavior:"smooth"}); });
     car.addEventListener("scroll",()=>requestAnimationFrame(paintDots),{passive:true});
     draw();
+  }
+  // sin usuario, al terminar un duelo o la partida de un link: guardar el resultado eligiendo usuario (nombre + PIN)
+  function showSaveUser(g){
+    const c=cur[g], u=ui[g]; if(!u) return;
+    const el=slot(g,"wuser"), on=!nick && c && c.n && (c.duel || c.lnk);
+    el.hidden=!on; if(!on) return;
+    el.innerHTML=`<p>${esc(T[lang].saveUserQ)}</p><button>${esc(T[lang].saveUserGo)}</button>`;
+    el.querySelector("button").addEventListener("click",()=>{ User.open(); $("userDlg").addEventListener("close",()=>{ if(nick) el.hidden=true; },{once:true}); });
   }
   // si quedó otra partida congelada (por una invitación), pregunta si la retoma
   function showBack(g){
@@ -3233,13 +3275,13 @@ Object.assign(T.es,{
   ptsLine:p=>`${p} puntos`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
     ahorcado:"Cada letra errada suma 20 s al reloj · Ver la pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +150 s.",
-    sopa:"Cada trazo equivocado (3 letras o más) suma 10 s · Revelar primera letra +60 s. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
+    sopa:"Cada trazo equivocado (3 letras o más) suma 10 s · Revelar primera letra +60 s · Cada palabra extra del glosario que encuentres (hay 2 escondidas) −30 s. El modo (palabras o pistas) se elige antes de empezar y cada uno tiene su ranking.",
     criptograma:"Cada letra equivocada suma 10 s al reloj · Comprobar +5 s · Revelar letra +60 s.",
     anagrama:"Cada intento equivocado suma 10 s al reloj · Ver pista +60 s · Pasar es gratis · Cada palabra sin resolver al terminar +90 s.",
     semilla:"El reloj corre desde que empezás a armar la frase · Cada palabra equivocada +10 s.",
     esbip:"Cada respuesta equivocada suma 45 s al reloj.", placa:"Cada intento equivocado suma 10 s al reloj · Pasar +90 s."},
   sModeLocked:"El modo se elige antes de empezar. Terminá esta sopa o pedí una nueva para cambiarlo.", sModeTag:"con pistas",
-  ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`,
+  ptsDetail:(t,p)=> p ? `Tiempo ${t} + ${p} de errores y ayudas` : `Tiempo ${t}, sin errores ni ayudas`, ptsExtra:(n,t)=>` − ${t} por ${n} palabra${n>1?"s":""} extra`,
   rkGenTitle:g=>`Ranking general de ${g}`,
   rkGenEmpty:m=>`Todavía nadie llegó a ${m} partidas comparables.`,
   rkPct:(p,n)=>`mejor que el ${p}%, ${n} partidas`,
@@ -3252,13 +3294,13 @@ Object.assign(T.en,{
   ptsLine:p=>`${p} points`, ptsShort:p=>`${p} pts`,
   cost:{acrostico:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
     ahorcado:"Each wrong letter adds 20s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +150s.",
-    sopa:"Each wrong trace (3+ letters) adds 10s · Reveal first letter +60s. Pick the mode (words or clues) before you start; each has its own leaderboard.",
+    sopa:"Each wrong trace (3+ letters) adds 10s · Reveal first letter +60s · Each extra glossary word you find (2 are hidden) −30s. Pick the mode (words or clues) before you start; each has its own leaderboard.",
     criptograma:"Each wrong letter adds 10s to the clock · Check +5s · Reveal letter +60s.",
     anagrama:"Each wrong try adds 10s to the clock · Show clue +60s · Skipping is free · Each word left unsolved at the end +90s.",
     semilla:"The clock runs from when you start rebuilding the phrase · Each wrong word +10s.",
     esbip:"Each wrong answer adds 45s to the clock.", placa:"Each wrong try adds 10s to the clock · Skip +90s."},
   sModeLocked:"Pick the mode before you start. Finish this one or start a new one to change it.", sModeTag:"with clues",
-  ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`,
+  ptsDetail:(t,p)=> p ? `Time ${t} + ${p} for mistakes and hints` : `Time ${t}, no mistakes or hints`, ptsExtra:(n,t)=>` − ${t} for ${n} extra word${n>1?"s":""}`,
   rkGenTitle:g=>`${g} overall leaderboard`,
   rkGenEmpty:m=>`Nobody has reached ${m} comparable games yet.`,
   rkPct:(p,n)=>`better than ${p}%, ${n} games`,
@@ -3284,7 +3326,9 @@ Object.assign(T.es,{
   lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
   ivYesOut:who=>`¡${cap(who)} aceptó! A jugar.`, ivNoOut:who=>`${cap(who)} no aceptó esta vez.`,
-  ivBusyOut:who=>`${cap(who)} estaba ocupado.`, ivExpOut:who=>`${cap(who)} no respondió a tiempo.`,
+  ivBusyOut:who=>`${cap(who)} estaba ocupado.`, ivLinkBusy:who=>`${cap(who)} no puede jugar en vivo ahora (quizás ya está jugando con otra persona). Jugá la partida del link y comparan puntajes.`,
+  ivInLink:(who,g)=>`${who?cap(who):"Alguien"} abrió tu link y te invita a jugar ${g}`,
+  saveUserQ:"¿Querés guardar este resultado y tus estadísticas? Elegí un nombre y un PIN: es un solo paso.", saveUserGo:"Elegir mi usuario", ivExpOut:who=>`${cap(who)} no respondió a tiempo.`,
   ivAgain:"Invitar a otro", ivSolo:"Jugarla solo", ivFail:"No se pudo enviar la invitación. Probá de nuevo.",
   ivInT:(who,g)=>`${who} te invita a jugar ${g}`,
   ivFz:"Tu cronómetro quedó congelado. Si aceptás, al terminar podés volver a tu partida.",
@@ -3332,6 +3376,9 @@ Object.assign(T.en,{
   lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
   lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
+  ivLinkBusy:who=>`${cap(who)} can't play live right now (maybe already playing someone else). Play the link's game and compare scores.`,
+  ivInLink:(who,g)=>`${who?cap(who):"Someone"} opened your link and invites you to play ${g}`,
+  saveUserQ:"Want to keep this result and your stats? Pick a name and a PIN: it's one step.", saveUserGo:"Pick my username",
   ivYesOut:who=>`${cap(who)} accepted! Let's play.`, ivNoOut:who=>`${cap(who)} declined this time.`,
   ivBusyOut:who=>`${cap(who)} was busy.`, ivExpOut:who=>`${cap(who)} didn't answer in time.`,
   ivAgain:"Invite someone else", ivSolo:"Play it alone", ivFail:"Couldn't send the invitation. Please try again.",
@@ -3527,18 +3574,22 @@ const Live = (()=>{
   // auto: reintento solo al azar después de un "no" (mismo juego y misma partida)
   async function send(auto){
     if(out) return;
-    if(!Reg.nick()){ msgOut(t().ivNeedNick); User.open(); return; }
+    // sin usuario solo se puede invitar desde un link a quien lo mandó (direct.lk)
+    if(!Reg.nick() && !(direct && direct.lk)){ msgOut(t().ivNeedNick); User.open(); return; }
     $("ivSend").disabled=true; $("ivAgain").disabled=true; msgOut(t().ivSearching);
     try{
       if(!direct && whoMode==="name" && !pickTo){ msgOut(t().ivPickName); $("ivName").focus(); return; }
       const one=direct || (whoMode==="name" ? pickTo : null);
       const g=game ? game.g : pickG, to=await candidate(g);
+      if(!to && direct && direct.lk){ msgOut(t().ivLinkBusy(direct.who)); stage("done"); return; }
       if(!to){ msgOut(one ? t().ivAwayWhy(one.who, awayWhy, T[lang].gName[g]) : auto ? lastWhy+" "+t().ivNoneLeft : t().ivNobody); stage(game?"done":"opts"); return; }
       // la partida nueva se crea una sola vez: si alguien no acepta, se invita a otro con la misma
       if(!game) game=await Reg.inviteGame(g, {L:pickL, s:g==="sopa"?pickS:undefined, m:g==="sopa"?pickM:undefined, w:g==="semilla"?pickW:undefined});
       const ns=one ? null : await fb.getDoc(fb.doc(fb.db,"names",to)).catch(()=>null);
       const who=one ? one.who : (ns && ns.exists() && ns.data().name) || t().ivSomeone;
-      const inv={to, name:Reg.nick(), g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"};
+      const inv={to, g:game.g, k:game.k, lang:game.lang, n:game.n, at:fb.serverTimestamp(), st:"pending"};
+      if(Reg.nick()) inv.name=Reg.nick();
+      if(direct && direct.lk) inv.lk=true;   // viene de un link: quien lo mandó puede recibirla aunque no haya usuario
       if(direct && direct.d) inv.d=direct.d;
       if(game.m) inv.m=game.m;
       if(game.w) inv.w=game.w;
@@ -3593,6 +3644,7 @@ const Live = (()=>{
     // al azar: se sigue invitando a otro disponible, con la misma partida, hasta que alguien acepte
     lastWhy=why;
     if(o.rnd && dOut.open){ msgOut(why+" "+t().ivNext); stage("wait"); $("ivWaitT").textContent=t().ivSearching; setTimeout(()=>{ if(dOut.open && !out) send(true); }, 1200); return; }
+    if(direct && direct.lk){ msgOut(t().ivLinkBusy(o.who)); stage("done"); return; }
     msgOut(why);
     stage("done");
   }
@@ -3600,7 +3652,9 @@ const Live = (()=>{
     if(out){ fb.updateDoc(fb.doc(fb.db,"invites",uid),{st:"cancelled"}).catch(()=>{}); stopOut(); }
     if(dOut.open) dOut.close();
   }
-  function solo(){ const gm=game; game=null; dOut.close(); if(gm){ setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m); } }
+  // jugar sola/o: la partida del link si se llegó por uno, si no la recién creada
+  function solo(){ const l=direct && direct.lk, gm=l ? {g:l.g, k:l.k, n:l.n, lang:l.L, m:l.m} : game; game=null; dOut.close();
+    if(gm){ setLang(gm.lang); Reg.playInvite(gm.g, gm.k, gm.n, null, gm.m).then(()=>{ if(l){ const c=Reg.cur(gm.g); if(c) c.lnk=true; } }); } }
   // link para compartir: una partida recién creada que puede jugar cualquiera que lo abra (sin estar conectado ni tener usuario)
   async function shareLink(){
     if(out) return;
@@ -3611,6 +3665,7 @@ const Live = (()=>{
       const q=new URLSearchParams({j:`${game.k}-${game.lang}-${game.n}`}); if(game.m) q.set("m",game.m); q.set("de",uid);
       const url=`${location.origin}/?${q}`, text=t().ivLinkText(describe(game, true), url);
       $("ivLinkUrl").value=text; $("ivLinkBox").hidden=false; $("ivLinkSolo").textContent=t().ivSolo;
+      store.set("rodo-linkat", String(Date.now()));   // durante una semana acepta invitaciones de quien llegue por el link, aunque no tenga usuario
       let ok=false; try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){}
       if(!ok){ $("ivLinkUrl").focus(); $("ivLinkUrl").select(); }
       msgOut(ok ? t().ivLinkOk : t().ivLinkCopy);
@@ -3635,6 +3690,7 @@ const Live = (()=>{
     const left=WIN-(now()-(d.at ? d.at.toMillis() : now()));
     if(left<=2000) return;
     if(d.r && iDeclined()) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"declined"}).catch(()=>{});
+    if(!d.name && !(d.lk && Date.now()-(+store.get("rodo-linkat")||0) < 7*86400000)) return fb.updateDoc(fb.doc(fb.db,"invites",id),{st:"busy"}).catch(()=>{});
     // la ventanita de invitar abierta sin una invitación propia pendiente (por ejemplo, copiando el link) no cuenta como ocupado
     if(dOut.open && !out && !dIn.open) dOut.close();
     if(inc || out || anyOpen() || $("lnkDlg").open || !want || Reg.busyList().some(g=>g===d.g || (Reg.cur(g).duel && Date.now()-Reg.cur(g).t0 < 16*60000)))
@@ -3642,7 +3698,7 @@ const Live = (()=>{
     inc={id, d, end:Date.now()+left};
     const playing=Reg.busyList().length>0;
     inc.frozen=Reg.freeze();
-    $("ivInT").textContent=(d.d ? t().ivRematchIn : t().ivInT)(d.name, describe(d));
+    $("ivInT").textContent= d.lk ? t().ivInLink(d.name||"", describe(d)) : (d.d ? t().ivRematchIn : t().ivInT)(d.name, describe(d));
     $("ivInFz").textContent=playing ? t().ivFz : "";
     $("ivYes").disabled=$("ivNo").disabled=$("ivOff").disabled=false;
     dIn.showModal(); $("ivYes").focus();
@@ -3845,7 +3901,7 @@ const Live = (()=>{
   }
   // entrar por un link: si quien lo mandó está disponible, se le ofrece jugar en vivo contra esa persona
   async function linkLive(o){
-    if(!fb || !Reg.nick() || !o.de || o.de===uid || anyOpen()) return false;
+    if(!fb || !o.de || o.de===uid || anyOpen()) return false;
     try{
       const s=await fb.getDoc(fb.doc(fb.db,"online",o.de)), x=s.exists()&&s.data();
       if(!x || !x.at || x.at.toMillis()<=now()-FRESH || !x.inv || (x.busy||[]).includes(o.g)) return false;
@@ -3854,7 +3910,7 @@ const Live = (()=>{
     $("lnkT").textContent=T0.lnkLiveT(o.who); $("lnkP").textContent=T0.lnkLiveP; $("lnkLive").textContent=T0.lnkLiveGo(o.who); $("lnkSolo").textContent=T0.lnkSoloGo;
     const live=await new Promise(res=>{ $("lnkLive").onclick=()=>res(true); $("lnkSolo").onclick=()=>res(false); d.oncancel=e=>{ e.preventDefault(); res(false); }; d.showModal(); });
     d.close(); if(!live) return false;
-    openOut({to:o.de, who:o.who});
+    openOut({to:o.de, who:o.who, lk:o});
     pickG=o.g; pickL=o.L; if(o.g==="sopa"){ pickS=o.k==="sopa"?"media":o.k.slice(4); pickM=o.m||"w"; }
     stage("opts"); renderOpts(); send();
     return true;
@@ -4529,15 +4585,13 @@ route();
   await Reg.ready; const fb=Reg.fb(); if(!fb) return;
   let who=""; const de=q.get("de");
   if(de && /^[A-Za-z0-9]{10,40}$/.test(de) && de!==Reg.uid()){ try{ const s=await fb.getDoc(fb.doc(fb.db,"names",de)); who=(s.exists()&&s.data().name)||""; }catch(e){} }
-  const play=()=>{ setLang(L); Reg.playInvite(g, k, +n, null, q.get("m")||undefined).then(()=>Reg.say(g, T[lang].lnkPlay(who))); };
+  const play=()=>{ setLang(L); Reg.playInvite(g, k, +n, null, q.get("m")||undefined).then(()=>{ const c=Reg.cur(g); if(c && c.n===+n) c.lnk=true; Reg.say(g, T[lang].lnkPlay(who)); }); };
   // con usuario y quien invitó en línea: se ofrece jugar en vivo; si no, la partida del link
-  const next=async()=>{ if(who && await Live.linkLive({de, who, g, k, L, m:q.get("m")||undefined})) return; play(); };
-  if(Reg.nick()) return next();
+  // sin pedir usuario: si quien lo mandó está en línea se ofrece jugar en vivo; si no, la partida del link.
+  // El usuario se sugiere al terminar (para guardar el resultado).
   setLang(L);
-  await User.open(); const dlg=$("userDlg");
-  if(!dlg.open) return next();
-  $("uMsg").textContent=T[lang].lnkIn(who, Reg.gameName(g));
-  dlg.addEventListener("close",next,{once:true});
+  if(who && await Live.linkLive({de, who, g, k, L, n:+n, m:q.get("m")||undefined})) return;
+  play();
 })();
 </script>
 <script type="module">

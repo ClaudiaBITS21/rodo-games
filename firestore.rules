@@ -51,11 +51,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/puzzles/$(id))
-        && request.resource.data.keys().hasOnly(['g', 'ok', 's', 'h', 'e', 'c', 'm', 'ms', 'at'])
+        && request.resource.data.keys().hasOnly(['g', 'ok', 's', 'h', 'e', 'c', 'm', 'b', 'ms', 'at'])
         // e: errores; c: veces que tocó "Comprobar"; m: modo de la sopa (w palabras, c pistas). Los resultados viejos no los tienen
         && (!('e' in request.resource.data) || (request.resource.data.e is int && request.resource.data.e >= 0))
         && (!('c' in request.resource.data) || (request.resource.data.c is int && request.resource.data.c >= 0))
         && (!('m' in request.resource.data) || request.resource.data.m in ['w', 'c'])
+        // b: palabras extra encontradas en la sopa (cada una descuenta 30 s; hasta 5)
+        && (!('b' in request.resource.data) || (request.resource.data.b is int && request.resource.data.b >= 1 && request.resource.data.b <= 5))
         && request.resource.data.g == id.split('-')[0]
         && request.resource.data.ok is bool
         && request.resource.data.s is int && request.resource.data.s >= 0 && request.resource.data.s <= 20
@@ -217,7 +219,7 @@ service cloud.firestore {
     // Vencen a los 60 segundos (65 de margen). Solo las leen quien invita y quien es invitado.
     function newInvite(from) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w', 'r'])
+      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w', 'r', 'lk'])
         // r: invitación al azar (quien ya rechazó una al azar en su sesión la rechaza sola)
         && (!('r' in d) || d.r is bool)
         // m: modo de la sopa y w: palabras de la semilla, que eligió quien invita
@@ -231,8 +233,10 @@ service cloud.firestore {
         && d.n is int
         && d.at == request.time
         && d.st == 'pending'
-        // el apodo es obligatorio y tiene que ser el que tiene guardado
-        && d.name == get(/databases/$(database)/documents/names/$(from)).data.name
+        // lk: viene de un link compartido (quien lo abrió invita a quien lo mandó)
+        && (!('lk' in d) || d.lk == true)
+        // el apodo es obligatorio y tiene que ser el que tiene guardado; solo una invitación desde un link puede ir sin apodo
+        && ((('lk' in d) && !('name' in d)) || d.name == get(/databases/$(database)/documents/names/$(from)).data.name)
         // la partida es nueva y la creó quien invita
         && get(/databases/$(database)/documents/puzzles/$(d.k + '-' + d.lang + '-' + string(d.n))).data.by == from;
     }

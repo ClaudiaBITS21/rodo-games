@@ -19,20 +19,21 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   // con "nadie disponible" también aparece el botón
   ok(!(await A.isVisible('#ivSend')) && !(await A.isVisible('#ivWho')) && /no hay nadie disponible/.test(await txt(A,'#ivLinkNote')),'sin nadie: solo el link, sin Invitar ni ¿A quién?');
   const n=url.match(/ahorcado6-es-(\d+)/)[1];
-  // Beto: abre el link, se crea usuario y juega esa partida
-  const B=await mk('B'); await B.goto(url.replace(/^https?:\/\/[^/]+\//,URL)); await B.waitForSelector('#userDlg[open]',{timeout:20000});
-  ok(/Ana te invitó a jugar Ahorcado/.test(await txt(B,'#uMsg')),'Beto ve: '+await txt(B,'#uMsg'));
+  // Beto: abre el link sin usuario; Ana está en línea: se le ofrece jugar en vivo y elige la del link
+  const B=await mk('B'); await B.goto(url.replace(/^https?:\/\/[^/]+\//,URL));
+  await B.waitForSelector('#lnkDlg[open]',{timeout:20000});
+  ok(!(await B.$('#userDlg[open]')) && /Ana está en línea/.test(await txt(B,'#lnkT')),'Beto entra sin pedirle usuario y se le ofrece jugar con Ana');
   ok(!/\?j=/.test(await B.evaluate(()=>location.href)),'el link se limpia de la barra');
-  await user(B,'Beto'); await B.waitForSelector('#lnkDlg[open]',{timeout:20000}); ok(/Ana está en línea/.test(await txt(B,'#lnkT')),'a Beto se le ofrece jugar en vivo con Ana'); await B.click('#lnkSolo');
-  await B.waitForFunction(()=>location.hash==='#ahorcado',null,{timeout:20000});
-  await B.waitForFunction(()=>/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
+  await B.click('#lnkSolo');
+  await B.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
   ok((await txt(B,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Beto juega la misma partida #'+n);
   ok(/Partida compartida por Ana/.test(await txt(B,'#view-ahorcado .pmsg')),'aviso: '+await txt(B,'#view-ahorcado .pmsg'));
-  ok(/Beto/.test(await txt(B,'#userBtn')),'Beto quedó con usuario');
-  // Carla: abre el link y cierra la ventanita: juega sin usuario
-  const C=await mk('C'); await C.goto(url.replace(/^https?:\/\/[^/]+\//,URL)); await C.waitForSelector('#userDlg[open]',{timeout:20000});
-  await C.click('#uX'); await C.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
-  ok((await txt(C,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Carla sin usuario juega la misma partida');
+  // al terminar sin usuario: se le sugiere elegir uno para guardar el resultado
+  await B.click('#view-ahorcado .gatecard button'); await B.waitForTimeout(300); await B.click('#hEnd'); await B.click('#hEnd');
+  await B.waitForSelector('#hWin .wuser:not([hidden])',{timeout:10000});
+  ok(/guardar este resultado/.test(await txt(B,'#hWin .wuser')),'al terminar: '+await txt(B,'#hWin .wuser'));
+  await B.click('#hWin .wuser button'); await user(B,'Beto'); await B.waitForTimeout(2500);
+  ok(/Beto/.test(await txt(B,'#userBtn')),'Beto eligió usuario desde el cartel final');
   // Ana la juega también desde el botón
   await A.click('#ivSolo').catch(()=>{}); if(await A.$('#ivOut[open]')) await A.click('#ivLinkSolo');
   await A.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
