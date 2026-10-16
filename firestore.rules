@@ -327,10 +327,58 @@ service cloud.firestore {
     // Pedidos de rompecabezas (games.rodo.es/rompecabezas): cualquiera autenticado crea uno; solo la administración los lee y les cambia el estado
     function orderQty(m, k) { return !(k in m) || (m[k] is int && m[k] >= 1 && m[k] <= 10); }
     function trimmed(s, lo, hi) { return s is string && s.size() >= lo && s.size() <= hi; }
+    // Código de descuento: si el pedido trae uno, tiene que estar vigente y valer para algún rompecabezas del pedido y su medio de pago,
+    // y en la misma escritura su contador de usos sube de a uno apuntando a este pedido. El monto lo revisa la administración.
+    function orderCoupon(code, o) {
+      return !('cup' in o) ? (!('disc' in o) || o.disc == 0)
+        : (o.cup is string && o.cup.matches('^[A-Z0-9]{3,20}$')
+          && o.disc is int && o.disc >= 1
+          && o.sub is int && o.disc <= o.sub && o.total == o.sub - o.disc
+          && couponOk(get(/databases/$(database)/documents/coupons/$(o.cup)).data, o)
+          && getAfter(/databases/$(database)/documents/coupons/$(o.cup)).data.used == get(/databases/$(database)/documents/coupons/$(o.cup)).data.used + 1
+          && getAfter(/databases/$(database)/documents/coupons/$(o.cup)).data.last == code);
+    }
+    function couponOk(c, o) {
+      return c.on == true
+        && (c.max == 0 || c.used < c.max)
+        && (c.from == 0 || request.time.toMillis() >= c.from)
+        && (c.until == 0 || request.time.toMillis() < c.until)
+        && o.pay in c.pays
+        && o.items.keys().hasAny(c.prods)
+        && (c.type != 'fix' || o.disc <= c.value);
+    }
+    // Códigos de descuento: los crea y edita la administración. Cualquiera puede consultar uno por su código exacto (no listarlos).
+    // Al encargar, el contador de usos sube de a uno junto con el pedido nuevo que lo usa.
+    match /coupons/{c} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() && c.matches('^[A-Z0-9]{3,20}$')
+        && request.resource.data.keys().hasOnly(['type', 'value', 'max', 'used', 'from', 'until', 'prods', 'pays', 'on', 'note', 'last', 'at'])
+        && request.resource.data.used == 0 && couponShape(request.resource.data);
+      allow update: if (isAdmin()
+          && request.resource.data.keys().hasOnly(['type', 'value', 'max', 'used', 'from', 'until', 'prods', 'pays', 'on', 'note', 'last', 'at'])
+          && request.resource.data.used == resource.data.used && couponShape(request.resource.data))
+        || (signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'last'])
+          && request.resource.data.used == resource.data.used + 1
+          && request.resource.data.last is string
+          && !exists(/databases/$(database)/documents/orders/$(request.resource.data.last))
+          && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.last)).data.cup == c);
+      allow delete: if isAdmin();
+    }
+    function couponShape(d) {
+      return d.type in ['pct', 'fix'] && d.value is int
+        && (d.type == 'fix' ? d.value >= 1 && d.value <= 100000000 : d.value >= 1 && d.value <= 100)
+        && d.max is int && d.max >= 0 && d.used is int
+        && d.from is int && d.until is int && d.from >= 0 && d.until >= 0
+        && d.prods is list && d.prods.size() >= 1 && d.prods.toSet().hasOnly(['bip39', 'whitepaper', 'times'])
+        && d.pays is list && d.pays.size() >= 1 && d.pays.toSet().hasOnly(['btc', 'ars'])
+        && d.on is bool;
+    }
     match /orders/{code} {
       allow create: if signedIn()
         && code.matches('^R[2-9A-HJ-NP-Z]{6}$')
-        && request.resource.data.keys().hasOnly(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'note', 'total', 'lang', 'u', 'st', 'at'])
+        && request.resource.data.keys().hasOnly(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'note', 'total', 'lang', 'u', 'st', 'at', 'sub', 'cup', 'disc'])
         && request.resource.data.keys().hasAll(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'total', 'lang', 'u', 'st', 'at'])
         && request.resource.data.u == request.auth.uid
         && request.resource.data.at == request.time
@@ -347,7 +395,8 @@ service cloud.firestore {
         && request.resource.data.ship in ['envio', 'retiro']
         && request.resource.data.pay in ['btc', 'ars']
         && request.resource.data.lang in ['es', 'en']
-        && request.resource.data.total is int && request.resource.data.total >= 0;
+        && request.resource.data.total is int && request.resource.data.total >= 0
+        && orderCoupon(code, request.resource.data);
       allow read: if isAdmin();
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st'])

@@ -78,6 +78,15 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,.clues li:focus-visible{
 h2{font-size:1.3rem;margin:8px 0 8px;font-weight:800;letter-spacing:-.01em}
 footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .adminlink{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.cpform{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);margin:0 0 8px}
+.cpform label{display:grid;gap:4px;font-size:.85rem;font-weight:600}.cpform label small{font-weight:400;color:var(--muted)}
+.cpform input,.cpform select{font:inherit;font-weight:400;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.cpform fieldset{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0;font-size:.85rem}.cpform legend{font-weight:600;padding:0 4px}
+.cpform label.ck{display:flex;align-items:center;gap:6px;font-weight:400}
+.cpform .wide{grid-column:1/-1}
+.cpbox>summary{cursor:pointer;font-weight:600;margin:0 0 8px;display:inline-block;border:1px solid var(--line);border-radius:10px;padding:7px 12px;background:var(--cell-bg)}
+.cpbox[open]>summary{border-color:var(--btc)}
+.atab td button{padding:4px 9px;font-size:.8rem}
 .admlogin{text-align:center;padding:24px 0}.admlogin .m{color:var(--bad,#D64545);min-height:1.2em}
 #view-admin .bar{gap:8px;flex-wrap:wrap}#view-admin .bar button{padding:7px 12px;font-size:.85rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
@@ -4969,6 +4978,7 @@ const Admin = (()=>{
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
     let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
     // pedidos de rompecabezas (games.rodo.es/rompecabezas)
+    let CP=null; try{ CP=[]; (await A.getDocs(A.collection(A.db,"coupons"))).forEach(d=>CP.push({code:d.id, ...d.data()})); }catch(e){ CP=null; }
     let OR=null; try{ OR=[]; (await A.getDocs(A.collection(A.db,"orders"))).forEach(d=>OR.push({code:d.id, ...d.data()})); }catch(e){ OR=null; }
     // palabras sugeridas por los jugadores
     let SG=null; try{ SG=[]; (await A.getDocs(A.collection(A.db,"sugs"))).forEach(d=>SG.push({id:d.id, ...d.data()})); }catch(e){ SG=null; }
@@ -5021,7 +5031,7 @@ const Admin = (()=>{
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
 
-    h=ordersHtml(OR)+sugsHtml(SG)+h;
+    h=ordersHtml(OR, CP)+couponsHtml(CP, OR)+sugsHtml(SG)+h;
 
     // por juego e idioma
     const G={};
@@ -5080,7 +5090,17 @@ const Admin = (()=>{
   const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
   const ST=["nuevo","confirmado","pagado","enviado","entregado","cancelado"];
   const ars=n=>"$ "+(n||0).toLocaleString("es-AR");
-  function ordersHtml(OR){
+  // ¿el descuento del pedido coincide con lo que da hoy su código? (las reglas validan vigencia y usos, no el monto exacto)
+  function discCheck(o, CP){
+    if(!o.cup) return "";
+    const c=(CP||[]).find(x=>x.code===o.cup), lbl=`${esc(o.cup)}: −${ars(o.disc)}`;
+    if(!c) return lbl+` <span class="small">(código borrado)</span>`;
+    const n=Object.values(o.items||{}).reduce((a,b)=>a+b,0), unit=n?o.sub/n:0;
+    const appl=Object.entries(o.items||{}).filter(([k])=>(c.prods||[]).includes(k)).reduce((a,[,v])=>a+v*unit,0);
+    const exp = c.type==="pct" ? Math.round(appl*c.value/100) : Math.min(c.value, appl);
+    return Math.abs(exp-o.disc)>1 ? lbl+` <b style="color:var(--bad)">⚠ con ese código correspondían −${ars(exp)}</b>` : lbl;
+  }
+  function ordersHtml(OR, CP){
     if(OR===null) return `<h2>Pedidos de rompecabezas</h2><p class="m small">No se pudieron leer los pedidos. ¿Están publicadas las reglas nuevas?</p>`;
     const list=OR.map(o=>({...o, at:ms(o.at)})).sort((a,b)=>(b.at||0)-(a.at||0));
     const open=list.filter(o=>o.st!=="cancelado"&&o.st!=="entregado"), units={};
@@ -5093,10 +5113,10 @@ const Admin = (()=>{
       ${Object.keys(PUZ).map(k=>`<div class="kpi"><b>${units[k]||0}</b><span>${PUZ[k]} pedidos (sin cancelados)</span></div>`).join("")}
       <div class="kpi"><b>${ars(open.reduce((a,o)=>a+(o.total||0),0))}</b><span>en pedidos abiertos</span></div>
     </div>`;
-    h+=table(["Cuándo","Pedido","Estado","Rompecabezas","Total","Nombre","Contacto","Lugar","Entrega","Pago","Comentarios"],
+    h+=table(["Cuándo","Pedido","Estado","Rompecabezas","Total","Descuento","Nombre","Contacto","Lugar","Entrega","Pago","Comentarios"],
       list.map(o=>[dt(o.at), `<b>${esc(o.code)}</b>`,
         `<select class="ordst" data-k="${esc(o.code)}">${ST.map(x=>`<option${x===o.st?" selected":""}>${x}</option>`).join("")}</select>`,
-        Object.entries(o.items||{}).map(([k,v])=>`${v} × ${esc(PUZ[k]||k)}`).join("<br>"), ars(o.total), esc(o.name),
+        Object.entries(o.items||{}).map(([k,v])=>`${v} × ${esc(PUZ[k]||k)}`).join("<br>"), ars(o.total), discCheck(o, CP)||"–", esc(o.name),
         `<a href="mailto:${esc(o.email)}?subject=${encodeURIComponent("Tu pedido "+o.code+" de rompecabezas")}">${esc(o.email)}</a><br><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(o.phone)}</a>`,
         esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?"₿ Lightning":"Pesos", `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
     return h;
@@ -5199,6 +5219,76 @@ ${JSON.stringify(list,null,1)}`;
   $("admBody").addEventListener("click",e=>{
     const b=e.target.closest("#sgCopy,#sgAppr,#sgAiSave"); if(!b||!A) return;
     if(b.id==="sgCopy") copy(sugPrompt(),b); else if(b.id==="sgAppr") copy(sugApproved(),b); else sugSave();
+  });
+  // ---------- Códigos de descuento (coupons/{CÓDIGO}) ----------
+  const PAYN={btc:"₿ Bitcoin",ars:"Pesos"};
+  const dayIn=v=>{ if(!v) return 0; const [y,m,d]=v.split("-").map(Number); return new Date(y,m-1,d).getTime(); };
+  const dayOut=ms=>{ if(!ms) return ""; const d=new Date(ms); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const dday=ms=>new Date(ms).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  let editing=null, lastCP=[];
+  function couponsHtml(CP, OR){
+    lastCP=CP||[];
+    let h=`<h2>Códigos de descuento</h2>`;
+    if(CP===null) return h+`<p class="m small">No se pudieron leer los códigos. ¿Están publicadas las reglas nuevas?</p>`;
+    const now=Date.now(), uses={}, money={};
+    (OR||[]).filter(o=>o.cup&&o.st!=="cancelado").forEach(o=>{ uses[o.cup]=(uses[o.cup]||0)+1; money[o.cup]=(money[o.cup]||0)+(o.disc||0); });
+    const state=c=> !c.on ? "pausado" : c.max&&c.used>=c.max ? "agotado" : c.from&&now<c.from ? "todavía no empieza" : c.until&&now>=c.until ? "vencido" : "<b style=\"color:var(--ok)\">vigente</b>";
+    const e=editing&&CP.find(c=>c.code===editing)||null;
+    h+=`<details class="cpbox"${e||!CP.length?" open":""}><summary>${e?"Editando "+esc(e.code):"＋ Crear código de descuento"}</summary><form class="cpform" id="cpForm">
+      <label>Código<input id="cpCode" maxlength="20" required ${e?"disabled":""} value="${e?esc(e.code):""}" placeholder="HODL10"></label>
+      <label>Tipo<select id="cpType"><option value="pct"${e&&e.type==="pct"?" selected":""}>Porcentaje (%)</option><option value="fix"${e&&e.type==="fix"?" selected":""}>Monto fijo ($)</option></select></label>
+      <label>Valor<input id="cpVal" type="number" min="1" step="1" required value="${e?e.value:""}" placeholder="10"></label>
+      <label>Usos máximos <small>(0 = sin límite)</small><input id="cpMax" type="number" min="0" step="1" value="${e?e.max:0}"></label>
+      <label>Desde <small>(vacío = ya)</small><input id="cpFrom" type="date" value="${e?dayOut(e.from):""}"></label>
+      <label>Hasta, inclusive <small>(vacío = sin vencimiento)</small><input id="cpUntil" type="date" value="${e&&e.until?dayOut(e.until-1):""}"></label>
+      <fieldset><legend>Rompecabezas</legend>${Object.entries(PUZ).map(([k,n])=>`<label class="ck"><input type="checkbox" name="cpP" value="${k}"${!e||e.prods.includes(k)?" checked":""}> ${n}</label>`).join("")}</fieldset>
+      <fieldset><legend>Medio de pago</legend>${Object.entries(PAYN).map(([k,n])=>`<label class="ck"><input type="checkbox" name="cpPay" value="${k}"${!e||e.pays.includes(k)?" checked":""}> ${n}</label>`).join("")}</fieldset>
+      <label class="wide">Nota interna <small>(opcional: para quién es, campaña…)</small><input id="cpNote" maxlength="200" value="${e?esc(e.note||""):""}"></label>
+      <div class="wide"><button class="primary" type="submit">${e?"Guardar cambios de "+esc(e.code):"Crear código"}</button> ${e?`<button type="button" id="cpCancel">Cancelar edición</button>`:""} <span class="m" id="cpMsg"></span></div>
+    </form></details>
+    <p class="m small">El porcentaje o el monto fijo se descuentan solo sobre los rompecabezas elegidos del pedido (el monto fijo, una vez por pedido y nunca más que esos rompecabezas). Cada pedido con el código usa uno de sus usos; los pedidos cancelados no los devuelven.</p>`;
+    if(!CP.length) return h;
+    const list=[...CP].sort((a,b)=>(ms(b.at)||0)-(ms(a.at)||0));
+    h+=table(["Código","Descuento","Usos","Vigencia","Rompecabezas","Pago","Estado","Pedidos","Nota",""],
+      list.map(c=>[`<b>${esc(c.code)}</b>`, c.type==="pct"?`${c.value}%`:ars(c.value), `${c.used||0} / ${c.max||"∞"}`,
+        `${c.from?dday(c.from):"ya"} → ${c.until?dday(c.until-1):"sin vencimiento"}`,
+        (c.prods||[]).map(k=>PUZ[k]||k).join(", "), (c.pays||[]).map(k=>PAYN[k]||k).join(", "), state(c),
+        uses[c.code]?`${uses[c.code]} · −${ars(money[c.code])}`:"–", `<span class="small" style="white-space:normal">${esc(c.note||"")}</span>`,
+        `<button class="cpOn" data-k="${esc(c.code)}">${c.on?"Pausar":"Activar"}</button> <button class="cpEdit" data-k="${esc(c.code)}">Editar</button> <button class="cpDel" data-k="${esc(c.code)}">Borrar</button>`]));
+    return h;
+  }
+  $("admBody").addEventListener("submit",async e=>{
+    if(e.target.id!=="cpForm"||!A) return; e.preventDefault();
+    const m=$("cpMsg"), bad=t=>{ m.style.color="var(--bad)"; m.textContent=t; };
+    const code=(editing||$("cpCode").value).trim().toUpperCase().replace(/\s+/g,"");
+    const type=$("cpType").value, value=Math.round(+$("cpVal").value), max=Math.max(0,Math.round(+$("cpMax").value||0));
+    const from=dayIn($("cpFrom").value), u=dayIn($("cpUntil").value), until=u?u+86400000:0;
+    const prods=[...document.querySelectorAll("input[name=cpP]:checked")].map(x=>x.value), pays=[...document.querySelectorAll("input[name=cpPay]:checked")].map(x=>x.value);
+    if(!/^[A-Z0-9]{3,20}$/.test(code)) return bad("El código va de 3 a 20 letras o números, sin espacios ni símbolos.");
+    if(!editing && lastCP.some(c=>c.code===code)) return bad("Ese código ya existe: editalo desde la tabla.");
+    if(!(value>=1) || (type==="pct" && value>100)) return bad(type==="pct"?"El porcentaje va de 1 a 100.":"El monto tiene que ser de al menos $1.");
+    if(until && from && until<=from) return bad("La fecha de fin es anterior a la de inicio.");
+    if(!prods.length) return bad("Elegí al menos un rompecabezas.");
+    if(!pays.length) return bad("Elegí al menos un medio de pago.");
+    const prev=editing&&lastCP.find(c=>c.code===editing);
+    const data={type, value, max, used:prev?(prev.used||0):0, from, until, prods, pays, on:prev?!!prev.on:true, note:$("cpNote").value.trim()};
+    if(prev&&prev.last) data.last=prev.last;
+    data.at = prev&&prev.at ? prev.at : A.serverTimestamp();
+    try{ await A.setDoc(A.doc(A.db,"coupons",code),data); editing=null; load(); }
+    catch(err){ bad("No se pudo guardar: "+(err.code||err.message)); }
+  });
+  $("admBody").addEventListener("click",async e=>{
+    if(!A) return;
+    if(e.target.id==="cpCancel"){ editing=null; load(); return; }
+    const b=e.target.closest(".cpOn,.cpEdit,.cpDel"); if(!b) return;
+    const k=b.dataset.k, c=lastCP.find(x=>x.code===k); if(!c) return;
+    if(b.classList.contains("cpEdit")){ editing=k; load(); return; }
+    try{
+      if(b.classList.contains("cpOn")){ const {code,...d}=c; await A.setDoc(A.doc(A.db,"coupons",k),{...d,on:!c.on}); }
+      else{ if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Seguro? Tocá de nuevo"; setTimeout(()=>{ b.dataset.sure=""; b.textContent="Borrar"; },4000); return; }
+        await A.deleteDoc(A.doc(A.db,"coupons",k)); }
+      load();
+    }catch(err){ $("admErr").textContent="No se pudo cambiar el código: "+(err.code||err.message); }
   });
   $("admBody").addEventListener("change",async e=>{
     const s=e.target.closest(".ordst"); if(!s||!A) return;

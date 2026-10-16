@@ -117,6 +117,12 @@ input:user-invalid{border-color:var(--bad)}
 .fine{color:var(--muted);font-size:.85rem;margin:0}
 .msg{margin:0;font-size:.95rem;min-height:1.4em}
 .msg.bad{color:var(--bad)}
+.cup{display:flex;gap:8px;flex-wrap:wrap}
+.cup input{flex:1;min-width:10em;text-transform:uppercase;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.cupmsg{margin:2px 0 0;font-size:.9rem;font-weight:400}
+.cupmsg.ok{color:var(--ok)} .cupmsg.bad{color:var(--bad)}
+.sum tr.dsc td{color:var(--ok)}
+.sum s{color:var(--muted);display:block;font-size:.85rem;font-weight:400}
 
 /* ---------- Confirmación ---------- */
 .done{border-radius:14px;background:var(--paper);border:2px solid var(--btc);padding:20px}
@@ -193,6 +199,10 @@ footer a{color:inherit}
       </div>
       <label><span><span id="noteL"></span> <small id="optL"></small></span><textarea id="fNote" maxlength="1000"></textarea></label>
       <div class="hp" aria-hidden="true"><input type="text" id="fHp" tabindex="-1" autocomplete="off"></div>
+      <div class="lab"><span><span id="cupL"></span> <small id="cupOpt"></small></span>
+        <div class="cup"><input id="fCup" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" id="cupBtn"></button></div>
+        <p class="cupmsg" id="cupMsg" aria-live="polite"></p>
+      </div>
       <p class="fine" id="fine"></p>
       <div class="row"><button class="primary" type="submit" id="send"></button></div>
       <p class="msg" id="msg" role="status" aria-live="polite"></p>
@@ -246,6 +256,13 @@ const T = {
     shipL:"¿Cómo lo recibís?", shipA:"Envío a domicilio", shipB:"Retiro en persona",
     payL:"¿Cómo pagás?", payA:"Bitcoin (Lightning)", payB:"Pesos (transferencia o Mercado Pago)",
     noteL:"Comentarios", optL:"(opcional)",
+    cupL:"Código de descuento", cupBtn:"Aplicar", cupRemove:"Quitar", cupChecking:"Buscando el código…",
+    cupNo:"Ese código no existe.", cupOff:"Ese código no está activo.", cupUsed:"Ese código ya se usó todas las veces posibles.",
+    cupSoon:d=>`Ese código vale desde el ${d}.`, cupExp:"Ese código ya venció.", cupNet:"No se pudo consultar el código. Probá de nuevo.",
+    cupPay:p=>`Este código vale solo pagando con ${p}.`, cupProds:l=>`Este código vale solo para: ${l}.`,
+    cupOk:(c,v,until)=>`Código ${c} aplicado: ${v} de descuento${until?`, vence el ${until}`:""}.`,
+    cupGone:"El código dejó de estar disponible (se agotó o venció) y lo quitamos. Revisá el total y volvé a encargar.",
+    payNames:{btc:"bitcoin",ars:"pesos"}, discount:c=>`Descuento (${c})`, subtotal:"Subtotal",
     fine:"Encargar no te cobra nada. Te escribimos para confirmar el pedido y coordinar el envío, que se cotiza aparte según el destino.",
     send:"Encargar", sending:"Enviando…",
     errEmpty:"Elegí al menos un rompecabezas.", errFields:"Completá nombre, email, teléfono y ciudad.", errMail:"Revisá el email.",
@@ -266,6 +283,13 @@ const T = {
     shipL:"How do you get it?", shipA:"Home delivery", shipB:"Pick up in person",
     payL:"How do you pay?", payA:"Bitcoin (Lightning)", payB:"Argentine pesos (bank or Mercado Pago)",
     noteL:"Comments", optL:"(optional)",
+    cupL:"Discount code", cupBtn:"Apply", cupRemove:"Remove", cupChecking:"Looking up the code…",
+    cupNo:"That code doesn’t exist.", cupOff:"That code isn’t active.", cupUsed:"That code has been used up.",
+    cupSoon:d=>`That code is valid from ${d}.`, cupExp:"That code has expired.", cupNet:"The code couldn’t be checked. Try again.",
+    cupPay:p=>`This code only works when paying with ${p}.`, cupProds:l=>`This code only applies to: ${l}.`,
+    cupOk:(c,v,until)=>`Code ${c} applied: ${v} off${until?`, valid until ${until}`:""}.`,
+    cupGone:"The code is no longer available (used up or expired), so we removed it. Check the total and order again.",
+    payNames:{btc:"bitcoin",ars:"pesos"}, discount:c=>`Discount (${c})`, subtotal:"Subtotal",
     fine:"Ordering doesn’t charge you anything. We’ll write to confirm the order and arrange shipping, quoted separately by destination.",
     send:"Place order", sending:"Sending…",
     errEmpty:"Pick at least one puzzle.", errFields:"Fill in name, email, phone and city.", errMail:"Check the email.",
@@ -288,7 +312,59 @@ const qs = new URLSearchParams(location.search).get("p");      // ?p=bip39 prese
 if(qs && qty[qs]!==undefined) qty[qs]=1;
 const ars = n => "$ " + n.toLocaleString("es-AR") + " ARS";
 const count = () => Object.values(qty).reduce((a,b)=>a+b,0);
-const totalARS = () => count()*CFG.PRICE_ARS;
+// ---------- Código de descuento (coupons/{CÓDIGO}, lo define la administración) ----------
+let coupon=null;                                               // {code, d} una vez aplicado
+const curPay = () => (document.querySelector("input[name=pay]:checked")||{}).value || "btc";
+const fmtDay = ms => new Date(ms).toLocaleDateString(lang==="en"?"en-GB":"es-AR",{day:"numeric",month:"short",year:"numeric"});
+function couponProblem(c){                                     // por qué no vale hoy, o "" si está vigente
+  const t=T[lang], now=Date.now();
+  if(!c.on) return t.cupOff;
+  if(c.max && c.used>=c.max) return t.cupUsed;
+  if(c.from && now<c.from) return t.cupSoon(fmtDay(c.from));
+  if(c.until && now>=c.until) return t.cupExp;
+  return "";
+}
+function calc(){
+  const sub=count()*CFG.PRICE_ARS, t=T[lang]; let disc=0, why="";
+  if(coupon){
+    const c=coupon.d, appl=PRODUCTS.filter(p=>qty[p.id] && c.prods.includes(p.id)).reduce((a,p)=>a+qty[p.id]*CFG.PRICE_ARS,0);
+    why=couponProblem(c);
+    if(!why && !c.pays.includes(curPay())) why=t.cupPay(c.pays.map(x=>t.payNames[x]).join(" o "));
+    if(!why && !appl) why=t.cupProds(PRODUCTS.filter(p=>c.prods.includes(p.id)).map(p=>p[lang].name).join(", "));
+    if(!why) disc = c.type==="pct" ? Math.round(appl*c.value/100) : Math.min(c.value, appl);
+  }
+  return {sub, disc, total:sub-disc, why};
+}
+const totalARS = () => calc().total;
+function cupMsg(){
+  const t=T[lang], el=$("cupMsg");
+  if(!coupon) return;
+  const k=calc(), c=coupon.d;
+  if(k.why){ el.className="cupmsg bad"; el.textContent=k.why; return; }
+  el.className="cupmsg ok";
+  el.textContent = t.cupOk(coupon.code, c.type==="pct"?`${c.value}%`:ars(c.value), c.until?fmtDay(c.until-1):"");
+}
+async function applyCoupon(){
+  const t=T[lang], el=$("cupMsg");
+  if(coupon){ coupon=null; $("fCup").value=""; $("fCup").disabled=false; el.textContent=""; texts(); return; }
+  const code=$("fCup").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(code.length<3){ el.className="cupmsg bad"; el.textContent=t.cupNo; return; }
+  el.className="cupmsg"; el.textContent=t.cupChecking; $("cupBtn").disabled=true;
+  try{
+    const fb=await FB; if(!fb) throw new Error("sin servidor");
+    const snap=await fb.getDoc(fb.doc(fb.db,"coupons",code));
+    if(!snap.exists()){ el.className="cupmsg bad"; el.textContent=t.cupNo; }
+    else{
+      const d=snap.data(), why=couponProblem(d);
+      if(why){ el.className="cupmsg bad"; el.textContent=why; }
+      else{ coupon={code, d}; $("fCup").value=code; $("fCup").disabled=true; texts(); }
+    }
+  }catch(err){ console.warn("Código:",err); el.className="cupmsg bad"; el.textContent=t.cupNet; }
+  $("cupBtn").disabled=false;
+}
+$("cupBtn").addEventListener("click",applyCoupon);
+$("fCup").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); applyCoupon(); } });
+document.querySelectorAll("input[name=pay]").forEach(r=>r.addEventListener("change",()=>renderSummary()));
 const lines = L => PRODUCTS.filter(p=>qty[p.id]).map(p=>`${qty[p.id]} × ${p[L].name}`).join(", ");
 
 function renderProducts(){
@@ -310,21 +386,23 @@ function renderProducts(){
       </div></article>`; }).join("");
 }
 function renderSummary(){
-  const t=T[lang], n=count();
+  const t=T[lang], n=count(), k=calc();
   $("sumBox").innerHTML = n
     ? `<table class="sum"><tbody>${PRODUCTS.filter(p=>qty[p.id]).map(p=>`<tr><td>${qty[p.id]} × ${esc(p[lang].name)}</td><td>${ars(qty[p.id]*CFG.PRICE_ARS)}</td></tr>`).join("")}
-        <tr class="tot"><td>${t.total}</td><td>${ars(totalARS())}</td></tr></tbody></table>`
+        ${k.disc?`<tr class="dsc"><td>${esc(t.discount(coupon.code))}</td><td>− ${ars(k.disc)}</td></tr>`:""}
+        <tr class="tot"><td>${t.total}</td><td>${k.disc?`<s>${ars(k.sub)}</s> `:""}${ars(k.total)}</td></tr></tbody></table>`
     : `<p class="empty">${esc(t.empty)}</p>`;
   $("cartbar").hidden = !n || !$("done").hidden;
-  $("cartTxt").textContent = n ? t.cart(n, ars(totalARS())) : "";
+  $("cartTxt").textContent = n ? t.cart(n, ars(k.total)) : "";
+  cupMsg();
 }
 function texts(){
   const t=T[lang];
   document.documentElement.lang=lang;
   $("title").textContent=t.title; $("backBtn").textContent=t.back; $("footBack").textContent=t.footBack; $("intro").textContent=t.intro;
   $("badges").innerHTML=(CFG.PRESALE?`<span class="badge o">${esc(t.presale)}</span>`:"")+t.badges.map(b=>`<span class="badge">${esc(b)}</span>`).join("");
-  ["orderT","nameL","mailL","phoneL","placeL","shipL","shipA","shipB","payL","payA","payB","noteL","optL","fine","send","cartGo"].forEach(k=>$(k).textContent=t[k]);
-  $("lbX").textContent=t.close;
+  ["orderT","nameL","mailL","phoneL","placeL","shipL","shipA","shipB","payL","payA","payB","noteL","optL","fine","send","cartGo","cupL","cupBtn"].forEach(k=>$(k).textContent=t[k]);
+  $("lbX").textContent=t.close; $("cupOpt").textContent=t.optL; $("cupBtn").textContent=coupon?t.cupRemove:t.cupBtn;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
   renderProducts(); renderSummary();
   if(lastOrder) renderDone(lastOrder);
@@ -360,22 +438,44 @@ $("form").addEventListener("submit", async e=>{
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)){ msg.textContent=t.errMail; $("fMail").focus(); return; }
   sending=true; $("send").disabled=true; $("send").textContent=t.sending; msg.className="msg"; msg.textContent="";
   const items={}; PRODUCTS.forEach(p=>{ if(qty[p.id]) items[p.id]=qty[p.id]; });
-  const order={ ...f, items, total:totalARS(), lang, code:newCode() };
+  const k=calc(), cup = k.disc ? coupon.code : "";
+  const order={ ...f, items, sub:k.sub, disc:k.disc, cup, total:k.total, lang, code:newCode() };
   let saved=false, mailed=false;
-  // 1) base de datos (la ve el panel de administración)
+  // 1) base de datos (la ve el panel de administración). Con código, el pedido y el uso del código se escriben juntos o no se escribe nada.
   const fb=await FB;
   if(fb){
     for(let i=0;i<2 && !saved;i++){
-      try{ await fb.setDoc(fb.doc(fb.db,"orders",order.code),{ items, name:f.name, email:f.email, phone:f.phone, place:f.place, ship:f.ship, pay:f.pay,
-             note:f.note, total:order.total, lang, u:fb.uid, st:"nuevo", at:fb.serverTimestamp() }); saved=true; }
-      catch(err){ console.warn("Pedido:",err); if(err.code==="permission-denied") order.code=newCode(); else break; }
+      const data={ items, name:f.name, email:f.email, phone:f.phone, place:f.place, ship:f.ship, pay:f.pay,
+             note:f.note, sub:order.sub, total:order.total, lang, u:fb.uid, st:"nuevo", at:fb.serverTimestamp() };
+      try{
+        if(cup){
+          const b=fb.writeBatch(fb.db);
+          b.set(fb.doc(fb.db,"orders",order.code),{...data, cup, disc:order.disc});
+          b.update(fb.doc(fb.db,"coupons",cup),{used:fb.increment(1), last:order.code});
+          await b.commit();
+        } else await fb.setDoc(fb.doc(fb.db,"orders",order.code),data);
+        saved=true;
+      }
+      catch(err){
+        console.warn("Pedido:",err);
+        if(err.code!=="permission-denied") break;
+        if(cup){                                                // ¿se agotó o venció el código mientras completaba el formulario?
+          let gone=true; try{ const sn=await fb.getDoc(fb.doc(fb.db,"coupons",cup)); if(sn.exists()){ coupon.d=sn.data(); gone=!!couponProblem(coupon.d); } }catch(e){}
+          if(gone){ coupon=null; $("fCup").value=""; $("fCup").disabled=false; texts();
+            sending=false; $("send").disabled=false; $("send").textContent=t.send; msg.className="msg bad"; msg.textContent=t.cupGone; $("sumBox").scrollIntoView({block:"center"}); return; }
+        }
+        order.code=newCode();
+      }
     }
+  }
+  if(cup && !saved){                                            // sin guardar el uso del código no se manda el pedido con descuento
+    sending=false; $("send").disabled=false; $("send").textContent=t.send; msg.className="msg bad"; msg.textContent=t.errSend; return;
   }
   // 2) aviso por mail
   try{
     const r=await fetch(`https://formsubmit.co/ajax/${CFG.MAIL_TO}`,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
       body:JSON.stringify({ _subject:`🧩 Pedido ${order.code}: ${lines("es")} (${ars(order.total)})`, _replyto:f.email, _template:"table", _captcha:"false",
-        Pedido:order.code, Rompecabezas:lines("es"), Total:ars(order.total), Nombre:f.name, Email:f.email, Telefono:f.phone, Lugar:f.place,
+        Pedido:order.code, Rompecabezas:lines("es"), Subtotal:ars(order.sub), Descuento:cup?`${cup}: − ${ars(order.disc)}`:"-", Total:ars(order.total), Nombre:f.name, Email:f.email, Telefono:f.phone, Lugar:f.place,
         Entrega:f.ship==="envio"?"Envío a domicilio":"Retiro en persona", Pago:f.pay==="btc"?"Bitcoin (Lightning)":"Pesos", Comentarios:f.note||"-",
         Idioma:lang, Guardado:saved?"sí, en el panel":"NO (solo este mail)" })});
     mailed=r.ok;
@@ -383,7 +483,7 @@ $("form").addEventListener("submit", async e=>{
   sending=false; $("send").disabled=false; $("send").textContent=t.send;
   if(!saved && !mailed){ msg.className="msg bad"; msg.textContent=t.errSend; return; }
   order.lines={es:lines("es"), en:lines("en")};
-  lastOrder=order; renderDone(order);
+  lastOrder=order; coupon=null; $("fCup").value=""; $("fCup").disabled=false; $("cupMsg").textContent=""; renderDone(order);
   $("orderBox").hidden=true; $("done").hidden=false; renderSummary();
   $("done").scrollIntoView({block:"start"});
 });
@@ -394,7 +494,7 @@ function renderDone(o){
   const arsb=`<div class="payb"><b>$ ${esc(t.payArs)}</b><div class="copy"><code>${esc(CFG.ARS_ALIAS)}</code><button data-copy="${esc(CFG.ARS_ALIAS)}">${t.copy}</button></div><p class="fine">${esc(t.payArsN(tot))}</p></div>`;
   const wa = CFG.WHATSAPP ? `<a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/${CFG.WHATSAPP}?text=${encodeURIComponent(t.waMsg(o.code,o.lines[lang]))}">${esc(t.wa)}</a>` : "";
   $("done").innerHTML=`<h3>${esc(t.doneT)}</h3>
-    <p>${esc(t.doneCode)} <span class="code">${o.code}</span> · ${esc(o.lines[lang])} · <b>${tot}</b></p>
+    <p>${esc(t.doneCode)} <span class="code">${o.code}</span> · ${esc(o.lines[lang])} · ${o.disc?`<s>${ars(o.sub)}</s> `:""}<b>${tot}</b>${o.disc?` · ${esc(t.discount(o.cup))}: − ${ars(o.disc)}`:""}</p>
     <p>${esc(t.doneP)}</p>${o.pay==="btc" ? btc+arsb : arsb+btc}
     <div class="row">${wa}<button id="againBtn">${esc(t.again)}</button></div>`;
 }
@@ -410,12 +510,12 @@ texts();
 // Firebase: el mismo jugador anónimo de los juegos; el pedido se guarda en orders/{código} (solo lo lee la administración)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 try{
   const res=await fetch("/__/firebase/init.json"); if(!res.ok) throw new Error("sin configuración");
   const app=initializeApp(await res.json()), auth=getAuth(app);
   const user=await new Promise((ok,ko)=>{ const off=onAuthStateChanged(auth,u=>{ off(); if(u) ok(u); else signInAnonymously(auth).then(c=>ok(c.user)).catch(ko); }); });
-  window.__fbResolve({ db:getFirestore(app), uid:user.uid, doc, setDoc, serverTimestamp });
+  window.__fbResolve({ db:getFirestore(app), uid:user.uid, doc, setDoc, getDoc, writeBatch, increment, serverTimestamp });
 }catch(e){ console.warn("Rompecabezas sin servidor:", e.message); window.__fbResolve(null); }
 </script>
 </body>
