@@ -3,3 +3,4 @@ node_modules
 *.png
 etag.txt
 firestore.rules
+package-lock.json
