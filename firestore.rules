@@ -306,6 +306,24 @@ service cloud.firestore {
     // Duelos: la serie de partidas entre dos personas que empezó con una invitación aceptada.
     // id = uid de quien invitó + '_' + primera partida. games: partidas jugadas; last: quién eligió la última.
     // Los resultados no se guardan acá: se calculan con los de cada partida, que no se pueden tocar.
+    // Palabras sugeridas para el glosario: cualquiera con sesión sugiere una (w: la palabra en mayúsculas, L: idioma, d: qué significa, opcional);
+    // solo la administración las lee, les cambia el estado (st) y les guarda el análisis de Claude (ai), o las borra
+    match /sugs/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['w', 'L', 'd', 'u', 'at'])
+        && request.resource.data.keys().hasAll(['w', 'L', 'u', 'at'])
+        && request.resource.data.u == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.w is string && request.resource.data.w.matches('^[A-ZÑ ]{3,30}$')
+        && request.resource.data.L in ['es', 'en']
+        && (!('d' in request.resource.data) || (request.resource.data.d is string && request.resource.data.d.size() <= 500));
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'ai'])
+        && request.resource.data.get('st', 'nueva') in ['nueva', 'aprobada', 'descartada']
+        && request.resource.data.get('ai', {}) is map;
+    }
+
     // Pedidos de rompecabezas (games.rodo.es/rompecabezas): cualquiera autenticado crea uno; solo la administración los lee y les cambia el estado
     function orderQty(m, k) { return !(k in m) || (m[k] is int && m[k] >= 1 && m[k] <= 10); }
     function trimmed(s, lo, hi) { return s is string && s.size() >= lo && s.size() <= hi; }

@@ -287,6 +287,22 @@ await t("torneo: terminado no se toca", assertFails(setDoc(doc(A, "tourneys/T1/r
 await t("torneo: quien no compite juega marcado x", assertSucceeds(setDoc(doc(B, "tourneys/T1/rounds/1/res/B"), tres({ x: true }))));
 await t("torneo: quien no compite no se hace pasar", assertFails(setDoc(doc(C, "tourneys/T1/rounds/1/res/C"), tres({ x: false }))));
 await t("torneo: no escribe el resultado de otro", assertFails(setDoc(doc(B, "tourneys/T1/rounds/1/res/A"), tres())));
+// ---- palabras sugeridas
+const sug = (o = {}) => ({ w: "STACKEAR", L: "es", d: "Juntar sats de a poco", u: "A", at: serverTimestamp(), ...o });
+await t("sugerencia: cualquiera con sesión", assertSucceeds(setDoc(doc(A, "sugs/s1"), sug())));
+await t("sugerencia: sin descripción", assertSucceeds(setDoc(doc(A, "sugs/s2"), (({ d, ...r }) => r)(sug()))));
+await t("sugerencia: sin login no", assertFails(setDoc(doc(anon, "sugs/s3"), sug())));
+await t("sugerencia: a nombre de otro no", assertFails(setDoc(doc(B, "sugs/s3"), sug())));
+await t("sugerencia: minúsculas o signos no", assertFails(setDoc(doc(A, "sugs/s3"), sug({ w: "stack<b>" }))));
+await t("sugerencia: muy larga no", assertFails(setDoc(doc(A, "sugs/s3"), sug({ w: "A".repeat(31) }))));
+await t("sugerencia: con estado o análisis no", assertFails(setDoc(doc(A, "sugs/s3"), sug({ st: "aprobada" }))));
+await t("sugerencia: no la lee quien la mandó", assertFails(getDoc(doc(A, "sugs/s1"))));
+await t("sugerencia: no la cambia quien la mandó", assertFails(updateDoc(doc(A, "sugs/s1"), { w: "OTRA" })));
+await t("sugerencia: admin la lee", assertSucceeds(getDocs(collection(ADM, "sugs"))));
+await t("sugerencia: admin guarda análisis y estado", assertSucceeds(setDoc(doc(ADM, "sugs/s1"), { st: "aprobada", ai: { es: "STACKEAR", en: "STACKING", p: { es: ["a", "b", "c"], en: ["a", "b", "c"] }, r: 7, why: "x" } }, { merge: true })));
+await t("sugerencia: admin no cambia la palabra", assertFails(updateDoc(doc(ADM, "sugs/s1"), { w: "OTRA" })));
+await t("sugerencia: estado raro no", assertFails(updateDoc(doc(ADM, "sugs/s1"), { st: "x" })));
+await t("sugerencia: admin la borra", assertSucceeds(deleteDoc(doc(ADM, "sugs/s2"))));
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

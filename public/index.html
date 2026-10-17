@@ -87,6 +87,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .atab{border-collapse:collapse;width:100%;font-size:.85rem}
 .atab th,.atab td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .atab th:first-child,.atab td:first-child{text-align:left}
+.sugtab .atab th,.sugtab .atab td{text-align:left;vertical-align:top}
 .atab th{color:var(--muted);font-weight:600}
 .bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin:0 0 4px;border-bottom:1px solid var(--line)}
 .bars div{flex:1;background:var(--btc);border-radius:3px 3px 0 0;min-height:1px}
@@ -939,6 +940,20 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     </div>
     <div id="admBody"></div>
   </section>
+
+  <!-- ===== Sugerir una palabra para el glosario: se guarda en Firestore (sugs) ===== -->
+  <details class="buzon" id="sugBox">
+    <summary><b id="sgTitle"></b><span id="sgIntro"></span><i id="sgOpen"></i></summary>
+    <form id="sgForm" novalidate>
+      <label><span id="sgWordL"></span>
+        <input type="text" id="sgWord" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </label>
+      <label><span><span id="sgDefL"></span> <small id="sgDefOpt"></small></span>
+        <textarea id="sgDef" maxlength="500" style="min-height:4.5em"></textarea>
+      </label>
+      <div class="row"><button class="primary" type="submit" id="sgSend"></button><p class="msg" id="sgStatus" role="status" aria-live="polite"></p></div>
+    </form>
+  </details>
 
   <!-- ===== Buzón de sugerencias: fuera de las vistas, se ve siempre ===== -->
   <details class="buzon" id="buzon">
@@ -4851,6 +4866,49 @@ const Buzon = (()=>{
   });
   return {texts};
 })();
+// SUGERIR UNA PALABRA: se guarda en sugs/ (solo la lee la administración). Si ya está en el glosario, se avisa y no se guarda.
+Object.assign(T.es,{
+  sgTitle:"¿Falta una palabra bitcoiner?", sgIntro:"Sugerí la tuya para sumarla a los juegos.", sgOpen:"Sugerir",
+  sgWordL:"Palabra", sgWordPh:"Por ejemplo: ZAPEAR", sgDefL:"¿Qué significa o por qué es bitcoiner?", sgDefOpt:"(opcional)",
+  sgSend:"Sugerir", sgSending:"Enviando…", sgOk:w=>`¡Gracias! ${w} quedó sugerida.`, sgEmpty:"Escribí una palabra primero.",
+  sgBad:"Usá solo letras (de 3 a 30).", sgHave:w=>`¡${w} ya está en los juegos! Probá con otra.`, sgFail:"No se pudo enviar. Probá de nuevo en un rato."
+});
+Object.assign(T.en,{
+  sgTitle:"Missing a bitcoiner word?", sgIntro:"Suggest yours to add it to the games.", sgOpen:"Suggest",
+  sgWordL:"Word", sgWordPh:"For example: NOCOINER", sgDefL:"What does it mean, or why is it bitcoiner?", sgDefOpt:"(optional)",
+  sgSend:"Suggest", sgSending:"Sending…", sgOk:w=>`Thanks! ${w} has been suggested.`, sgEmpty:"Write a word first.",
+  sgBad:"Use letters only (3 to 30).", sgHave:w=>`${w} is already in the games! Try another one.`, sgFail:"Couldn't send it. Please try again later."
+});
+// clave para comparar con el glosario: sin tildes, sin espacios ni signos
+const wordKey = s => clean(s).replace(/ /g,"");
+const inGloss = w => { const k=wordKey(w); return G_ES.some(([x])=>wordKey(x)===k) || G_EN.some(([x])=>wordKey(x)===k); };
+const Suggest = (()=>{
+  let sending=false;
+  function texts(){
+    const t=T[lang];
+    ["sgTitle","sgIntro","sgOpen","sgWordL","sgDefL","sgDefOpt"].forEach(k=>$(k).textContent=t[k]);
+    $("sgWord").placeholder=t.sgWordPh;
+    $("sgSend").textContent = sending ? t.sgSending : t.sgSend;
+  }
+  function status(text,cls){ const m=$("sgStatus"); m.textContent=text; m.className="msg"+(cls?" "+cls:""); }
+  $("sgForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const t=T[lang], raw=$("sgWord").value.trim(), w=clean(raw);
+    if(sending) return;
+    if(!raw){ status(t.sgEmpty,"bad"); $("sgWord").focus(); return; }
+    if(w.replace(/ /g,"").length<3 || w.length>30){ status(t.sgBad,"bad"); $("sgWord").focus(); return; }
+    if(inGloss(w)){ status(t.sgHave(w),"ok"); return; }
+    sending=true; $("sgSend").disabled=true; texts(); status("");
+    try{
+      await Reg.ready; const fb=Reg.fb(), u=Reg.uid(); if(!fb||!u) throw new Error("sin conexión");
+      const d={w, L:lang, u, at:fb.serverTimestamp()}, def=$("sgDef").value.trim(); if(def) d.d=def.slice(0,500);
+      await fb.setDoc(fb.doc(fb.collection(fb.db,"sugs")), d);
+      $("sgForm").reset(); status(t.sgOk(w),"ok");
+    }catch(err){ console.warn("Sugerir palabra:",err); status(t.sgFail,"bad"); }
+    sending=false; $("sgSend").disabled=false; texts();
+  });
+  return {texts};
+})();
 
 // =====================================================================
 // MENÚ, IDIOMA Y RUTAS
@@ -4912,6 +4970,8 @@ const Admin = (()=>{
     let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
     // pedidos de rompecabezas (games.rodo.es/rompecabezas)
     let OR=null; try{ OR=[]; (await A.getDocs(A.collection(A.db,"orders"))).forEach(d=>OR.push({code:d.id, ...d.data()})); }catch(e){ OR=null; }
+    // palabras sugeridas por los jugadores
+    let SG=null; try{ SG=[]; (await A.getDocs(A.collection(A.db,"sugs"))).forEach(d=>SG.push({id:d.id, ...d.data()})); }catch(e){ SG=null; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
     N.forEach(d=>names[d.id]=d.data().name);
@@ -4961,7 +5021,7 @@ const Admin = (()=>{
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
 
-    h=ordersHtml(OR)+h;
+    h=ordersHtml(OR)+sugsHtml(SG)+h;
 
     // por juego e idioma
     const G={};
@@ -5041,6 +5101,105 @@ const Admin = (()=>{
         esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?"₿ Lightning":"Pesos", `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
     return h;
   }
+  // ---------- Palabras sugeridas por los jugadores ----------
+  // Se agrupan por palabra (sin tildes ni espacios) y se muestran solo las que no están en el glosario en ningún idioma.
+  // Traducción, 3 pistas por idioma e interés (1 a 10) los escribe Claude fuera del sitio (sin IA en tiempo real):
+  // "Copiar para Claude" arma el pedido; la respuesta (JSON) se pega acá y se guarda en el campo ai de cada sugerencia.
+  const SST=["nueva","aprobada","descartada"];
+  let sugG=[];
+  function sugGroups(SG){
+    const G={};
+    SG.map(x=>({...x, at:ms(x.at)})).sort((a,b)=>(a.at||0)-(b.at||0)).forEach(x=>{
+      const k=wordKey(x.w); const g=G[k]=G[k]||{k, w:x.w, docs:[], langs:new Set(), us:new Set(), notes:[], ai:null, st:"nueva", at:x.at};
+      g.docs.push(x.id); g.langs.add(x.L); g.us.add(x.u); if(x.d) g.notes.push(x.d); if(x.ai) g.ai=x.ai; if(x.st) g.st=x.st; g.at=x.at;
+    });
+    return Object.values(G);
+  }
+  const inGlossAi=g=>g.ai && [g.ai.es,g.ai.en].some(w=>w && inGloss(w));
+  function sugsHtml(SG){
+    if(SG===null) return `<h2>Palabras sugeridas</h2><p class="m small">No se pudieron leer las sugerencias. ¿Están publicadas las reglas nuevas?</p>`;
+    const all=sugGroups(SG), had=all.filter(g=>inGloss(g.w)||inGlossAi(g));
+    sugG=all.filter(g=>!had.includes(g));
+    const ord=g=>SST.indexOf(g.st);
+    sugG.sort((a,b)=>ord(a)-ord(b) || ((b.ai&&b.ai.r)||0)-((a.ai&&a.ai.r)||0) || b.us.size-a.us.size || (b.at||0)-(a.at||0));
+    let h=`<h2>Palabras sugeridas</h2>`;
+    if(!sugG.length) h+=`<p class="m small">No hay palabras nuevas sugeridas.</p>`;
+    else{
+      const pend=sugG.filter(g=>!g.ai && g.st!=="descartada").length, appr=sugG.filter(g=>g.st==="aprobada").length;
+      h+=`<p class="m small">Solo las que no están en el glosario. La traducción, las pistas y el interés los completa Claude: tocá «Copiar para Claude», pegalo en un chat con Claude y pegá acá su respuesta.</p>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px">
+        <button id="sgCopy"${pend?"":" disabled"}>📋 Copiar para Claude (${pend} sin analizar)</button>
+        <button id="sgAppr"${appr?"":" disabled"}>📋 Copiar aprobadas para sumar al glosario (${appr})</button>
+      </div>
+      <details style="margin:0 0 12px"><summary>Pegar la respuesta de Claude</summary>
+        <textarea id="sgAi" style="width:100%;min-height:8em;margin-top:6px;font:.85rem ui-monospace,monospace" placeholder='[{"id":"ZAPEAR","es":"ZAPEAR","en":"ZAP","p":{"es":["…","…","…"],"en":["…","…","…"]},"r":7,"why":"…"}]'></textarea>
+        <button id="sgAiSave" class="primary">Guardar</button> <span id="sgAiMsg" class="m small"></span>
+      </details>`;
+      const pl=a=>a&&a.length?`<ol style="margin:0;padding-left:1.2em;white-space:normal;text-align:left">${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:"–";
+      const who=g=>[...g.us].map(u=>names[u]||"anónimo").join(", ");
+      h+=`<div class="sugtab">`+table(["Palabra","Interés","En castellano","En inglés","Pistas ES","Pistas EN","Qué dijeron","Quién","Estado"],
+        sugG.map(g=>[`<b>${esc(g.w)}</b><br><span class="small">${[...g.langs].map(l=>l.toUpperCase()).join("/")} · ${dt(g.at)}${g.us.size>1?` · ${g.us.size} personas`:""}</span>`,
+          g.ai&&g.ai.r?`<b>${esc(g.ai.r)}/10</b><br><span class="small" style="white-space:normal">${esc(g.ai.why||"")}</span>`:"–",
+          esc(g.ai&&g.ai.es||"–"), esc(g.ai&&g.ai.en||"–"), pl(g.ai&&g.ai.p&&g.ai.p.es), pl(g.ai&&g.ai.p&&g.ai.p.en),
+          `<span class="small" style="white-space:normal">${g.notes.map(esc).join("<br>")||"–"}</span>`, `<span class="small" style="white-space:normal">${esc(who(g))}</span>`,
+          `<select class="sugst" data-k="${esc(g.k)}">${SST.map(x=>`<option${x===g.st?" selected":""}>${x}</option>`).join("")}</select>`]))+`</div>`;
+    }
+    if(had.length) h+=`<p class="m small">Ya estaban en el glosario (no se muestran): ${had.map(g=>esc(g.w)).join(", ")}.</p>`;
+    return h;
+  }
+  const sugGroup=k=>sugG.find(g=>g.k===wordKey(k));
+  function sugPrompt(){
+    const list=sugG.filter(g=>!g.ai && g.st!=="descartada").map(g=>({id:g.k, w:g.w, L:[...g.langs].join("/"), d:g.notes.join(" / ")||undefined, n:g.us.size}));
+    const ex=(L,w)=>((L==="es"?G_ES:G_EN).find(([x])=>x===w)||["",[]])[1].join(" | ");
+    return `Analizá estas palabras que sugirieron los jugadores de RODO ₿ Games (juegos de palabras bitcoiners, en castellano rioplatense y en inglés).
+Para cada una devolvé SOLO un JSON (un array, sin texto alrededor) con:
+- "id": el mismo que te paso
+- "es": la palabra como iría en el glosario en castellano (MAYÚSCULAS, sin tildes, sin espacios)
+- "en": lo mismo en inglés
+- "p": {"es":[3 pistas], "en":[3 pistas]}: cortas (hasta unos 90 caracteres), que no contengan la palabra, en el tono del glosario
+- "r": de 1 a 10, qué tan interesante es sumarla (que sea de Bitcoin y no de cripto en general, que la conozca la comunidad, que sirva para los juegos de palabras)
+- "why": una línea con el motivo del puntaje
+Ejemplos de pistas del glosario: SATS → ${ex("es","SATS")} · HODL → ${ex("en","HODL")}
+Palabras ("d" es lo que escribió quien la sugirió; "n", cuántas personas la sugirieron):
+${JSON.stringify(list,null,1)}`;
+  }
+  function sugApproved(){
+    const list=sugG.filter(g=>g.st==="aprobada");
+    return `Sumá estas palabras al glosario de RODO ₿ Games: al final de G_ES y G_EN con sus 3 pistas, y su definición al final de public/defs-es.json y public/defs-en.json. Revisá las pistas antes de sumarlas.\n\n`+list.map(g=>{ const a=g.ai||{}, p=a.p||{};
+      return `- ${a.es||g.w} / ${a.en||"(falta la traducción)"}${g.notes.length?`\n  Quien la sugirió dijo: ${g.notes.join(" / ")}`:""}\n  Pistas ES: ${(p.es||[]).join(" | ")||"(faltan)"}\n  Pistas EN: ${(p.en||[]).join(" | ")||"(faltan)"}`; }).join("\n");
+  }
+  async function copy(txt, btn){
+    let ok=true; try{ await navigator.clipboard.writeText(txt); }catch(e){ ok=false; }
+    if(ok){ const o=btn.textContent; btn.textContent="✓ Copiado"; setTimeout(()=>btn.textContent=o,1800); }
+    else{ const t=$("sgAi"); t.closest("details").open=true; t.value=txt; t.select(); $("sgAiMsg").textContent="No se pudo copiar solo: copialo de acá (y después borralo antes de pegar la respuesta)."; }
+  }
+  async function sugSave(){
+    const msg=$("sgAiMsg"), raw=$("sgAi").value, a=raw.indexOf("["), b=raw.lastIndexOf("]");
+    let L; try{ L=JSON.parse(raw.slice(a,b+1)); if(!Array.isArray(L)) throw 0; }catch(e){ msg.textContent="No es un JSON válido: pegá solo el array que devolvió Claude."; return; }
+    const str=(x,n)=>typeof x==="string" ? x.trim().slice(0,n) : "";
+    const pl=x=>Array.isArray(x) ? x.map(y=>str(y,200)).filter(Boolean).slice(0,3) : [];
+    let n=0, miss=[];
+    try{
+      for(const it of L){
+        const g=it && sugGroup(String(it.id||it.w||"")); if(!g){ miss.push(it&&it.id); continue; }
+        const r=Math.round(+it.r), ai={es:str(it.es,40), en:str(it.en,40), p:{es:pl(it.p&&it.p.es), en:pl(it.p&&it.p.en)}, r:r>=1&&r<=10?r:null, why:str(it.why,300)};
+        for(const id of g.docs) await A.setDoc(A.doc(A.db,"sugs",id),{ai},{merge:true});
+        n++;
+      }
+    }catch(err){ msg.textContent="No se pudo guardar: "+(err.code||err.message); return; }
+    msg.textContent=`Guardadas ${n}.`+(miss.length?` No encontré: ${miss.join(", ")}.`:"");
+    if(n) setTimeout(load,800);
+  }
+  $("admBody").addEventListener("change",async e=>{
+    const q=e.target.closest(".sugst"); if(!q||!A) return;
+    const g=sugGroup(q.dataset.k); if(!g) return;
+    try{ for(const id of g.docs) await A.setDoc(A.doc(A.db,"sugs",id),{st:q.value},{merge:true}); g.st=q.value; q.style.outline="2px solid var(--ok)"; setTimeout(()=>q.style.outline="",1200); }
+    catch(err){ $("admErr").textContent="No se pudo cambiar el estado: "+(err.code||err.message); }
+  });
+  $("admBody").addEventListener("click",e=>{
+    const b=e.target.closest("#sgCopy,#sgAppr,#sgAiSave"); if(!b||!A) return;
+    if(b.id==="sgCopy") copy(sugPrompt(),b); else if(b.id==="sgAppr") copy(sugApproved(),b); else sugSave();
+  });
   $("admBody").addEventListener("change",async e=>{
     const s=e.target.closest(".ordst"); if(!s||!A) return;
     try{ await A.setDoc(A.doc(A.db,"orders",s.dataset.k),{st:s.value},{merge:true}); s.style.outline="2px solid var(--ok)"; setTimeout(()=>s.style.outline="",1200); }
@@ -5072,7 +5231,7 @@ function applyTexts(){
   $("cHangName").textContent=t.hangName; $("cHangDesc").textContent=t.hangDesc;
   $("cSopaName").textContent=t.sopaName; $("cSopaDesc").textContent=t.sopaDesc;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
-  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Live.texts(); User.texts(); Stats.texts(); Tour.texts();
+  Acro.texts(); Hang.texts(); Sopa.texts(); applyTexts2(); Reg.texts(); Buzon.texts(); Suggest.texts(); Live.texts(); User.texts(); Stats.texts(); Tour.texts();
   $("adminLink").textContent=t.adminLink;
   ["shopTag","shopName","shopDesc","shopGo"].forEach(k=>$(k).textContent=t[k]);
   if(view==="admin") return setTitle("Administración");
