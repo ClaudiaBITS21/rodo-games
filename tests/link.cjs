@@ -30,8 +30,13 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.click('#salaGo');
   await B.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
   ok((await txt(B,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Beto juega la misma partida #'+n);
+  // Beto se va y vuelve a entrar con el mismo link: retoma la partida y el reloj sigue desde el arranque
+  await B.waitForTimeout(8000); await B.goto(url.replace(/^https?:\/\/[^/]+\//,URL));
+  await B.waitForFunction(n=>{ const c=Reg.cur('ahorcado'); return location.hash==='#ahorcado' && c && c.n===+n && c.sala && c.t0; },n,{timeout:25000});
+  ok(/Volviste a la sala de Ana/.test(await B.evaluate(()=>document.body.textContent)),'Beto vuelve a la misma partida de la sala');
+  ok(await B.evaluate(()=>{ const c=Reg.cur('ahorcado'); return c.t0===c.sync && c.t0<c.load; }),'el reloj cuenta desde que arrancaron todos, no desde que volvió');
   // al terminar sin usuario: se le sugiere elegir uno para guardar el resultado
-  await B.waitForTimeout(6000); await B.click('#hEnd'); await B.click('#hEnd');
+  await B.waitForTimeout(1000); await B.click('#hEnd'); await B.click('#hEnd');
   await B.waitForSelector('#hWin .wuser:not([hidden])',{timeout:10000});
   ok(/guardar este resultado/.test(await txt(B,'#hWin .wuser')),'al terminar: '+await txt(B,'#hWin .wuser'));
   await B.click('#hWin .wuser button'); await user(B,'Beto'); await B.waitForTimeout(2500);
