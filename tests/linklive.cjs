@@ -13,13 +13,9 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="sopa"]');
   await A.click('#ivLink'); await A.waitForFunction(()=>/Invitación copiada/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:15000});
   const url=(await A.evaluate(()=>navigator.clipboard.readText())).match(/https?:\S+/)[0].replace(/^https?:\/\/[^/]+\//,URL);
-  // Mati abre el link con Ana todavía en la ventanita del link
-  // Mati abre el link SIN usuario y elige jugar en vivo; casi a la vez entra Dani
+  // Mati abre el link SIN usuario, con Ana todavía en la ventanita del link: entra directo a la sala
   const B=await mk('B'); await B.goto(url);
-  await B.waitForSelector('#lnkDlg[open]',{timeout:20000});
-  ok(/Ana está en línea/.test(await txt(B,'#lnkT')) && /Jugar contra Ana ahora/.test(await txt(B,'#lnkLive')),'Mati (sin usuario) ve: '+await txt(B,'#lnkT')+' / '+await txt(B,'#lnkLive'));
-  await B.click('#lnkLive');
-  // Ana no toca nada: se le abre la sala sola, con Mati adentro
+  // Ana no toca nada: la ventanita del link pasa a la sala, con Mati adentro
   await A.waitForFunction(()=>document.getElementById('salaDlg').open && /2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});
   ok(/Tu sala/.test(await txt(A,'#salaT')),'a Ana se le abre la sala sola: '+await txt(A,'#salaWho'));
   await B.waitForFunction(()=>document.getElementById('salaDlg').open,null,{timeout:20000});
@@ -35,10 +31,12 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(na.replace(/\D/g,'')===nb.replace(/\D/g,''),'en vivo, misma partida: '+na);
   ok(await A.evaluate(()=>!!Reg.cur('sopa').sala) && await B.evaluate(()=>!!Reg.cur('sopa').sala),'los dos en la sala');
   await A.waitForTimeout(6000);
-  // Carla abre el mismo link sin usuario: juega la del link (no se le ofrece en vivo)
-  const C=await mk('C'); await C.goto(url); await C.waitForTimeout(2500); if(await C.$('#lnkDlg[open]')) await C.click('#lnkSolo');
+  // Carla abre el mismo link cuando ya arrancó: ya no está disponible; elige «Ahora no» y juega una sopa por su cuenta
+  const C=await mk('C'); await C.goto(url); await C.waitForSelector('#lnkDlg[open]',{timeout:20000});
+  ok(/ya no está disponible/.test(await txt(C,'#lnkT')),'Carla llega tarde: '+await txt(C,'#lnkT'));
+  await C.click('#lnkSolo'); await C.evaluate(()=>location.hash='sopa');
   await C.waitForFunction(()=>location.hash==='#sopa'&&/\d/.test(document.querySelector('#view-sopa .pid').textContent),null,{timeout:20000});
-  ok(true,'Carla juega la del link');
+  ok(true,'Carla juega una sopa');
   await C.click('#view-sopa .gatecard button'); await C.waitForTimeout(1500);
   await C.click('#userBtn'); await user(C,'Carla'); await C.waitForTimeout(2500); if(await C.$('#userDlg[open]')) await C.click('#uX');
   await C.evaluate(()=>Live.beat && Live.beat()); await C.waitForTimeout(1500);

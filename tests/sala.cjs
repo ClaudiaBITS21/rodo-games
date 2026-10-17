@@ -18,16 +18,15 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/Esperando que se sume el primer jugador/.test(await txt(A,'#ivOutMsg')),'después de copiar: '+await txt(A,'#ivOutMsg'));
   const url=(await A.evaluate(()=>navigator.clipboard.readText())).match(/https?:\S+/)[0].replace(/^https?:\/\/[^/]+\//,URL);
   // Mati (sin usuario) entra y juega en vivo: se abre la sala
-  const B=await mk('B'); await B.goto(url); await B.waitForSelector('#lnkDlg[open]',{timeout:20000}); await B.click('#lnkLive');
+  const B=await mk('B'); await B.goto(url); await B.waitForSelector('#salaDlg[open]',{timeout:20000});
   await A.waitForFunction(()=>/2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});
   // Dani abre el mismo link: ve la sala y se suma
-  await D.goto(url); await D.waitForSelector('#lnkDlg[open]',{timeout:20000});
-  ok(/Ana armó una sala: 2 esperando/.test(await txt(D,'#lnkT')) && /Sumarme/.test(await txt(D,'#lnkLive')),'Dani ve: '+await txt(D,'#lnkT'));
-  await D.click('#lnkLive');
+  await D.goto(url); await D.waitForSelector('#salaDlg[open]',{timeout:20000});
+  ok(/Sala de Ana/.test(await txt(D,'#salaT')),'Dani entra directo: '+await txt(D,'#salaWho'));
   await A.waitForFunction(()=>/3 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});
   ok(/Ana \(vos\).*Dani|Dani.*Ana \(vos\)/.test(await txt(A,'#salaWho')) && /Jugador/.test(await txt(A,'#salaWho')),'Ana ve: '+await txt(A,'#salaWho'));
-  await D.waitForFunction(()=>/Esperando que se sumen… 0:\d\d/.test(document.getElementById('salaWait').textContent),null,{timeout:5000}).catch(()=>{});
-  ok(/Esperando que se sumen… 0:\d\d/.test(await txt(D,'#salaWait')),'cuenta del minuto: '+await txt(D,'#salaWait'));
+  await D.waitForFunction(()=>/Esperando que se sumen… [45]:\d\d/.test(document.getElementById('salaWait').textContent),null,{timeout:5000}).catch(()=>{});
+  ok(/Esperando que se sumen… [45]:\d\d/.test(await txt(D,'#salaWait')),'cuenta de los 5 minutos: '+await txt(D,'#salaWait'));
   await A.click('#salaGo');
   for(const [p,n] of [[A,'Ana'],[B,'Mati'],[D,'Dani']]) await p.waitForFunction(()=>location.hash==='#sopa'&&Reg.cur('sopa')&&Reg.cur('sopa').sala&&Reg.cur('sopa').n,null,{timeout:20000});
   const pa=await pid(A), pb=await pid(B), pd=await pid(D);

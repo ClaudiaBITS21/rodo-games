@@ -237,11 +237,19 @@ await t("sala: sale ella misma", assertSucceeds(updateDoc(doc(C, "salas/A"), { "
 await t("sala: un jugador no arranca antes del minuto", assertFails(updateDoc(doc(B, "salas/A"), { go: serverTimestamp() })));
 await t("sala: quien la armó arranca", assertSucceeds(updateDoc(doc(A, "salas/A"), { go: serverTimestamp() })));
 await t("sala: arrancada, nadie se suma", assertFails(updateDoc(doc(C, "salas/A"), { "p.C": { nm: "Caro", av: "" } })));
-await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { go: null, at: Timestamp.fromMillis(Date.now() - 70e3) }); });
-await t("sala: pasado el minuto, uno de adentro arranca", assertSucceeds(updateDoc(doc(B, "salas/A"), { go: serverTimestamp() })));
+await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { go: null, at: Timestamp.fromMillis(Date.now() - 310e3) }); });
+await t("sala: pasados los 5 minutos, uno de adentro arranca", assertSucceeds(updateDoc(doc(B, "salas/A"), { go: serverTimestamp() })));
 await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { go: null }); });
-await t("sala: pasado el minuto, alguien de afuera no", assertFails(updateDoc(doc(C, "salas/A"), { go: serverTimestamp() })));
+await t("sala: pasados los 5 minutos, alguien de afuera no", assertFails(updateDoc(doc(C, "salas/A"), { go: serverTimestamp() })));
 await t("sala: otra ronda (solo ella adentro)", assertSucceeds(setDoc(doc(A, "salas/A"), sala({ games: ["ahorcado-es-7", "ahorcado-es-7"] }))));
+await t("sala: un jugador no la cierra", assertFails(updateDoc(doc(B, "salas/A"), { cl: true })));
+await t("sala: quien la armó la cierra", assertSucceeds(updateDoc(doc(A, "salas/A"), { cl: true })));
+await t("sala: cerrada, nadie se suma", assertFails(updateDoc(doc(B, "salas/A"), { "p.B": { nm: "", av: "" } })));
+await t("sala: cerrada, no arranca", assertFails(updateDoc(doc(A, "salas/A"), { go: serverTimestamp() })));
+await t("sala: no se abre ya cerrada", assertFails(setDoc(doc(A, "salas/A"), sala({ cl: true }))));
+await t("sala: se reabre (otra invitación)", assertSucceeds(setDoc(doc(A, "salas/A"), sala())));
+await t("sala: a los 4 minutos todavía se suma", assertSucceeds((async () => { await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { at: Timestamp.fromMillis(Date.now() - 240e3) }); }); return updateDoc(doc(B, "salas/A"), { "p.B": { nm: "", av: "" } }); })()));
+await t("sala: a los 6 minutos ya no", assertFails((async () => { await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "salas/A"), { at: Timestamp.fromMillis(Date.now() - 360e3) }); }); return updateDoc(doc(C, "salas/A"), { "p.C": { nm: "Caro", av: "" } }); })()));
 // torneo
 const tour = (o = {}) => ({ name: "PRUEBA", st: "open", cap: 64, orgs: ["org@x.com"], rounds: [], lang: "es", cur: 0, at: serverTimestamp(), ...o });
 const ORG = env.authenticatedContext("org", { email: "org@x.com", email_verified: true }).firestore();

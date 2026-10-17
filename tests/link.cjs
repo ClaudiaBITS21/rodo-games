@@ -19,30 +19,37 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   // con "nadie disponible" también aparece el botón
   ok(!(await A.isVisible('#ivSend')) && !(await A.isVisible('#ivWho')) && /no hay nadie disponible/.test(await txt(A,'#ivLinkNote')),'sin nadie: solo el link, sin Invitar ni ¿A quién?');
   const n=url.match(/ahorcado6-es-(\d+)/)[1];
-  // Beto: abre el link sin usuario; Ana está en línea: se le ofrece jugar en vivo y elige la del link
+  ok(/Esperando que se sume el primer jugador… [45]:\d\d/.test(await txt(A,'#ivOutMsg')),'después de copiar: '+await txt(A,'#ivOutMsg'));
+  // Beto: abre el link sin usuario y entra directo a la sala de Ana
   const B=await mk('B'); await B.goto(url.replace(/^https?:\/\/[^/]+\//,URL));
-  await B.waitForSelector('#lnkDlg[open]',{timeout:20000});
-  ok(!(await B.$('#userDlg[open]')) && /Ana está en línea/.test(await txt(B,'#lnkT')),'Beto entra sin pedirle usuario y se le ofrece jugar con Ana');
+  await B.waitForSelector('#salaDlg[open]',{timeout:20000});
+  ok(!(await B.$('#userDlg[open]')) && /Sala de Ana/.test(await txt(B,'#salaT')),'Beto entra directo a la sala, sin pedirle usuario');
   ok(!/\?j=/.test(await B.evaluate(()=>location.href)),'el link se limpia de la barra');
-  await B.click('#lnkSolo');
+  await A.waitForFunction(()=>document.getElementById('salaDlg').open && /2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});
+  ok(!(await A.$('#ivOut[open]')),'a Ana la ventanita del link le pasa a la sala con quiénes entraron');
+  await A.click('#salaGo');
   await B.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
   ok((await txt(B,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Beto juega la misma partida #'+n);
-  ok(/Partida compartida por Ana/.test(await txt(B,'#view-ahorcado .pmsg')),'aviso: '+await txt(B,'#view-ahorcado .pmsg'));
   // al terminar sin usuario: se le sugiere elegir uno para guardar el resultado
-  await B.click('#view-ahorcado .gatecard button'); await B.waitForTimeout(300); await B.click('#hEnd'); await B.click('#hEnd');
+  await B.waitForTimeout(6000); await B.click('#hEnd'); await B.click('#hEnd');
   await B.waitForSelector('#hWin .wuser:not([hidden])',{timeout:10000});
   ok(/guardar este resultado/.test(await txt(B,'#hWin .wuser')),'al terminar: '+await txt(B,'#hWin .wuser'));
   await B.click('#hWin .wuser button'); await user(B,'Beto'); await B.waitForTimeout(2500);
   ok(/Beto/.test(await txt(B,'#userBtn')),'Beto eligió usuario desde el cartel final');
-  // Ana la juega también desde el botón
-  await A.click('#ivSolo').catch(()=>{}); if(await A.$('#ivOut[open]')) await A.click('#ivLinkSolo');
-  await A.waitForFunction(()=>location.hash==='#ahorcado'&&/\d/.test(document.querySelector('#view-ahorcado .pid').textContent),null,{timeout:20000});
-  ok((await txt(A,'#view-ahorcado .pid')).replace(/\D/g,'')===n,'Ana también la juega');
   // sopa grande con pistas: el mensaje dice exactamente qué es
   await A.evaluate(()=>location.hash=''); await A.waitForTimeout(400);
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="sopa"]'); await A.click('#ivSopa button[data-s="grande"]'); await A.click('#ivSopa button[data-m="c"]');
   await A.click('#ivLink'); await A.waitForFunction(()=>/Invitación copiada/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:15000});
   const m2=await A.evaluate(()=>navigator.clipboard.readText());
   ok(/en RODO ₿ Games una partida de Sopa de letras Bitcoiner de 15×15, con pistas, en castellano! Entrá con este link: http\S+\?j=sopagrande-es-\d+&m=c&de=/.test(m2),'sopa: '+m2);
+  // Ana cierra la ventanita: la invitación se cancela y a quien llega le dice que ya no está
+  await A.click('#ivOutX');
+  const C=await mk('C'); await C.goto(m2.match(/https?:\S+/)[0].replace(/^https?:\/\/[^/]+\//,URL));
+  await C.waitForSelector('#lnkDlg[open]',{timeout:20000});
+  ok(/ya no está disponible/.test(await txt(C,'#lnkT')) && /Invitar yo/.test(await txt(C,'#lnkLive')),'link cancelado: '+await txt(C,'#lnkT'));
+  await C.click('#lnkLive');
+  await C.waitForFunction(()=>/Esperando que se sume el primer jugador/.test(document.getElementById('ivOutMsg').textContent),null,{timeout:15000});
+  const m3=await C.evaluate(()=>navigator.clipboard.readText()), cu=await C.evaluate(()=>Reg.uid());
+  ok(/Sopa de letras Bitcoiner de 15×15, con pistas/.test(m3) && m3.includes('de='+cu),'arma su propio link con el mismo juego');
   await br.close(); console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

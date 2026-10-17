@@ -3563,7 +3563,7 @@ Object.assign(T.es,{
   ivOutT:"¿A qué querés jugar?", ivNick:"Tu apodo:", ivSend:"Invitar",
   ivNeedNick:"Poné un apodo: es lo que va a ver la otra persona.",
   ivSearching:"Buscando a alguien…", ivNobody:"No hay nadie disponible para invitar ahora. Podés copiar un link y mandárselo a quien quieras.",
-  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:"✓ Invitación copiada. ⏳ Esperando que se sume el primer jugador…", ivLinkOkOff:"✓ Invitación copiada. Para jugar en vivo con quien entre, tildá «Recibir invitaciones» en la portada.", ivLinkCopy:"Copiá este mensaje y compartilo donde quieras:", gBit:g=>`${g} Bitcoiner`, ivLinkText:(d,u)=>`¡Te invito a jugar en RODO ₿ Games una partida de ${d}! Entrá con este link: ${u}`,
+  ivLink:"🔗 Copiar link", ivLinkMaking:"Creando la partida…", ivLinkOk:t=>`✓ Invitación copiada. ⏳ Esperando que se sume el primer jugador… ${t} (si cerrás esta ventanita, se cancela)`, ivLinkNone:"Nadie se sumó en 5 minutos: la invitación se cerró.", ivLinkCopy:t=>`Copiá este mensaje y compartilo donde quieras. ⏳ Esperando que se sume el primer jugador… ${t}`, gBit:g=>`${g} Bitcoiner`, ivLinkText:(d,u)=>`¡Te invito a jugar en RODO ₿ Games una partida de ${d}! Entrá con este link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" te invitó":"Te invitaron"} a jugar ${g}. Elegí tu usuario para aparecer en el ranking, o cerrá esta ventana y jugá sin usuario.`,
   lnkPlay:who=>`🔗 Partida compartida${who?" por "+who:""}: los puntajes se comparan en el ranking de esta partida.`,
   ivSomeone:"un jugador", ivWaitT:who=>`Esperando a ${who}…`, ivSecs:s=>`Vence en ${s} s`, ivCancel:"Cancelar",
@@ -3572,8 +3572,9 @@ Object.assign(T.es,{
   ivOther:"Invitar a otro jugador", ivLinkPlay:"Jugar la del link", ivOwnLink:"🔗 Crear mi link",
   saMine:"Tu sala", saOf:who=>`Sala de ${cap(who)}`, saWait:s=>`Esperando que se sumen… ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`,
   saIn:(n,list)=>`${n} en la sala: ${list}`, saYouTag:" (vos)", saAnon:i=>`Jugador ${i}`,
-  saHostNote:"Arranca sola al terminar el minuto, o cuando toques «Iniciar ya». Quien entre por tu link mientras tanto se suma.",
-  saGuestNote:who=>`Arranca cuando ${cap(who)} toque «Iniciar ya», o sola al terminar el minuto.`,
+  saHostNote:"Arranca sola al terminar el tiempo, o cuando toques «Iniciar ya». Quien entre por tu link mientras tanto se suma. Si salís, la sala se cierra.",
+  lnkGoneT:"Lo lamento, esta invitación ya no está disponible.", lnkGoneP:"¿Querés invitar vos? Te armamos un link nuevo con el mismo juego para que lo compartas.", lnkGoneGo:"🔗 Invitar yo", lnkGoneNo:"Ahora no", saClosedT:who=>`${cap(who)} cerró la sala.`,
+  saGuestNote:who=>`Arranca cuando ${cap(who)} toque «Iniciar ya», o sola al terminar el tiempo.`,
   saGo:"▶ Iniciar ya", saLeave:"Salir", saStart:(who,n)=>`Sala de ${cap(who)}: ${n} jugadores. Arrancan todos a la vez.`,
   saPlaying:n=>`Juegan ${n} a la vez…`, saDone:(d,n)=>`⚡ ${d} de ${n-1} ya terminaron`, saLead:(who,p)=>`${cap(who)} va primero con ${p} puntos.`,
   saBeat:t=>`Para quedar primero tenés que terminar en menos de ${t}.`, saGone:who=>`${cap(who)} ya ganó esta.`,
@@ -3626,7 +3627,7 @@ Object.assign(T.en,{
   ivOutT:"What do you want to play?", ivNick:"Your nickname:", ivSend:"Invite",
   ivNeedNick:"Pick a nickname: it's what the other person will see.",
   ivSearching:"Looking for someone…", ivNobody:"Nobody is available to invite right now. You can copy a link and send it to anyone.",
-  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:"✓ Invitation copied. ⏳ Waiting for the first player to join…", ivLinkOkOff:"✓ Invitation copied. To play live with whoever comes in, tick “Receive invitations” on the home page.", ivLinkCopy:"Copy this message and share it anywhere:", gBit:g=>`Bitcoiner ${g}`, ivLinkText:(d,u)=>`Join me on RODO ₿ Games for a game of ${d}! Play with this link: ${u}`,
+  ivLink:"🔗 Copy link", ivLinkMaking:"Creating the game…", ivLinkOk:t=>`✓ Invitation copied. ⏳ Waiting for the first player to join… ${t} (closing this window cancels it)`, ivLinkNone:"Nobody joined in 5 minutes: the invitation was closed.", ivLinkCopy:t=>`Copy this message and share it anywhere. ⏳ Waiting for the first player to join… ${t}`, gBit:g=>`Bitcoiner ${g}`, ivLinkText:(d,u)=>`Join me on RODO ₿ Games for a game of ${d}! Play with this link: ${u}`,
   lnkIn:(who,g)=>`${who?cap(who)+" invited you":"You were invited"} to play ${g}. Pick a username to show up on the leaderboard, or close this window and play without one.`,
   lnkPlay:who=>`🔗 Shared game${who?" from "+who:""}: scores are compared on this game's leaderboard.`,
   ivSomeone:"a player", ivWaitT:who=>`Waiting for ${who}…`, ivSecs:s=>`Expires in ${s}s`, ivCancel:"Cancel",
@@ -3634,8 +3635,9 @@ Object.assign(T.en,{
   ivOther:"Invite another player", ivLinkPlay:"Play the link's game", ivOwnLink:"🔗 Create my link",
   saMine:"Your room", saOf:who=>`${cap(who)}'s room`, saWait:s=>`Waiting for people to join… ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`,
   saIn:(n,list)=>`${n} in the room: ${list}`, saYouTag:" (you)", saAnon:i=>`Player ${i}`,
-  saHostNote:"It starts on its own when the minute is up, or when you tap “Start now”. Anyone who opens your link meanwhile joins in.",
-  saGuestNote:who=>`It starts when ${cap(who)} taps “Start now”, or on its own when the minute is up.`,
+  saHostNote:"It starts on its own when time is up, or when you tap “Start now”. Anyone who opens your link meanwhile joins in. If you leave, the room closes.",
+  lnkGoneT:"Sorry, this invitation is no longer available.", lnkGoneP:"Want to invite others yourself? We'll make you a new link with the same game to share.", lnkGoneGo:"🔗 Invite them myself", lnkGoneNo:"Not now", saClosedT:who=>`${cap(who)} closed the room.`,
+  saGuestNote:who=>`It starts when ${cap(who)} taps “Start now”, or on its own when time is up.`,
   saGo:"▶ Start now", saLeave:"Leave", saStart:(who,n)=>`${cap(who)}'s room: ${n} players. Everyone starts at the same time.`,
   saPlaying:n=>`${n} playing at the same time…`, saDone:(d,n)=>`⚡ ${d} of ${n-1} already finished`, saLead:(who,p)=>`${cap(who)} leads with ${p} points.`,
   saBeat:t=>`To finish first you need to be done in under ${t}.`, saGone:who=>`${cap(who)} already won this one.`,
@@ -3956,7 +3958,7 @@ const Live = (()=>{
       store.set("rodo-linkat", String(Date.now()));   // durante una semana acepta invitaciones de quien llegue por el link, aunque no tenga usuario
       let ok=false; try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){}
       if(!ok){ $("ivLinkUrl").focus(); $("ivLinkUrl").select(); }
-      msgOut(ok ? (want ? t().ivLinkOk : t().ivLinkOkOff) : t().ivLinkCopy);
+      await salaFromLink(game, ok);
       fb.setDoc(fb.doc(fb.db,"fichas",uid),{inv:fb.increment(1)},{merge:true}).catch(()=>{});
     }catch(e){ msgOut(t().ivFail); }
     finally{ $("ivLink").disabled=$("ivLink2").disabled=false; }
@@ -4134,11 +4136,11 @@ const Live = (()=>{
   // ---------- salas: varias personas juegan a la vez la partida del link ----------
   // salas/{uid de quien la armó}: {g,k,lang,n,m,w, games, p:{uid:{nm,av}}, at, go}. Se espera un minuto (o «Iniciar ya») y arrancan todos juntos.
   // SA: la sala que sigue este navegador. roster[partida]: quiénes jugaron cada ronda (p al arrancar); scores[partida]: sus resultados.
-  const SALA_WAIT=60000, dSala=$("salaDlg"), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const SALA_WAIT=5*60000, dSala=$("salaDlg"), sleep=ms=>new Promise(r=>setTimeout(r,ms));
   let SA=null;
   const salaPid=x=>`${x.k}-${x.lang}-${x.n}`;
   const salaLeft=x=> x && x.at && x.at.toMillis ? x.at.toMillis()+SALA_WAIT-now() : SALA_WAIT;
-  const salaWaiting=x=> !!(x && !x.go && x.at && salaLeft(x) > -20000);
+  const salaWaiting=x=> !!(x && !x.go && !x.cl && x.at && salaLeft(x) > -20000);
   const meEntry=()=>({nm:Reg.nick()||"", av:Reg.nick() ? (Reg.av()||"") : ""});
   function salaWatch(h){
     if(SA && SA.h===h) return SA;
@@ -4153,6 +4155,34 @@ const Live = (()=>{
     const d={h:uid, g:gm.g, k:gm.k, lang:gm.lang, n:gm.n, games:games.slice(-60), p:{[uid]:meEntry()}, at:fb.serverTimestamp(), go:null};
     if(gm.m) d.m=gm.m; if(gm.w) d.w=gm.w;
     return fb.setDoc(fb.doc(fb.db,"salas",uid), d);
+  }
+  // copié un link: la sala queda abierta 5 minutos esperando que entre alguien (si cierro la ventanita, se cancela)
+  async function salaFromLink(gm, copied){
+    salaStop(); salaWatch(uid); const me=SA; me.copied=copied;
+    msgOut((copied ? t().ivLinkOk : t().ivLinkCopy)(fmt(SALA_WAIT)));
+    await salaSet(gm, [`${gm.k}-${gm.lang}-${gm.n}`]);
+    if(SA!==me) return;
+    // recién ahora (ya guardada la sala nueva) cuenta como "mi link": una sala vieja no dispara nada
+    me.link=true; if(!dOut.open){ salaClose(""); return; }
+    clearInterval(me.timer); me.timer=setInterval(salaTick,500);
+  }
+  // cerrar la sala (quien la armó): nadie más puede entrar
+  function salaClose(msg){
+    if(!SA) return; const h=SA.h;
+    if(h===uid && SA.doc && !SA.doc.go) fb.updateDoc(fb.doc(fb.db,"salas",h),{cl:true}).catch(()=>{});
+    clearInterval(SA.timer); SA.lobby=true; if(dSala.open) dSala.close();
+    if(msg && dOut.open) msgOut(msg);
+    salaStop();
+  }
+  // la invitación ya no está: se ofrece armar un link propio con el mismo juego
+  async function goneDlg(x, title){
+    const d=$("lnkDlg"), T0=t();
+    $("lnkT").textContent=title||T0.lnkGoneT; $("lnkP").textContent=T0.lnkGoneP; $("lnkLive").textContent=T0.lnkGoneGo; $("lnkSolo").textContent=T0.lnkGoneNo;
+    const go=await new Promise(res=>{ $("lnkLive").onclick=()=>res(true); $("lnkSolo").onclick=()=>res(false); d.oncancel=e=>{ e.preventDefault(); res(false); }; d.showModal(); });
+    d.close(); if(!go || anyOpen()) return;
+    openOut();
+    pickG=x.g; pickL=x.lang; if(x.g==="sopa"){ pickS=x.k==="sopa"?"media":String(x.k).slice(4); pickM=x.m||"w"; } if(x.g==="semilla" && x.w) pickW=x.w;
+    stage("opts"); renderOpts(); shareLink();
   }
   // alguien entró por mi link: abro la sala con esa partida (la creó quien entró) y quien entró se suma solo
   async function hostSala(){
@@ -4176,17 +4206,18 @@ const Live = (()=>{
     }catch(e){ return false; }
   }
   function salaLobby(){
-    if(!SA) return;
+    if(!SA) return; SA.lobby=true;
     if(dOut.open) dOut.close(); if($("lnkDlg").open) $("lnkDlg").close();
     if(!dSala.open) dSala.showModal();
     if(SA.doc) salaDrawLobby();
     clearInterval(SA.timer); SA.timer=setInterval(salaTick,500); salaTick();
   }
   function salaLeave(){
-    if(!SA) return; clearInterval(SA.timer); if(dSala.open) dSala.close();
+    if(!SA) return;
+    if(SA.h===uid) return salaClose("");          // si sale quien la armó, la sala se cierra
+    clearInterval(SA.timer); if(dSala.open) dSala.close();
     const x=SA.doc;
     if(x && !x.go && uid in (x.p||{})) fb.updateDoc(fb.doc(fb.db,"salas",SA.h),{[`p.${uid}`]:fb.deleteField()}).catch(()=>{});
-    if(SA.h===uid) salaStop();
   }
   // quiénes están: primero quien armó la sala; sin usuario, "Jugador 2", "Jugador 3"…
   function salaPeople(ids){
@@ -4207,17 +4238,22 @@ const Live = (()=>{
     $("salaGo").hidden=!host; $("salaGo").textContent=T0.saGo; $("salaGo").disabled=ps.length<2; $("salaX").textContent=T0.saLeave;
   }
   function salaTick(){
-    const x=SA && SA.doc; if(!x || x.go) return;
+    const x=SA && SA.doc; if(!x || x.go || x.cl) return;
     const left=salaLeft(x), s=Math.max(0,Math.ceil(left/1000)), pid=salaPid(x), n=Object.keys(x.p||{}).length;
+    if(SA.h===uid && SA.link && !SA.lobby && dOut.open) msgOut((SA.copied ? t().ivLinkOk : t().ivLinkCopy)(fmt(Math.max(0,left))));
     if(dSala.open){ $("salaBar").style.width=Math.max(0,Math.min(100,left/SALA_WAIT*100))+"%"; $("salaBar").classList.toggle("low",s<=10); $("salaWait").textContent=t().saWait(s); }
     if(!(uid in (x.p||{})) || SA.going===pid || left>0) return;
     // pasó el minuto: arranca quien la armó (si quedó sola/o, se cierra); si no está, la arranca cualquiera de adentro
-    if(SA.h===uid && n<2){ salaLeave(); return; }
+    if(SA.h===uid && n<2){ salaClose(t().ivLinkNone); return; }
     if(SA.h===uid || left<=-4000){ SA.going=pid; salaGoNow(); }
   }
   function salaGoNow(){ fb.updateDoc(fb.doc(fb.db,"salas",SA.h),{go:fb.serverTimestamp()}).catch(()=>{ if(SA) SA.going=null; }); }
   function salaUpdate(){
     const x=SA.doc, pid=salaPid(x);
+    // la cerró quien la armó: a los que esperaban se les ofrece armar su propio link
+    if(x.cl && SA.h!==uid && !x.go && uid in (x.p||{}) && dSala.open){ clearInterval(SA.timer); dSala.close(); const h=salaHost(); salaStop(); goneDlg(x, t().saClosedT(h)); return; }
+    // mi link: entró el primero, se pasa a la sala con la cuenta regresiva
+    if(SA.h===uid && SA.link && !SA.lobby && !x.go && !x.cl && Object.keys(x.p||{}).length>=2){ salaLobby(); return; }
     // arranque: solo si estoy adentro y es reciente (una sala vieja no arranca sola al abrir la página)
     if(x.go && uid in (x.p||{}) && !SA.started[pid] && x.go.toMillis && now()-x.go.toMillis() < 20000) return salaStart(x, pid);
     if(dSala.open){ if(x.go || !(uid in (x.p||{}))) { clearInterval(SA.timer); dSala.close(); } else salaDrawLobby(); }
@@ -4272,6 +4308,7 @@ const Live = (()=>{
   }
   // otra ronda: la abre quien armó la sala, con el mismo juego y opciones y una partida nueva
   async function salaAgain(){
+    SA.link=false;
     const x=SA.doc, sz= x.g==="sopa" ? (x.k==="sopa" ? "media" : x.k.slice(4)) : undefined;
     const gm=await Reg.inviteGame(x.g, {L:x.lang, s:sz, m:x.m, w:x.w});
     SA.going=null;
@@ -4292,6 +4329,10 @@ const Live = (()=>{
   }, 1000);
   $("salaGo").addEventListener("click",()=>{ if(!SA || SA.h!==uid) return; $("salaGo").disabled=true; SA.going=salaPid(SA.doc); salaGoNow(); });
   $("salaX").addEventListener("click",salaLeave);
+  // cerrar la ventanita de invitar mientras se espera al primero cancela la invitación
+  dOut.addEventListener("close",()=>{ if(SA && SA.h===uid && SA.link && !SA.lobby) salaClose(""); });
+  // cerrar la pestaña también la cancela
+  window.addEventListener("pagehide",()=>{ if(SA && SA.h===uid && SA.doc && !SA.doc.go && !SA.doc.cl) fb.updateDoc(fb.doc(fb.db,"salas",uid),{cl:true}).catch(()=>{}); });
   dSala.addEventListener("cancel",e=>{ e.preventDefault(); salaLeave(); });
 
   // ---------- eventos ----------
@@ -4354,27 +4395,11 @@ const Live = (()=>{
     count();
   }
   // entrar por un link: si quien lo mandó está disponible, se le ofrece jugar en vivo contra esa persona
+  // entrar por un link: si la sala de quien lo mandó está esperando, se entra directo; si no, ya no está disponible
   async function linkLive(o){
     if(!fb || !o.de || o.de===uid || anyOpen()) return false;
-    let sx=null;
-    try{ const s=await fb.getDoc(fb.doc(fb.db,"salas",o.de)); sx=s.exists() && s.data(); if(!salaWaiting(sx) || salaLeft(sx)<=3000) sx=null; }catch(e){}
-    if(!sx) try{
-      const s=await fb.getDoc(fb.doc(fb.db,"online",o.de)), x=s.exists()&&s.data();
-      if(!x || !x.at || x.at.toMillis()<=now()-FRESH || !x.inv || (x.busy||[]).includes(o.g)) return false;
-    }catch(e){ return false; }
-    const d=$("lnkDlg"), T0=t();
-    const ask=(title, p, go)=>new Promise(res=>{ $("lnkT").textContent=title; $("lnkP").textContent=p; $("lnkLive").textContent=go; $("lnkSolo").textContent=T0.lnkSoloGo;
-      $("lnkLive").onclick=()=>res(true); $("lnkSolo").onclick=()=>res(false); d.oncancel=e=>{ e.preventDefault(); res(false); }; d.showModal(); });
-    // quien mandó el link tiene una sala esperando: sumarse
-    if(sx){
-      const go=await ask(T0.lnkSalaT(o.who, Object.keys(sx.p||{}).length), cap(describe(sx))+". "+T0.lnkSalaP, T0.lnkSalaGo); d.close();
-      return go ? await salaJoin(o.de) : false;
-    }
-    const live=await ask(T0.lnkLiveT(o.who), T0.lnkLiveP, T0.lnkLiveGo(o.who));
-    d.close(); if(!live) return false;
-    openOut({to:o.de, who:o.who, lk:o});
-    pickG=o.g; pickL=o.L; if(o.g==="sopa"){ pickS=o.k==="sopa"?"media":o.k.slice(4); pickM=o.m||"w"; }
-    stage("opts"); renderOpts(); send();
+    if(await salaJoin(o.de, `${o.k}-${o.L}-${o.n}`)) return true;
+    goneDlg({g:o.g, k:o.k, lang:o.L, m:o.m});
     return true;
   }
   return {texts, beat, linkLive, now, synced:()=>synced};
@@ -6188,7 +6213,7 @@ route();
   // sin pedir usuario: si quien lo mandó está en línea se ofrece jugar en vivo; si no, la partida del link.
   // El usuario se sugiere al terminar (para guardar el resultado).
   setLang(L);
-  if(who && await Live.linkLive({de, who, g, k, L, n:+n, m:q.get("m")||undefined})) return;
+  if(await Live.linkLive({de, who, g, k, L, n:+n, m:q.get("m")||undefined})) return;
   play();
 })();
 </script>
