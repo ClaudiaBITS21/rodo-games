@@ -34,17 +34,22 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/Sala de Ana: 3 jugadores/.test(await D.evaluate(()=>document.body.textContent)),'aviso de arranque con la cantidad');
   await A.waitForTimeout(6000);
   ok(/Juegan 3 a la vez/.test(await A.evaluate(()=>document.body.textContent)),'mientras nadie terminó: «Juegan 3 a la vez…»');
-  // Mati y Dani se rinden: Ana ve cuántos terminaron
-  await B.click('#sGiveUp'); await B.click('#sGiveUp');
-  await A.waitForFunction(()=>/1 de 2 ya terminaron/.test(document.body.textContent),null,{timeout:15000});
-  ok(true,'Ana ve «1 de 2 ya terminaron»');
+  // Mati resuelve (se simula con su resultado), Ana se rinde: todavía se define y «Otra ronda» espera a Dani
+  await B.evaluate(()=>{ document.getElementById('sWin').style.display='block'; Reg.finish('sopa',{ok:true,s:0,h:0,ms:200000}); });
+  await A.waitForFunction(()=>/1 de 2 ya terminaron · Jugador \d va primero/.test(document.body.textContent),null,{timeout:15000});
+  ok(true,'Ana ve quién va primero mientras juega');
   await B.waitForSelector('#sWin .wsala:not([hidden])',{timeout:10000});
-  ok(/Sala · 3 jugadores/.test(await txt(B,'#sWin .wsala')) && /jugando…/.test(await txt(B,'#sWin .wsala')),'Mati ve el podio con los que siguen: '+await txt(B,'#sWin .wsala'));
+  await B.waitForFunction(()=>/todavía pueden ganarte si terminan en menos de \d:\d\d/.test(document.querySelector('#sWin .sastat').textContent),null,{timeout:10000});
+  ok(/Sala · 3 jugadores/.test(await txt(B,'#sWin .wsala')) && /jugando…/.test(await txt(B,'#sWin .wsala')),'Mati ve: '+await txt(B,'#sWin .sastat'));
   ok(!(await B.$('#sWin .saAgain')),'«Otra ronda» solo para Ana');
-  await D.click('#sGiveUp'); await D.click('#sGiveUp'); await A.click('#sGiveUp'); await A.click('#sGiveUp');
+  await A.click('#sGiveUp'); await A.click('#sGiveUp');
+  await A.waitForSelector('#sWin .wsala:not([hidden])',{timeout:10000});
+  ok(/todavía se define/.test(await txt(A,'#sWin .sastat')) && !(await A.$('#sWin .saAgain')) && /cuando terminen todos/.test(await txt(A,'#sWin .wsala')),'Ana terminó pero Dani sigue: sin «Otra ronda» · '+await txt(A,'#sWin .sastat'));
+  await D.click('#sGiveUp'); await D.click('#sGiveUp');
   await A.waitForSelector('#sWin .saAgain',{timeout:10000});
-  await A.waitForFunction(()=>!/jugando…/.test(document.querySelector('#sWin .wsala').textContent),null,{timeout:10000});
-  ok(true,'Ana ve el podio completo: '+await txt(A,'#sWin .wsala'));
+  ok(/Ganó Jugador \d/.test(await txt(A,'#sWin .sastat')),'terminaron todos: '+await txt(A,'#sWin .sastat'));
+  await B.waitForFunction(()=>/Ganaste esta/.test(document.querySelector('#sWin .sastat').textContent),null,{timeout:10000});
+  ok(true,'Mati ve «¡Ganaste esta!»');
   // otra ronda: Ana la abre, Dani se suma desde su cartel
   await A.click('#sWin .saAgain');
   await A.waitForFunction(()=>document.getElementById('salaDlg').open && /1 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:20000});

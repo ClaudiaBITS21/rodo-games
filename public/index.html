@@ -239,6 +239,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .wsala[hidden]{display:none}
 .wsala .sat{font-weight:700!important;margin:0 0 4px!important;font-size:.9rem!important}
 .wsala ol{list-style:none;margin:0 0 6px;padding:0;font:600 .88rem "IBM Plex Mono",ui-monospace,monospace}
+.wsala .sastat{font-weight:700!important}
 .wsala li.me{font-weight:800;text-decoration:underline;text-decoration-color:var(--btc)} .wsala li.pend{opacity:.65;font-weight:400}
 .wsala p{font-size:.85rem!important;font-weight:400!important;margin:2px 0 6px!important}
 .wsala button{padding:7px 12px;font-size:.88rem}
@@ -3577,7 +3578,10 @@ Object.assign(T.es,{
   saGuestNote:who=>`Arranca cuando ${cap(who)} toque «Iniciar ya», o sola al terminar el tiempo.`,
   saGo:"▶ Iniciar ya", saLeave:"Salir", saStart:(who,n)=>`Sala de ${cap(who)}: ${n} jugadores. Arrancan todos a la vez.`,
   saPlaying:n=>`Juegan ${n} a la vez…`, saDone:(d,n)=>`⚡ ${d} de ${n-1} ya terminaron`, saLead:(who,p)=>`${cap(who)} va primero con ${p} puntos.`,
-  saBeat:t=>`Para quedar primero tenés que terminar en menos de ${t}.`, saGone:who=>`${cap(who)} ya ganó esta.`,
+  saBeat:t=>`Para quedar primero tenés que terminar en menos de ${t}.`, saGone:who=>`${cap(who)} ya ganó esta. Podés seguir jugando para terminarla.`,
+  saCanLose:(names,n,t)=>`${names} todavía ${n>1?"pueden":"puede"} ganarte si ${n>1?"terminan":"termina"} en menos de ${t} con menos errores y ayudas.`,
+  saCanLoseS:(names,n)=>`${names} todavía ${n>1?"pueden":"puede"} ganarte.`, saLeadOpen:who=>`${cap(who)} va primero; todavía se define.`,
+  saWon:"🏆 ¡Ganaste esta!", saWonBy:who=>`🏆 Ganó ${who}.`, saNoWin:"Nadie la resolvió.", saAgainWait:"«Otra ronda» aparece cuando terminen todos.",
   saTitle:n=>`Sala · ${n} jugadores`, saYou:"Vos", saStill:"jugando…", saOut:"no terminó", saWins:"Rondas ganadas: ",
   saNext:"Otra ronda", saNextIn:(who,t)=>`${cap(who)} abrió otra ronda · ${t}`, saJoin:"⚔️ Sumarme", saJoined:"Te sumaste a la próxima ronda.",
   lnkSalaT:(who,n)=>`${cap(who)} armó una sala: ${n} esperando`, lnkSalaP:"Sumate y arrancan todos a la vez. Gana quien saque más puntos.", lnkSalaGo:"⚔️ Sumarme",
@@ -3640,7 +3644,10 @@ Object.assign(T.en,{
   saGuestNote:who=>`It starts when ${cap(who)} taps “Start now”, or on its own when time is up.`,
   saGo:"▶ Start now", saLeave:"Leave", saStart:(who,n)=>`${cap(who)}'s room: ${n} players. Everyone starts at the same time.`,
   saPlaying:n=>`${n} playing at the same time…`, saDone:(d,n)=>`⚡ ${d} of ${n-1} already finished`, saLead:(who,p)=>`${cap(who)} leads with ${p} points.`,
-  saBeat:t=>`To finish first you need to be done in under ${t}.`, saGone:who=>`${cap(who)} already won this one.`,
+  saBeat:t=>`To finish first you need to be done in under ${t}.`, saGone:who=>`${cap(who)} already won this one. You can keep playing to finish it.`,
+  saCanLose:(names,n,t)=>`${names} can still beat you by finishing in under ${t} with fewer mistakes and hints.`,
+  saCanLoseS:(names,n)=>`${names} can still beat you.`, saLeadOpen:who=>`${cap(who)} is ahead; it's not decided yet.`,
+  saWon:"🏆 You won this one!", saWonBy:who=>`🏆 ${who} won.`, saNoWin:"Nobody solved it.", saAgainWait:"“Another round” shows up when everyone is done.",
   saTitle:n=>`Room · ${n} players`, saYou:"You", saStill:"playing…", saOut:"didn't finish", saWins:"Rounds won: ",
   saNext:"Another round", saNextIn:(who,t)=>`${cap(who)} opened another round · ${t}`, saJoin:"⚔️ Join", saJoined:"You joined the next round.",
   lnkSalaT:(who,n)=>`${cap(who)} opened a room: ${n} waiting`, lnkSalaP:"Join and everyone starts at the same time. Most points wins.", lnkSalaGo:"⚔️ Join",
@@ -4202,6 +4209,8 @@ const Live = (()=>{
       if(!salaWaiting(x) || (pid && salaPid(x)!==pid)) return false;
       salaWatch(h);
       await fb.updateDoc(fb.doc(fb.db,"salas",h),{[`p.${uid}`]:meEntry()});
+      // mientras llega la sala en vivo, se dibuja con lo que ya se leyó (más uno mismo)
+      if(SA && (!SA.doc || !(uid in (SA.doc.p||{})))){ SA.doc={...x, p:{...(x.p||{}), [uid]:meEntry()}}; Object.assign(SA.names, SA.doc.p); }
       salaLobby(); return true;
     }catch(e){ return false; }
   }
@@ -4286,7 +4295,20 @@ const Live = (()=>{
     const left=best.sc.adj-a;
     return txt+" "+(left>0 ? T0.saBeat(fmt(left*1000)) : T0.saGone(who));
   }
-  // al terminar: el podio de la ronda, las rondas ganadas y la ronda siguiente
+  // ya terminé: ¿quién gana? Arrancamos juntos, así que los que siguen llevan jugando lo mismo que mi reloj.
+  // Para ganar, el que sigue tiene que terminar con menos segundos ajustados que el que va primero.
+  function salaStat(c, ros, S){
+    const T0=t(), best=salaRank(c.k, ros, S)[0]; if(!best) return {txt:"", open:false, pend:[]};
+    const late=c.t0 && Date.now()-c.t0 > 16*60000, pend=late ? [] : ros.filter(u=>!S[u]);
+    const semi=c.k==="semilla" || !c.t0, left=best.sc.ok ? best.sc.adj-((Date.now()-c.t0)/1000-2) : Infinity;
+    const open=pend.length>0 && (semi || !best.sc.ok || left>0);
+    const nm=u=> u===uid ? T0.saYou : (salaPeople([u])[0]||{}).nm || T0.ivSomeone;
+    let txt;
+    if(open) txt= best.uid===uid && best.sc.ok ? (semi ? T0.saCanLoseS(pend.map(nm).join(", "), pend.length) : T0.saCanLose(pend.map(nm).join(", "), pend.length, fmt(left*1000))) : best.sc.ok ? T0.saLeadOpen(nm(best.uid)) : "";
+    else txt= !best.sc.ok ? (pend.length ? "" : T0.saNoWin) : best.uid===uid ? T0.saWon : T0.saWonBy(nm(best.uid));
+    return {txt, open, pend, late};
+  }
+  // al terminar: el podio de la ronda, quién gana, las rondas ganadas y la ronda siguiente
   function salaEnd(g){
     const c=Reg.cur(g); if(!SA || !SA.doc || !c || c.sala!==SA.h || !c.n) return;
     const T0=t(), pid=`${c.k}-${c.lang}-${c.n}`, ros=SA.roster[pid]||[uid], S=SA.scores[pid]||{}, el=Reg.slot(g,"wsala");
@@ -4297,12 +4319,13 @@ const Live = (()=>{
     const won={}; let rounds=0;
     Object.keys(SA.roster).forEach(q=>{ const b=salaRank(q.split("-")[0], SA.roster[q], SA.scores[q]||{})[0]; if(b && b.sc.ok){ rounds++; won[b.uid]=(won[b.uid]||0)+1; } });
     const wins= rounds>1 ? `<p>${esc(T0.saWins+Object.entries(won).sort((a,b)=>b[1]-a[1]).map(([u,n])=>`${u===uid?T0.saYou:(salaPeople([u])[0]||{}).nm} ${n}`).join(" · "))}</p>` : "";
-    const x=SA.doc, xp=salaPid(x), next= xp!==pid && !SA.started[xp] && salaWaiting(x);
+    const x=SA.doc, xp=salaPid(x), next= xp!==pid && !SA.started[xp] && salaWaiting(x), st=salaStat(c, ros, S);
     let foot="";
     if(next) foot= uid in (x.p||{}) ? `<p>${esc(T0.saJoined)}</p>` : `<p class="sanext">${esc(T0.saNextIn(salaHost(), fmt(Math.max(0,salaLeft(x)))))}</p><button class="saJoin">${esc(T0.saJoin)}</button>`;
-    else if(SA.h===uid && xp===pid) foot=`<button class="saAgain">${esc(T0.saNext)}</button>`;
-    el.hidden=false;
-    el.innerHTML=`<p class="sat">${esc(T0.saTitle(ros.length))}</p><ol>${rows}</ol>${wins}${foot}`;
+    // «Otra ronda» recién cuando terminaron todos (o pasaron los 16 minutos)
+    else if(SA.h===uid && xp===pid) foot= st.pend.length ? `<p>${esc(T0.saAgainWait)}</p>` : `<button class="saAgain">${esc(T0.saNext)}</button>`;
+    el.hidden=false; el.dataset.st=String(st.pend.length)+"|"+!!st.late;
+    el.innerHTML=`<p class="sat">${esc(T0.saTitle(ros.length))}</p><ol>${rows}</ol><p class="sastat">${esc(st.txt)}</p>${wins}${foot}`;
     const bj=el.querySelector(".saJoin"); if(bj) bj.addEventListener("click",()=>{ bj.disabled=true; salaJoin(SA.h, xp).then(ok=>{ if(!ok) salaEnd(g); }); });
     const ba=el.querySelector(".saAgain"); if(ba) ba.addEventListener("click",()=>{ ba.disabled=true; salaAgain().catch(()=>{ ba.disabled=false; }); });
   }
@@ -4325,7 +4348,14 @@ const Live = (()=>{
     if(!SA || !SA.doc) return;
     Object.keys(GAMES).forEach(g=>{ const c=Reg.cur(g); if(!c || c.sala!==SA.h || !c.n) return;
       if(!c.t1) Reg.duelNote(g, salaNote(g, c));
-      else{ const el=Reg.slot(g,"wsala").querySelector(".sanext"); if(el) el.textContent=t().saNextIn(salaHost(), fmt(Math.max(0,salaLeft(SA.doc)))); } });
+      else{
+        const w=Reg.slot(g,"wsala"), el=w.querySelector(".sanext"); if(el) el.textContent=t().saNextIn(salaHost(), fmt(Math.max(0,salaLeft(SA.doc))));
+        // cuenta regresiva de "todavía te puede ganar"; si cambió quién falta (o pasaron los 16 min), se redibuja
+        const pid=`${c.k}-${c.lang}-${c.n}`, ros=SA.roster[pid]; if(!ros) return;
+        const st=salaStat(c, ros, SA.scores[pid]||{});
+        if(w.dataset.st!==String(st.pend.length)+"|"+!!st.late) salaEnd(g);
+        else { const e2=w.querySelector(".sastat"); if(e2 && e2.textContent!==st.txt) e2.textContent=st.txt; }
+      } });
   }, 1000);
   $("salaGo").addEventListener("click",()=>{ if(!SA || SA.h!==uid) return; $("salaGo").disabled=true; SA.going=salaPid(SA.doc); salaGoNow(); });
   $("salaX").addEventListener("click",salaLeave);
