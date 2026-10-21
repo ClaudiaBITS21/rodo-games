@@ -4932,7 +4932,7 @@ Object.assign(T.en,{shopTag:"New · physical", shopName:"1000-piece jigsaw puzzl
 // La seguridad real está en las reglas de Firestore: solo claudia@rodo.es puede leer las fichas.
 // =====================================================================
 const Admin = (()=>{
-  const ADMIN_EMAIL="claudia@rodo.es";
+  const ADMINS=["claudia@rodo.es","ce.andragnes@gmail.com"];   // las mismas que isAdmin() en firestore.rules
   let A=null, rows=[], names={};
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const ms=x=> x&&x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
@@ -4951,7 +4951,7 @@ const Admin = (()=>{
     A = await Promise.race([ADMIN_READY, new Promise(r=>setTimeout(()=>r(null),9000))]);
     if(!A){ $("admLogin").style.display=""; $("admIn").disabled=true; $("admErr").textContent="La administración solo funciona en el sitio publicado."; return; }
     A.onState(u=>{
-      const ok = u && u.email===ADMIN_EMAIL;
+      const ok = u && ADMINS.includes(u.email);
       $("admLogin").style.display = ok ? "none" : "";
       document.querySelectorAll("#view-admin .bar button").forEach(b=>b.style.display = ok ? "" : "none");
       $("admWho").textContent = ok ? u.email : "";
@@ -6049,7 +6049,7 @@ const Tour = (()=>{
 // (o se acaba el tiempo) y, si está activado, la siguiente se programa con 5 minutos de cuenta regresiva.
 // =====================================================================
 const TourAdmin = (()=>{
-  const SUPER="claudia@rodo.es", NEXT=5*60000;
+  const SUPERS=["claudia@rodo.es","ce.andragnes@gmail.com"], SUPER=SUPERS.join(" y "), NEXT=5*60000;
   const GS=["ahorcado","anagrama","sopa","acrostico","semilla","criptograma"];
   const GN={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida"};
   const DIFS=["","facil","media","dificil"], DIFN={"":"normal",facil:"fácil",media:"media",dificil:"difícil"};
@@ -6066,7 +6066,7 @@ const TourAdmin = (()=>{
   const rounds=()=>Object.values(RS).sort((a,b)=>a.no-b.no);
   const last=()=>{ const l=rounds(); return l.length ? l[l.length-1] : null; };
   const nm=u=>{ const x=INS[u]; return x ? (x.av?x.av+" ":"")+x.nm : u.slice(0,6); };
-  const isSuper=()=>!!(me && me.email===SUPER);
+  const isSuper=()=>!!(me && SUPERS.includes(me.email));
   const mine=x=>isSuper() || (me && (x.orgs||[]).includes(me.email));
   const say=(s,bad)=>{ msgT=s||""; const el=$("taMsg"); if(el){ el.textContent=msgT; el.classList.toggle("bad",!!bad); } };
   const fail=e=>say("No se pudo: "+(e.code||e.message), true);
@@ -6523,7 +6523,7 @@ try {
   // administración: app separada, para que entrar con Google no reemplace la identidad anónima del jugador
   try{
     const aapp = initializeApp(cfg, "admin"), aauth = getAuth(aapp), prov = new GoogleAuthProvider();
-    prov.setCustomParameters({ login_hint: "claudia@rodo.es", prompt: "select_account" });
+    prov.setCustomParameters({ prompt: "select_account" });
     window.__adminResolve({ db: getFirestore(aapp), collection, collectionGroup, getDocs, doc, setDoc, deleteDoc, serverTimestamp,
       getDoc, updateDoc, onSnapshot, writeBatch, runTransaction, Timestamp, query, where,
       login: () => signInWithPopup(aauth, prov), logout: () => signOut(aauth), onState: cb => onAuthStateChanged(aauth, cb) });

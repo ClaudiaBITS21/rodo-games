@@ -10,9 +10,10 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     // Administración: solo esta cuenta de Google (verificada) puede leer las fichas de todos
+    // Administración: estas cuentas de Google (verificadas)
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.get('email', '') == 'claudia@rodo.es'
+        && request.auth.token.get('email', '') in ['claudia@rodo.es', 'ce.andragnes@gmail.com']
         && request.auth.token.get('email_verified', false) == true;
     }
     function validKey(k) {

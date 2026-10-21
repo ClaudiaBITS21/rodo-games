@@ -327,6 +327,12 @@ await t("fijo en pesos", assertSucceeds(withCup(C, "R2345AM", "FIJO", { u: "C", 
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "coupons/VIEJO"), cpn({ until: Date.now() - 1000 })); });
 await t("código vencido no", assertFails(withCup(C, "R2345AN", "VIEJO", { u: "C" })));
 await t("el admin no toca los usos", assertFails(setDoc(doc(ADM, "coupons/FIJO"), cpn({ type: "fix", value: 5000, max: 0, pays: ["ars"], used: 0 }))));
+// segunda administradora
+const ADM2 = env.authenticatedContext("adm2", { email: "ce.andragnes@gmail.com", email_verified: true }).firestore();
+const ADM2X = env.authenticatedContext("adm3", { email: "ce.andragnes@gmail.com", email_verified: false }).firestore();
+await t("admin 2: lee las fichas", assertSucceeds(getDoc(doc(ADM2, "fichas/A"))));
+await t("admin 2 sin verificar no", assertFails(getDoc(doc(ADM2X, "fichas/A"))));
+await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext("x", { email: "otro@gmail.com", email_verified: true }).firestore(), "fichas/A"))));
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);
