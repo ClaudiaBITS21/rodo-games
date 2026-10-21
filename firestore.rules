@@ -376,10 +376,40 @@ service cloud.firestore {
         && d.pays is list && d.pays.size() >= 1 && d.pays.toSet().hasOnly(['btc', 'ars'])
         && d.on is bool;
     }
+    // Pago on-chain: cada pedido en bitcoin toma la siguiente dirección libre (payaddr/{n}, que genera la administración desde su xpub);
+    // en la misma escritura el contador btcidx/main sube de a uno apuntando a este pedido, así dos pedidos nunca comparten dirección.
+    function orderAddr(code, o) {
+      return !('ai' in o) ? !('addr' in o) && !('sats' in o) && !('rate' in o)
+        : (o.pay == 'btc' && o.ai is int
+          && get(/databases/$(database)/documents/btcidx/main).data.n == o.ai
+          && getAfter(/databases/$(database)/documents/btcidx/main).data.n == o.ai + 1
+          && getAfter(/databases/$(database)/documents/btcidx/main).data.last == code
+          && o.addr == get(/databases/$(database)/documents/payaddr/$(string(o.ai))).data.a
+          && o.sats is int && o.sats >= 0 && o.sats <= 2100000000000000
+          && o.rate is number && o.rate >= 0);
+    }
+    // Configuración del cobro on-chain (la clave pública extendida): solo la administración
+    match /btcpay/{d} { allow read, write: if isAdmin(); }
+    // Direcciones de cobro: las escribe la administración; cualquiera con sesión lee una por su número (no listarlas)
+    match /payaddr/{n} {
+      allow get: if signedIn();
+      allow list, write: if isAdmin();
+    }
+    // Próxima dirección libre: la administración la crea/ajusta; un pedido nuevo la sube de a uno
+    match /btcidx/{d} {
+      allow get: if signedIn();
+      allow write: if isAdmin();
+      allow update: if signedIn() && d == 'main'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['n', 'last'])
+        && request.resource.data.n == resource.data.n + 1
+        && request.resource.data.last is string
+        && !exists(/databases/$(database)/documents/orders/$(request.resource.data.last))
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.last)).data.ai == resource.data.n;
+    }
     match /orders/{code} {
       allow create: if signedIn()
         && code.matches('^R[2-9A-HJ-NP-Z]{6}$')
-        && request.resource.data.keys().hasOnly(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'note', 'total', 'lang', 'u', 'st', 'at', 'sub', 'cup', 'disc'])
+        && request.resource.data.keys().hasOnly(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'note', 'total', 'lang', 'u', 'st', 'at', 'sub', 'cup', 'disc', 'ai', 'addr', 'sats', 'rate'])
         && request.resource.data.keys().hasAll(['items', 'name', 'email', 'phone', 'place', 'ship', 'pay', 'total', 'lang', 'u', 'st', 'at'])
         && request.resource.data.u == request.auth.uid
         && request.resource.data.at == request.time
@@ -397,7 +427,8 @@ service cloud.firestore {
         && request.resource.data.pay in ['btc', 'ars']
         && request.resource.data.lang in ['es', 'en']
         && request.resource.data.total is int && request.resource.data.total >= 0
-        && orderCoupon(code, request.resource.data);
+        && orderCoupon(code, request.resource.data)
+        && orderAddr(code, request.resource.data);
       allow read: if isAdmin();
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st'])

@@ -4978,6 +4978,7 @@ const Admin = (()=>{
     }catch(e){ $("admBody").innerHTML=`<p class="m">No se pudieron leer los datos (${esc(e.code||e.message)}). ¿Están publicadas las reglas nuevas?</p>`; return; }
     let ER=[]; try{ (await A.getDocs(A.collection(A.db,"errs"))).forEach(d=>ER.push(d.data())); }catch(e){}
     // pedidos de rompecabezas (games.rodo.es/rompecabezas)
+    await payLoad();
     let CP=null; try{ CP=[]; (await A.getDocs(A.collection(A.db,"coupons"))).forEach(d=>CP.push({code:d.id, ...d.data()})); }catch(e){ CP=null; }
     let OR=null; try{ OR=[]; (await A.getDocs(A.collection(A.db,"orders"))).forEach(d=>OR.push({code:d.id, ...d.data()})); }catch(e){ OR=null; }
     // palabras sugeridas por los jugadores
@@ -5031,7 +5032,7 @@ const Admin = (()=>{
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
 
-    h=ordersHtml(OR, CP)+couponsHtml(CP, OR)+sugsHtml(SG)+h;
+    h=ordersHtml(OR, CP)+payHtml()+couponsHtml(CP, OR)+sugsHtml(SG)+h;
 
     // por juego e idioma
     const G={};
@@ -5084,7 +5085,7 @@ const Admin = (()=>{
     h+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
       last.map(r=>[dt(r.at), esc(names[r.u]||("anónimo "+r.u.slice(0,6))), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", fmt(r.ms), r.h]));
     h+=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
-    $("admBody").innerHTML=h;
+    $("admBody").innerHTML=h; payFill();
   }
   // ---------- Pedidos de rompecabezas ----------
   const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
@@ -5113,14 +5114,85 @@ const Admin = (()=>{
       ${Object.keys(PUZ).map(k=>`<div class="kpi"><b>${units[k]||0}</b><span>${PUZ[k]} pedidos (sin cancelados)</span></div>`).join("")}
       <div class="kpi"><b>${ars(open.reduce((a,o)=>a+(o.total||0),0))}</b><span>en pedidos abiertos</span></div>
     </div>`;
-    h+=table(["Cuándo","Pedido","Estado","Rompecabezas","Total","Descuento","Nombre","Contacto","Lugar","Entrega","Pago","Comentarios"],
+    h+=table(["Cuándo","Pedido","Estado","Rompecabezas","Total","Descuento","Nombre","Contacto","Lugar","Entrega","Pago","On-chain","Comentarios"],
       list.map(o=>[dt(o.at), `<b>${esc(o.code)}</b>`,
         `<select class="ordst" data-k="${esc(o.code)}">${ST.map(x=>`<option${x===o.st?" selected":""}>${x}</option>`).join("")}</select>`,
         Object.entries(o.items||{}).map(([k,v])=>`${v} × ${esc(PUZ[k]||k)}`).join("<br>"), ars(o.total), discCheck(o, CP)||"–", esc(o.name),
         `<a href="mailto:${esc(o.email)}?subject=${encodeURIComponent("Tu pedido "+o.code+" de rompecabezas")}">${esc(o.email)}</a><br><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(o.phone)}</a>`,
-        esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?"₿ Lightning":"Pesos", `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
+        esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?(o.addr?"₿ On-chain":"₿ Lightning"):"Pesos",
+        o.addr ? `<a href="${MEMPOOL}/address/${esc(o.addr)}" target="_blank" rel="noopener" class="mono small">${esc(o.addr.slice(0,10))}…${esc(o.addr.slice(-6))}</a><br>${o.sats?`${(o.sats/1e8).toFixed(8)} BTC`:"sin cotización"}<br><span class="onc small" data-a="${esc(o.addr)}" data-s="${o.sats||0}" data-x="${o.st==="cancelado"||o.st==="entregado"?1:0}">…</span>` : "–",
+        `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
     return h;
   }
+  // ---------- Cobro en bitcoin on-chain: la clave pública extendida genera una dirección por pedido ----------
+  // btcpay/cfg {key, kind, base, cnt}: las direcciones payaddr/{base…cnt-1} salen de la clave, desde su índice 0 (m/…/0/i).
+  // btcidx/main {n}: la próxima libre (cada pedido en bitcoin la toma y la sube). La clave no se publica en la tienda.
+  const MEMPOOL="https://mempool.space";
+  let PAY=null, payLib=null;
+  const lib=async()=> payLib || (payLib=await import("/js/btcaddr.js"));
+  async function payLoad(){
+    try{ const c=await A.getDoc(A.doc(A.db,"btcpay","cfg")), i=await A.getDoc(A.doc(A.db,"btcidx","main"));
+      PAY={cfg:c.exists()?c.data():null, idx:i.exists()?(i.data().n||0):null}; }catch(e){ PAY=null; }
+  }
+  function payHtml(){
+    let h=`<h2>Cobro en bitcoin on-chain</h2>`;
+    if(PAY===null) return h+`<p class="m small">No se pudo leer la configuración. ¿Están publicadas las reglas nuevas?</p>`;
+    const c=PAY.cfg, idx=PAY.idx||0, free=c ? Math.max(0,(c.cnt||0)-idx) : 0, K=[["wpkh","bc1q… (segwit nativa)"],["sh-wpkh","3… (segwit anidada)"],["pkh","1… (legacy)"]];
+    h+=`<p class="m small">Pegá la <b>clave pública extendida</b> (zpub, ypub o xpub) de una cuenta de tu billetera dedicada a la tienda: quien la tenga ve todos sus movimientos, pero no puede gastar. <b>Nunca la clave privada ni las palabras.</b> Con ella se generan direcciones de cobro, una por pedido; la clave no se publica en la tienda (solo las direcciones, de a una).</p>
+    <div class="cpform"><label class="wide">Clave pública extendida<input id="pyKey" autocomplete="off" spellcheck="false" value="${c?esc(c.key):""}" placeholder="zpub6r…"></label>
+      <label>Tipo de dirección<select id="pyKind">${K.map(([k,n])=>`<option value="${k}"${c&&c.kind===k?" selected":""}>${n}</option>`).join("")}</select></label>
+      <div class="wide"><button type="button" id="pyPrev">Ver las primeras direcciones</button> <button type="button" class="primary" id="pySave">${c?"Guardar clave nueva":"Guardar"} y generar 50 direcciones</button> ${c?`<button type="button" id="pyMore">Generar 50 más</button>`:""} <span class="m" id="pyMsg"></span></div>
+      <div class="wide small" id="pyList"></div></div>`;
+    h+= c ? `<p class="m small">Direcciones libres: <b>${free}</b> · ya usadas por pedidos: ${Math.max(0,idx-c.base)} de esta clave.${free<10?` <b style="color:var(--bad)">⚠ Quedan pocas: generá más (si se acaban, el pedido en bitcoin cae a Lightning).</b>`:""} Tu billetera solo mira 20 direcciones seguidas sin uso: si muchos encargan y no pagan, subí ese límite ("gap limit") en la billetera o los pagos posteriores no te aparecen ahí (en mempool.space sí).</p>`
+          : `<p class="m small">Todavía no hay clave: los pedidos en bitcoin muestran la Lightning Address como antes.</p>`;
+    return h;
+  }
+  // estado del pago de cada pedido on-chain, en mempool.space (sin guardar nada)
+  function payFill(){
+    document.querySelectorAll("#admBody .onc").forEach(async el=>{
+      if(el.dataset.x==="1"){ el.textContent=""; return; }
+      try{
+        const j=await (await fetch(`${MEMPOOL}/api/address/${el.dataset.a}`)).json(), want=+el.dataset.s;
+        const chain=(j.chain_stats||{}).funded_txo_sum||0, mem=(j.mempool_stats||{}).funded_txo_sum||0, got=chain+mem;
+        el.innerHTML = !got ? "sin pago todavía" : (chain>=got ? `<b style="color:var(--ok)">✓ ${chain} sats confirmados</b>` : `📡 ${got} sats sin confirmar`) + (want && got<want*0.995 ? ` <b style="color:var(--bad)">⚠ faltan ${want-got}</b>` : "");
+      }catch(e){ el.textContent="no se pudo consultar"; }
+    });
+  }
+  async function payWrite(key, kind, base, from, n){
+    const L=await lib(), addrs=L.derive(key, from, n, kind), b=A.writeBatch(A.db);
+    addrs.forEach((a,i)=>b.set(A.doc(A.db,"payaddr",String(base+from+i)),{a, i:from+i}));
+    await b.commit();
+  }
+  $("admBody").addEventListener("click",async e=>{
+    const b=e.target.closest("#pyPrev,#pySave,#pyMore"); if(!b||!A) return;
+    const m=$("pyMsg"), bad=t=>{ m.style.color="var(--bad)"; m.textContent=t; }, key=$("pyKey").value.trim(), kind=$("pyKind").value;
+    m.style.color=""; m.textContent="";
+    try{
+      const L=await lib();
+      if(b.id==="pyPrev"){
+        const a=L.derive(key, 0, 5, kind);
+        $("pyList").innerHTML=`<p>Comparalas con las primeras direcciones de recepción de tu billetera (tienen que coincidir, en este orden):</p><ol start="0">${a.map(x=>`<li class="mono">${esc(x)}</li>`).join("")}</ol>`;
+        if(!$("pyKind").dataset.touched && L.kindOf(key)!==kind) m.textContent=`Por el prefijo, esta clave suele usar ${L.kindOf(key)==="wpkh"?"bc1q…":L.kindOf(key)==="sh-wpkh"?"3…":"1…"}: si no coinciden, probá ese tipo.`;
+        return;
+      }
+      L.derive(key, 0, 1, kind);                                 // valida la clave antes de guardar
+      b.disabled=true;
+      const c=PAY&&PAY.cfg, idx=PAY&&PAY.idx!==null ? PAY.idx : 0;
+      if(b.id==="pySave"){
+        if(c && c.key===key && c.kind===kind){ b.disabled=false; return bad("Es la misma clave: usá «Generar 50 más»."); }
+        if(PAY.idx===null) await A.setDoc(A.doc(A.db,"btcidx","main"),{n:0, last:""});
+        await payWrite(key, kind, idx, 0, 50);                   // desde la próxima libre, con los índices 0–49 de la clave
+        if(c && c.cnt>idx+50){ const d=A.writeBatch(A.db); for(let k=idx+50;k<c.cnt;k++) d.delete(A.doc(A.db,"payaddr",String(k))); await d.commit(); }   // las libres de la clave anterior ya no se usan
+        await A.setDoc(A.doc(A.db,"btcpay","cfg"),{key, kind, base:idx, cnt:idx+50, at:A.serverTimestamp()});
+      } else {
+        if(!c || c.key!==key || c.kind!==kind) { b.disabled=false; return bad("Cambiaste la clave o el tipo: tocá «Guardar clave nueva»."); }
+        await payWrite(key, kind, c.base, c.cnt-c.base, 50);
+        await A.setDoc(A.doc(A.db,"btcpay","cfg"),{...c, cnt:c.cnt+50});
+      }
+      load();
+    }catch(err){ b.disabled=false; bad(err.message||String(err)); }
+  });
+  $("admBody").addEventListener("change",e=>{ if(e.target.id==="pyKind") e.target.dataset.touched="1"; });
   // ---------- Palabras sugeridas por los jugadores ----------
   // Se agrupan por palabra (sin tildes ni espacios) y se muestran solo las que no están en el glosario en ningún idioma.
   // Traducción, 3 pistas por idioma e interés (1 a 10) los escribe Claude fuera del sitio (sin IA en tiempo real):

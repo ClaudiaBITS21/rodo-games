@@ -15,6 +15,15 @@ http.createServer((q,r)=>{
     const et=fs.existsSync(path.join(HERE,"etag.txt"))?fs.readFileSync(path.join(HERE,"etag.txt"),"utf8").trim():"v1";
     r.writeHead(200,{"content-type":"text/html","etag":'"'+et+'"'}); return r.end(q.method==="HEAD"?undefined:h);
   }
-  const f=path.join(PUB,u); if(f.startsWith(PUB)&&fs.existsSync(f)&&fs.statSync(f).isFile()){ r.writeHead(200); return r.end(fs.readFileSync(f)); }
+  // la tienda de rompecabezas, también conectada a los emuladores
+  if(u==="/rompecabezas"||u==="/rompecabezas.html"){
+    let h=fix(fs.readFileSync(PUB+"/rompecabezas.html","utf8"));
+    h=h.replace("signInAnonymously, onAuthStateChanged }","signInAnonymously, onAuthStateChanged, connectAuthEmulator }")
+       .replace("increment, serverTimestamp } from","increment, serverTimestamp, connectFirestoreEmulator } from")
+       .replace("auth=getAuth(app);","auth=getAuth(app); connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true}); const _db=getFirestore(app); connectFirestoreEmulator(_db,'127.0.0.1',8080);")
+       .replace("db:getFirestore(app),","db:_db,");
+    r.writeHead(200,{"content-type":"text/html"}); return r.end(h);
+  }
+  const f=path.join(PUB,u); if(f.startsWith(PUB)&&fs.existsSync(f)&&fs.statSync(f).isFile()){ const T={".js":"text/javascript",".json":"application/json",".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".svg":"image/svg+xml"}; r.writeHead(200, T[path.extname(f)]?{"content-type":T[path.extname(f)]}:{}); return r.end(fs.readFileSync(f)); }
   r.writeHead(404); r.end();
 }).listen(5055,()=>console.log("listo 5055"));

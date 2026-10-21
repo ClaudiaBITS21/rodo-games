@@ -1,0 +1,37 @@
+// Tienda de rompecabezas: pago on-chain (dirección por pedido, cotización de CriptoYa, estado en mempool.space) y vuelta a Lightning sin direcciones
+const { chromium } = require(process.env.PLAYWRIGHT||'/opt/node22/lib/node_modules/playwright');
+const URL='http://localhost:5055/rompecabezas?p=bip39', FS='http://127.0.0.1:8080/v1/projects/demo-rodo/databases/(default)/documents/';
+let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fails++; };
+const H={Authorization:'Bearer owner','Content-Type':'application/json'};
+const put=(p,fields)=>fetch(FS+p,{method:'PATCH',headers:H,body:JSON.stringify({fields})});
+const get=async p=>(await fetch(FS+p,{headers:H})).json();
+(async()=>{
+  await put('payaddr/0',{a:{stringValue:'bc1qprueba0'}}); await put('payaddr/1',{a:{stringValue:'bc1qprueba1'}});
+  await put('btcidx/main',{n:{integerValue:'0'}, last:{stringValue:''}});
+  const br=await chromium.launch();
+  let funded=0;
+  const mk=async()=>{ const p=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); p.on('pageerror',e=>console.log('pageerror',e.message));
+    await p.route('https://criptoya.com/**', r=>r.fulfill({json:{a:{ask:99000000,totalAsk:100000000}, b:{totalAsk:110000000}, c:{totalAsk:90000000}, d:{ask:0}}}));
+    await p.route('https://formsubmit.co/**', r=>r.fulfill({json:{success:'true'}}));
+    await p.route('https://mempool.space/api/**', r=>r.fulfill({json:{chain_stats:{funded_txo_sum:0}, mempool_stats:{funded_txo_sum:funded}}}));
+    await p.goto(URL); await p.waitForTimeout(1500); return p; };
+  const buy=async(p,name)=>{ await p.fill('#fName',name); await p.fill('#fMail','x@example.com'); await p.fill('#fPhone','1155554444'); await p.fill('#fPlace','CABA');
+    await p.click('#send'); await p.waitForSelector('#done:not([hidden])',{timeout:20000}); return p.$eval('#done',e=>e.textContent.replace(/\s+/g,' ')); };
+  const A=await mk(), txt=(s)=>A.$eval(s,e=>e.textContent.trim());
+  ok(/se cotiza por separado/.test(await A.$eval('body',e=>e.textContent)),'aclara que el envío se cotiza aparte');
+  ok(/Bitcoin \(on-chain\)/.test(await txt('#payA')),'opción: '+await txt('#payA'));
+  const d1=await buy(A,'Ana Pérez');
+  ok(/bc1qprueba0/.test(d1) && /0\.00090000 BTC/.test(d1),'dirección propia y monto (90.000 $ a 100.000.000 $/BTC)');
+  ok(/Esperando el pago/.test(await txt('#payStat')),'estado: '+await txt('#payStat'));
+  const ix=await get('btcidx/main'); ok(ix.fields.n.integerValue==='1','el contador pasó a 1');
+  const os=(await get('orders')).documents||[]; const o=os[0]&&os[0].fields;
+  ok(o && o.addr.stringValue==='bc1qprueba0' && o.sats.integerValue==='90000' && +o.ai.integerValue===0,'pedido guardado con dirección y sats');
+  funded=90000;
+  await A.waitForFunction(()=>/Vimos tu pago de 90000 sats/.test(document.getElementById('payStat').textContent),null,{timeout:30000});
+  ok(true,'ve el pago en mempool.space');
+  const B=await mk(); const d2=await buy(B,'Beto Gómez');
+  ok(/bc1qprueba1/.test(d2),'el segundo pedido toma la siguiente dirección');
+  const C=await mk(); const d3=await buy(C,'Carla Díaz');
+  ok(!/bc1q/.test(d3) && /walletofsatoshi/.test(d3),'sin direcciones libres: muestra la Lightning Address');
+  await br.close(); console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
+})().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

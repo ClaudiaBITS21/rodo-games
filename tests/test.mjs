@@ -327,6 +327,23 @@ await t("fijo en pesos", assertSucceeds(withCup(C, "R2345AM", "FIJO", { u: "C", 
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "coupons/VIEJO"), cpn({ until: Date.now() - 1000 })); });
 await t("código vencido no", assertFails(withCup(C, "R2345AN", "VIEJO", { u: "C" })));
 await t("el admin no toca los usos", assertFails(setDoc(doc(ADM, "coupons/FIJO"), cpn({ type: "fix", value: 5000, max: 0, pays: ["ars"], used: 0 }))));
+// rompecabezas: pago on-chain con direcciones de una xpub
+await t("on-chain: el admin guarda la clave", assertSucceeds(setDoc(doc(ADM, "btcpay/cfg"), { key: "zpub…", kind: "wpkh", base: 0, cnt: 2 })));
+await t("on-chain: un jugador no ve la clave", assertFails(getDoc(doc(A, "btcpay/cfg"))));
+await t("on-chain: el admin escribe direcciones", assertSucceeds((async () => { await setDoc(doc(ADM, "payaddr/0"), { a: "bc1qaaa" }); await setDoc(doc(ADM, "payaddr/1"), { a: "bc1qbbb" }); return setDoc(doc(ADM, "btcidx/main"), { n: 0, last: "" }); })()));
+await t("on-chain: un jugador no escribe direcciones", assertFails(setDoc(doc(A, "payaddr/2"), { a: "bc1qmia" })));
+await t("on-chain: un jugador no lista direcciones", assertFails(getDocs(collection(A, "payaddr"))));
+await t("on-chain: lee la próxima", assertSucceeds(getDoc(doc(A, "payaddr/0"))));
+const btcOrd = (db, code, ai, addr, o = {}) => { const b = writeBatch(db); b.set(doc(db, "orders/" + code), ord({ ai, addr, sats: 90000, rate: 100000000, ...o })); b.update(doc(db, "btcidx/main"), { n: increment(1), last: code }); return b.commit(); };
+await t("on-chain: pedido con su dirección y el contador", assertSucceeds(btcOrd(A, "R3456AB", 0, "bc1qaaa")));
+await t("on-chain: misma dirección otra vez no", assertFails(btcOrd(B, "R3456AC", 0, "bc1qaaa", { u: "B" })));
+await t("on-chain: otra dirección que no es la suya no", assertFails(btcOrd(B, "R3456AD", 1, "bc1qtrucha", { u: "B" })));
+await t("on-chain: pagando en pesos no", assertFails(btcOrd(B, "R3456AE", 1, "bc1qbbb", { u: "B", pay: "ars" })));
+await t("on-chain: con dirección pero sin subir el contador no", assertFails(setDoc(doc(B, "orders/R3456AF"), ord({ u: "B", ai: 1, addr: "bc1qbbb", sats: 1, rate: 1 }))));
+await t("on-chain: subir el contador sin pedido no", assertFails(updateDoc(doc(B, "btcidx/main"), { n: increment(1), last: "R3456AG" })));
+await t("on-chain: la siguiente", assertSucceeds(btcOrd(B, "R3456AH", 1, "bc1qbbb", { u: "B" })));
+await t("on-chain: sin direcciones libres no", assertFails(btcOrd(C, "R3456AJ", 2, "bc1qccc", { u: "C" })));
+await t("on-chain: pedido en bitcoin sin dirección sigue andando", assertSucceeds(setDoc(doc(C, "orders/R3456AK"), ord({ u: "C" }))));
 // segunda administradora
 const ADM2 = env.authenticatedContext("adm2", { email: "ce.andragnes@gmail.com", email_verified: true }).firestore();
 const ADM2X = env.authenticatedContext("adm3", { email: "ce.andragnes@gmail.com", email_verified: false }).firestore();

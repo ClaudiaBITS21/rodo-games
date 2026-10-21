@@ -53,7 +53,7 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   await a.click('#sgAppr'); await a.waitForTimeout(200);
   const ap=await a.evaluate(()=>window.__clip);
   ok(/- PLEBE \/ PLEB/.test(ap) && /Pistas EN: d \| e \| f/.test(ap),'aprobadas para el glosario');
-  await a.click('#admBody details summary');
+  await a.click('#admBody details:has(#sgAi) summary');
   await a.fill('#sgAi','```json\n[{"id":"ZAPEAR","es":"ZAPEAR","en":"ZAPPING","p":{"es":["x","y","z"],"en":["q","r","s"]},"r":7,"why":"jerga"},{"id":"NOPE"}]\n```');
   await a.click('#sgAiSave'); await a.waitForTimeout(400);
   const w=await a.evaluate(()=>window.__writes);
