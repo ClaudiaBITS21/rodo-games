@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, where, serverTimestamp, Timestamp, getCountFromServer, writeBatch, deleteField } from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, where, serverTimestamp, Timestamp, getCountFromServer, writeBatch, deleteField, increment } from "firebase/firestore";
 import fs from "fs";
 
 const env = await initializeTestEnvironment({
@@ -303,6 +303,30 @@ await t("sugerencia: admin guarda análisis y estado", assertSucceeds(setDoc(doc
 await t("sugerencia: admin no cambia la palabra", assertFails(updateDoc(doc(ADM, "sugs/s1"), { w: "OTRA" })));
 await t("sugerencia: estado raro no", assertFails(updateDoc(doc(ADM, "sugs/s1"), { st: "x" })));
 await t("sugerencia: admin la borra", assertSucceeds(deleteDoc(doc(ADM, "sugs/s2"))));
+// rompecabezas: pedidos y códigos de descuento
+const cpn = (o = {}) => ({ type: "pct", value: 10, max: 2, used: 0, from: 0, until: 0, prods: ["bip39"], pays: ["btc", "ars"], on: true, note: "", at: serverTimestamp(), ...o });
+const ord = (o = {}) => ({ items: { bip39: 1 }, name: "Ana Pérez", email: "ana@example.com", phone: "1155554444", place: "CABA", ship: "envio", pay: "btc", note: "", total: 90000, lang: "es", u: "A", st: "nuevo", at: serverTimestamp(), ...o });
+const withCup = (db, code, cup, o = {}) => { const b = writeBatch(db); b.set(doc(db, "orders/" + code), ord({ sub: 90000, disc: 9000, total: 81000, cup, ...o })); b.update(doc(db, "coupons/" + cup), { used: increment(1), last: code }); return b.commit(); };
+await t("cupón: lo crea la administración", assertSucceeds(setDoc(doc(ADM, "coupons/HODL10"), cpn())));
+await t("cupón: un jugador no lo crea", assertFails(setDoc(doc(A, "coupons/GRATIS"), cpn({ value: 100 }))));
+await t("cupón: porcentaje mayor a 100 no", assertFails(setDoc(doc(ADM, "coupons/MAL"), cpn({ value: 150 }))));
+await t("cupón: cualquiera lo consulta por su código", assertSucceeds(getDoc(doc(anon, "coupons/HODL10"))));
+await t("cupón: nadie los lista", assertFails(getDocs(collection(A, "coupons"))));
+await t("pedido sin código", assertSucceeds(setDoc(doc(A, "orders/R2345AB"), ord())));
+await t("pedido con código y su uso, juntos", assertSucceeds(withCup(A, "R2345AC", "HODL10")));
+await t("pedido con código sin sumar el uso no", assertFails(setDoc(doc(A, "orders/R2345AD"), ord({ sub: 90000, disc: 9000, total: 81000, cup: "HODL10" }))));
+await t("sumar un uso sin pedido no", assertFails(updateDoc(doc(A, "coupons/HODL10"), { used: increment(1), last: "R2345AE" })));
+await t("total que no cierra no", assertFails(withCup(A, "R2345AF", "HODL10", { total: 1000 })));
+await t("código para otro rompecabezas no", assertFails(withCup(A, "R2345AG", "HODL10", { items: { times: 1 } })));
+await t("segundo uso (máximo 2)", assertSucceeds(withCup(B, "R2345AH", "HODL10", { u: "B" })));
+await t("código agotado no", assertFails(withCup(C, "R2345AJ", "HODL10", { u: "C" })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "coupons/FIJO"), cpn({ type: "fix", value: 5000, max: 0, pays: ["ars"] })); });
+await t("código solo pesos pagando en bitcoin no", assertFails(withCup(C, "R2345AK", "FIJO", { u: "C", disc: 5000, total: 85000 })));
+await t("fijo por más de su valor no", assertFails(withCup(C, "R2345AL", "FIJO", { u: "C", pay: "ars", disc: 6000, total: 84000 })));
+await t("fijo en pesos", assertSucceeds(withCup(C, "R2345AM", "FIJO", { u: "C", pay: "ars", disc: 5000, total: 85000 })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "coupons/VIEJO"), cpn({ until: Date.now() - 1000 })); });
+await t("código vencido no", assertFails(withCup(C, "R2345AN", "VIEJO", { u: "C" })));
+await t("el admin no toca los usos", assertFails(setDoc(doc(ADM, "coupons/FIJO"), cpn({ type: "fix", value: 5000, max: 0, pays: ["ars"], used: 0 }))));
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);
