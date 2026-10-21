@@ -305,7 +305,7 @@ await t("sugerencia: estado raro no", assertFails(updateDoc(doc(ADM, "sugs/s1"),
 await t("sugerencia: admin la borra", assertSucceeds(deleteDoc(doc(ADM, "sugs/s2"))));
 // rompecabezas: pedidos y códigos de descuento
 const cpn = (o = {}) => ({ type: "pct", value: 10, max: 2, used: 0, from: 0, until: 0, prods: ["bip39"], pays: ["btc", "ars"], on: true, note: "", at: serverTimestamp(), ...o });
-const ord = (o = {}) => ({ items: { bip39: 1 }, name: "Ana Pérez", email: "ana@example.com", phone: "1155554444", place: "CABA", ship: "envio", pay: "btc", note: "", total: 90000, lang: "es", u: "A", st: "nuevo", at: serverTimestamp(), ...o });
+const ord = (o = {}) => ({ items: { bip39: 1 }, name: "Ana Pérez", email: "ana@example.com", phone: "1155554444", place: "CABA", ship: "correo", pay: "btc", note: "", total: 90000, lang: "es", u: "A", st: "nuevo", at: serverTimestamp(), ...o });
 const withCup = (db, code, cup, o = {}) => { const b = writeBatch(db); b.set(doc(db, "orders/" + code), ord({ sub: 90000, disc: 9000, total: 81000, cup, ...o })); b.update(doc(db, "coupons/" + cup), { used: increment(1), last: code }); return b.commit(); };
 await t("cupón: lo crea la administración", assertSucceeds(setDoc(doc(ADM, "coupons/HODL10"), cpn())));
 await t("cupón: un jugador no lo crea", assertFails(setDoc(doc(A, "coupons/GRATIS"), cpn({ value: 100 }))));
@@ -313,6 +313,8 @@ await t("cupón: porcentaje mayor a 100 no", assertFails(setDoc(doc(ADM, "coupon
 await t("cupón: cualquiera lo consulta por su código", assertSucceeds(getDoc(doc(anon, "coupons/HODL10"))));
 await t("cupón: nadie los lista", assertFails(getDocs(collection(A, "coupons"))));
 await t("pedido sin código", assertSucceeds(setDoc(doc(A, "orders/R2345AB"), ord())));
+await t("entrega vieja (envio) no", assertFails(setDoc(doc(A, "orders/R2345AZ"), ord({ ship: "envio" }))));
+await t("retiro en LABITCONF", assertSucceeds(setDoc(doc(A, "orders/R2345AY"), ord({ ship: "labitconf" }))));
 await t("pedido con código y su uso, juntos", assertSucceeds(withCup(A, "R2345AC", "HODL10")));
 await t("pedido con código sin sumar el uso no", assertFails(setDoc(doc(A, "orders/R2345AD"), ord({ sub: 90000, disc: 9000, total: 81000, cup: "HODL10" }))));
 await t("sumar un uso sin pedido no", assertFails(updateDoc(doc(A, "coupons/HODL10"), { used: increment(1), last: "R2345AE" })));

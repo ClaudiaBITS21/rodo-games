@@ -124,7 +124,8 @@ input:user-invalid{border-color:var(--bad)}
 .sum tr.dsc td{color:var(--ok)}
 .sum s{color:var(--muted);display:block;font-size:.85rem;font-weight:400}
 .payb code.addr{word-break:break-all;font-size:.85rem}
-.paystat{font-weight:700;margin:8px 0 4px}.paystat.ok{color:var(--ok)}
+.paystat{font-weight:700;margin:8px 0 4px}
+.qr{width:220px;max-width:100%;margin:10px 0;background:#fff;border-radius:10px;padding:6px}.qr svg{display:block;width:100%;height:auto}.paystat.ok{color:var(--ok)}
 
 /* ---------- Confirmación ---------- */
 .done{border-radius:14px;background:var(--paper);border:2px solid var(--btc);padding:20px}
@@ -189,8 +190,9 @@ footer a{color:inherit}
       </div>
       <div class="lab"><span id="shipL"></span>
         <div class="seg">
-          <label><input type="radio" name="ship" value="envio" checked> <span id="shipA"></span></label>
-          <label><input type="radio" name="ship" value="retiro"> <span id="shipB"></span></label>
+          <label><input type="radio" name="ship" value="correo" checked> <span id="shipA"></span></label>
+          <label><input type="radio" name="ship" value="dot"> <span id="shipB"></span></label>
+          <label><input type="radio" name="ship" value="labitconf"> <span id="shipC"></span></label>
         </div>
       </div>
       <div class="lab"><span id="payL"></span>
@@ -257,7 +259,7 @@ const T = {
     specs:["1000 piezas","Madera","Caja de 24 × 18 × 5,5 cm"], zoom:"Ampliar", each:"c/u", add:"Lo quiero", less:"Quitar uno", more:"Sumar uno",
     orderT:"Encargá el tuyo", empty:"Todavía no elegiste ningún rompecabezas. Tocá “Lo quiero” en el que te guste.",
     total:"Total", nameL:"Nombre y apellido", mailL:"Email", phoneL:"WhatsApp o teléfono", placeL:"Ciudad y provincia (o país)",
-    shipL:"¿Cómo lo recibís?", shipA:"Envío a domicilio", shipB:"Retiro en persona",
+    shipL:"¿Cómo lo recibís?", shipA:"Correo Argentino", shipB:"Retiro en Shopping DOT", shipC:"Retiro en LABITCONF",
     payL:"¿Cómo pagás?", payA:"Bitcoin (on-chain)", payB:"Pesos (transferencia o Mercado Pago)",
     noteL:"Comentarios", optL:"(opcional)",
     cupL:"Código de descuento", cupBtn:"Aplicar", cupRemove:"Quitar", cupChecking:"Buscando el código…",
@@ -267,19 +269,19 @@ const T = {
     cupOk:(c,v,until)=>`Código ${c} aplicado: ${v} de descuento${until?`, vence el ${until}`:""}.`,
     cupGone:"El código dejó de estar disponible (se agotó o venció) y lo quitamos. Revisá el total y volvé a encargar.",
     payNames:{btc:"bitcoin",ars:"pesos"}, discount:c=>`Descuento (${c})`, subtotal:"Subtotal",
-    fine:"Encargar no te cobra nada. El total es solo de los rompecabezas: el envío a domicilio se cotiza por separado según el destino, una vez hecho el pedido. Te escribimos para confirmarlo y coordinarlo.",
+    fine:"Encargar no te cobra nada. El total es solo de los rompecabezas: el envío por Correo Argentino se cotiza por separado según el destino, una vez hecho el pedido. Te escribimos para confirmarlo y coordinarlo.",
     send:"Encargar", sending:"Enviando…",
     errEmpty:"Elegí al menos un rompecabezas.", errFields:"Completá nombre, email, teléfono y ciudad.", errMail:"Revisá el email.",
     errSend:"No se pudo enviar el pedido. Revisá la conexión y probá de nuevo.",
     cart:(n,t)=>`${n} rompecabezas · ${t}`, cartGo:"Encargar",
     doneT:"¡Pedido recibido!", doneCode:"Tu número de pedido es",
-    doneP:"Te vamos a escribir para confirmarlo y, si elegiste envío a domicilio, pasarte su costo, que se paga por separado. Si querés, ya podés pagar con estos datos y mandarnos el comprobante con tu número de pedido:",
+    doneP:"Te vamos a escribir para confirmarlo y, si elegiste Correo Argentino, pasarte el costo del envío, que se paga por separado. Si querés, ya podés pagar con estos datos y mandarnos el comprobante con tu número de pedido:",
     payBtc:"Bitcoin por Lightning", payBtcN:t=>`Te pasamos el monto exacto en sats al cambio del día (${t}).`,
     payArs:"Pesos: transferencia o Mercado Pago", payArsN:t=>`Alias. Monto: ${t}.`,
     payOn:"Bitcoin on-chain", payTo:"Mandá el pago a esta dirección (es solo para tu pedido):", payAmt:"Monto exacto:",
     payRate:(r,t)=>`Calculado con la cotización de CriptoYa (1 BTC = ${r}) para ${t}. El monto vale por 24 horas.`,
     payNoRate:t=>`No pudimos traer la cotización: te pasamos el monto en bitcoin para ${t} cuando te escribamos.`,
-    payOpen:"Abrir en mi billetera", payMempool:"Ver la dirección en mempool.space",
+    payOpen:"Abrir en mi billetera", payQr:"Código QR con la dirección y el monto, para escanear con tu billetera", payMempool:"Ver la dirección en mempool.space",
     payWait:"⏳ Esperando el pago… Lo vemos solos en mempool.space apenas lo mandes.",
     paySeen:n=>`📡 Vimos tu pago de ${n} sats: falta que se confirme en un bloque.`, payOk:n=>`✓ Pago confirmado: ${n} sats. ¡Gracias!`,
     payShort:(g,w)=>` Llegaron ${g} de ${w} sats: faltan ${w-g}.`,
@@ -291,7 +293,7 @@ const T = {
     specs:["1000 pieces","Wood","Box 24 × 18 × 5.5 cm"], zoom:"Zoom", each:"each", add:"I want it", less:"One less", more:"One more",
     orderT:"Order yours", empty:"You haven’t picked a puzzle yet. Tap “I want it” on the one you like.",
     total:"Total", nameL:"Full name", mailL:"Email", phoneL:"WhatsApp or phone", placeL:"City and province (or country)",
-    shipL:"How do you get it?", shipA:"Home delivery", shipB:"Pick up in person",
+    shipL:"How do you get it?", shipA:"Correo Argentino (shipping)", shipB:"Pick up at Shopping DOT", shipC:"Pick up at LABITCONF",
     payL:"How do you pay?", payA:"Bitcoin (on-chain)", payB:"Argentine pesos (bank or Mercado Pago)",
     noteL:"Comments", optL:"(optional)",
     cupL:"Discount code", cupBtn:"Apply", cupRemove:"Remove", cupChecking:"Looking up the code…",
@@ -301,19 +303,19 @@ const T = {
     cupOk:(c,v,until)=>`Code ${c} applied: ${v} off${until?`, valid until ${until}`:""}.`,
     cupGone:"The code is no longer available (used up or expired), so we removed it. Check the total and order again.",
     payNames:{btc:"bitcoin",ars:"pesos"}, discount:c=>`Discount (${c})`, subtotal:"Subtotal",
-    fine:"Ordering doesn’t charge you anything. The total covers the puzzles only: home delivery is quoted separately by destination, once the order is placed. We’ll write to confirm it and arrange it.",
+    fine:"Ordering doesn’t charge you anything. The total covers the puzzles only: shipping by Correo Argentino is quoted separately by destination, once the order is placed. We’ll write to confirm it and arrange it.",
     send:"Place order", sending:"Sending…",
     errEmpty:"Pick at least one puzzle.", errFields:"Fill in name, email, phone and city.", errMail:"Check the email.",
     errSend:"The order couldn’t be sent. Check your connection and try again.",
     cart:(n,t)=>`${n} puzzle${n>1?"s":""} · ${t}`, cartGo:"Order",
     doneT:"Order received!", doneCode:"Your order number is",
-    doneP:"We’ll write to confirm it and, if you chose home delivery, send you its cost, paid separately. If you like, you can pay now and send us the receipt with your order number:",
+    doneP:"We’ll write to confirm it and, if you chose Correo Argentino, send you the shipping cost, paid separately. If you like, you can pay now and send us the receipt with your order number:",
     payBtc:"Bitcoin via Lightning", payBtcN:t=>`We’ll send you the exact amount in sats at the day’s rate (${t}).`,
     payArs:"Pesos: bank transfer or Mercado Pago", payArsN:t=>`Alias. Amount: ${t}.`,
     payOn:"Bitcoin on-chain", payTo:"Send the payment to this address (it’s only for your order):", payAmt:"Exact amount:",
     payRate:(r,t)=>`Based on CriptoYa’s rate (1 BTC = ${r}) for ${t}. The amount is valid for 24 hours.`,
     payNoRate:t=>`We couldn’t get the rate: we’ll send you the bitcoin amount for ${t} when we write.`,
-    payOpen:"Open in my wallet", payMempool:"See the address on mempool.space",
+    payOpen:"Open in my wallet", payQr:"QR code with the address and amount, to scan with your wallet", payMempool:"See the address on mempool.space",
     payWait:"⏳ Waiting for the payment… We’ll see it on mempool.space as soon as you send it.",
     paySeen:n=>`📡 We see your ${n} sats payment: waiting for a block confirmation.`, payOk:n=>`✓ Payment confirmed: ${n} sats. Thank you!`,
     payShort:(g,w)=>` ${g} of ${w} sats arrived: ${w-g} missing.`,
@@ -393,6 +395,10 @@ async function btcRate(){                                      // pesos por 1 BT
   }catch(e){ console.warn("Cotización:",e); return 0; }
 }
 const btcOf = sats => (sats/1e8).toFixed(8);
+const bip21 = o => `bitcoin:${o.addr}${o.sats?`?amount=${btcOf(o.sats)}`:""}`;   // URI de pago (BIP21): la billetera lee dirección y monto
+async function payQr(o){
+  try{ const {qrSvg}=await import("/js/qr.js"), el=$("payQr"); if(el) el.innerHTML=qrSvg(bip21(o)); }catch(e){ console.warn("QR:",e); }
+}
 let payTimer=null;
 function watchPay(o){
   clearInterval(payTimer); if(!o || !o.addr) return;
@@ -445,11 +451,11 @@ function texts(){
   document.documentElement.lang=lang;
   $("title").textContent=t.title; $("backBtn").textContent=t.back; $("footBack").textContent=t.footBack; $("intro").textContent=t.intro;
   $("badges").innerHTML=(CFG.PRESALE?`<span class="badge o">${esc(t.presale)}</span>`:"")+t.badges.map(b=>`<span class="badge">${esc(b)}</span>`).join("");
-  ["orderT","nameL","mailL","phoneL","placeL","shipL","shipA","shipB","payL","payA","payB","noteL","optL","fine","send","cartGo","cupL","cupBtn"].forEach(k=>$(k).textContent=t[k]);
+  ["orderT","nameL","mailL","phoneL","placeL","shipL","shipA","shipB","shipC","payL","payA","payB","noteL","optL","fine","send","cartGo","cupL","cupBtn"].forEach(k=>$(k).textContent=t[k]);
   $("lbX").textContent=t.close; $("cupOpt").textContent=t.optL; $("cupBtn").textContent=coupon?t.cupRemove:t.cupBtn;
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
   renderProducts(); renderSummary();
-  if(lastOrder) renderDone(lastOrder);
+  if(lastOrder){ renderDone(lastOrder); payQr(lastOrder); }
 }
 document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{ lang=b.dataset.lang; store.set("rodo-lang",lang); texts(); }));
 
@@ -531,7 +537,7 @@ $("form").addEventListener("submit", async e=>{
     const r=await fetch(`https://formsubmit.co/ajax/${CFG.MAIL_TO}`,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
       body:JSON.stringify({ _subject:`🧩 Pedido ${order.code}: ${lines("es")} (${ars(order.total)})`, _replyto:f.email, _template:"table", _captcha:"false",
         Pedido:order.code, Rompecabezas:lines("es"), Subtotal:ars(order.sub), Descuento:cup?`${cup}: − ${ars(order.disc)}`:"-", Total:ars(order.total), Nombre:f.name, Email:f.email, Telefono:f.phone, Lugar:f.place,
-        Entrega:f.ship==="envio"?"Envío a domicilio":"Retiro en persona", Pago:f.pay==="btc"?(order.addr?"Bitcoin on-chain":"Bitcoin (sin dirección on-chain libre: pasarle una o cobrar por Lightning)"):"Pesos",
+        Entrega:{correo:"Correo Argentino (cotizar envío)", dot:"Retiro en Shopping DOT", labitconf:"Retiro en LABITCONF"}[f.ship]||f.ship, Pago:f.pay==="btc"?(order.addr?"Bitcoin on-chain":"Bitcoin (sin dirección on-chain libre: pasarle una o cobrar por Lightning)"):"Pesos",
         Direccion:order.addr||"-", Monto_BTC:order.addr?(order.sats?`${btcOf(order.sats)} BTC (${order.sats} sats, 1 BTC = ${ars(order.rate)})`:"sin cotización: pasárselo"):"-", Comentarios:f.note||"-",
         Idioma:lang, Guardado:saved?"sí, en el panel":"NO (solo este mail)" })});
     mailed=r.ok;
@@ -539,7 +545,7 @@ $("form").addEventListener("submit", async e=>{
   sending=false; $("send").disabled=false; $("send").textContent=t.send;
   if(!saved && !mailed){ msg.className="msg bad"; msg.textContent=t.errSend; return; }
   order.lines={es:lines("es"), en:lines("en")};
-  lastOrder=order; coupon=null; $("fCup").value=""; $("fCup").disabled=false; $("cupMsg").textContent=""; renderDone(order); watchPay(order);
+  lastOrder=order; coupon=null; $("fCup").value=""; $("fCup").disabled=false; $("cupMsg").textContent=""; renderDone(order); watchPay(order); payQr(order);
   $("orderBox").hidden=true; $("done").hidden=false; renderSummary();
   $("done").scrollIntoView({block:"start"});
 });
@@ -552,7 +558,8 @@ function renderDone(o){
       <div class="copy"><code class="addr">${esc(o.addr)}</code><button data-copy="${esc(o.addr)}">${t.copy}</button></div>
       ${o.sats ? `<p class="fine">${esc(t.payAmt)}</p><div class="copy"><code>${btcOf(o.sats)} BTC</code><button data-copy="${btcOf(o.sats)}">${t.copy}</button></div><p class="fine">${esc(t.payRate(ars(o.rate), tot))}</p>`
                : `<p class="fine">${esc(t.payNoRate(tot))}</p>`}
-      <p><a class="btn" href="bitcoin:${esc(o.addr)}${o.sats?`?amount=${btcOf(o.sats)}`:""}">${esc(t.payOpen)}</a></p>
+      <div class="qr" id="payQr" role="img" aria-label="${esc(t.payQr)}"></div>
+      <p><a class="btn" href="${esc(bip21(o))}">${esc(t.payOpen)}</a></p>
       <p class="paystat" id="payStat" aria-live="polite">${esc(t.payWait)}</p>
       <p class="fine"><a href="${CFG.MEMPOOL}/address/${esc(o.addr)}" target="_blank" rel="noopener">${esc(t.payMempool)}</a></p></div>` : btc;
   const wa = CFG.WHATSAPP ? `<a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/${CFG.WHATSAPP}?text=${encodeURIComponent(t.waMsg(o.code,o.lines[lang]))}">${esc(t.wa)}</a>` : "";

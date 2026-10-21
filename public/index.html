@@ -5119,7 +5119,7 @@ const Admin = (()=>{
         `<select class="ordst" data-k="${esc(o.code)}">${ST.map(x=>`<option${x===o.st?" selected":""}>${x}</option>`).join("")}</select>`,
         Object.entries(o.items||{}).map(([k,v])=>`${v} × ${esc(PUZ[k]||k)}`).join("<br>"), ars(o.total), discCheck(o, CP)||"–", esc(o.name),
         `<a href="mailto:${esc(o.email)}?subject=${encodeURIComponent("Tu pedido "+o.code+" de rompecabezas")}">${esc(o.email)}</a><br><a href="https://wa.me/${esc(String(o.phone).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(o.phone)}</a>`,
-        esc(o.place), o.ship==="retiro"?"Retiro":"Envío", o.pay==="btc"?(o.addr?"₿ On-chain":"₿ Lightning"):"Pesos",
+        esc(o.place), ({correo:"Correo Argentino", dot:"Shopping DOT", labitconf:"LABITCONF", envio:"Envío", retiro:"Retiro"})[o.ship]||esc(o.ship), o.pay==="btc"?(o.addr?"₿ On-chain":"₿ Lightning"):"Pesos",
         o.addr ? `<a href="${MEMPOOL}/address/${esc(o.addr)}" target="_blank" rel="noopener" class="mono small">${esc(o.addr.slice(0,10))}…${esc(o.addr.slice(-6))}</a><br>${o.sats?`${(o.sats/1e8).toFixed(8)} BTC`:"sin cotización"}<br><span class="onc small" data-a="${esc(o.addr)}" data-s="${o.sats||0}" data-x="${o.st==="cancelado"||o.st==="entregado"?1:0}">…</span>` : "–",
         `<span class="small" style="white-space:normal">${esc(o.note||"")}</span>`]));
     return h;

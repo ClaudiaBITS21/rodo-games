@@ -423,7 +423,7 @@ service cloud.firestore {
         && trimmed(request.resource.data.phone, 6, 40)
         && trimmed(request.resource.data.place, 2, 120)
         && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 1000
-        && request.resource.data.ship in ['envio', 'retiro']
+        && request.resource.data.ship in ['correo', 'dot', 'labitconf']
         && request.resource.data.pay in ['btc', 'ars']
         && request.resource.data.lang in ['es', 'en']
         && request.resource.data.total is int && request.resource.data.total >= 0
