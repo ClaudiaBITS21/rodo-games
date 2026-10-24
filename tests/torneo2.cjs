@@ -50,6 +50,25 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await wait(()=>document.querySelector('#tStage .tking'));
   ok(/Campeón/.test(await st()) && /Bot2/.test(await st()),'campeón: '+await st());
   await A.screenshot({path:__dirname+'/torneo2.png'});
+  // varios torneos programados: una tarjeta por cada uno en la portada, con la hora y el lugar; en la sala se elige cuál ver
+  await db(async f => {
+    await F.updateDoc(F.doc(f, T), { place:'LABITCONF, Costa Salguero' });
+    await F.setDoc(F.doc(f, 'tourneys/T2'), { name:'SEGUNDO GAMES', st:'open', cap:64, fee:0, lnurl:'', when:F.Timestamp.fromMillis(Date.now()+3*86400000), place:'Online', orgs:[], bases:'', lang:'es', cur:0,
+      rounds:[{g:'sopa',lang:'es',s:'media',m:'w',dur:10}], champ:null, auto:true, at:F.Timestamp.now() });
+  });
+  await A.evaluate(()=>location.hash='');
+  await wait(()=>document.querySelectorAll('#tBanner .tbanner').length===2);
+  const cards=await A.$$eval('#tBanner .tbanner',l=>l.map(e=>e.textContent.replace(/\s+/g,' ')));
+  ok(cards.some(c=>/SEGUNDO GAMES/.test(c) && /🗓/.test(c) && /📍 Online/.test(c)) && cards.some(c=>/PRUEBA GAMES/.test(c) && /📍 LABITCONF, Costa Salguero/.test(c)),'portada con los dos torneos, hora y lugar: '+cards.join(' | '));
+  await A.$eval('#tBanner',e=>e.scrollIntoView()); await A.screenshot({path:__dirname+'/torneo-portada.png'});
+  await A.click('#tBanner .tbanner[data-tid="T2"]');
+  await wait(()=>location.hash==='#torneo' && /SEGUNDO GAMES/.test(document.querySelector('#tHead .tname')?.textContent||''));
+  const head=await A.$eval('#tHead',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/📍 Online/.test(head) && /Arranca:/.test(head),'la sala del elegido, con hora y lugar: '+head.slice(0,200));
+  ok(await A.$$eval('#tHead [data-tpick]',l=>l.length)===2,'en la sala se puede pasar al otro');
+  await A.click('#tHead [data-tpick="T1"]');
+  await wait(()=>/PRUEBA GAMES/.test(document.querySelector('#tHead .tname')?.textContent||''));
+  ok(true,'cambia al otro torneo');
   // cierre de ronda (tDecided): pasan 2 de 4; la ronda se cierra apenas los que siguen jugando ya no pueden entrar
   const dec=await A.evaluate(()=>{
     const ts=ms=>({toMillis:()=>ms}), go=Date.now()-200000, at=s=>ts(go+s*1000);

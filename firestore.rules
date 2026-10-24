@@ -481,7 +481,9 @@ service cloud.firestore {
     function isTest(tid) { return tour(tid).get('test', false) == true; }
     function validTour(d) {
       // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv', 'test', 'src', 'inv'])
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv', 'test', 'src', 'inv', 'place'])
+        // place: dónde se juega (texto libre que se muestra en la portada y en la sala)
+        && (!('place' in d) || (d.place is string && d.place.size() <= 120))
         && (!('test' in d) || d.test is bool)
         && (!('inv' in d) || (d.inv is list && d.inv.size() <= 40))
         && d.name is string && d.name.size() > 0 && d.name.size() <= 80

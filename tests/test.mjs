@@ -258,6 +258,8 @@ await t("torneo: un jugador no lo crea", assertFails(setDoc(doc(A, "tourneys/T2"
 await t("torneo: un organizador lo maneja", assertSucceeds(updateDoc(doc(ORG, "tourneys/T1"), { name: "PRUEBA 2" })));
 await t("torneo: un organizador no cambia los organizadores", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { orgs: ["org@x.com", "otro@x.com"] })));
 await t("torneo: un jugador no lo cambia", assertFails(updateDoc(doc(A, "tourneys/T1"), { st: "live" })));
+await t("torneo: el organizador pone dónde se juega", assertSucceeds(updateDoc(doc(ORG, "tourneys/T1"), { place: "LABITCONF" })));
+await t("torneo: el lugar tiene un largo máximo", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { place: "x".repeat(121) })));
 await t("torneo: el organizador guarda las palabras propias", assertSucceeds(setDoc(doc(ORG, "tourneys/T1/secret/cw"), { x1: "HALVING" })));
 await t("torneo: el organizador las lee", assertSucceeds(getDoc(doc(ORG, "tourneys/T1/secret/cw"))));
 await t("torneo: un jugador no ve las palabras propias", assertFails(getDoc(doc(A, "tourneys/T1/secret/cw"))));
