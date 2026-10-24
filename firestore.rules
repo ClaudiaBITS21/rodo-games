@@ -220,7 +220,9 @@ service cloud.firestore {
     // Vencen a los 60 segundos (65 de margen). Solo las leen quien invita y quien es invitado.
     function newInvite(from) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w', 'r', 'lk'])
+      return d.keys().hasOnly(['to', 'name', 'g', 'k', 'lang', 'n', 'at', 'st', 'd', 'm', 'w', 'r', 'lk', 'sa'])
+        // sa: invitación a la sala de quien invita (quien acepta se suma a salas/{from})
+        && (!('sa' in d) || d.sa is bool)
         // r: invitación al azar (quien ya rechazó una al azar en su sesión la rechaza sola)
         && (!('r' in d) || d.r is bool)
         // m: modo de la sopa y w: palabras de la semilla, que eligió quien invita

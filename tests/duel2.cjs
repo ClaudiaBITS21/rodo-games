@@ -17,6 +17,9 @@ const rest=async(path,opt={})=>{ const r=await fetch(FS+path,{...opt,headers:{Au
   // A invita a B al ahorcado
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="ahorcado"]'); await A.click('#ivSend'); await mkUser(A,'Ana'); await A.click('#ivSend');
   await B.waitForSelector('#ivIn[open]',{timeout:15000}); await B.click('#ivYes');
+  // «Invitar a jugar» abre la sala de Ana: arranca cuando ella quiere
+  await A.waitForFunction(()=>document.getElementById('salaDlg').open && /2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:15000});
+  await A.click('#salaGo');
   await A.waitForFunction(()=>location.hash==='#ahorcado'); await B.waitForFunction(()=>location.hash==='#ahorcado');
   const n=await pidOf(A,'ahorcado'); ok(n===await pidOf(B,'ahorcado'),'misma partida #'+n);
   const pz=await rest(`puzzles/ahorcado6-es-${n}`); const LIST=pz.fields.data.mapValue.fields.list.arrayValue.values.map(v=>v.mapValue.fields.w.stringValue); const word=LIST[0];
@@ -28,8 +31,8 @@ const rest=async(path,opt={})=>{ const r=await fetch(FS+path,{...opt,headers:{Au
   for(const w of LIST){ for(const c of [...new Set(w)].filter(c=>all.includes(c))) await press(A,c); await A.waitForTimeout(900); }
   await B.waitForFunction(()=>/ya ganó esta/.test(document.querySelector('#view-ahorcado .pduel').textContent),null,{timeout:15000});
   ok(true,'B: '+await txt(B,'#view-ahorcado .pduel'));
-  await A.waitForFunction(()=>/Ganaste esta! .* ya no te alcanza/.test((document.querySelector('#view-ahorcado .wduel')||{}).textContent||''),null,{timeout:15000});
-  ok(true,'A: '+await txt(A,'#view-ahorcado .wduel .dunow'));
+  await A.waitForFunction(()=>/Ganaste esta/.test((document.querySelector('#view-ahorcado .wsala .sastat')||{}).textContent||''),null,{timeout:15000});
+  ok(true,'A: '+await txt(A,'#view-ahorcado .wsala .sastat'));
   // English
   await B.evaluate(()=>document.querySelector('[data-lang="en"],#langBtn')&&0);
   await br.close(); console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);

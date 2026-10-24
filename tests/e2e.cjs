@@ -29,7 +29,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(true,'A espera: '+await txt(A,'#ivWaitT')+' | '+await txt(A,'#ivCancel'));
   // B recibe con el cronómetro congelado
   await B.waitForSelector('#ivIn[open]',{timeout:15000});
-  ok(/Ana te invita a jugar Criptograma en inglés/.test(await txt(B,'#ivInT')),'B ve: '+await txt(B,'#ivInT'));
+  ok(/Ana te invita a su sala: Criptograma en inglés/.test(await txt(B,'#ivInT')),'B ve: '+await txt(B,'#ivInT'));
   const bpid=await txt(B,'#view-ahorcado .pid');
   ok(/congelado/.test(await txt(B,'#ivInFz')),'aviso de congelado');
   const cls=await B.$eval('#view-ahorcado .ptime',e=>e.className); ok(/frozen/.test(cls),'reloj del ahorcado congelado ('+cls+')');
@@ -37,6 +37,9 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(f1===f2,`no avanza mientras está congelado (${f1} = ${f2})`);
   ok(/Vence en \d+ s/.test(await txt(B,'#ivInLeft')),'cuenta regresiva: '+await txt(B,'#ivInLeft'));
   await B.click('#ivYes');
+  // los dos en la sala de Ana: arranca ella
+  await A.waitForFunction(()=>document.getElementById('salaDlg').open && /2 en la sala/.test(document.getElementById('salaWho').textContent),null,{timeout:15000});
+  await A.click('#salaGo');
   await A.waitForFunction(()=>location.hash==='#criptograma',null,{timeout:10000});
   await B.waitForFunction(()=>location.hash==='#criptograma',null,{timeout:10000});
   await A.waitForFunction(()=>/\d/.test(document.querySelector('#view-criptograma .pid').textContent));
@@ -45,7 +48,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(pa===pb,`misma partida (${pa} / ${pb})`);
   ok(await B.evaluate(()=>document.documentElement.lang)==='en','B pasó a inglés');
   const qa=await A.$eval('#view-criptograma',e=>e.innerText.slice(0,4000)), qb=await B.$eval('#view-criptograma',e=>e.innerText.slice(0,4000));
-  const clean=s=>s.split('\n').filter(l=>!/jugando|terminó|Empieza|Iniciar|arranca|Duelo|playing|finished|Starts|Start|Duel|aceptó|accepted|both start/.test(l)).join('\n').replace(/\d+:\d+/g,'');
+  const clean=s=>s.split('\n').filter(l=>!/jugando|terminó|Empieza|Iniciar|arranca|Duelo|playing|finished|Starts|Start|Duel|aceptó|accepted|both start|Sala|Juegan|room|at once|same time/.test(l)).join('\n').replace(/\d+:\d+/g,'');
   if(clean(qa)!==clean(qb)){ const x=clean(qa).split('\n'), y=clean(qb).split('\n'); x.forEach((l,i)=>{ if(l!==y[i]) console.log('DIFF',JSON.stringify(l),'|',JSON.stringify(y[i])); }); }
   ok(clean(qa)===clean(qb),'mismo contenido en las dos pantallas');
   // B vuelve al ahorcado: sigue desde donde quedó
@@ -58,12 +61,12 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   // los dos vuelven a castellano desde la portada
   await B.evaluate(()=>location.hash=''); await B.waitForTimeout(400); await B.click('.lang button[data-lang="es"]');
   await A.evaluate(()=>location.hash=''); await A.waitForTimeout(400); await A.click('.lang button[data-lang="es"]');
-  // B no recibe invitaciones mientras tiene un duelo vivo: se prueba con otra y después se lo da por vencido
+  // B no recibe invitaciones mientras tiene una sala viva: se prueba con otra y después se lo da por vencido
   await A.evaluate(()=>location.hash=''); await A.waitForTimeout(500);
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="anagrama"]'); await A.click('#ivSend');
-  await A.waitForSelector('#ivDone:not([hidden])',{timeout:15000}); ok(!(await B.$('#ivIn[open]')),'en duelo no le llegan invitaciones: '+await txt(A,'#ivOutMsg'));
+  await A.waitForSelector('#ivDone:not([hidden])',{timeout:15000}); ok(!(await B.$('#ivIn[open]')),'jugando en una sala no le llegan invitaciones: '+await txt(A,'#ivOutMsg'));
   await A.click('#ivOutX').catch(()=>{}); await A.waitForTimeout(500);
-  await B.evaluate(()=>['criptograma','sopa','ahorcado','acrostico','anagrama','semilla'].forEach(g=>{ const c=Reg.cur(g); if(c&&c.duel) c.t0-=17*60000; }));
+  await B.evaluate(()=>['criptograma','sopa','ahorcado','acrostico','anagrama','semilla'].forEach(g=>{ const c=Reg.cur(g); if(c&&(c.duel||c.sala)) c.t0-=17*60000; }));
   // rechazo
   await A.evaluate(()=>location.hash=''); await A.waitForTimeout(500);
   await A.click('#ivBtn'); await A.click('#ivGames button[data-g="anagrama"]'); await A.click('#ivSend');
