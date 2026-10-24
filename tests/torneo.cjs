@@ -49,6 +49,25 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.click('#sGiveUp'); await A.click('#sGiveUp');
   const r=await until(async()=>{ const x=await get(`${T}/rounds/1/res/${uid}`); return x && x.done && x; });
   ok(r && r.done && r.ok===false && r.x===false,'resultado final guardado (se rindió): '+JSON.stringify(r&&{done:r.done,ok:r.ok,p:r.p}));
+  // la final se cierra mientras Ana juega (Bot 1 ya no puede ser alcanzado): el cartel dice que terminó y quién ganó
+  const d2=await A.evaluate(async()=>JSON.parse(JSON.stringify(await Reg.genFor('sopa',{L:'es', s:'media'}))));
+  const now2=Date.now();
+  await db(async f => {
+    await F.setDoc(F.doc(f, `${T}/ins/bot-1`), { nm:'Bot 1', av:'🤖', bot:true, at:F.Timestamp.now(), ck:F.Timestamp.now(), paid:false, out:false });
+    await F.setDoc(F.doc(f, `${T}/rounds/2`), { no:2, ci:0, g:'sopa', k:'sopa', lang:'es', dur:10, nr:0, final:true, pl:[uid,'bot-1'], adv:1, st:'live',
+      go:F.Timestamp.fromMillis(now2-1000), end:F.Timestamp.fromMillis(now2+600000), left:0, s:'media', m:'w', at:F.Timestamp.now() });
+    await F.setDoc(F.doc(f, `${T}/rounds/2/data/p`), { d:d2 });
+    await F.updateDoc(F.doc(f, T), { cur:2 });
+  });
+  await A.evaluate(()=>{ location.hash='torneo'; });
+  await A.waitForFunction(()=>{ const c=Reg.cur('sopa'); return location.hash==='#sopa' && c && c.tour && c.tour.rid==='2'; },null,{timeout:20000}).catch(async()=>{ if(await A.$('[data-act="play"]')) await A.click('[data-act="play"]'); });
+  await A.waitForFunction(()=>{ const c=Reg.cur('sopa'); return location.hash==='#sopa' && c && c.tour && c.tour.rid==='2'; },null,{timeout:20000});
+  await db(async f => {
+    await F.setDoc(F.doc(f, `${T}/rounds/2/res/bot-1`), { p:1, s:0, f:0, e:0, h:0, c:0, ok:true, done:true, x:false, at:F.Timestamp.fromMillis(now2+59000) });
+    await F.updateDoc(F.doc(f, `${T}/rounds/2`), { st:'closed', q:['bot-1'], pos:{'bot-1':1, [uid]:2} });
+  });
+  await A.waitForFunction(()=>/La final terminó/.test(document.querySelector('#view-sopa .wtour')?.textContent||'') && /Ganó la final 🤖 Bot 1 con 940 puntos/.test(document.querySelector('#view-sopa .wtour')?.textContent||''),null,{timeout:20000})
+    .then(()=>ok(true,'final cortada: dice que terminó y quién ganó'), async()=>ok(false,'final cortada: '+await A.evaluate(()=>document.querySelector('#view-sopa .wtour')?.textContent)));
   ok(await A.evaluate(()=>tScore({go:{toMillis:()=>1000}, nr:0, k:'sopa'}, {done:true, ok:true, at:{toMillis:()=>61000}, e:1, h:0, c:0, f:0}).pts)===930,'tScore: 60 s y un error → 930');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);

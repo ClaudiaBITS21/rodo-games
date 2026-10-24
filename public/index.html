@@ -5578,7 +5578,7 @@ Object.assign(T.es,{
   tsFinal:"🏆 Gran final", tsChamp:"👑 Campeón",
   tChamp:w=>`🏆 Campeón: ${w}`, tChampPool:s=>`Gana el pozo de ${s} sats.`, tChampNoPool:"No aportó al pozo: el pozo queda para el organizador.",
   tBarGo:(no,tm)=>`🏆 ${no} arranca en ${tm}`, tBarLive:no=>`🏆 ${no} en juego`, tBarBtn:"Ir", tBarPassed:no=>`🏆 ¡Pasaste a la ${no}!`,
-  tTimeUp:"⏱ Se terminó el tiempo de la ronda. Se guardó lo que llegaste a resolver.", tClosedMid:"La ronda terminó: ya se definieron los que pasan.",
+  tTimeUp:"⏱ Se terminó el tiempo de la ronda. Se guardó lo que llegaste a resolver.", tClosedMid:"La ronda terminó: ya se definieron los que pasan.", tFinalMid:"La final terminó: con el tiempo y las penalidades que llevabas, ya no se podía dar vuelta.", tFinalWon:"🏆 ¡Ganaste la final!", tFinalLost:(w,p)=>`🏆 Ganó la final ${w} con ${p} puntos.`,
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} de ${n} terminaron · pasan ${a}`, tNoteNL:(d,n)=>`${d} de ${n} terminaron`, tNoteX:"Jugás sin competir.",
   tPos:(p,n)=>`Puesto provisorio: ${p}° (de ${n} que terminaron).`, tSeeTable:"Ver la tabla", tPts:p=>`${p} puntos`,
   tLoadFail:"No se pudo abrir la partida de la ronda. Probá de nuevo.", tWaitStart:"Abriendo la partida…",
@@ -5622,7 +5622,7 @@ Object.assign(T.en,{
   tsFinal:"🏆 Grand final", tsChamp:"👑 Champion",
   tChamp:w=>`🏆 Champion: ${w}`, tChampPool:s=>`Wins the ${s} sats pool.`, tChampNoPool:"Didn't contribute to the pool: it goes to the organizer.",
   tBarGo:(no,tm)=>`🏆 ${no} starts in ${tm}`, tBarLive:no=>`🏆 ${no} is live`, tBarBtn:"Go", tBarPassed:no=>`🏆 You're through to ${no}!`,
-  tTimeUp:"⏱ Time's up for this round. What you solved was saved.", tClosedMid:"The round is over: the qualifiers are decided.",
+  tTimeUp:"⏱ Time's up for this round. What you solved was saved.", tClosedMid:"The round is over: the qualifiers are decided.", tFinalMid:"The final is over: with your time and penalties so far, it could no longer be turned around.", tFinalWon:"🏆 You won the final!", tFinalLost:(w,p)=>`🏆 ${w} won the final with ${p} points.`,
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} of ${n} finished · ${a} advance`, tNoteNL:(d,n)=>`${d} of ${n} finished`, tNoteX:"You're playing without competing.",
   tPos:(p,n)=>`Provisional rank: #${p} (of ${n} who finished).`, tSeeTable:"See standings", tPts:p=>`${p} points`,
   tLoadFail:"Couldn't open the round's game. Please try again.", tWaitStart:"Opening the game…",
@@ -5777,7 +5777,7 @@ const Tour = (()=>{
     const r=curR();
     if(r){ loadMine(r); if(r.st==="closed"){ loadClosed(r); Object.values(RS).forEach(x=>{ if(x.st==="closed" && view==="torneo") loadClosed(x); }); } }
     // el organizador cerró la ronda mientras la jugaba
-    if(play && RS[play.id] && RS[play.id].st==="closed" && !play.done){ stop(t().tClosedMid); }
+    if(play && RS[play.id] && RS[play.id].st==="closed" && !play.done){ stop(RS[play.id].final ? t().tFinalMid : t().tClosedMid); }
     if(play && RS[play.id] && RS[play.id].st==="closed") loadClosed(RS[play.id]);
     watchRes(); render(); banner(); winSlot();
   }
@@ -5858,7 +5858,10 @@ const Tour = (()=>{
     if(mine && mine.at){ const sc=tScore(r, mine); h+=`<b class="tpts">${esc(T0.tPts(sc.pts))}</b>`; }
     if(r.st==="closed"){
       const p=(r.pos||{})[uid];
-      if(comp(r) && p) h+=`<p>${esc((r.q||[]).includes(uid) ? T0.tPassed(p) : T0.tOut(p, (r.pl||[]).length))}</p>`;
+      // la final: quién ganó y con cuántos puntos
+      if(r.final && comp(r)){ const ch=(r.q||[])[0], cr=(closedRes[r.id]||{})[ch];
+        h+=`<p class="tbigt">${esc(ch===uid ? T0.tFinalWon : ch ? T0.tFinalLost(who(ch), cr ? tScore(r, cr).pts : "–") : "–")}</p>`; }
+      else if(comp(r) && p) h+=`<p>${esc((r.q||[]).includes(uid) ? T0.tPassed(p) : T0.tOut(p, (r.pl||[]).length))}</p>`;
       else if(play.x && mine){ const res=closedRes[r.id]||{}; const L=tStand(r,res), me=tScore(r,mine); const pos=1+L.filter(x=>x.sc.pts>me.pts).length; h+=`<p>${esc(T0.tWould(pos))}</p>`; }
     } else if(mine){
       const L=tStand(r, RES).filter(x=>x.r), me=tScore(r, mine);
