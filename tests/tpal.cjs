@@ -41,7 +41,23 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/faltan las pistas de ZAPEAR/.test(await msg()) && !(await get(`${T}/rounds/1`)),'sin pista no arranca: '+await msg());
   // se pega la respuesta de Claude abajo de la lista
   await cw(0).fill('halving\nZapéar\nMEMPOOL\nZAPEAR = Mandar sats por Nostr');
+  // elegir del glosario: tildar y destildar
+  await a.locator('[data-ta="cwlist"]').nth(0).click();
+  ok(await a.locator('.tacwr').nth(0).locator('.cwi').count()===218,'la lista trae las 218 palabras del glosario');
+  await a.locator('.tacwr').nth(0).locator('.cwlist').screenshot({path:__dirname+'/tpal-lista.png'});
+  await a.locator('.tacwr').nth(0).locator('.cwq').fill('hodl');
+  ok(await a.locator('.tacwr').nth(0).locator('.cwi:not([hidden])').count()<=3,'el buscador filtra');
+  ok(await a.locator('.tacwr').nth(0).locator('[data-cw="MEMPOOL"]').isChecked(),'las que ya están en la caja aparecen tildadas');
+  await a.locator('.tacwr').nth(0).locator('[data-cw="HODL"]').check();
+  ok(/\nHODL$/.test(await cw(0).inputValue()),'tildar la suma a la lista');
+  ok(/EN: HODL/.test(await a.locator('.tacwr').nth(0).locator('.cwi:has([data-cw="HODL"])').textContent()),'muestra la traducción');
+  await a.locator('.tacwr').nth(0).locator('[data-cw="HODL"]').uncheck();
+  ok(!/HODL/.test(await cw(0).inputValue()),'destildar la saca');
+  // la final (criptograma): elegir una de las frases del juego
   await a.locator('.tacwr summary').nth(1).click().catch(()=>{});
+  await a.locator('[data-ta="cwlist"]').nth(1).click();
+  await a.locator('.tacwr').nth(1).locator('[data-cwp]').first().check();
+  ok(/^El problema de fondo del dinero convencional.*\n— Satoshi Nakamoto, 2009$/.test(await cw(1).inputValue()),'elegir una frase la pone en la caja');
   await cw(1).fill('No confíes, verificá.\n— Dicho bitcoiner');
   await a.click('[data-ta="save"]');
   await a.waitForFunction(()=>/Configuración guardada/.test(document.getElementById('taMsg').textContent),null,{timeout:10000});

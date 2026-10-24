@@ -381,7 +381,10 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tacfg textarea{min-height:6em;resize:vertical}
 .tarounds input[type=number]{width:4.5em}
-.tacwr td{padding-top:0!important}.tacwr summary{cursor:pointer;color:var(--muted,#5B6672);font-size:.9rem}.tacwr textarea{width:100%;box-sizing:border-box;margin-top:6px;font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.cwlist{max-height:340px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:8px}
+.cwi{display:block;min-width:0;overflow:hidden;white-space:normal;overflow-wrap:anywhere;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.92rem;text-align:left}.cwi:hover{background:rgba(247,147,26,.08)}.cwi[hidden]{display:none}
+.cwi small{display:block;white-space:normal;color:var(--muted,#5B6672);margin-left:22px;font-size:.8rem}.cwi.off{opacity:.45;cursor:default}.tacwr summary{cursor:pointer;color:var(--muted,#5B6672);font-size:.9rem}.tacwr textarea{width:100%;box-sizing:border-box;margin-top:6px;font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tarounds td{text-align:left!important}
 .taauto{display:flex;align-items:center;gap:8px;font-size:.9rem}
 #taHist details{margin:0 0 8px}#taHist summary{cursor:pointer;font-weight:600}
@@ -1654,6 +1657,11 @@ const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
 // devuelve [palabra, pista elegida, código, todas sus pistas]
 // número de cada palabra del glosario (1..218, el mismo del código de pista) y sus definiciones (se bajan solo cuando hacen falta)
 const GW={es:new Map(G_ES.map(([w],i)=>[w,i+1])), en:new Map(G_EN.map(([w],i)=>[w,i+1]))};
+// traducción entre los glosarios (no están en el mismo orden): palabra en castellano → en inglés; las que se escriben igual en los dos no van
+const G_TR_ES={"BLOQUE":"BLOCK","CADENA":"CHAIN","MINERO":"MINER","MINERIA":"MINING","NODO":"NODE","BILLETERA":"WALLET","WALLET":"WALLET","SEMILLA":"SEED","CLAVE":"KEY","LLAVE":"KEY","KEY":"KEY","FIRMA":"SIGNATURE","CANAL":"CHANNEL","DIFICULTAD":"DIFFICULTY","COMISION":"FEE","ESCASEZ":"SCARCITY","CONSENSO":"CONSENSUS","CRIPTOGRAFIA":"CRYPTOGRAPHY","PRIVACIDAD":"PRIVACY","CUSTODIA":"CUSTODY","MULTIFIRMA":"MULTISIG","DIRECCION":"ADDRESS","CONFIRMACION":"CONFIRMATION","ENERGIA":"ENERGY","INFLACION":"INFLATION","ORO":"GOLD","DINERO":"MONEY","SOBERANIA":"SOVEREIGNTY","CONTRASEÑA":"PASSPHRASE","SELLO":"TIMESTAMP","LIBRO":"LEDGER","CONFIANZA":"TRUST","VERIFICAR":"VERIFY","EMISION":"ISSUANCE","MILLONES":"MILLION","BANCOS":"BANKS","CANCILLER":"CHANCELLOR","RESCATE":"BAILOUT","EFECTIVO":"CASH","ELECTRONICO":"ELECTRONIC","PARES":"PEER","PALABRAS":"WORDS","FRIO":"COLD","STACKEAR":"STACK","HUMILDE":"HUMBLE","PREFERENCIA":"PREFERENCE","OFERTA":"SUPPLY","VOLATILIDAD":"VOLATILITY","CENSURA":"CENSORSHIP","PERMISO":"PERMISSION","FRONTERAS":"BORDERS","CUANTICA":"QUANTUM","PROTOCOLO":"PROTOCOL","CODIGO":"CODE","RED":"NETWORK","TRANSACCION":"TRANSACTION","ENTRADA":"INPUT","SALIDA":"OUTPUT","VUELTO":"CHANGE","SALDO":"BALANCE","PAGO":"PAYMENT","FACTURA":"INVOICE","RUTA":"ROUTE","LIQUIDEZ":"LIQUIDITY","CAPA":"LAYER","RESPALDO":"BACKUP","ACERO":"STEEL","ENTROPIA":"ENTROPY","DADOS":"DICE","DERIVACION":"DERIVATION","PUBLICA":"PUBLIC","PRIVADA":"PRIVATE","CURVA":"CURVE","ORACULO":"ORACLE","BOVEDA":"VAULT","HUERFANO":"ORPHAN","CABECERA":"HEADER","ALTURA":"HEIGHT","EPOCA":"EPOCH","AJUSTE":"ADJUSTMENT","SUBSIDIO":"SUBSIDY","SEUDONIMO":"PSEUDONYM","ANONIMATO":"ANONYMITY","VIGILANCIA":"SURVEILLANCE","DEVALUACION":"DEVALUATION","DOLAR":"DOLLAR","AHORRO":"SAVINGS","REMESA":"REMITTANCE","ADOPCION":"ADOPTION","COMERCIO":"COMMERCE","MERCADO":"MARKET","TORO":"BULL","OSO":"BEAR","BALLENA":"WHALE","LUNA":"MOON","ESTABLE":"STABLECOIN","CUSTODIO":"CUSTODIAN","AUTOCUSTODIA":"SELFCUSTODY","MICROPAGO":"MICROPAYMENT","COMUNIDAD":"COMMUNITY","MEMORIA":"MEMORY","HERENCIA":"INHERITANCE","RESILIENCIA":"RESILIENCE","INMUTABLE":"IMMUTABLE","RELOJ":"CLOCK","EXPLORADOR":"EXPLORER","POLVO":"DUST","CONSOLIDAR":"CONSOLIDATE","ETIQUETA":"LABEL","SUBMARINO":"SUBMARINE","PREIMAGEN":"PREIMAGE","CEBOLLA":"ONION"};
+const G_TR_EN=Object.fromEntries(Object.entries(G_TR_ES).reverse().map(([e,n])=>[n,e]));
+// la misma palabra en el otro idioma ("" si no tiene)
+const gTrans=(L,w)=>{ const O=L==="en"?GW.es:GW.en, t=(L==="en"?G_TR_EN:G_TR_ES)[w]; return t || (O.has(w) ? w : ""); };
 const gWord=(L,n)=>((L==="en"?G_EN:G_ES)[n-1]||[""])[0];
 const DEFS={};
 const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; }));
@@ -6415,6 +6423,7 @@ const TourAdmin = (()=>{
         if(x) invNames[u]=x.nm; $("taInvIn").value=""; onlQ=""; say(`${x?x.nm:"Esa persona"} ya ve el ensayo: le aparece un aviso para sumarse.`); return; }
       if(a==="invdel" && TD.test){ await A.updateDoc(tref(),{inv:(TD.inv||[]).filter(x=>x!==el.dataset.u)}); return; }
       if(a==="save") return save();
+      if(a==="cwlist"){ const tr=el.closest(".tacwr"), box=tr.querySelector(".cwpick"); box.hidden=!box.hidden; if(!box.hidden) cwPick(tr); return; }
       if(a==="cwask"){ const tr=el.closest(".tacwr"), row=tr.previousElementSibling, g=row.querySelector('[data-f="g"]').value, L=row.querySelector('[data-f="lang"]').value||"es";
         const p=cwParse(g, tr.querySelector('[data-f="cw"]').value, L);
         if(p.err){ say(p.err, true); return; }
@@ -6544,10 +6553,33 @@ const TourAdmin = (()=>{
       else if(c.g!=="sopa"){ const txt=(c.cwid && CW[c.cwid])||"", p=cwParse(c.g, txt, c.lang||T0.lang||"es"), n=p.v ? (Array.isArray(p.v) && c.g!=="criptograma" ? p.v.length : 1) : 0;
         const ms=(p.miss||[]).length;
         h+=`<tr class="tacwr"><td></td><td colspan="6"><details${txt?" open":""}><summary>✎ ${CW_LBL[c.g]}${n?` · ${c.g==="criptograma"||c.g==="acrostico"?"elegida":n+" elegida"+(n===1?"":"s")}`:" · al azar"}${ms?` · <b class="bad">⚠ falta${ms===1?"":"n"} ${ms} pista${ms===1?"":"s"}</b>`:""}</summary>
-          <textarea data-f="cw" rows="${c.g==="acrostico"||c.g==="criptograma"?2:4}" maxlength="3000" placeholder="${esc(CW_PH[c.g]||"")}"${dis?" disabled":""}>${esc(txt)}</textarea><p class="m small">${esc(CW_HELP[c.g]||"")}</p>${(c.g==="ahorcado"||c.g==="anagrama") && !dis?`<div class="row"><button data-ta="cwask">📋 Copiar pedido de pistas para Claude</button></div>`:""}</details></td></tr>`; }
+          <textarea data-f="cw" rows="${c.g==="acrostico"||c.g==="criptograma"?2:4}" maxlength="3000" placeholder="${esc(CW_PH[c.g]||"")}"${dis?" disabled":""}>${esc(txt)}</textarea><p class="m small">${esc(CW_HELP[c.g]||"")}</p>${!dis && c.g!=="semilla"?`<div class="row"><button data-ta="cwlist">📚 ${c.g==="ahorcado"||c.g==="anagrama"?"Elegir del glosario":"Elegir de las frases del juego"}</button>${c.g==="ahorcado"||c.g==="anagrama"?`<button data-ta="cwask">📋 Copiar pedido de pistas para Claude</button>`:""}</div><div class="cwpick" hidden></div>`:""}</details></td></tr>`; }
     });
     h+=`</tbody></table></div><div class="row">${!ro && T0.rounds.length<8?`<button data-ta="addr">+ Ronda</button>`:""}<button class="primary" data-ta="save">Guardar configuración</button></div>`;
     return h;
+  }
+  // lista para tildar: las 218 palabras del glosario (con su traducción y sus pistas) o las frases del juego, en el idioma de la ronda
+  function cwPick(tr){
+    const row=tr.previousElementSibling, g=row.querySelector('[data-f="g"]').value, L=row.querySelector('[data-f="lang"]').value||"es";
+    const box=tr.querySelector(".cwpick"), ta=tr.querySelector('[data-f="cw"]');
+    if(g==="ahorcado" || g==="anagrama"){
+      const G=L==="en"?G_EN:G_ES, p=cwParse(g, ta.value, L), have=new Set((p.v||[]).map(x=>x[0]));
+      const okW=w=>{ const n=w.replace(/ /g,"").length; return g==="anagrama" ? !w.includes(" ") && n>=3 && n<=12 : n>=3 && n<=16; };
+      box.innerHTML=`<div class="row"><input class="cwq" placeholder="Buscar palabra o pista…"> <span class="m small cwn">${have.size} elegida${have.size===1?"":"s"} · hasta ${CW_MAX[g]}</span></div><div class="cwlist">`+
+        G.map(([w,cs],i)=>`<label class="cwi${okW(w)?"":" off"}" data-s="${esc(norm(w+" "+cs.join(" ")))}" title="${esc(cs.join("\n"))}"><input type="checkbox" data-cw="${esc(w)}"${have.has(w)?" checked":""}${okW(w)?"":" disabled"}> <b>${esc(w)}</b> ${gTrans(L,w)?`<span class="m">${esc(L==="en"?"ES":"EN")}: ${esc(gTrans(L,w))}</span>`:`<span class="m">(solo en ${L==="en"?"inglés":"castellano"})</span>`}<small>${esc(cs[0])}</small></label>`).join("")+`</div>`;
+      return;
+    }
+    const list=g==="criptograma" ? (QUOTES[L]||[]).map(([q,a])=>a?`${q}\n— ${a}`:q) : (PHRASES[L]||[]);
+    box.innerHTML=`<div class="cwlist">`+list.map(x=>`<label class="cwi"><input type="radio" name="cwp${row.dataset.i}" data-cwp="${esc(x)}"${ta.value.trim()===x?" checked":""}> ${esc(x).replace("\n","<br><span class='m'>")}${x.includes("\n")?"</span>":""}</label>`).join("")+`</div>`;
+  }
+  // tildar o destildar una palabra: se agrega al final de la lista o se saca
+  function cwToggle(cb){
+    const tr=cb.closest(".tacwr"), ta=tr.querySelector('[data-f="cw"]'), w=cb.dataset.cw, g=tr.previousElementSibling.querySelector('[data-f="g"]').value;
+    let ls=ta.value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    const same=x=>clean(x.split("=")[0])===w;
+    if(cb.checked){ if(ls.filter(x=>!x.startsWith("—")).length>=CW_MAX[g]){ cb.checked=false; say(`Hasta ${CW_MAX[g]} palabras en esta ronda.`, true); return; } if(!ls.some(same)) ls.push(w); }
+    else ls=ls.filter(x=>!same(x));
+    ta.value=ls.join("\n"); const n=ls.length, el=tr.querySelector(".cwn"); if(el) el.textContent=`${n} elegida${n===1?"":"s"} · hasta ${CW_MAX[g]}`;
   }
   const CW_LBL={ahorcado:"Elegir las palabras", anagrama:"Elegir las palabras", acrostico:"Elegir la frase", criptograma:"Elegir la frase", semilla:"Elegir la semilla"};
   const CW_PH={ahorcado:"HALVING\nMEMPOOL = Donde esperan las transacciones antes de entrar a un bloque", anagrama:"NODO\nMINERO\nCARTERA", acrostico:"STAY HUMBLE STACK SATS",
@@ -6681,9 +6713,13 @@ const TourAdmin = (()=>{
       return; }
     if(b.tagName!=="SELECT" && b.dataset.ta!=="auto") act(b.dataset.ta, b);
   });
-  $("view-torneo-admin").addEventListener("input",e=>{ if(e.target.id==="taInvIn") searchOnline(); });
+  $("view-torneo-admin").addEventListener("input",e=>{ if(e.target.id==="taInvIn") searchOnline();
+    if(e.target.classList.contains("cwq")){ const q=norm(e.target.value.trim()); e.target.closest(".cwpick").querySelectorAll(".cwi").forEach(l=>{ l.hidden=!!q && !l.dataset.s.includes(q); }); } });
   $("view-torneo-admin").addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.id==="taAdmIn"){ e.preventDefault(); act("admadd"); } });
-  $("view-torneo-admin").addEventListener("change",e=>{ const b=e.target.closest("[data-ta]"); if(!b) return;
+  $("view-torneo-admin").addEventListener("change",e=>{
+    if(e.target.dataset.cw!==undefined) return cwToggle(e.target);
+    if(e.target.dataset.cwp!==undefined){ e.target.closest(".tacwr").querySelector('[data-f="cw"]').value=e.target.dataset.cwp; return; }
+    const b=e.target.closest("[data-ta]"); if(!b) return;
     if(b.dataset.ta==="pick"||b.dataset.ta==="auto") act(b.dataset.ta, b);
     if(b.closest(".tarounds") && b.dataset.f==="g"){ /* el juego nuevo trae sus opciones al guardar */ } });
   return {show};
