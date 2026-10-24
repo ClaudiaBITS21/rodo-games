@@ -383,7 +383,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tacfg textarea{min-height:6em;resize:vertical}
 .tarounds input[type=number]{width:4.5em}
-.cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}.tadel{color:#B3261E}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}#taToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;background:#1A7F37;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
+#taToast.bad{background:#B3261E}#taToast[hidden]{display:none}
+.tadel{color:#B3261E}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .cwlist{max-height:340px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:8px}
 .cwi{display:block;min-width:0;overflow:hidden;white-space:normal;overflow-wrap:anywhere;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.92rem;text-align:left}.cwi:hover{background:rgba(247,147,26,.08)}.cwi[hidden]{display:none}
 .cwi small{display:block;white-space:normal;color:var(--muted,#5B6672);margin-left:22px;font-size:.8rem}.cwi.off{opacity:.45;cursor:default}.tacwr summary{cursor:pointer;color:var(--muted,#5B6672);font-size:.9rem}.tacwr textarea{width:100%;box-sizing:border-box;margin-top:6px;font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
@@ -6312,7 +6314,15 @@ const TourAdmin = (()=>{
   const nm=u=>{ const x=INS[u]; return x ? (x.av?x.av+" ":"")+x.nm : u.slice(0,6); };
   const isSuper=()=>!!(me && SUPERS.includes(me.email));
   const mine=x=>isSuper() || (me && (x.orgs||[]).includes(me.email));
-  const say=(s,bad)=>{ msgT=s||""; const el=$("taMsg"); if(el){ el.textContent=msgT; el.classList.toggle("bad",!!bad); } };
+  const say=(s,bad)=>{ msgT=s||""; const el=$("taMsg"); if(el){ el.textContent=msgT; el.classList.toggle("bad",!!bad); } toast(msgT, bad); };
+  // el mensaje también abajo, flotando: el de arriba no se ve si se está al final de la configuración
+  let toastT=null;
+  function toast(s, bad){
+    let el=$("taToast"); if(!el){ el=document.createElement("div"); el.id="taToast"; el.setAttribute("role","status"); el.setAttribute("aria-live","polite"); document.body.appendChild(el); }
+    clearTimeout(toastT); if(!s || view!=="torneo-admin"){ el.hidden=true; return; }
+    el.textContent=s; el.className=bad?"bad":""; el.hidden=false;
+    toastT=setTimeout(()=>{ el.hidden=true; }, bad ? 12000 : 5000);
+  }
   const fail=e=>say("No se pudo: "+(e.code||e.message), true);
 
   async function show(){
@@ -6498,7 +6508,7 @@ const TourAdmin = (()=>{
         if(!(TD.inv||[]).includes(u)) await A.updateDoc(tref(),{inv:[...(TD.inv||[]), u].slice(-40)});
         if(x) invNames[u]=x.nm; $("taInvIn").value=""; onlQ=""; say(`${x?x.nm:"Esa persona"} ya ve el ensayo: le aparece un aviso para sumarse.`); return; }
       if(a==="invdel" && TD.test){ await A.updateDoc(tref(),{inv:(TD.inv||[]).filter(x=>x!==el.dataset.u)}); return; }
-      if(a==="save") return save();
+      if(a==="save") return save(el);
       if(a==="cwtab"){ cwPick(el.closest(".tacwr"), el.dataset.t); return; }
       if(a==="cwlist"){ const tr=el.closest(".tacwr"), box=tr.querySelector(".cwpick"); box.hidden=!box.hidden; if(!box.hidden) cwPick(tr); return; }
       if(a==="cwask"){ const tr=el.closest(".tacwr"), row=tr.previousElementSibling, g=row.querySelector('[data-f="g"]').value, L=row.querySelector('[data-f="lang"]').value||"es";
@@ -6689,7 +6699,11 @@ const TourAdmin = (()=>{
     if(!TD.test) c.pub=ts(pb);
     return c;
   }
-  async function save(){
+  async function save(btn){
+    if(btn){ btn.disabled=true; btn.textContent="Guardando…"; }
+    try{ await save1(); } finally { if(btn && btn.isConnected){ btn.disabled=false; btn.textContent="Guardar configuración"; } }
+  }
+  async function save1(){
     const c=readCfg(), box=$("taCfg"), cw={}, errs=[], miss=[];
     if(!CWok){ say("Todavía no se cargaron las palabras propias: probá en un momento.", true); return; }
     // palabras propias: se validan acá y se guardan aparte (secret/cw), así los jugadores no las ven

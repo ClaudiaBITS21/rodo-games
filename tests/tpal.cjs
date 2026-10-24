@@ -66,6 +66,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await cw(1).fill('No confíes, verificá.\n— Dicho bitcoiner');
   await a.click('[data-ta="save"]');
   await a.waitForFunction(()=>/Configuración guardada/.test(document.getElementById('taMsg').textContent),null,{timeout:10000});
+  ok(await a.isVisible('#taToast') && /Configuración guardada/.test(await a.$eval('#taToast',e=>e.textContent)),'el aviso de guardado se ve abajo, flotando');
   const t=await get(T), sec=await get(`${T}/secret/cw`);
   const id0=t.rounds[0].cwid, id2=t.rounds[2].cwid;
   ok(id0 && id2 && !t.rounds[1].cwid && t.rounds[0].n===3,'la configuración guarda solo el identificador y la cantidad: '+JSON.stringify(t.rounds[0]));
