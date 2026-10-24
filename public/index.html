@@ -383,7 +383,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tacfg textarea{min-height:6em;resize:vertical}
 .tarounds input[type=number]{width:4.5em}
-.cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
+.cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}.tadel{color:#B3261E}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .cwlist{max-height:340px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:8px}
 .cwi{display:block;min-width:0;overflow:hidden;white-space:normal;overflow-wrap:anywhere;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.92rem;text-align:left}.cwi:hover{background:rgba(247,147,26,.08)}.cwi[hidden]{display:none}
 .cwi small{display:block;white-space:normal;color:var(--muted,#5B6672);margin-left:22px;font-size:.8rem}.cwi.off{opacity:.45;cursor:default}.tacwr summary{cursor:pointer;color:var(--muted,#5B6672);font-size:.9rem}.tacwr textarea{width:100%;box-sizing:border-box;margin-top:6px;font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
@@ -5785,6 +5785,8 @@ function cwParse(g, text, L){
 // rondas que tiene cada partida, para el puntaje (anagrama 10; ahorcado del torneo, las palabras que tenga)
 const tourRounds=c=> c.g==="anagrama" ? 10 : c.g==="ahorcado" ? (c.n||6) : 0;
 const tms=x=> x && x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
+// orden de los torneos: por fecha y hora de arranque (los terminados, al final; sin fecha, después de los que tienen)
+const tourOrder=(a,b)=>((a.st==="done")-(b.st==="done")) || ((tms(a.when)||9e15)-(tms(b.when)||9e15)) || ((tms(b.at)||0)-(tms(a.at)||0));
 const pow2below=n=>{ let p=1; while(p*2<n) p*=2; return p; };
 // puntaje de una ronda: rd = la ronda, r = el resultado guardado de un jugador
 function tScore(rd, r){
@@ -5855,9 +5857,8 @@ const Tour = (()=>{
   // ---------- suscripciones ----------
   function pick(){
     const vis=x=> x.test ? (x.inv||[]).includes(uid) : (!tms(x.pub) || srv()>=tms(x.pub));
-    const tst=x=> x.test && x.st!=="done" ? 0 : 1;   // un ensayo en curso al que me invitaron va primero
     const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && vis(x) && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
-      .sort((a,b)=>(tst(a[1])-tst(b[1]))||(pri[a[1].st]-pri[b[1].st])||((tms(a[1].when)||9e15)-(tms(b[1].when)||9e15))||((tms(b[1].at)||0)-(tms(a[1].at)||0)));
+      .sort((a,b)=>tourOrder(a[1],b[1]));
     // puede haber varios programados: se ve el que eligió el jugador (tocando su tarjeta o en la sala) o, si no, el más próximo
     LIST=l.map(([k])=>k);
     const id=l.length ? (wantT && LIST.includes(wantT) ? wantT : l[0][0]) : null;
@@ -5874,13 +5875,20 @@ const Tour = (()=>{
   }
   // el cartel del campeón, a pantalla completa y con confeti, en la pantalla de quien ganó (una vez por torneo y navegador)
   function champFx(){
-    if(!TD || TD.st!=="done" || !uid || TD.champ!==uid || document.querySelector(".champfx")) return;
-    const k="rodo-champ-"+tid; if(store.get(k)) return; store.set(k,"1");
-    const T0=t(), av=(mine&&mine.av)||Reg.av()||"🏆", nm=(mine&&mine.nm)||Reg.nick()||"";
+    // cualquiera de los torneos visibles (con varios programados, el que ganó puede no ser el que se está mirando)
+    if(!uid || document.querySelector(".champfx")) return;
+    const cid=LIST.find(k=>ALL[k].st==="done" && ALL[k].champ===uid && !store.get("rodo-champ-"+k)); if(!cid) return;
+    store.set("rodo-champ-"+cid,"1");
+    // su apodo y avatar, de su inscripción en ese torneo
+    if(cid===tid) return champShow(cid, mine);
+    fb.getDoc(fb.doc(fb.db,"tourneys",cid,"ins",uid)).then(x=>champShow(cid, x.exists()?x.data():null)).catch(()=>champShow(cid, null));
+  }
+  function champShow(cid, me1){
+    const TD=ALL[cid], T0=t(), av=(me1&&me1.av)||Reg.av()||"🏆", nm=(me1&&me1.nm)||Reg.nick()||"";
     const el=document.createElement("div"); el.className="champfx"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true");
     const cols=["#F7931A","#FFD24A","#FFFFFF","#C76F00","#3BB273","#4AA3FF"];
     const conf=Array.from({length:90},(_,i)=>`<i style="left:${Math.random()*100}%;background:${cols[i%cols.length]};animation-delay:${(Math.random()*2.5).toFixed(2)}s;animation-duration:${(2.6+Math.random()*2.4).toFixed(2)}s;transform:rotate(${Math.round(Math.random()*360)}deg)"></i>`).join("");
-    const pool=mine && mine.paid ? poolSats() : 0;
+    const pool=me1 && me1.paid && cid===tid ? poolSats() : 0;
     el.innerHTML=`<div class="cfx-conf" aria-hidden="true">${conf}</div><div class="cfx-card">
       <div class="cfx-trophy">🏆</div><div class="cfx-av">${esc(av)}</div>
       <p class="cfx-k">${esc(T0.tChampK)}</p><h2>${esc(T0.tChampWon(nm))}</h2><p class="cfx-t">${esc(TD.name||"")}</p>
@@ -6321,7 +6329,7 @@ const TourAdmin = (()=>{
     });
   }
   function pickT(id){
-    const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>(tms(ALL[b].at)||0)-(tms(ALL[a].at)||0));
+    const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>tourOrder(ALL[a],ALL[b]));
     if(!id || !ok.includes(id)) id=ok[0]||null;
     if(id!==tid){
       tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null; CW={}; CWok=false;
@@ -6335,6 +6343,17 @@ const TourAdmin = (()=>{
     }
     TD=tid ? ALL[tid] : null;
     render();
+  }
+  // borra un torneo con todo lo que tiene adentro (Firestore no borra solas las subcolecciones)
+  async function wipe(t){
+    const all=async(...p)=>(await A.getDocs(A.collection(A.db,"tourneys",t,...p))).docs;
+    for(const r of await all("rounds")){
+      await Promise.all((await all("rounds",r.id,"res")).map(d=>A.deleteDoc(d.ref)));
+      await A.deleteDoc(A.doc(A.db,"tourneys",t,"rounds",r.id,"data","p")).catch(()=>{});
+      await A.deleteDoc(r.ref);
+    }
+    for(const c of ["ins","priv","secret"]) await Promise.all((await all(c)).map(d=>A.deleteDoc(d.ref)));
+    await A.deleteDoc(A.doc(A.db,"tourneys",t));
   }
   async function loadCw(){ const t0=tid; try{ const s=await A.getDoc(cwRef()); if(t0!==tid) return; CW=s.exists() ? s.data() : {}; CWok=true; cfgFor=null; render(); }catch(e){ fail(e); } }
   const cwRef=(t=tid)=>A.doc(A.db,"tourneys",t,"secret","cw");
@@ -6459,7 +6478,11 @@ const TourAdmin = (()=>{
           cur:0, rounds:TD.rounds, champ:null, auto:true, test:true, src:tid, inv:me0?[me0]:[], at:A.serverTimestamp()});
         if(Object.keys(CW).length) await A.setDoc(cwRef(ref.id), CW);
         cfgFor=null; pickT(ref.id); say("Ensayo armado: no lo ve el público. Sumá jugadores falsos, invitá gente y arrancalo cuando quieras."); return; }
-      if(a==="deltest" && TD.test){ if(!sure(el, "¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
+      if(a==="deltest" && TD.test){ if(!sure(el, "¿Borrar este ensayo?")) return; const src=TD.src; await wipe(tid); pickT(src); return; }
+      // borrar un torneo (solo la administración): con sus inscriptos, mails y teléfonos, rondas y resultados
+      if(a==="deltour" && isSuper() && !TD.test){
+        if(!sure(el, `¿Borrar «${TD.name}»${TD.st==="live"?" (está en juego)":""}? Se borran también sus inscriptos y resultados. No se puede deshacer.`)) return;
+        const nm0=TD.name; say("Borrando…"); await wipe(tid); pickT(null); say(`Se borró «${nm0}».`); return; }
       if(a==="bots" && TD.test){
         const n=Math.max(1,Math.min(63,parseInt($("taBotsN").value,10)||0)), have=Object.keys(INS).filter(isBot).map(u=>+u.slice(4));
         let k=have.length ? Math.max(...have) : 0; const b=A.writeBatch(A.db);
@@ -6687,9 +6710,10 @@ const TourAdmin = (()=>{
   // ---------- pantalla ----------
   function render(){
     if(view!=="torneo-admin" || !me) return;
-    const ok=Object.keys(ALL).filter(k=>mine(ALL[k]));
-    let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
-      (isSuper()?` <button data-ta="new">Nuevo torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
+    const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>tourOrder(ALL[a],ALL[b]));
+    const wh=x=>tms(x.when) ? " · "+new Date(tms(x.when)).toLocaleString("es-AR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
+    let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)}${esc(wh(ALL[k]))} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
+      (isSuper()?` <button data-ta="new">Nuevo torneo</button>`:"")+(isSuper() && TD && !TD.test?` <button class="tadel" data-ta="deltour">🗑 Borrar este torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
     if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
     // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
     const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });

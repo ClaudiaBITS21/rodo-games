@@ -97,6 +97,22 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(g.cr==='No confíes, verificá.','criptograma con la frase elegida');
   ok(g.crossed>=14,'sopa: las palabras se cruzan ('+g.crossed+' de 20 sopas)');
 
+  // varios torneos: el selector va por fecha y hora de arranque; se puede borrar uno con todo lo que tiene
+  await db(async f => {
+    await F.setDoc(F.doc(f, 'tourneys/T3'), { name:'MAS LEJOS', st:'open', cap:64, fee:0, lnurl:'', when:F.Timestamp.fromMillis(Date.now()+9*86400000), orgs:[], bases:'', lang:'es', cur:0, rounds:[{g:'sopa',lang:'es',dur:10}], champ:null, auto:true, at:F.Timestamp.now() });
+    await F.setDoc(F.doc(f, 'tourneys/T2'), { name:'MAS CERCA', st:'open', cap:64, fee:0, lnurl:'', when:F.Timestamp.fromMillis(Date.now()+2*86400000), orgs:[], bases:'', lang:'es', cur:0, rounds:[{g:'sopa',lang:'es',dur:10}], champ:null, auto:true, at:F.Timestamp.fromMillis(Date.now()-86400000) });
+    await F.setDoc(F.doc(f, 'tourneys/T2/ins/u1'), { nm:'X', av:'', at:F.Timestamp.now(), ck:null, paid:false, out:false });
+    await F.setDoc(F.doc(f, 'tourneys/T2/priv/u1'), { mail:'x@x.com', tel:'123456', ok:true, at:F.Timestamp.now() });
+  });
+  await a.waitForFunction(()=>document.querySelectorAll('#taPick select option').length===3,null,{timeout:15000});
+  const opts=await a.$$eval('#taPick select option',l=>l.map(o=>o.textContent));
+  ok(/MAS CERCA/.test(opts[0]) && /MAS LEJOS/.test(opts[1]) && /PRUEBA GAMES/.test(opts[2]),'ordenados por fecha de arranque: '+opts.join(' | '));
+  await a.selectOption('#taPick select','T2'); await a.waitForTimeout(800);
+  await a.click('[data-ta="deltour"]'); await a.click('[data-ta="deltour"]');
+  await a.waitForFunction(()=>/Se borró «MAS CERCA»/.test(document.getElementById('taMsg').textContent),null,{timeout:15000});
+  ok(!(await get('tourneys/T2')) && !(await get('tourneys/T2/ins/u1')) && !(await get('tourneys/T2/priv/u1')),'borrado con sus inscriptos y datos privados');
+  await a.waitForFunction(()=>document.querySelectorAll('#taPick select option').length===2,null,{timeout:10000});
+  ok(true,'ya no está en la lista');
   // el campeón: cartel a pantalla completa en su pantalla, una sola vez
   const j=await (await br.newContext({viewport:{width:390,height:844}})).newPage();
   j.on('pageerror',e=>console.log('pageerror',e.message));
