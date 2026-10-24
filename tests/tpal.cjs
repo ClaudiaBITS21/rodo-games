@@ -49,10 +49,15 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(await a.locator('.tacwr').nth(0).locator('.cwi:not([hidden])').count()<=3,'el buscador filtra');
   ok(await a.locator('.tacwr').nth(0).locator('[data-cw="MEMPOOL"]').isChecked(),'las que ya están en la caja aparecen tildadas');
   await a.locator('.tacwr').nth(0).locator('[data-cw="HODL"]').check();
-  ok(/\nHODL$/.test(await cw(0).inputValue()),'tildar la suma a la lista');
-  ok(/EN: HODL/.test(await a.locator('.tacwr').nth(0).locator('.cwi:has([data-cw="HODL"])').textContent()),'muestra la traducción');
+  ok(/\nHODL = \S/.test(await cw(0).inputValue()),'tildar la suma a la lista, con su pista');
   await a.locator('.tacwr').nth(0).locator('[data-cw="HODL"]').uncheck();
   ok(!/HODL/.test(await cw(0).inputValue()),'destildar la saca');
+  // la otra tabla: el glosario en inglés
+  await a.locator('.tacwr').nth(0).locator('[data-ta="cwtab"][data-t="en"]').click();
+  ok(await a.locator('.tacwr').nth(0).locator('[data-cw="SIGNATURE"]').count()===1 && await a.locator('.tacwr').nth(0).locator('.cwi').count()===218,'la tabla en inglés');
+  await a.locator('.tacwr').nth(0).locator('[data-cw="SIGNATURE"]').check();
+  ok(/\nSIGNATURE = \S/.test(await cw(0).inputValue()),'se puede elegir de la tabla en inglés: '+await cw(0).inputValue());
+  await a.locator('.tacwr').nth(0).locator('[data-cw="SIGNATURE"]').uncheck();
   // la final (criptograma): elegir una de las frases del juego
   await a.locator('.tacwr summary').nth(1).click().catch(()=>{});
   await a.locator('[data-ta="cwlist"]').nth(1).click();
