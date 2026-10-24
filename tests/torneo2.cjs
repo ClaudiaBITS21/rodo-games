@@ -50,6 +50,24 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await wait(()=>document.querySelector('#tStage .tking'));
   ok(/Campeón/.test(await st()) && /Bot2/.test(await st()),'campeón: '+await st());
   await A.screenshot({path:__dirname+'/torneo2.png'});
+  // cierre de ronda (tDecided): pasan 2 de 4; la ronda se cierra apenas los que siguen jugando ya no pueden entrar
+  const dec=await A.evaluate(()=>{
+    const ts=ms=>({toMillis:()=>ms}), go=Date.now()-200000, at=s=>ts(go+s*1000);
+    const fin=s=>({done:true, ok:true, e:0, h:0, c:0, s:0, f:0, p:1, at:at(s)});
+    const rd={g:'sopa', k:'sopa', nr:0, pl:['a','b','c','me'], adv:2, final:false, go:ts(go), end:null};
+    const r1={a:fin(50), b:fin(100), c:{done:false, p:0.3, e:0, h:0, c:0, at:at(60)}, me:{done:false, p:0.2, e:0, h:0, c:0, at:at(60)}};
+    const own={...rd, own:'me'};
+    return {
+      // a los 70 s, el 2º sacó 900: c y la organizadora todavía pueden sacar hasta 932
+      sin: tDecided(rd, r1, go+70000),
+      // con la organizadora que pasa siempre queda 1 lugar: a ya lo tiene (950) y c no lo alcanza
+      con: tDecided(own, r1, go+70000),
+      // ...pero se espera a c mientras pueda superar a a
+      conTemprano: tDecided(own, r1, go+51000),
+      ownFinal: tOwn({...own, final:true}), ownFuera: tOwn({...own, pl:['a','b','c']})
+    };
+  });
+  ok(dec.sin===false && dec.con===true && dec.conTemprano===false && dec.ownFinal===null && dec.ownFuera===null, 'cierre anticipado y organizadora que pasa: '+JSON.stringify(dec));
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

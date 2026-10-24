@@ -5685,16 +5685,19 @@ function tStand(rd, res){
 // ¿ya está definida la ronda? Todos terminaron, se acabó el tiempo, o nadie de los que siguen jugando puede
 // superar al último de los que pasan (como mucho sacan 100 + 900 − segundos desde el arranque − sus penalidades)
 function tDecided(rd, res, now){
-  const L=tStand(rd, res), go=tms(rd.go), end=tms(rd.end); if(!go || now<go) return false;
-  if(L.length && L.every(x=>x.r && x.r.done)) return true;
+  const go=tms(rd.go), end=tms(rd.end); if(!go || now<go) return false;
+  // en un ensayo, la organizadora que juega (own) pasa siempre: no se la espera y queda un lugar menos para el resto
+  const sk=tOwn(rd), L=tStand(rd, res).filter(x=>x.u!==sk), adv=rd.adv-(sk?1:0);
+  if(L.every(x=>x.r && x.r.done)) return true;
   if(end && now>=end+22000) return true;
   const fixed=L.filter(x=>x.r && x.r.done).map(x=>x.sc.pts).sort((a,b)=>b-a);
-  if(fixed.length<rd.adv) return false;
+  if(adv<1 || fixed.length<adv) return adv<1;
   const el=(now-go)/1000-2, open=L.filter(x=>!(x.r && x.r.done));
   // si no termina a tiempo, a lo sumo saca 99 (avance parcial)
   const best=Math.max(99, ...open.map(x=>SCORE.BONUS+SCORE.CAP-(el+(x.sc.pen||0))));
-  return fixed[rd.adv-1] > best;
+  return fixed[adv-1] > best;
 }
+const tOwn=rd=>rd.own && !rd.final && rd.adv>1 && (rd.pl||[]).includes(rd.own) ? rd.own : null;
 // "Ahorcado de 6 palabras, dificultad media, en castellano"
 function tDesc(c){
   const T0=T[lang], p=[];
@@ -6128,7 +6131,7 @@ const Tour = (()=>{
 // (o se acaba el tiempo) y, si está activado, la siguiente se programa con 5 minutos de cuenta regresiva.
 // =====================================================================
 const TourAdmin = (()=>{
-  const SUPERS=["claudia@rodo.es","ce.andragnes@gmail.com"], SUPER=SUPERS.join(" y "), NEXT=5*60000;
+  const SUPERS=["claudia@rodo.es","ce.andragnes@gmail.com"], SUPER=SUPERS.join(" y "), NEXT=5*60000, TEST_NEXT=60000;
   const GS=["ahorcado","anagrama","sopa","acrostico","semilla","criptograma"];
   const GN={acrostico:"Acróstico",ahorcado:"Ahorcado",sopa:"Sopa de letras",criptograma:"Criptograma",anagrama:"Anagrama",semilla:"Semilla perdida"};
   const DIFS=["","facil","media","dificil"], DIFN={"":"normal",facil:"fácil",media:"media",dificil:"difícil"};
@@ -6212,14 +6215,16 @@ const TourAdmin = (()=>{
     try{
       if(r.st==="sched" && r.go && now>=tms(r.go)){ busy=true; await A.updateDoc(rref(r.id),{st:"live"}); }
       else if(r.st==="live" && resOk && resFor===r.id && tDecided(r, RESL, now)){ busy=true; await close(r); }
-      else if(r.st==="closed" && TD.auto!==false && !r.final && (r.q||[]).length>1){ busy=true; await next(r, NEXT); }
+      // la siguiente la arranca el organizador; en un ensayo, sola al minuto
+      else if(r.st==="closed" && TD.test && TD.auto!==false && !r.final && (r.q||[]).length>1){ busy=true; await next(r, TEST_NEXT); }
     }catch(e){ fail(e); } finally{ busy=false; }
     renderLive();
   }
   let autoFor=null;
   setInterval(tick, 1000);
   async function close(r){
-    const L=tStand(r, RESL), q=L.slice(0, r.adv).map(x=>x.u), pos={};
+    const L=tStand(r, RESL), own=tOwn(r), q=L.filter(x=>x.u!==own).slice(0, r.adv-(own?1:0)).map(x=>x.u), pos={};
+    if(own) q.push(own);
     L.forEach((x,i)=>pos[x.u]=i+1);
     // con dos pestañas del panel abiertas, cierra una sola
     const done=await A.runTransaction(A.db, async tx=>{
@@ -6244,6 +6249,8 @@ const TourAdmin = (()=>{
     const d=await Reg.genFor(c.g, opt), go=srv()+delay;
     const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
       pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
+    // ensayo: la organizadora que juega desde este navegador pasa siempre de ronda (tOwn)
+    if(TD.test && Reg.uid() && pl.includes(Reg.uid())) rd.own=Reg.uid();
     if(c.g==="sopa"){ rd.s=opt.s; rd.m=c.m||"w"; } if(c.g==="semilla") rd.w=opt.w; if(c.dif) rd.dif=c.dif; if(c.g==="ahorcado") rd.n=opt.n;
     // una sola vez por ronda, aunque haya dos pestañas del panel abiertas
     const ok=await A.runTransaction(A.db, async tx=>{
@@ -6465,7 +6472,7 @@ const TourAdmin = (()=>{
     if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button><button data-ta="startnow">Arrancar ya (10 s)</button>`+
       (tms(TD.when) ? `<p class="m small">Con este panel abierto, arranca solo a la hora fijada (${new Date(tms(TD.when)).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}). Los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>` : `<p class="m small">Si ponés la hora de arranque en la configuración, arranca solo a esa hora y los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>`);
     if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
-    if(st==="live") c+=`<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, programar sola la siguiente (5 min de cuenta regresiva)</label><button data-ta="st" data-s="done">Terminar el torneo</button>`;
+    if(st==="live") c+=(TD.test ? `<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, arrancar sola la siguiente al minuto</label>` : "")+`<button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
     if($("taCtl").dataset.h!==c){ $("taCtl").dataset.h=c; $("taCtl").innerHTML=c; }
     Object.entries(keep).forEach(([i,[v,f]])=>{ const el=$(i); if(el){ el.value=v; if(f) el.focus(); } });
@@ -6491,7 +6498,7 @@ const TourAdmin = (()=>{
     if(r.st==="ready") h+=`<b>En pausa${r.left?` (quedaban ${clock(r.left)})`:""}</b> <button class="primary" data-ta="resume">Reanudar</button><button data-ta="now">Arrancar ya (10 s)</button>`;
     if(r.st==="sched") h+=now<tms(r.go) ? `<b>Arranca en <span data-cd="${tms(r.go)}">${clock(tms(r.go)-now)}</span></b> <button data-ta="pause">Pausar</button><button data-ta="now">Arrancar ya (10 s)</button>` : `<b>Arrancando…</b>`;
     if(r.st==="live") h+=`<b>En juego${r.end?` · quedan <span data-cd="${tms(r.end)}">${clock(tms(r.end)-now)}</span>`:""}</b> <button data-ta="close">Cerrar la ronda ahora</button>`;
-    if(r.st==="closed" && !r.final && TD.st==="live") h+=`<b>Cerrada.</b> ${TD.auto!==false?"La siguiente se programa sola.":`<button class="primary" data-ta="next">Programar la siguiente (5 min)</button><button data-ta="next" data-ms="10000">Siguiente ya (10 s)</button>`}`;
+    if(r.st==="closed" && !r.final && TD.st==="live") h+=`<b>Cerrada.</b> ${TD.test && TD.auto!==false?"La siguiente arranca sola en 1 minuto.":`<button class="primary" data-ta="next">Programar la siguiente (5 min)</button><button data-ta="next" data-ms="10000">Siguiente ya (10 s)</button>`}`;
     if(r.st==="closed" && (r.final || TD.st==="done")) h+=`<b>🏆 ${esc(TD.champ?nm(TD.champ):"–")}</b>`;
     if(r.st==="sched"||r.st==="ready") h+=` <button data-ta="peek">Ver la partida</button>${r.st==="ready"||now<tms(r.go)-5000?`<button data-ta="regen">Generar otra</button>`:""}`;
     h+=`</div>`;
