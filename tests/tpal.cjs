@@ -18,19 +18,29 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const br=await chromium.launch();
   const a=await (await br.newContext({viewport:{width:1300,height:900}})).newPage();
   a.on('pageerror',e=>console.log('pageerror',e.message));
-  await a.addInitScript(()=>{ window.__admTok=JSON.stringify({sub:'adm1', email:'claudia@rodo.es', email_verified:true}); });
+  await a.addInitScript(()=>{ window.__admTok=JSON.stringify({sub:'adm1', email:'claudia@rodo.es', email_verified:true});
+    window.__clip=''; try{ Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{ window.__clip=t; }}}); }catch(e){} });
   await a.goto(URL+'#torneo-admin');
   await a.click('#taIn');
   await a.waitForSelector('.tacwr textarea',{timeout:20000, state:'attached'});
   const cw=i=>a.locator('.tacwr textarea').nth(i);
   ok(await a.locator('.tacwr').count()===2,'hay para elegir palabras en el ahorcado y la final, no en la sopa');
   const msg=()=>a.$eval('#taMsg',e=>e.textContent);
-  // palabra que no está en el glosario y sin pista: no guarda
+  // palabra que no está en el glosario y sin pista: guarda, avisa y el pedido para Claude la lleva
   await a.locator('.tacwr summary').nth(0).click().catch(()=>{});
-  await cw(0).fill('HALVING\nZAPEAR');
-  await a.click('[data-ta="save"]'); await a.waitForTimeout(500);
-  ok(/ZAPEAR» no está en el glosario/.test(await msg()),'sin pista no guarda: '+await msg());
-  await cw(0).fill('halving\nZapéar = Mandar sats por Nostr\nMEMPOOL');
+  await cw(0).fill('HALVING\nZAPEAR\nMEMPOOL');
+  await a.click('[data-ta="save"]');
+  await a.waitForFunction(()=>/Configuración guardada/.test(document.getElementById('taMsg').textContent),null,{timeout:10000});
+  ok(/Faltan pistas: ronda 1: ZAPEAR/.test(await msg()),'guarda y avisa la pista que falta: '+await msg());
+  ok(/falta 1 pista/.test(await a.$eval('.tacwr summary',e=>e.textContent)),'el resumen lo marca');
+  await a.click('[data-ta="cwask"]'); await a.waitForTimeout(300);
+  const ask=await a.evaluate(()=>window.__clip);
+  ok(/PALABRA = pista/.test(ask) && /\nZAPEAR$/.test(ask) && !/HALVING/.test(ask),'pedido para Claude solo con las que faltan');
+  // sin la pista, la ronda no se programa
+  await a.click('[data-ta="startnow"]'); await a.click('[data-ta="startnow"]'); await a.waitForTimeout(800);
+  ok(/faltan las pistas de ZAPEAR/.test(await msg()) && !(await get(`${T}/rounds/1`)),'sin pista no arranca: '+await msg());
+  // se pega la respuesta de Claude abajo de la lista
+  await cw(0).fill('halving\nZapéar\nMEMPOOL\nZAPEAR = Mandar sats por Nostr');
   await a.locator('.tacwr summary').nth(1).click().catch(()=>{});
   await cw(1).fill('No confíes, verificá.\n— Dicho bitcoiner');
   await a.click('[data-ta="save"]');

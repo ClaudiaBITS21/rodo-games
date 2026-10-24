@@ -69,7 +69,8 @@ Respondé en castellano rioplatense, directo, sin relleno, y marcá inconsistenc
   - **Imagen del torneo:** fichas de Scrabble cruzadas con su puntaje (HALVING en naranja; BITCOIN, GAMES y AR en madera; `SCRAB`, `scrabHtml`) en el cartel de la portada y en la sala. "Compartir imagen" en la sala genera un PNG (`tourImage`); hay una copia fija en `public/img/torneo-halving.png`.
   - **Rondas:** el organizador define cada ronda: juego, idioma (queda fijo cuando se genera la partida), opciones (sopa: tamaño y modo; semilla: 12/24; ahorcado: cantidad de palabras), dificultad (fácil/media/difícil por largo de palabra o frase) y minutos (0 = sin límite).
   - **Palabras propias:** en cada ronda, salvo la sopa, el organizador puede elegir qué se juega ("✎ Elegir las palabras / la frase / la semilla", debajo de la ronda; vacío = al azar):
-    - Ahorcado: una por línea, hasta 12, `PALABRA` o `PALABRA = pista` (sin pista, la del glosario; si no está en el glosario, la pista es obligatoria). La cantidad de palabras pasa a ser la de la lista.
+    - Ahorcado: una por línea, hasta 12, `PALABRA` o `PALABRA = pista` (sin pista, la del glosario). La cantidad de palabras pasa a ser la de la lista.
+    - Las palabras pueden no estar en el glosario. Las que no tienen pista se guardan igual, con "⚠ falta N pista(s)". "📋 Copiar pedido de pistas para Claude" (`cwAsk`) copia el pedido: la dueña lo pega en el chat, Claude contesta con líneas `PALABRA = pista` y ella las pega abajo de la lista, tal cual (la línea con pista reemplaza a la que no la tenía). Sin IA en el sitio. Mientras falte una pista, esa ronda no se programa ("faltan las pistas de …").
     - Anagrama: igual, hasta 10, sin espacios; si son menos, se completan del glosario.
     - Acróstico: la frase escondida (hasta 30 letras); las filas salen del glosario.
     - Criptograma: la frase y, opcional, `— autor` en la última línea.

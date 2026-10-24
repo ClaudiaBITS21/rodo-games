@@ -5694,25 +5694,34 @@ async function tourImage(TD){
 // la dificultad y las palabras del ahorcado, para generar la partida de cada ronda
 const TOUR_GEN=o=>({dif:o.dif, n:o.n, cw:o.cw});
 // palabras o frase que elige el organizador para una ronda (todo menos la sopa). Devuelve {v} o {err}.
-// ahorcado y anagrama: una por línea, "PALABRA" o "PALABRA = pista" (sin pista, la del glosario; si no está, es obligatoria)
+// ahorcado y anagrama: una por línea, "PALABRA" o "PALABRA = pista" (sin pista, la del glosario; si no está en el glosario, queda en miss:
+// la pista la escribe Claude con el pedido que copia el panel, y la ronda no se programa hasta tenerla)
 // acróstico: la frase escondida; criptograma: la frase y, opcional, "— autor" en la última línea; semilla: 12 o 24 palabras BIP39
 const CW_MAX={ahorcado:12, anagrama:10};
+// pedido para pegarle a Claude con las palabras que no tienen pista; contesta con líneas listas para pegar en la ronda
+const cwAsk=(g, words, L)=>`Escribí una pista para cada una de estas palabras de un torneo de RODO ₿ Games (juegos de palabras bitcoiners), para el ${g==="anagrama"?"anagrama":"ahorcado"}, ${L==="en"?"en inglés":"en castellano rioplatense"}.
+Voz bitcoiner (timechain en vez de blockchain), clara y con un poco de humor, de hasta 120 caracteres, sin nombrar la palabra ni una parecida, que alcance para adivinarla.
+Respondé solo con una línea por palabra, con esta forma exacta: PALABRA = pista
+
+${words.join("\n")}`;
 function cwParse(g, text, L){
   text=String(text||"").trim(); if(!text) return {v:null};
   const G=new Set((L==="en"?G_EN:G_ES).map(([w])=>w));
   if(g==="ahorcado" || g==="anagrama"){
-    const out=[], bad=[];
+    const out=[], bad=[], miss=[];
     for(const line of text.split(/\n+/).map(x=>x.trim()).filter(Boolean)){
       const i=line.indexOf("="), w=clean(i<0 ? line : line.slice(0,i)), c=i<0 ? "" : line.slice(i+1).trim().slice(0,160);
       const letters=w.replace(/ /g,"").length;
       if(g==="anagrama" && w.includes(" ")){ bad.push(`«${w}» tiene espacios (en el anagrama va una sola palabra)`); continue; }
       if(letters<3 || letters>(g==="anagrama"?12:16)){ bad.push(`«${w||line}» tiene que tener entre 3 y ${g==="anagrama"?12:16} letras`); continue; }
-      if(!c && !G.has(w)){ bad.push(`«${w}» no está en el glosario: agregale la pista («${w} = pista»)`); continue; }
-      if(out.some(x=>x[0]===w)){ bad.push(`«${w}» está repetida`); continue; }
+      // la respuesta de Claude se puede pegar abajo de la lista: "ZAPEAR" y después "ZAPEAR = pista" quedan como una sola
+      const k=out.findIndex(x=>x[0]===w);
+      if(k>=0){ if(c && !out[k][1]){ out[k][1]=c; const m=miss.indexOf(w); if(m>=0) miss.splice(m,1); } else if(c){ bad.push(`«${w}» está repetida`); } continue; }
+      if(!c && !G.has(w)) miss.push(w);
       out.push([w, c||null]);
     }
     if(out.length>CW_MAX[g]) bad.push(`Son ${out.length} palabras: el máximo es ${CW_MAX[g]}`);
-    return bad.length ? {err:bad.join(". ")} : {v:out};
+    return bad.length ? {err:bad.join(". ")} : {v:out, miss};
   }
   if(g==="acrostico"){
     const ph=clean(text.replace(/\n+/g," ")), n=ph.replace(/ /g,"").length;
@@ -6275,7 +6284,9 @@ const TourAdmin = (()=>{
   async function loadCw(){ const t0=tid; try{ const s=await A.getDoc(cwRef()); if(t0!==tid) return; CW=s.exists() ? s.data() : {}; CWok=true; cfgFor=null; render(); }catch(e){ fail(e); } }
   const cwRef=(t=tid)=>A.doc(A.db,"tourneys",t,"secret","cw");
   // las palabras propias de la configuración c de una ronda, ya leídas (null = al azar)
-  function cwOf(c){ const t=c && c.cwid && CW[c.cwid]; if(!t) return null; const p=cwParse(c.g, t, c.lang||TD.lang||"es"); return p.v||null; }
+  function cwOf(c){ const t=c && c.cwid && CW[c.cwid]; if(!t) return null; const p=cwParse(c.g, t, c.lang||TD.lang||"es");
+    if(p.miss && p.miss.length) throw new Error(`faltan las pistas de ${p.miss.join(", ")}: en la configuración, «Copiar pedido de pistas para Claude»`);
+    return p.v||null; }
   async function loadPriv(){ try{ const qs=await A.getDocs(A.collection(A.db,"tourneys",tid,"priv")); PRIV={}; qs.forEach(d=>PRIV[d.id]=d.data()); render(); }catch(e){} }
   // los datos de contacto de quienes se van inscribiendo (de a uno, sin releer todos)
   async function privNew(){
@@ -6404,6 +6415,12 @@ const TourAdmin = (()=>{
         if(x) invNames[u]=x.nm; $("taInvIn").value=""; onlQ=""; say(`${x?x.nm:"Esa persona"} ya ve el ensayo: le aparece un aviso para sumarse.`); return; }
       if(a==="invdel" && TD.test){ await A.updateDoc(tref(),{inv:(TD.inv||[]).filter(x=>x!==el.dataset.u)}); return; }
       if(a==="save") return save();
+      if(a==="cwask"){ const tr=el.closest(".tacwr"), row=tr.previousElementSibling, g=row.querySelector('[data-f="g"]').value, L=row.querySelector('[data-f="lang"]').value||"es";
+        const p=cwParse(g, tr.querySelector('[data-f="cw"]').value, L);
+        if(p.err){ say(p.err, true); return; }
+        if(!p.miss || !p.miss.length){ say("Todas las palabras de esa ronda ya tienen pista."); return; }
+        let ok=true; try{ await navigator.clipboard.writeText(cwAsk(g, p.miss, L)); }catch(e){ ok=false; }
+        say(ok ? `Pedido copiado (${p.miss.length} palabra${p.miss.length===1?"":"s"}). Pegalo en el chat con Claude, pegá su respuesta en esta misma caja (abajo de la lista, tal cual) y guardá.` : "No se pudo copiar: este navegador no deja usar el portapapeles.", !ok); return; }
       if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
@@ -6525,8 +6542,9 @@ const TourAdmin = (()=>{
       // palabras o frase propias (no en la sopa); vacío = al azar
       if(c.g!=="sopa" && !CWok) h+=`<tr class="tacwr"><td></td><td colspan="6" class="m small">Cargando las palabras elegidas…</td></tr>`;
       else if(c.g!=="sopa"){ const txt=(c.cwid && CW[c.cwid])||"", p=cwParse(c.g, txt, c.lang||T0.lang||"es"), n=p.v ? (Array.isArray(p.v) && c.g!=="criptograma" ? p.v.length : 1) : 0;
-        h+=`<tr class="tacwr"><td></td><td colspan="6"><details${txt?" open":""}><summary>✎ ${CW_LBL[c.g]}${n?` · ${c.g==="criptograma"||c.g==="acrostico"?"elegida":n+" elegida"+(n===1?"":"s")}`:" · al azar"}</summary>
-          <textarea data-f="cw" rows="${c.g==="acrostico"||c.g==="criptograma"?2:4}" maxlength="3000" placeholder="${esc(CW_PH[c.g]||"")}"${dis?" disabled":""}>${esc(txt)}</textarea><p class="m small">${esc(CW_HELP[c.g]||"")}</p></details></td></tr>`; }
+        const ms=(p.miss||[]).length;
+        h+=`<tr class="tacwr"><td></td><td colspan="6"><details${txt?" open":""}><summary>✎ ${CW_LBL[c.g]}${n?` · ${c.g==="criptograma"||c.g==="acrostico"?"elegida":n+" elegida"+(n===1?"":"s")}`:" · al azar"}${ms?` · <b class="bad">⚠ falta${ms===1?"":"n"} ${ms} pista${ms===1?"":"s"}</b>`:""}</summary>
+          <textarea data-f="cw" rows="${c.g==="acrostico"||c.g==="criptograma"?2:4}" maxlength="3000" placeholder="${esc(CW_PH[c.g]||"")}"${dis?" disabled":""}>${esc(txt)}</textarea><p class="m small">${esc(CW_HELP[c.g]||"")}</p>${(c.g==="ahorcado"||c.g==="anagrama") && !dis?`<div class="row"><button data-ta="cwask">📋 Copiar pedido de pistas para Claude</button></div>`:""}</details></td></tr>`; }
     });
     h+=`</tbody></table></div><div class="row">${!ro && T0.rounds.length<8?`<button data-ta="addr">+ Ronda</button>`:""}<button class="primary" data-ta="save">Guardar configuración</button></div>`;
     return h;
@@ -6534,8 +6552,8 @@ const TourAdmin = (()=>{
   const CW_LBL={ahorcado:"Elegir las palabras", anagrama:"Elegir las palabras", acrostico:"Elegir la frase", criptograma:"Elegir la frase", semilla:"Elegir la semilla"};
   const CW_PH={ahorcado:"HALVING\nMEMPOOL = Donde esperan las transacciones antes de entrar a un bloque", anagrama:"NODO\nMINERO\nCARTERA", acrostico:"STAY HUMBLE STACK SATS",
     criptograma:"No confíes, verificá.\n— Dicho bitcoiner", semilla:"abandon ability able about above absent absorb abstract absurd abuse access accident"};
-  const CW_HELP={ahorcado:"Una por línea, hasta 12. Si la palabra no está en el glosario, poné la pista después de «=». Vacío: al azar del glosario. La cantidad de palabras pasa a ser la de la lista.",
-    anagrama:"Una por línea, hasta 10 (si ponés menos, se completan del glosario). Si no está en el glosario, la pista va después de «=».",
+  const CW_HELP={ahorcado:"Una por línea, hasta 12. Pueden no estar en el glosario: las que no tengan pista, me las pedís a mí (Claude) con el botón de abajo y pegás mi respuesta acá. También podés escribir la tuya después de «=». Vacío: al azar del glosario. La cantidad de palabras pasa a ser la de la lista.",
+    anagrama:"Una por línea, hasta 10 (si ponés menos, se completan del glosario). Las que no estén en el glosario y no tengan pista, me las pedís a mí (Claude) con el botón de abajo.",
     acrostico:"La frase escondida en la columna naranja (solo letras y espacios, hasta 30 letras). Las palabras de cada fila salen del glosario.",
     criptograma:"La frase a descifrar. Si querés, el autor en otra línea que empiece con «—».",
     semilla:"12 o 24 palabras de la lista BIP39 en el idioma de la ronda, separadas por espacios, en orden."};
@@ -6560,7 +6578,7 @@ const TourAdmin = (()=>{
     return c;
   }
   async function save(){
-    const c=readCfg(), box=$("taCfg"), cw={}, errs=[];
+    const c=readCfg(), box=$("taCfg"), cw={}, errs=[], miss=[];
     if(!CWok){ say("Todavía no se cargaron las palabras propias: probá en un momento.", true); return; }
     // palabras propias: se validan acá y se guardan aparte (secret/cw), así los jugadores no las ven
     [...box.querySelectorAll(".tarounds tbody tr.tarow")].forEach((tr,i)=>{
@@ -6568,11 +6586,13 @@ const TourAdmin = (()=>{
       if(!rc || rc.g==="sopa" || !txt){ delete rc.cwid; return; }
       const p=cwParse(rc.g, txt, rc.lang||"es");
       if(p.err){ errs.push(`${i===c.rounds.length-1?"Final":"Ronda "+(i+1)}: ${p.err}`); return; }
+      if(p.miss && p.miss.length) miss.push(`${i===c.rounds.length-1?"final":"ronda "+(i+1)}: ${p.miss.join(", ")}`);
       rc.cwid=rc.cwid||Math.random().toString(36).slice(2,10); cw[rc.cwid]=txt.slice(0,3000);
       if(rc.g==="ahorcado") rc.n=p.v.length; if(rc.g==="semilla") rc.w=p.v.length;
     });
     if(errs.length){ say(errs.join(" · "), true); return; }
-    try{ await A.setDoc(cwRef(), cw); CW=cw; await A.updateDoc(tref(), c); cfgFor=null; say("Configuración guardada."); }catch(e){ fail(e); }
+    try{ await A.setDoc(cwRef(), cw); CW=cw; await A.updateDoc(tref(), c); cfgFor=null;
+      say(miss.length ? `Configuración guardada. Faltan pistas: ${miss.join(" · ")}. Tocá «Copiar pedido de pistas para Claude» en esa ronda.` : "Configuración guardada.", !!miss.length); }catch(e){ fail(e); }
   }
 
   // ---------- pantalla ----------
