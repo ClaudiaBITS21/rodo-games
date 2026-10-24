@@ -258,6 +258,10 @@ await t("torneo: un jugador no lo crea", assertFails(setDoc(doc(A, "tourneys/T2"
 await t("torneo: un organizador lo maneja", assertSucceeds(updateDoc(doc(ORG, "tourneys/T1"), { name: "PRUEBA 2" })));
 await t("torneo: un organizador no cambia los organizadores", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { orgs: ["org@x.com", "otro@x.com"] })));
 await t("torneo: un jugador no lo cambia", assertFails(updateDoc(doc(A, "tourneys/T1"), { st: "live" })));
+await t("torneo: el organizador guarda las palabras propias", assertSucceeds(setDoc(doc(ORG, "tourneys/T1/secret/cw"), { x1: "HALVING" })));
+await t("torneo: el organizador las lee", assertSucceeds(getDoc(doc(ORG, "tourneys/T1/secret/cw"))));
+await t("torneo: un jugador no ve las palabras propias", assertFails(getDoc(doc(A, "tourneys/T1/secret/cw"))));
+await t("torneo: un jugador no las escribe", assertFails(setDoc(doc(A, "tourneys/T1/secret/cw"), { x1: "X" })));
 const ins = (nm, o = {}) => ({ nm, av: "", at: serverTimestamp(), ck: null, paid: false, out: false, ...o });
 await t("torneo: Ana se inscribe con su apodo", assertSucceeds(setDoc(doc(A, "tourneys/T1/ins/A"), ins("Ana"))));
 await t("torneo: sin usuario no se inscribe", assertFails(setDoc(doc(B, "tourneys/T1/ins/B"), ins(""))));

@@ -350,6 +350,21 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .win.tonly{background:var(--paper);color:var(--ink)}
 .wtour{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.4);text-align:center}
 .wtour[hidden]{display:none}
+.champfx{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(circle at 50% 40%,rgba(247,147,26,.55),rgba(14,16,20,.94) 70%);overflow:hidden;animation:cfxIn .35s ease-out}
+.cfx-conf i{position:absolute;top:-20px;width:9px;height:15px;border-radius:2px;opacity:.95;animation:cfxFall linear infinite}
+.cfx-card{position:relative;max-width:420px;width:100%;text-align:center;color:#fff;padding:28px 20px 24px;border-radius:22px;background:linear-gradient(160deg,#1A1E23,#2A2216);border:2px solid #F7931A;box-shadow:0 0 60px rgba(247,147,26,.6);animation:cfxPop .6s cubic-bezier(.2,1.6,.4,1)}
+.cfx-trophy{font-size:4.5rem;line-height:1;animation:cfxBob 1.6s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(255,210,74,.8))}
+.cfx-av{font-size:3.2rem;line-height:1;margin:6px 0 4px}
+.cfx-k{margin:6px 0 0;text-transform:uppercase;letter-spacing:.14em;font-size:.8rem;color:#FFD24A}
+.cfx-card h2{margin:6px 0 4px;font-size:2rem;color:#F7931A}
+.cfx-t{margin:0 0 10px;font-weight:600}
+.cfx-p{margin:0 0 12px;color:#FFD24A}
+.cfx-ok{font-size:1.05rem;padding:10px 26px}
+@keyframes cfxFall{to{transform:translateY(110vh) rotate(720deg)}}
+@keyframes cfxPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes cfxBob{50%{transform:translateY(-8px) scale(1.06)}}
+@keyframes cfxIn{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.cfx-conf{display:none}.cfx-card,.cfx-trophy{animation:none}}
 .wtour .tpts{display:block;font-size:1.45rem;font-weight:800;line-height:1.1;margin:0 0 4px}
 .wtour p{font-size:.95rem!important;margin:2px 0 8px!important}
 .wtour .twhy{font-weight:700!important}
@@ -366,6 +381,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tacfg textarea{min-height:6em;resize:vertical}
 .tarounds input[type=number]{width:4.5em}
+.tacwr td{padding-top:0!important}.tacwr summary{cursor:pointer;color:var(--muted,#5B6672);font-size:.9rem}.tacwr textarea{width:100%;box-sizing:border-box;margin-top:6px;font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tarounds td{text-align:left!important}
 .taauto{display:flex;align-items:center;gap:8px;font-size:.9rem}
 #taHist details{margin:0 0 8px}#taHist summary{cursor:pointer;font-weight:600}
@@ -1653,6 +1669,8 @@ const gloss = () => {
   if(CLUES.duel && CLUES.trimWords) list=list.map(x=>[x,x[4]+Math.random()*0.9]).sort((a,b)=>a[1]-b[1]).slice(0,Math.ceil(list.length*0.6)).map(x=>x[0]);
   return list;
 };
+// palabra → pista elegida, de todo el glosario (sin recortar las más vistas): para las palabras que elige el organizador
+const glossClues=()=>{ const t=CLUES.trimWords; CLUES.trimWords=false; try{ return new Map(gloss().map(x=>[x[0],x[1]])); } finally{ CLUES.trimWords=t; } };
 // códigos de las pistas que aparecen en una partida (busca los textos dentro de sus datos)
 function cluesIn(d, L){
   const ids=new Set(), walk=v=>{ if(typeof v==="string"){ const id=CLUES.byText[L].get(v); if(id) ids.add(id); } else if(v && typeof v==="object") Object.values(v).forEach(walk); };
@@ -1913,8 +1931,8 @@ const Acro = (()=>{
   }
   // dif: frase corta, mediana o larga (tercios por cantidad de letras)
   function gen(a,b){
-    const pool=byThird(PHRASES[lang], p=>p.replace(/ /g,"").length, genOpts(a,b).dif).filter(p=>p!==lastPhrase);
-    const phrase=rand(pool); lastPhrase=phrase;
+    const o=genOpts(a,b), pool=byThird(PHRASES[lang], p=>p.replace(/ /g,"").length, o.dif).filter(p=>p!==lastPhrase);
+    const phrase=o.cw || rand(pool); lastPhrase=phrase;
     const g=generate(phrase);
     return {phrase:g.phrase, L:g.L, W:g.W, rows:g.rows.map(r=>r.gap?{gap:true}:{word:r.word,clue:r.clue,pos:r.pos,given:!!r.given})};
   }
@@ -2012,6 +2030,8 @@ const Hang = (()=>{
   // gen() o gen({n, dif}): n palabras (6 por defecto); con dif, del largo que corresponde (si faltan, las más cercanas)
   function gen(a,b){
     const o=genOpts(a,b), n=o.n>0 ? Math.floor(o.n) : ROUNDS, R=LEN[o.dif];
+    // palabras elegidas por el organizador del torneo (sin pista, la del glosario)
+    if(o.cw){ const gl=glossClues(); return {list:o.cw.map(([w,c])=>({w, c:c||gl.get(w)||""}))}; }
     const all=gloss().filter(([w])=>w.length>=4 && w.length<=12 && !recent.includes(w));
     const pool=R ? shuffle(nearLen(all, n, R[0], R[1])) : shuffle(all).slice(0,n);
     pool.forEach(([w])=>{ recent.push(w); if(recent.length>40) recent.shift(); });
@@ -2110,21 +2130,26 @@ const Sopa = (()=>{
     document.querySelectorAll("#sModeSeg button").forEach(b=>{ b.textContent = b.dataset.m==="w" ? t.sList : t.sListClue; b.setAttribute("aria-pressed", (b.dataset.m==="c")===showClues); });
     $("sSize").setAttribute("aria-label",t.sSizeL); $("sModeSeg").setAttribute("aria-label",t.sModeL);
   }
+  // las palabras se pueden cruzar (comparten la letra): entre los lugares posibles se prefieren los que cruzan otra palabra
+  // (a lo sumo 2 letras compartidas, para que no se encimen a lo largo)
   function place(w){
-    const L=[...w];
+    const L=[...w]; let best=null;
     for(let tries=0;tries<300;tries++){
       const [dr,dc]=rand(DIRS);
       const r0=Math.floor(Math.random()*N), c0=Math.floor(Math.random()*N);
       const r1=r0+dr*(L.length-1), c1=c0+dc*(L.length-1);
       if(r1<0||r1>=N||c1<0||c1>=N) continue;
-      let ok=true;
-      for(let i=0;i<L.length;i++){ const g=grid[r0+dr*i][c0+dc*i]; if(g && g!==L[i]){ ok=false; break; } }
-      if(!ok) continue;
-      const cells=[];
-      for(let i=0;i<L.length;i++){ grid[r0+dr*i][c0+dc*i]=L[i]; cells.push([r0+dr*i,c0+dc*i]); }
-      return cells;
+      let ok=true, x=0;
+      for(let i=0;i<L.length;i++){ const g=grid[r0+dr*i][c0+dc*i]; if(g && g!==L[i]){ ok=false; break; } if(g) x++; }
+      if(!ok || x>2) continue;
+      const sc=Math.min(x,1)+Math.random()*1.2;
+      if(!best || sc>best.sc) best={sc,r0,c0,dr,dc};
+      if(best.sc>=1.9) break;
     }
-    return null;
+    if(!best) return null;
+    const {r0,c0,dr,dc}=best, cells=[];
+    for(let i=0;i<L.length;i++){ grid[r0+dr*i][c0+dc*i]=L[i]; cells.push([r0+dr*i,c0+dc*i]); }
+    return cells;
   }
   // s: tamaño (por defecto el elegido). No toca la sopa que esté abierta: guarda y restaura su estado
   function gen(s){
@@ -2489,7 +2514,9 @@ const Seed = (()=>{
   }
   function show(id,on){ $(id).style.display = on ? "" : "none"; }
   // w: cantidad de palabras (por defecto la elegida)
-  function gen(w){
+  function gen(w, cw){
+    // cw: la semilla que eligió el organizador del torneo; las de relleno, al azar
+    if(cw){ const k=cw.length; return {n:k, words:[...cw], decoys:shuffle(BIP39[lang].filter(x=>!cw.includes(x))).slice(0, Math.round(k/3))}; }
     const k=w||n, all=shuffle(BIP39[lang]).slice(0, k + Math.round(k/3));
     return {n:k, words:all.slice(0,k), decoys:all.slice(k)};
   }
@@ -2697,7 +2724,7 @@ const Cripto = (()=>{
   }
   // dif: frase corta, mediana o larga (tercios por cantidad de letras)
   function gen(a,b){
-    const pool=byThird(QUOTES[lang], x=>norm(x[0]).replace(/[^A-ZÑ]/g,"").length, genOpts(a,b).dif).filter(x=>x[0]!==lastQ); const qq=rand(pool); lastQ=qq[0];
+    const o=genOpts(a,b), pool=byThird(QUOTES[lang], x=>norm(x[0]).replace(/[^A-ZÑ]/g,"").length, o.dif).filter(x=>x[0]!==lastQ); const qq=o.cw || rand(pool); lastQ=qq[0];
     const A=alpha(); let perm;
     do { perm=shuffle(A); } while (perm.some((c,i)=>c===A[i]));
     const m={}; A.forEach((c,i)=>m[c]=perm[i]);
@@ -2729,7 +2756,7 @@ const Cripto = (()=>{
       }
       box.appendChild(wd);
     });
-    $("cAuthor").textContent="— "+q[1];
+    $("cAuthor").textContent=q[1] ? "— "+q[1] : "";
     $("cWin").style.display="none"; $("cStatus").textContent=""; updateHint();
   }
   const group = c => cells.filter(x=>x.c===c);
@@ -2797,7 +2824,7 @@ const Cripto = (()=>{
     const {cv,x}=canvasBase(W,H,t.cripTitle);
     x.fillStyle="#1A1E23"; x.font=`700 24px ${MONO}`;
     const y=wrapText(x, norm(q[0]), 40, 150, W-80, 32);
-    x.fillStyle="#C76F00"; x.font=`600 18px ${SANS}`; x.fillText("— "+q[1], 40, y+40);
+    x.fillStyle="#C76F00"; x.font=`600 18px ${SANS}`; if(q[1]) x.fillText("— "+q[1], 40, y+40);
     x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`; x.fillText(t.cCard(fmt(elapsed),hints), 40, H-30);
     return toBlob(cv);
   }
@@ -2832,7 +2859,11 @@ const Ana = (()=>{
   // dif: largo de las palabras; si no alcanzan 10 en el rango, se completa con las de largo más cercano (siempre entre 4 y 10)
   const LEN={facil:[4,6], media:[6,8], dificil:[8,10]};
   function gen(a,b){
-    const R=LEN[genOpts(a,b).dif], pool=gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)));
+    const o=genOpts(a,b), R=LEN[o.dif], pool=gloss().filter(([w,c,,cs])=>w.length>=4&&w.length<=10&&!(cs||[c]).some(x=>ACR.test(x)));
+    // las del organizador del torneo; si son menos de 10, se completan del glosario
+    if(o.cw){ const gl=glossClues(), mine=o.cw.map(([w,c])=>({w, c:c||gl.get(w)||""}));
+      const rest=(R ? shuffle(nearLen(pool,ROUNDS,R[0],R[1])) : shuffle(pool)).filter(([w])=>!mine.some(x=>x.w===w)).slice(0, ROUNDS-mine.length).map(([w,c])=>({w,c}));
+      return {list:[...mine, ...rest]}; }
     return {list:(R ? shuffle(nearLen(pool,ROUNDS,R[0],R[1])) : shuffle(pool).slice(0,ROUNDS)).map(([w,c])=>({w,c}))};
   }
   function create(){ Reg.newGame("anagrama"); }
@@ -3302,7 +3333,7 @@ const Reg = (()=>{
     await ready; const L=opt.L||lang;
     await loadClueUse(L);
     const prev=lang; lang=L; CLUES.duel=true; CLUES.trimWords=g!=="acrostico";
-    try{ return g==="sopa" ? GAMES.sopa.gen(opt.s) : g==="semilla" ? GAMES.semilla.gen(opt.w) : GAMES[g].gen(TOUR_GEN(opt)); }
+    try{ return g==="sopa" ? GAMES.sopa.gen(opt.s) : g==="semilla" ? GAMES.semilla.gen(opt.cw ? opt.cw.length : opt.w, opt.cw) : GAMES[g].gen(TOUR_GEN(opt)); }
     finally{ lang=prev; CLUES.duel=false; CLUES.trimWords=false; }
   }
   // jugar la partida de una ronda de torneo. ctx: {k, m, R (rondas de la partida), t0 (arranque de la ronda, en hora de este dispositivo), label(), seen}
@@ -5576,7 +5607,7 @@ Object.assign(T.es,{
   tsIns:n=>`${n===1?"jugador":"jugadores"} ${n===1?"anotado":"anotados"}`, tsCk:(n,m)=>`confirmaron ${n===1?"su":"su"} presencia · ${m} ${m===1?"anotado":"anotados"}`,
   tsPlay:n=>`${n===1?"compite":"compiten"}`, tsLeft:(n,m)=>`siguen ${n} de ${m}`, tsOut:"Quedaron afuera", tsDone:(d,n)=>`${d} de ${n} ya terminaron`,
   tsFinal:"🏆 Gran final", tsChamp:"👑 Campeón",
-  tChamp:w=>`🏆 Campeón: ${w}`, tChampPool:s=>`Gana el pozo de ${s} sats.`, tChampNoPool:"No aportó al pozo: el pozo queda para el organizador.",
+  tChamp:w=>`🏆 Campeón: ${w}`, tChampK:"Campeón del torneo", tChampWon:n=>n ? `¡Ganaste, ${n}!` : "¡Ganaste el torneo!", tChampOk:"¡Gracias!", tChampPool:s=>`Gana el pozo de ${s} sats.`, tChampNoPool:"No aportó al pozo: el pozo queda para el organizador.",
   tBarGo:(no,tm)=>`🏆 ${no} arranca en ${tm}`, tBarLive:no=>`🏆 ${no} en juego`, tBarBtn:"Ir", tBarPassed:no=>`🏆 ¡Pasaste a la ${no}!`,
   tTimeUp:"⏱ Se terminó el tiempo de la ronda. Se guardó lo que llegaste a resolver.", tClosedMid:"La ronda terminó: ya se definieron los que pasan.", tFinalMid:"La final terminó: con el tiempo y las penalidades que llevabas, ya no se podía dar vuelta.", tFinalWon:"🏆 ¡Ganaste la final!", tFinalLost:(w,p)=>`🏆 Ganó la final ${w} con ${p} puntos.`,
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} de ${n} terminaron · pasan ${a}`, tNoteNL:(d,n)=>`${d} de ${n} terminaron`, tNoteX:"Jugás sin competir.",
@@ -5620,7 +5651,7 @@ Object.assign(T.en,{
   tsIns:n=>`${n===1?"player":"players"} signed up`, tsCk:(n,m)=>`checked in · ${m} signed up`,
   tsPlay:n=>`${n===1?"competing":"competing"}`, tsLeft:(n,m)=>`${n} of ${m} still in`, tsOut:"Knocked out", tsDone:(d,n)=>`${d} of ${n} already finished`,
   tsFinal:"🏆 Grand final", tsChamp:"👑 Champion",
-  tChamp:w=>`🏆 Champion: ${w}`, tChampPool:s=>`Wins the ${s} sats pool.`, tChampNoPool:"Didn't contribute to the pool: it goes to the organizer.",
+  tChamp:w=>`🏆 Champion: ${w}`, tChampK:"Tournament champion", tChampWon:n=>n ? `You won, ${n}!` : "You won the tournament!", tChampOk:"Thanks!", tChampPool:s=>`Wins the ${s} sats pool.`, tChampNoPool:"Didn't contribute to the pool: it goes to the organizer.",
   tBarGo:(no,tm)=>`🏆 ${no} starts in ${tm}`, tBarLive:no=>`🏆 ${no} is live`, tBarBtn:"Go", tBarPassed:no=>`🏆 You're through to ${no}!`,
   tTimeUp:"⏱ Time's up for this round. What you solved was saved.", tClosedMid:"The round is over: the qualifiers are decided.", tFinalMid:"The final is over: with your time and penalties so far, it could no longer be turned around.", tFinalWon:"🏆 You won the final!", tFinalLost:(w,p)=>`🏆 ${w} won the final with ${p} points.`,
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} of ${n} finished · ${a} advance`, tNoteNL:(d,n)=>`${d} of ${n} finished`, tNoteX:"You're playing without competing.",
@@ -5661,7 +5692,46 @@ async function tourImage(TD){
   return toBlob(cv);
 }
 // la dificultad y las palabras del ahorcado, para generar la partida de cada ronda
-const TOUR_GEN=o=>({dif:o.dif, n:o.n});
+const TOUR_GEN=o=>({dif:o.dif, n:o.n, cw:o.cw});
+// palabras o frase que elige el organizador para una ronda (todo menos la sopa). Devuelve {v} o {err}.
+// ahorcado y anagrama: una por línea, "PALABRA" o "PALABRA = pista" (sin pista, la del glosario; si no está, es obligatoria)
+// acróstico: la frase escondida; criptograma: la frase y, opcional, "— autor" en la última línea; semilla: 12 o 24 palabras BIP39
+const CW_MAX={ahorcado:12, anagrama:10};
+function cwParse(g, text, L){
+  text=String(text||"").trim(); if(!text) return {v:null};
+  const G=new Set((L==="en"?G_EN:G_ES).map(([w])=>w));
+  if(g==="ahorcado" || g==="anagrama"){
+    const out=[], bad=[];
+    for(const line of text.split(/\n+/).map(x=>x.trim()).filter(Boolean)){
+      const i=line.indexOf("="), w=clean(i<0 ? line : line.slice(0,i)), c=i<0 ? "" : line.slice(i+1).trim().slice(0,160);
+      const letters=w.replace(/ /g,"").length;
+      if(g==="anagrama" && w.includes(" ")){ bad.push(`«${w}» tiene espacios (en el anagrama va una sola palabra)`); continue; }
+      if(letters<3 || letters>(g==="anagrama"?12:16)){ bad.push(`«${w||line}» tiene que tener entre 3 y ${g==="anagrama"?12:16} letras`); continue; }
+      if(!c && !G.has(w)){ bad.push(`«${w}» no está en el glosario: agregale la pista («${w} = pista»)`); continue; }
+      if(out.some(x=>x[0]===w)){ bad.push(`«${w}» está repetida`); continue; }
+      out.push([w, c||null]);
+    }
+    if(out.length>CW_MAX[g]) bad.push(`Son ${out.length} palabras: el máximo es ${CW_MAX[g]}`);
+    return bad.length ? {err:bad.join(". ")} : {v:out};
+  }
+  if(g==="acrostico"){
+    const ph=clean(text.replace(/\n+/g," ")), n=ph.replace(/ /g,"").length;
+    return n<3 || n>30 ? {err:`La frase del acróstico tiene que tener entre 3 y 30 letras (tiene ${n})`} : {v:ph};
+  }
+  if(g==="criptograma"){
+    const ls=text.split(/\n+/).map(x=>x.trim()).filter(Boolean); let au="";
+    if(ls.length>1 && /^[—–-]/.test(ls[ls.length-1])) au=ls.pop().replace(/^[—–-]+\s*/,"").slice(0,80);
+    const q=ls.join(" ").replace(/\s+/g," "), n=norm(q).replace(/[^A-ZÑ]/g,"").length;
+    return n<10 || q.length>220 ? {err:"La frase del criptograma tiene que tener al menos 10 letras y hasta 220 caracteres"} : {v:[q, au]};
+  }
+  if(g==="semilla"){
+    const ws=text.split(/[\s,;.]+/).filter(Boolean), out=[], bad=[];
+    ws.forEach(w=>{ const i=bipSet[L].get(norm(w)); if(i===undefined) bad.push(w); else out.push(BIP39[L][i]); });
+    if(bad.length) return {err:`No están en la lista BIP39 ${L==="en"?"en inglés":"en castellano"}: ${bad.join(", ")}`};
+    return out.length===12 || out.length===24 ? {v:out} : {err:`La semilla tiene que tener 12 o 24 palabras (tiene ${out.length})`};
+  }
+  return {v:null};
+}
 // rondas que tiene cada partida, para el puntaje (anagrama 10; ahorcado del torneo, las palabras que tenga)
 const tourRounds=c=> c.g==="anagrama" ? 10 : c.g==="ahorcado" ? (c.n||6) : 0;
 const tms=x=> x && x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
@@ -5744,7 +5814,24 @@ const Tour = (()=>{
       watchIns();
     }
     TD=tid ? ALL[tid] : null;
-    banner(); render();
+    banner(); render(); champFx();
+  }
+  // el cartel del campeón, a pantalla completa y con confeti, en la pantalla de quien ganó (una vez por torneo y navegador)
+  function champFx(){
+    if(!TD || TD.st!=="done" || !uid || TD.champ!==uid || document.querySelector(".champfx")) return;
+    const k="rodo-champ-"+tid; if(store.get(k)) return; store.set(k,"1");
+    const T0=t(), av=(mine&&mine.av)||Reg.av()||"🏆", nm=(mine&&mine.nm)||Reg.nick()||"";
+    const el=document.createElement("div"); el.className="champfx"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true");
+    const cols=["#F7931A","#FFD24A","#FFFFFF","#C76F00","#3BB273","#4AA3FF"];
+    const conf=Array.from({length:90},(_,i)=>`<i style="left:${Math.random()*100}%;background:${cols[i%cols.length]};animation-delay:${(Math.random()*2.5).toFixed(2)}s;animation-duration:${(2.6+Math.random()*2.4).toFixed(2)}s;transform:rotate(${Math.round(Math.random()*360)}deg)"></i>`).join("");
+    const pool=mine && mine.paid ? poolSats() : 0;
+    el.innerHTML=`<div class="cfx-conf" aria-hidden="true">${conf}</div><div class="cfx-card">
+      <div class="cfx-trophy">🏆</div><div class="cfx-av">${esc(av)}</div>
+      <p class="cfx-k">${esc(T0.tChampK)}</p><h2>${esc(T0.tChampWon(nm))}</h2><p class="cfx-t">${esc(TD.name||"")}</p>
+      ${pool?`<p class="cfx-p">${esc(T0.tChampPool(pool))}</p>`:""}
+      <button class="primary cfx-ok">${esc(T0.tChampOk)}</button></div>`;
+    document.body.appendChild(el);
+    el.querySelector(".cfx-ok").addEventListener("click",()=>el.remove());
   }
   // inscriptos: solo con la sala abierta (cada alta le llega a todos los que miran)
   function watchIns(){
@@ -6145,6 +6232,7 @@ const TourAdmin = (()=>{
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
   const srv=()=>Live.now();
   let A=null, me=null, ALL={}, tid=null, TD=null, RS={}, INS={}, PRIV={}, RESL={}, resFor=null, resOk=false;
+  let CW={}, CWok=false;   // palabras propias de cada ronda (secret/cw: solo organizadores), por cwid
   let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="", onl=[], onlQ="", plan={};
   const isBot=u=>/^bot-\d+$/.test(u);
   const tref=()=>A.doc(A.db,"tourneys",tid), rref=id=>A.doc(A.db,"tourneys",tid,"rounds",String(id));
@@ -6173,17 +6261,21 @@ const TourAdmin = (()=>{
     const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>(tms(ALL[b].at)||0)-(tms(ALL[a].at)||0));
     if(!id || !ok.includes(id)) id=ok[0]||null;
     if(id!==tid){
-      tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null;
+      tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null; CW={}; CWok=false;
       [uR,uI,uRes].forEach(f=>f&&f()); uR=uI=uRes=null;
       if(tid){
         uR=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); watchRes(); render(); }, fail);
         uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); privNew(); }, fail);
-        loadPriv();
+        loadPriv(); loadCw();
       }
     }
     TD=tid ? ALL[tid] : null;
     render();
   }
+  async function loadCw(){ const t0=tid; try{ const s=await A.getDoc(cwRef()); if(t0!==tid) return; CW=s.exists() ? s.data() : {}; CWok=true; cfgFor=null; render(); }catch(e){ fail(e); } }
+  const cwRef=(t=tid)=>A.doc(A.db,"tourneys",t,"secret","cw");
+  // las palabras propias de la configuración c de una ronda, ya leídas (null = al azar)
+  function cwOf(c){ const t=c && c.cwid && CW[c.cwid]; if(!t) return null; const p=cwParse(c.g, t, c.lang||TD.lang||"es"); return p.v||null; }
   async function loadPriv(){ try{ const qs=await A.getDocs(A.collection(A.db,"tourneys",tid,"priv")); PRIV={}; qs.forEach(d=>PRIV[d.id]=d.data()); render(); }catch(e){} }
   // los datos de contacto de quienes se van inscribiendo (de a uno, sin releer todos)
   async function privNew(){
@@ -6249,6 +6341,7 @@ const TourAdmin = (()=>{
     const c=TD.rounds[ci], fin=ci===TD.rounds.length-1 || pl.length<=2;
     const L=c.lang||TD.lang||"es", opt={L};
     if(c.g==="sopa") opt.s=c.s||"media"; if(c.g==="semilla") opt.w=c.w||12; if(c.dif) opt.dif=c.dif; if(c.g==="ahorcado") opt.n=c.n||6;
+    const cw=c.g!=="sopa" && cwOf(c); if(cw){ opt.cw=cw; if(c.g==="ahorcado") opt.n=cw.length; if(c.g==="semilla") opt.w=cw.length; }
     const d=await Reg.genFor(c.g, opt), go=srv()+delay;
     const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
       pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
@@ -6292,6 +6385,7 @@ const TourAdmin = (()=>{
         const ref=A.doc(A.collection(A.db,"tourneys")), me0=Reg.uid();
         await A.setDoc(ref,{name:(TD.name+" · ensayo").slice(0,80), st:"open", cap:TD.cap, fee:TD.fee||0, lnurl:TD.lnurl||"", when:null, orgs:TD.orgs||[], bases:TD.bases||"", lang:TD.lang||"es",
           cur:0, rounds:TD.rounds, champ:null, auto:true, test:true, src:tid, inv:me0?[me0]:[], at:A.serverTimestamp()});
+        if(Object.keys(CW).length) await A.setDoc(cwRef(ref.id), CW);
         cfgFor=null; pickT(ref.id); say("Ensayo armado: no lo ve el público. Sumá jugadores falsos, invitá gente y arrancalo cuando quieras."); return; }
       if(a==="deltest" && TD.test){ if(!sure(el, "¿Borrar este ensayo?")) return; const src=TD.src; await A.deleteDoc(tref()); pickT(src); return; }
       if(a==="bots" && TD.test){
@@ -6325,6 +6419,7 @@ const TourAdmin = (()=>{
       if(a==="now" && (r.st==="sched"||r.st==="ready")){ const go=now+10000; say(`${r.final?"Final":"Ronda "+r.no}: arranca en 10 segundos.`); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
       if(a==="regen" && (r.st==="ready" || (r.st==="sched" && now<tms(r.go)-5000))){
         const c={g:r.g, lang:r.lang, s:r.s, w:r.w, dif:r.dif, n:r.n}, opt={L:r.lang}; if(r.s) opt.s=r.s; if(r.w) opt.w=r.w; if(r.dif) opt.dif=r.dif; if(r.n) opt.n=r.n;
+        const cw=r.g!=="sopa" && cwOf({...(TD.rounds[r.ci]||{}), lang:r.lang}); if(cw) opt.cw=cw;
         await A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p"), {d:await Reg.genFor(c.g, opt)}); prevD=null; say("Partida nueva generada."); renderLive(); return; }
       if(a==="peek"){ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p")); prevD=s.exists()?{id:r.id, d:s.data().d}:null; renderLive(); return; }
       if(a==="close" && r.st==="live" && sure(el, "¿Cerrar la ronda ahora con la tabla como está?")){ await close(r); return; }
@@ -6394,7 +6489,7 @@ const TourAdmin = (()=>{
     if(g==="acrostico") return d.phrase;
     if(g==="ahorcado") return (d.words||[d]).map(x=>x.word).join(", ");
     if(g==="sopa") return d.words.map(x=>x.w).join(", ");
-    if(g==="criptograma") return `${d.q[0]} — ${d.q[1]}`;
+    if(g==="criptograma") return d.q[1] ? `${d.q[0]} — ${d.q[1]}` : d.q[0];
     if(g==="anagrama") return d.list.map(x=>x.w).join(", ");
     if(g==="semilla") return d.words.join(" ");
     return "";
@@ -6424,19 +6519,33 @@ const TourAdmin = (()=>{
       else if(c.g==="semilla") o=sel("w",[[12,"12 palabras"],[24,"24 palabras"]],c.w||12,dis);
       else if(c.g==="ahorcado") o=`<input data-f="n" type="number" min="1" max="12" value="${c.n||6}"${dis?" disabled":""}> palabras`;
       const hasDif=["ahorcado","anagrama","criptograma","acrostico"].includes(c.g);
-      h+=`<tr data-i="${i}"><td>${i===T0.rounds.length-1?"Final":i+1}</td><td>${sel("g",GS.map(g=>[g,GN[g]]),c.g,dis)}</td><td>${sel("lang",[["es","ES"],["en","EN"]],c.lang||T0.lang||"es",dis)}</td>
+      h+=`<tr class="tarow" data-i="${i}"><td>${i===T0.rounds.length-1?"Final":i+1}</td><td>${sel("g",GS.map(g=>[g,GN[g]]),c.g,dis)}</td><td>${sel("lang",[["es","ES"],["en","EN"]],c.lang||T0.lang||"es",dis)}</td>
         <td class="taopt">${o}</td><td>${hasDif?sel("dif",DIFS.map(d=>[d,DIFN[d]]),c.dif||"",dis):""}</td><td><input data-f="dur" type="number" min="0" max="120" value="${c.dur||0}"${dis?" disabled":""}></td>
         <td>${!dis && !ro && T0.rounds.length>1?`<button data-ta="delr" data-i="${i}" title="Quitar">✕</button>`:""}</td></tr>`;
+      // palabras o frase propias (no en la sopa); vacío = al azar
+      if(c.g!=="sopa" && !CWok) h+=`<tr class="tacwr"><td></td><td colspan="6" class="m small">Cargando las palabras elegidas…</td></tr>`;
+      else if(c.g!=="sopa"){ const txt=(c.cwid && CW[c.cwid])||"", p=cwParse(c.g, txt, c.lang||T0.lang||"es"), n=p.v ? (Array.isArray(p.v) && c.g!=="criptograma" ? p.v.length : 1) : 0;
+        h+=`<tr class="tacwr"><td></td><td colspan="6"><details${txt?" open":""}><summary>✎ ${CW_LBL[c.g]}${n?` · ${c.g==="criptograma"||c.g==="acrostico"?"elegida":n+" elegida"+(n===1?"":"s")}`:" · al azar"}</summary>
+          <textarea data-f="cw" rows="${c.g==="acrostico"||c.g==="criptograma"?2:4}" maxlength="3000" placeholder="${esc(CW_PH[c.g]||"")}"${dis?" disabled":""}>${esc(txt)}</textarea><p class="m small">${esc(CW_HELP[c.g]||"")}</p></details></td></tr>`; }
     });
     h+=`</tbody></table></div><div class="row">${!ro && T0.rounds.length<8?`<button data-ta="addr">+ Ronda</button>`:""}<button class="primary" data-ta="save">Guardar configuración</button></div>`;
     return h;
   }
+  const CW_LBL={ahorcado:"Elegir las palabras", anagrama:"Elegir las palabras", acrostico:"Elegir la frase", criptograma:"Elegir la frase", semilla:"Elegir la semilla"};
+  const CW_PH={ahorcado:"HALVING\nMEMPOOL = Donde esperan las transacciones antes de entrar a un bloque", anagrama:"NODO\nMINERO\nCARTERA", acrostico:"STAY HUMBLE STACK SATS",
+    criptograma:"No confíes, verificá.\n— Dicho bitcoiner", semilla:"abandon ability able about above absent absorb abstract absurd abuse access accident"};
+  const CW_HELP={ahorcado:"Una por línea, hasta 12. Si la palabra no está en el glosario, poné la pista después de «=». Vacío: al azar del glosario. La cantidad de palabras pasa a ser la de la lista.",
+    anagrama:"Una por línea, hasta 10 (si ponés menos, se completan del glosario). Si no está en el glosario, la pista va después de «=».",
+    acrostico:"La frase escondida en la columna naranja (solo letras y espacios, hasta 30 letras). Las palabras de cada fila salen del glosario.",
+    criptograma:"La frase a descifrar. Si querés, el autor en otra línea que empiece con «—».",
+    semilla:"12 o 24 palabras de la lista BIP39 en el idioma de la ronda, separadas por espacios, en orden."};
   // lee el formulario (los cambios de juego regeneran las opciones al guardar)
   function readCfg(){
     const box=$("taCfg"), v=f=>{ const el=box.querySelector(`.tacfg [data-f="${f}"]`); return el ? el.value : ""; };
-    const rs=[...box.querySelectorAll(".tarounds tbody tr")].map((tr,i)=>{
-      const g=tr.querySelector('[data-f="g"]').value, q=f=>{ const el=tr.querySelector(`[data-f="${f}"]`); return el ? el.value : null; }, prev=TD.rounds[i]||{};
+    const rs=[...box.querySelectorAll(".tarounds tbody tr.tarow")].map((tr,i)=>{
+      const g=tr.querySelector('[data-f="g"]').value, q=f=>{ const el=tr.querySelector(`[data-f="${f}"]`); return el ? el.value : null; }, prev=TD.rounds[+tr.dataset.i]||{};
       const c={g, lang:q("lang")||"es", dur:Math.max(0,Math.min(120,parseInt(q("dur"),10)||0))};
+      if(prev.cwid) c.cwid=prev.cwid;
       if(g!==prev.g){ if(g==="sopa"){ c.s="media"; c.m="w"; } if(g==="semilla") c.w=12; if(g==="ahorcado") c.n=6; return c; }
       if(g==="sopa"){ c.s=q("s")||"media"; c.m=q("m")||"w"; }
       if(g==="semilla") c.w=+(q("w")||12);
@@ -6451,8 +6560,19 @@ const TourAdmin = (()=>{
     return c;
   }
   async function save(){
-    const c=readCfg();
-    try{ await A.updateDoc(tref(), c); cfgFor=null; say("Configuración guardada."); }catch(e){ fail(e); }
+    const c=readCfg(), box=$("taCfg"), cw={}, errs=[];
+    if(!CWok){ say("Todavía no se cargaron las palabras propias: probá en un momento.", true); return; }
+    // palabras propias: se validan acá y se guardan aparte (secret/cw), así los jugadores no las ven
+    [...box.querySelectorAll(".tarounds tbody tr.tarow")].forEach((tr,i)=>{
+      const rc=c.rounds[i], ta=tr.nextElementSibling && tr.nextElementSibling.querySelector('[data-f="cw"]'), txt=ta ? ta.value.trim() : "";
+      if(!rc || rc.g==="sopa" || !txt){ delete rc.cwid; return; }
+      const p=cwParse(rc.g, txt, rc.lang||"es");
+      if(p.err){ errs.push(`${i===c.rounds.length-1?"Final":"Ronda "+(i+1)}: ${p.err}`); return; }
+      rc.cwid=rc.cwid||Math.random().toString(36).slice(2,10); cw[rc.cwid]=txt.slice(0,3000);
+      if(rc.g==="ahorcado") rc.n=p.v.length; if(rc.g==="semilla") rc.w=p.v.length;
+    });
+    if(errs.length){ say(errs.join(" · "), true); return; }
+    try{ await A.setDoc(cwRef(), cw); CW=cw; await A.updateDoc(tref(), c); cfgFor=null; say("Configuración guardada."); }catch(e){ fail(e); }
   }
 
   // ---------- pantalla ----------

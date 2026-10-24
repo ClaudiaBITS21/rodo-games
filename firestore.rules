@@ -543,6 +543,10 @@ service cloud.firestore {
       }
 
       // Rondas: las crea y maneja el organizador. pl: quienes compiten; adv: cuántos pasan; go/end: arranque y fin (hora del servidor).
+      // Palabras o frases que eligió el organizador para cada ronda: solo las ven los organizadores (la partida se genera con ellas)
+      match /secret/{x} {
+        allow read, write: if isOrg(tid);
+      }
       match /rounds/{r} {
         allow read: if true;
         allow write: if isOrg(tid);

@@ -11,7 +11,12 @@ http.createServer((q,r)=>{
     h=h.replace("signInWithEmailAndPassword }","signInWithEmailAndPassword, connectAuthEmulator }")
        .replace("writeBatch, deleteField } from","writeBatch, deleteField, connectFirestoreEmulator } from")
        .replace("const auth = getAuth(app);","const auth = getAuth(app); connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});")
-       .replace("const db = getFirestore(app);","const db = getFirestore(app); connectFirestoreEmulator(db,'127.0.0.1',8080);");
+       .replace("const db = getFirestore(app);","const db = getFirestore(app); connectFirestoreEmulator(db,'127.0.0.1',8080);")
+       // el panel (app "admin") también va a los emuladores; window.__admTok entra con una cuenta de Google simulada
+       .replace("signInWithPopup, signOut,","signInWithPopup, signInWithCredential, signOut,")
+       .replace('prov.setCustomParameters({ prompt: "select_account" });','prov.setCustomParameters({ prompt: "select_account" }); connectAuthEmulator(aauth,\'http://127.0.0.1:9099\',{disableWarnings:true}); const __adb=getFirestore(aapp); connectFirestoreEmulator(__adb,\'127.0.0.1\',8080);')
+       .replace("window.__adminResolve({ db: getFirestore(aapp),","window.__adminResolve({ db: __adb,")
+       .replace("login: () => signInWithPopup(aauth, prov)","login: () => window.__admTok ? signInWithCredential(aauth, GoogleAuthProvider.credential(window.__admTok)) : signInWithPopup(aauth, prov)");
     const et=fs.existsSync(path.join(HERE,"etag.txt"))?fs.readFileSync(path.join(HERE,"etag.txt"),"utf8").trim():"v1";
     r.writeHead(200,{"content-type":"text/html","etag":'"'+et+'"'}); return r.end(q.method==="HEAD"?undefined:h);
   }
