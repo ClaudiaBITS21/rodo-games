@@ -242,8 +242,11 @@ const CFG = {
   WHATSAPP: "",                                      // número con código de país, solo dígitos (ej. 5491100000000). Vacío = sin botón
   MAIL_TO: "claudia@rodo.es",                        // aviso de cada pedido por FormSubmit
   MAX_QTY: 10,
-  // PDF de cada rompecabezas para ampliar la imagen al armarlo (en public/pdf/). Sin archivo, no se muestra el botón
-  PDF: { bip39:"", whitepaper:"", times:"" }
+  // PDF de cada rompecabezas para ampliar la imagen al armarlo (con clave, que se da al confirmar la compra).
+  // Están en el Drive de la dueña (carpeta "RODO Games · PDF de los rompecabezas", compartida con cualquiera que tenga el link). Vacío = sin botón
+  PDF: { bip39:"https://drive.google.com/uc?export=download&id=1XuVNSsu2XZ0bkOhmpadAzTPE9QgWiPfe",
+         whitepaper:"https://drive.google.com/uc?export=download&id=1JEZVcUKGfVOBw5xqHTlIrh8PCpAqjwsE",
+         times:"https://drive.google.com/uc?export=download&id=1Z__yWCjm6XRDpOWUB6Ka9A7CwrnYVljF" }
 };
 
 const PRODUCTS = [
@@ -434,7 +437,7 @@ function renderProducts(){
         <h3>${esc(P.name)}</h3>
         <p>${esc(P.desc)}</p>
         <div class="specs">${t.specs.map(s=>`<span>${esc(s)}</span>`).join("")}<span>${esc(P.orient)}</span></div>
-        ${CFG.PDF[p.id] ? `<div class="pdf"><a class="pdfdl" href="${esc(CFG.PDF[p.id])}" download>📄 ${esc(t.pdf)}</a><small>${esc(t.pdfNote)}</small></div>` : ""}
+        ${CFG.PDF[p.id] ? `<div class="pdf"><a class="pdfdl" href="${esc(CFG.PDF[p.id])}" target="_blank" rel="noopener" download>📄 ${esc(t.pdf)}</a><small>${esc(t.pdfNote)}</small></div>` : ""}
         <div class="buy">
           <span class="price">${ars(CFG.PRICE_ARS)} <small style="font-weight:400;color:var(--muted)">${t.each}</small></span>
           ${q ? `<span class="qty"><button data-d="-1" aria-label="${esc(t.less)}">−</button><output>${q}</output><button data-d="1" aria-label="${esc(t.more)}"${q>=CFG.MAX_QTY?" disabled":""}>+</button></span>`
