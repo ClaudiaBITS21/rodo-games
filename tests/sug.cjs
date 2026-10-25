@@ -34,7 +34,7 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
     window.__writes=[]; window.__clip='';
     try{ Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{ window.__clip=t; }}}); }catch(e){}
     // un jugador nuevo hoy, que además armó su usuario hoy (para la solapa Jugadores → Por día)
-    const NOW=Date.now(), DB={sugs:SG, names:[{id:'u9', name:'Lola', at:NOW-60000}], fichas:[{id:'u9', first:NOW-120000, last:NOW-60000, vis:3, vd:{'2026-10-25':3}, plays:{'sopa-es':2}, seen:{}}]};
+    const NOW=Date.now(), DB={sugs:SG, names:[{id:'u9', name:'Lola', at:NOW-60000}], fichas:[{id:'u8', first:NOW-100000, last:NOW-100000, plays:{}, seen:{}}, {id:'u9', first:NOW-120000, last:NOW-60000, vis:3, vd:{'2026-10-25':3}, plays:{'sopa-es':2}, seen:{}}]};
     const snap=n=>({forEach:f=>(DB[n]||[]).forEach(x=>{ const {id,...d}=x; f({id, data:()=>d}); })});
     const A={ db:{}, collection:(db,n)=>n, collectionGroup:(db,n)=>n, getDocs:async n=>snap(n), doc:(db,c,id)=>c+'/'+id,
       setDoc:async(ref,d)=>{ window.__writes.push([ref,d]); }, deleteDoc:async()=>{}, serverTimestamp:()=>Date.now(),
@@ -45,10 +45,11 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   await a.goto(URL+'#admin');
   await a.waitForFunction(()=>/Palabras sugeridas/.test(document.getElementById('admBody').textContent),null,{timeout:20000});
   ok((await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|'))).match(/^📈 Resumen\|👥 Jugadores\|🧩 Tienda\|💡 Sugeridas \(\d\)\|⚙️ Sistema$/),'solapas: '+await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|')));
-  ok(/1\s*con usuario \(100\s*%\) · 0 sin usuario/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'con y sin usuario: '+(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)).match(/\d+\s*con usuario[^·]*·[^<]{0,20}/));
+  ok(/1\s*con usuario \(50\s*%\) · 1 sin usuario/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'con y sin usuario: '+(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)).match(/\d+\s*con usuario[^·]*·[^<]{0,20}/));
   await a.click('[data-admtab="jug"]');
   const day=await a.$eval('#admBody .admsec[data-sec="jug"] .aday',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/1 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day),'por día: '+day.slice(0,160));
+  ok(/2 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day) && /1 anónimo que no jugó/.test(day),'por día (el anónimo que no jugó solo se cuenta): '+day.slice(0,220));
+  ok(/1\s*anónimos que entraron y no jugaron/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'el total de anónimos que no jugaron, en el resumen');
   // tocar el nombre abre su perfil
   await a.click('#admBody .admsec[data-sec="jug"] .aday summary');
   await a.click('#admBody .admsec[data-sec="jug"] .aday .aprof');
