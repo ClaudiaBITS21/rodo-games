@@ -23,7 +23,7 @@ const get=async p=>(await fetch(FS+p,{headers:H})).json();
   ok(await A.$$eval('.pdfdl',l=>l.length)===0,'sin PDF cargado no hay botón');
   await A.evaluate(()=>{ CFG.PDF.bip39='/pdf/bip39.pdf'; renderProducts(); });
   const pdf=await A.$eval('.prod[data-id="bip39"] .pdf',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/Bajar PDF/.test(pdf) && /ampliar la imagen a gusto/.test(pdf) && await A.$$eval('.pdfdl',l=>l.length)===1,'botón «Bajar PDF» con la recomendación: '+pdf);
+  ok(/Bajar PDF/.test(pdf) && /ampliar la imagen a gusto/.test(pdf) && /te la pasamos cuando confirmamos tu compra/.test(pdf) && await A.$$eval('.pdfdl',l=>l.length)===1,'botón «Bajar PDF» con la recomendación: '+pdf);
   await A.evaluate(()=>{ CFG.PDF.bip39=''; renderProducts(); });
   ok(/Bitcoin \(on-chain\)/.test(await txt('#payA')),'opción: '+await txt('#payA'));
   ok(/Correo Argentino/.test(await txt('#shipA')) && /Shopping DOT/.test(await txt('#shipB')) && /LABITCONF/.test(await txt('#shipC')),'opciones de entrega: '+[await txt('#shipA'),await txt('#shipB'),await txt('#shipC')].join(' / '));
