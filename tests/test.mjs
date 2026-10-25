@@ -111,6 +111,10 @@ await t("jugador no desmarca", assertFails(deleteDoc(doc(A, "testers/A"))));
 await t("admin desmarca", assertSucceeds(deleteDoc(doc(ADM, "testers/A"))));
 await t("fichas con inv", assertSucceeds(setDoc(doc(A, "fichas/A"), { first: 1, last: 1, seen: {}, plays: {}, inv: 2 })));
 await t("fichas inv no numérico no", assertFails(setDoc(doc(A, "fichas/A"), { first: 1, last: 1, seen: {}, plays: {}, inv: "x" })));
+await t("dict: la administración edita el glosario", assertSucceeds(setDoc(doc(ADM, "dict/es-1"), { L: "es", n: 1, w: "BITCOIN", c: ["a"], d: "x", off: false, tr: false })));
+await t("dict: un jugador no", assertFails(setDoc(doc(A, "dict/es-1"), { L: "es", n: 1, w: "X", c: ["a"] })));
+await t("dict: el id tiene que coincidir", assertFails(setDoc(doc(ADM, "dict/es-2"), { L: "es", n: 1, w: "X", c: ["a"] })));
+await t("dict: lo lee cualquiera", assertSucceeds(getDoc(doc(A, "dict/es-1"))));
 await t("fichas con visitas", assertSucceeds(setDoc(doc(A, "fichas/A"), { first: 1, last: 1, seen: {}, plays: {}, vis: 3, vd: { "2026-10-25": 3 } })));
 await t("fichas visitas no numérico no", assertFails(setDoc(doc(A, "fichas/A"), { first: 1, last: 1, seen: {}, plays: {}, vis: "x" })));
 

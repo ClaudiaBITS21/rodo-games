@@ -76,6 +76,18 @@ service cloud.firestore {
     // Ficha de cada jugador (navegador): primera y última visita, partidas vistas y jugadas.
     // Solo la lee y la escribe su dueño.
     // (no se llama "players" para no mezclarse con los resultados, que se leen como grupo "players")
+    // Diccionarios: cambios al glosario hechos desde el panel (id = idioma-número). Los lee el sitio; los escribe solo la administración.
+    // w: palabra, c: hasta 3 pistas, d: definición, off: oculta en los juegos, tr: pendiente de traducir (réplica del otro idioma), src: de qué entrada salió
+    match /dict/{id} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['L', 'n', 'w', 'c', 'd', 'off', 'tr', 'src', 'at'])
+        && request.resource.data.L in ['es', 'en'] && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 5000
+        && id == request.resource.data.L + '-' + string(request.resource.data.n)
+        && (!('w' in request.resource.data) || (request.resource.data.w is string && request.resource.data.w.size() <= 30))
+        && (!('c' in request.resource.data) || (request.resource.data.c is list && request.resource.data.c.size() <= 3))
+        && (!('d' in request.resource.data) || (request.resource.data.d is string && request.resource.data.d.size() <= 1200));
+      allow delete: if isAdmin();
+    }
     match /fichas/{uid} {
       allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow create, update: if signedIn() && request.auth.uid == uid

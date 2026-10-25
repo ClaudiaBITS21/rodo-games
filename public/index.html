@@ -94,6 +94,11 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .admtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.admsec[hidden]{display:none}
 .ivdlg.profdlg{max-width:min(900px,calc(100vw - 24px));width:100%;text-align:left;max-height:90vh;overflow:auto}.profdlg h4{margin:16px 0 6px}.aprof{color:inherit;text-decoration:underline dotted;cursor:pointer}
 .aplf{margin:0 0 8px}.aplf button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.aplq{width:100%;max-width:320px;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}tr[hidden]{display:none}
+.dword{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0 0 4px;background:var(--paper)}.dword[hidden]{display:none}.dword summary{cursor:pointer}
+.dtag{font-style:normal;font-size:.72rem;border-radius:5px;padding:0 5px;background:#eee;color:#555}.dtag.tr{background:#FFE7C2;color:#8A4B00}.dtag.ed{background:#DDF3E4;color:#1A7F37}
+.dbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 12px}.dform{display:grid;gap:6px;margin:10px 0;padding:10px;border:1px dashed var(--line);border-radius:8px}.dform label{display:grid;gap:3px;font-size:.85rem}.dform .dchk{display:flex;gap:6px;align-items:center}
+.dform input:not([type=checkbox]),.dform textarea,.dq,#dAns{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink);font:inherit}
+.dq{flex:1;min-width:220px}.dpend{border:1px solid #F7931A;border-radius:10px;padding:10px;margin:10px 0}.dpend label{display:grid;gap:4px;margin-top:8px}.dmsg{font-weight:600}.dmsg.bad{color:var(--bad,#B3261E)}
 .aday{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 6px;background:var(--paper)}.aday summary{cursor:pointer}.aday p{margin:6px 0;font-size:.9rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
 .kpi{border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:10px 12px;background:var(--paper)}
@@ -1668,7 +1673,26 @@ const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
 const GW={es:new Map(G_ES.map(([w],i)=>[w,i+1])), en:new Map(G_EN.map(([w],i)=>[w,i+1]))};
 const gWord=(L,n)=>((L==="en"?G_EN:G_ES)[n-1]||[""])[0];
 const DEFS={};
-const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; }));
+const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; })
+  .then(a=>{ if(!a) return a; Object.values(DICT.docs).forEach(x=>{ if(x.L===L && typeof x.d==="string" && x.d) a[x.n-1]=x.d; }); return a; }));
+// ---------- Diccionarios editados desde el panel (dict/{idioma}-{número}) ----------
+// Cambian palabras, pistas y definiciones del glosario sin tocar el código; las palabras nuevas siguen al final (número = posición + 1,
+// así los códigos de pista "palabra.pista" no se mueven). Una palabra "off" no sale en los juegos (no se borra, para no correr los números).
+const DICT={docs:{}, off:{es:new Set(), en:new Set()}};
+function applyDict(list){
+  list.sort((a,b)=>a.n-b.n).forEach(x=>{
+    if(x.L!=="es" && x.L!=="en") return; const G=x.L==="en"?G_EN:G_ES, i=x.n-1;
+    DICT.docs[`${x.L}-${x.n}`]=x;
+    if(i>G.length) return;                      // hueco: se ignora hasta que esté la anterior
+    if(i===G.length){ if(!x.w || !Array.isArray(x.c)) return; G.push([x.w, x.c.slice(0,3)]); }
+    else { if(x.w) G[i][0]=x.w; if(Array.isArray(x.c) && x.c.length) G[i][1]=x.c.slice(0,3); }
+    if(x.off) DICT.off[x.L].add(x.n); else DICT.off[x.L].delete(x.n);
+  });
+  // índices que dependen del glosario
+  ["es","en"].forEach(L=>{ const G=L==="en"?G_EN:G_ES; GW[L].clear(); G.forEach(([w],i)=>GW[L].set(w,i+1));
+    CLUES.byText[L].clear(); G.forEach(([w,cs],i)=>cs.forEach((c,j)=>CLUES.byText[L].set(c,`${i+1}.${j+1}`))); });
+  ["es","en"].forEach(L=>{ if(DEFS[L]) DEFS[L]=DEFS[L].then(a=>{ if(a) Object.values(DICT.docs).forEach(x=>{ if(x.L===L && x.d) a[x.n-1]=x.d; }); return a; }); });
+}
 const gloss = () => {
   const L=lang, seen=CLUES.seen[L];
   let list=(L==="en" ? G_EN : G_ES).map(([w,cs],i)=>{
@@ -1676,7 +1700,7 @@ const gloss = () => {
     const sc=ids.map(id=>{ const u=clueUse(L,id), s=seen.has(id)?1:0; return (CLUES.duel ? u*2+s : s*1e6+u) + Math.random()*0.9; });
     const j=sc.indexOf(Math.min(...sc));
     return [w, cs[j], ids[j], cs, ids.reduce((a,id)=>a+clueUse(L,id),0)];
-  });
+  }).filter((x,i)=>!DICT.off[L].has(i+1));   // las ocultadas desde el panel no salen en los juegos
   // en las invitaciones se dejan afuera las palabras más vistas (el acróstico necesita todas para armar la frase)
   if(CLUES.duel && CLUES.trimWords) list=list.map(x=>[x,x[4]+Math.random()*0.9]).sort((a,b)=>a[1]-b[1]).slice(0,Math.ceil(list.length*0.6)).map(x=>x[0]);
   return list;
@@ -3061,6 +3085,8 @@ const Reg = (()=>{
       await Promise.all(["es","en"].map(loadClueUse));
       try{ (await fb.getDocs(fb.collection(fb.db,"testers"))).forEach(d=>testers.add(d.id)); }catch(e){}
       document.body.classList.toggle("tester", testers.has(uid));
+      // cambios del glosario hechos desde el panel
+      try{ const L0=[]; (await fb.getDocs(fb.collection(fb.db,"dict"))).forEach(d=>L0.push(d.data())); applyDict(L0); }catch(e){}
     }
     KEYS.forEach(setPid);
   })();
@@ -5076,6 +5102,9 @@ const Admin = (()=>{
     let CP=null; try{ CP=[]; (await A.getDocs(A.collection(A.db,"coupons"))).forEach(d=>CP.push({code:d.id, ...d.data()})); }catch(e){ CP=null; }
     let OR=null; try{ OR=[]; (await A.getDocs(A.collection(A.db,"orders"))).forEach(d=>OR.push({code:d.id, ...d.data()})); }catch(e){ OR=null; }
     // palabras sugeridas por los jugadores
+    // diccionarios: lo editado desde el panel (se vuelve a leer, por si cambió en otra pestaña) y las definiciones
+    try{ const DC=[]; (await A.getDocs(A.collection(A.db,"dict"))).forEach(d=>DC.push(d.data())); applyDict(DC); }catch(e){}
+    { const [d1,d2]=await Promise.all([defsOf("es"), defsOf("en")]); DEFV={es:d1||[], en:d2||[]}; }
     let SG=null; try{ SG=[]; (await A.getDocs(A.collection(A.db,"sugs"))).forEach(d=>SG.push({id:d.id, ...d.data()})); }catch(e){ SG=null; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
@@ -5212,12 +5241,106 @@ const Admin = (()=>{
     const note=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
     // solapas: se recuerda la última abierta
     const open=OR ? OR.filter(o=>o.st==="nuevo").length : 0, sgN=SG ? new Set(SG.filter(x=>!x.st||x.st==="nueva").map(x=>x.w)).size : 0;
-    const TABS=[["res","📈 Resumen",h+note],["jug","👥 Jugadores",secPl+note],["tienda",`🧩 Tienda${open?` (${open})`:""}`,secShop],["sug",`💡 Sugeridas${sgN?` (${sgN})`:""}`,secSug],["sis",`⚙️ Sistema${locks.length||errs.length?` (${locks.length+errs.length})`:""}`,secSys]];
+    const TABS=[["res","📈 Resumen",h+note],["jug","👥 Jugadores",secPl+note],["tienda",`🧩 Tienda${open?` (${open})`:""}`,secShop],["sug",`💡 Sugeridas${sgN?` (${sgN})`:""}`,secSug],["dic",`📚 Diccionarios${dictPend().length?` (${dictPend().length})`:""}`,dictHtml()],["sis",`⚙️ Sistema${locks.length||errs.length?` (${locks.length+errs.length})`:""}`,secSys]];
     let cur="res"; try{ cur=localStorage.getItem("rodo-admtab")||"res"; }catch(e){} if(!TABS.some(t=>t[0]===cur)) cur="res";
     $("admBody").innerHTML=`<div class="seg admtabs" role="tablist">${TABS.map(([k,l])=>`<button role="tab" data-admtab="${k}" aria-pressed="${k===cur}">${l}</button>`).join("")}</div>`+
       TABS.map(([k,,c])=>`<section class="admsec" data-sec="${k}"${k===cur?"":" hidden"}>${c}</section>`).join("");
     payFill();
   }
+  // ---------- Diccionarios (glosario en castellano e inglés) ----------
+  // Dos secciones: las palabras que están igual en los dos diccionarios y las que están en uno solo. Cada una se edita (palabra, 3 pistas,
+  // definición), se oculta de los juegos o se replica en el otro diccionario: la réplica queda "pendiente de traducir" y la traduce Claude
+  // con el pedido que copia el panel (sin IA en el sitio).
+  const DL={es:"castellano", en:"inglés"}, otherL=L=>L==="es"?"en":"es", GOf=L=>L==="en"?G_EN:G_ES;
+  const dictPend=()=>Object.values(DICT.docs).filter(x=>x.tr);
+  let DEFV={es:[], en:[]};
+  function dictRow(L,n){
+    const [w,cs]=GOf(L)[n-1]||["",[]], x=DICT.docs[`${L}-${n}`]||{}, off=DICT.off[L].has(n);
+    return `<span class="dent" data-lg="${L}" data-n="${n}"><b>${esc(w)}</b> <small class="m">${L.toUpperCase()} ${n}</small>${off?` <em class="dtag">oculta</em>`:""}${x.tr?` <em class="dtag tr">por traducir</em>`:""}${x.at&&!x.tr?` <em class="dtag ed">editada</em>`:""}</span>`;
+  }
+  function dictForm(L,n,isNew){
+    const G=GOf(L), [w,cs]=isNew ? ["",[]] : (G[n-1]||["",[]]), off=DICT.off[L].has(n), d=isNew ? "" : ((DEFV[L]||[])[n-1]||"");
+    const inOther=!isNew && GW[otherL(L)].has(w);
+    return `<form class="dform" data-lg="${L}" data-n="${n}"><b>${isNew?`Palabra nueva en ${DL[L]}`:`${L==="es"?"Castellano":"Inglés"} · ${n}`}</b>
+      <label>Palabra<input name="w" value="${esc(w)}" maxlength="30" required></label>
+      ${[0,1,2].map(j=>`<label>Pista ${j+1}<input name="c${j}" value="${esc(cs[j]||"")}" maxlength="200"${j?"":" required"}></label>`).join("")}
+      <label>Definición<textarea name="d" rows="4" maxlength="1200">${esc(d)}</textarea></label>
+      <label class="dchk"><input type="checkbox" name="off"${off?" checked":""}> Oculta: no sale en los juegos</label>
+      <label class="dchk"><input type="checkbox" name="rep"> ${inOther?`Replicar en ${DL[otherL(L)]}: traducir pistas y definición sobre la misma palabra`:`Replicar en ${DL[otherL(L)]}: sumarla traducida`}</label>
+      <button class="primary">Guardar</button></form>`;
+  }
+  function dictHtml(){
+    const both=[], only={es:[], en:[]};
+    G_ES.forEach(([w],i)=>{ const m=GW.en.get(w); if(m) both.push([i+1,m]); else only.es.push(i+1); });
+    G_EN.forEach(([w],i)=>{ if(!GW.es.has(w)) only.en.push(i+1); });
+    const pend=dictPend();
+    const item=(s,inner,body)=>`<details class="dword" data-s="${esc(s)}"><summary>${inner}</summary><div class="dbody" data-f="${esc(body)}"></div></details>`;
+    return `<h2>Diccionarios</h2><p class="m small">${G_ES.length} palabras en castellano y ${G_EN.length} en inglés. Tocá una para editar la palabra, sus 3 pistas y su definición. "Oculta" la saca de los juegos sin borrarla (borrar correría los números de las pistas). Los cambios valen para las partidas que se generan desde ahora.</p>
+      <div class="row"><input class="dq" placeholder="Buscar palabra, pista o definición…"><button data-dnew="es">+ Palabra en castellano</button><button data-dnew="en">+ Palabra en inglés</button></div>
+      <div class="dnew"></div>
+      ${pend.length?`<div class="dpend"><b>${pend.length} pendiente${pend.length===1?"":"s"} de traducir:</b> ${pend.map(x=>esc((GOf(x.L)[x.n-1]||[x.w])[0]||x.w)+` (${x.L.toUpperCase()})`).join(", ")}
+        <div class="row"><button id="dAsk">📋 Copiar pedido de traducción para Claude</button></div>
+        <label>Pegá acá la respuesta de Claude<textarea id="dAns" rows="3" placeholder='[{"id":"en-219","w":"…","c":["…","…","…"],"d":"…"}]'></textarea></label><div class="row"><button id="dApply">Aplicar traducciones</button></div></div>`:""}
+      <h3>En los dos diccionarios (${both.length})</h3><p class="m small">La misma palabra en castellano y en inglés (suelen ser términos en inglés o nombres).</p>
+      ${both.map(([a,b])=>item(`${G_ES[a-1][0]} ${G_ES[a-1][1].join(" ")} ${G_EN[b-1][1].join(" ")} ${(DEFV.es[a-1]||"")} ${(DEFV.en[b-1]||"")}`, dictRow("es",a)+" · "+dictRow("en",b), `es-${a}|en-${b}`)).join("")}
+      <h3>Solo en castellano (${only.es.length})</h3>
+      ${only.es.map(n=>item(`${G_ES[n-1][0]} ${G_ES[n-1][1].join(" ")} ${DEFV.es[n-1]||""}`, dictRow("es",n), `es-${n}`)).join("")}
+      <h3>Solo en inglés (${only.en.length})</h3>
+      ${only.en.map(n=>item(`${G_EN[n-1][0]} ${G_EN[n-1][1].join(" ")} ${DEFV.en[n-1]||""}`, dictRow("en",n), `en-${n}`)).join("")}`;
+  }
+  const dictRedraw=async()=>{ DEFV={es:await defsOf("es")||[], en:await defsOf("en")||[]}; const sec=document.querySelector('#admBody .admsec[data-sec="dic"]'); if(sec) sec.innerHTML=dictHtml();
+    const b=document.querySelector('#admBody [data-admtab="dic"]'); if(b) b.textContent=`📚 Diccionarios${dictPend().length?` (${dictPend().length})`:""}`; };
+  const dsay=(t,bad)=>{ const el=document.querySelector('#admBody .admsec[data-sec="dic"] .dmsg')||(()=>{ const m=document.createElement("p"); m.className="dmsg"; const s0=document.querySelector('#admBody .admsec[data-sec="dic"]'); s0&&s0.prepend(m); return m; })(); el.textContent=t; el.classList.toggle("bad",!!bad); };
+  async function dictSave(f){
+    const L=f.dataset.lg, n=+f.dataset.n, v=k=>(f.elements[k]&&f.elements[k].value||"").trim();
+    const w=clean(v("w")), c=[v("c0"),v("c1"),v("c2")].filter(Boolean), d=v("d");
+    if(w.replace(/ /g,"").length<2){ dsay("La palabra tiene que tener al menos 2 letras.", true); return; }
+    if(!c.length){ dsay("Hace falta al menos una pista.", true); return; }
+    const dup=GW[L].get(w); if(dup && dup!==n){ dsay(`«${w}» ya está en el diccionario en ${DL[L]} (número ${dup}).`, true); return; }
+    const data={L, n, w, c, d, off:f.elements.off.checked, tr:false, at:A.serverTimestamp()};
+    const writes=[[`${L}-${n}`, data]];
+    if(f.elements.rep.checked){
+      const O=otherL(L), src=`${L}-${n}`, same=GW[O].get(w), prev=Object.values(DICT.docs).find(x=>x.L===O && x.src===src);
+      const m=same || (prev && prev.n) || GOf(O).length+1, old=DICT.docs[`${O}-${m}`]||{}, cur=GOf(O)[m-1];
+      // la réplica queda pendiente de traducir; si es nueva, oculta hasta que llegue la traducción
+      writes.push([`${O}-${m}`, cur ? {L:O, n:m, w:cur[0], c:cur[1], d:old.d||((DEFV[O]||[])[m-1]||""), off:DICT.off[O].has(m), tr:true, src, at:A.serverTimestamp()}
+                                     : {L:O, n:m, w, c, d, off:true, tr:true, src, at:A.serverTimestamp()}]);
+    }
+    try{ for(const [id,x] of writes) await A.setDoc(A.doc(A.db,"dict",id), x);
+      applyDict(writes.map(([,x])=>({...x, at:Date.now()}))); await dictRedraw();
+      dsay(`Guardado: ${w}${writes.length>1?` · quedó pendiente de traducir en ${DL[otherL(L)]}`:""}.`); }
+    catch(e){ dsay("No se pudo guardar: "+(e.code||e.message), true); }
+  }
+  function dictAsk(){
+    const items=dictPend().map(x=>{ const [sl,sn]=String(x.src||"").split("-"), S=GOf(sl)[+sn-1]||[x.w,x.c];
+      return {id:`${x.L}-${x.n}`, traducir_a:DL[x.L], palabra:S[0], pistas:S[1], definicion:(DEFV[sl]||[])[+sn-1]||x.d||""}; });
+    return `Traducí al idioma indicado estas entradas del glosario de RODO ₿ Games (juegos de palabras bitcoiners). Para cada una: la palabra (en mayúsculas, sin tildes; si es un término que se usa igual en los dos idiomas, dejala igual), 3 pistas cortas que no nombren la palabra (hasta 120 caracteres, voz bitcoiner, timechain en vez de blockchain) y la definición (200 a 400 caracteres, qué es y qué peso tiene en Bitcoin).
+Respondé solo con un JSON: [{"id":"…","w":"PALABRA","c":["pista 1","pista 2","pista 3"],"d":"definición"}]
+
+${JSON.stringify(items, null, 1)}`;
+  }
+  async function dictApply(txt){
+    let arr; try{ const j=txt.slice(txt.indexOf("["), txt.lastIndexOf("]")+1); arr=JSON.parse(j); }catch(e){ dsay("No pude leer la respuesta: tiene que ser el JSON que contestó Claude.", true); return; }
+    let ok=0; const done=[], skip=[];
+    for(const r of arr){ const x=DICT.docs[r.id]; if(!x || !x.tr) continue; const w=clean(r.w||""), c=(r.c||[]).map(s=>String(s).trim().slice(0,200)).filter(Boolean).slice(0,3);
+      if(!w || !c.length){ skip.push(`${r.id}: falta la palabra o las pistas`); continue; }
+      // si la traducción ya es otra palabra del diccionario, no se duplica: queda pendiente para decidir
+      const dup=GW[x.L].get(w); if(dup && dup!==x.n){ skip.push(`«${w}» ya está en ${DL[x.L]} (número ${dup}): no la dupliqué; si querés, editá esa`); continue; }
+      const data={L:x.L, n:x.n, w, c, d:String(r.d||"").slice(0,1200), off:false, tr:false, src:x.src||"", at:A.serverTimestamp()};
+      try{ await A.setDoc(A.doc(A.db,"dict",r.id), data); done.push({...data, at:Date.now()}); ok++; }catch(e){ console.warn("dict",r.id,e.code||e.message); } }
+    applyDict(done); await dictRedraw();
+    dsay((ok ? `Listo: ${ok} traducida${ok===1?"":"s"} y ya en los juegos.` : "No se aplicó ninguna.")+(skip.length?" "+skip.join(" · "):(!ok?" Revisá que la respuesta sea la de este pedido.":"")), !ok || skip.length>0);
+  }
+  $("admBody").addEventListener("toggle",e=>{ const dt0=e.target; if(!dt0.classList || !dt0.classList.contains("dword") || !dt0.open) return; const b=dt0.querySelector(".dbody"); if(b.innerHTML) return;
+    b.innerHTML=b.dataset.f.split("|").map(id=>{ const [L,n]=id.split("-"); return dictForm(L,+n,false); }).join(""); }, true);
+  $("admBody").addEventListener("submit",e=>{ const f=e.target.closest(".dform"); if(!f) return; e.preventDefault(); dictSave(f); });
+  $("admBody").addEventListener("click",async e=>{
+    const nb=e.target.closest("[data-dnew]"); if(nb){ const L=nb.dataset.dnew, box=document.querySelector('#admBody .dnew'); box.innerHTML=dictForm(L, GOf(L).length+1, true); return; }
+    if(e.target.id==="dAsk"){ let ok=true; try{ await navigator.clipboard.writeText(dictAsk()); }catch(err){ ok=false; } dsay(ok?"Pedido copiado: pegalo en el chat con Claude y pegá su respuesta abajo.":"No se pudo copiar: este navegador no deja usar el portapapeles.", !ok); return; }
+    if(e.target.id==="dApply"){ dictApply($("dAns").value); }
+  });
+  $("admBody").addEventListener("input",e=>{ if(!e.target.classList.contains("dq")) return; const q=norm(e.target.value.trim());
+    document.querySelectorAll('#admBody .dword').forEach(d=>{ d.hidden=!!q && !norm(d.dataset.s).includes(q); }); });
   // ---------- Perfil de un jugador (al tocar su nombre en el panel) ----------
   let PROF=null;
   function profile(u){
