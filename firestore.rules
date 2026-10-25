@@ -79,7 +79,10 @@ service cloud.firestore {
     match /fichas/{uid} {
       allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays', 'inv', 'cl'])
+        && request.resource.data.keys().hasOnly(['first', 'last', 'seen', 'plays', 'inv', 'cl', 'vis', 'vd'])
+        // vis: cuántas veces entró (una por pestaña) y vd: entradas por día ({"2026-10-25": 3}), para el perfil del panel
+        && (!('vis' in request.resource.data) || request.resource.data.vis is int)
+        && (!('vd' in request.resource.data) || request.resource.data.vd is map)
         // cl: códigos de las pistas que ya vio, por idioma ({es: ["2.3", ...]})
         && (!('cl' in request.resource.data) || request.resource.data.cl is map)
         // inv: cuántas invitaciones a jugar mandó

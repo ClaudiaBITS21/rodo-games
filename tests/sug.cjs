@@ -34,7 +34,7 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
     window.__writes=[]; window.__clip='';
     try{ Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{ window.__clip=t; }}}); }catch(e){}
     // un jugador nuevo hoy, que además armó su usuario hoy (para la solapa Jugadores → Por día)
-    const NOW=Date.now(), DB={sugs:SG, names:[{id:'u9', name:'Lola', at:NOW-60000}], fichas:[{id:'u9', first:NOW-120000, last:NOW-60000}]};
+    const NOW=Date.now(), DB={sugs:SG, names:[{id:'u9', name:'Lola', at:NOW-60000}], fichas:[{id:'u9', first:NOW-120000, last:NOW-60000, vis:3, vd:{'2026-10-25':3}, plays:{'sopa-es':2}, seen:{}}]};
     const snap=n=>({forEach:f=>(DB[n]||[]).forEach(x=>{ const {id,...d}=x; f({id, data:()=>d}); })});
     const A={ db:{}, collection:(db,n)=>n, collectionGroup:(db,n)=>n, getDocs:async n=>snap(n), doc:(db,c,id)=>c+'/'+id,
       setDoc:async(ref,d)=>{ window.__writes.push([ref,d]); }, deleteDoc:async()=>{}, serverTimestamp:()=>Date.now(),
@@ -49,6 +49,14 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   await a.click('[data-admtab="jug"]');
   const day=await a.$eval('#admBody .admsec[data-sec="jug"] .aday',e=>e.textContent.replace(/\s+/g,' '));
   ok(/1 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day),'por día: '+day.slice(0,160));
+  // tocar el nombre abre su perfil
+  await a.click('#admBody .admsec[data-sec="jug"] .aday summary');
+  await a.click('#admBody .admsec[data-sec="jug"] .aday .aprof');
+  await a.waitForSelector('#profDlg[open]',{timeout:5000});
+  await a.screenshot({path:__dirname+'/perfil.png'});
+  const prof=await a.$eval('#profDlg',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/Lola/.test(prof) && /Con usuario/.test(prof) && /3\s*visitas en 1 día/.test(prof) && /Sopa/.test(prof) && /Empezadas/.test(prof),'perfil del jugador: '+prof.slice(0,220));
+  await a.click('#profX'); ok(!(await a.$('#profDlg[open]')),'el perfil se cierra');
   await a.click('[data-admtab="sug"]');   // el panel va en solapas
   const body=await a.$eval('#admBody',e=>e.innerText);
   const tbl=await a.$$eval('#admBody .sugst',s=>s.map(x=>x.dataset.k));

@@ -92,6 +92,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 #view-admin .bar{gap:8px;flex-wrap:wrap}#view-admin .bar button{padding:7px 12px;font-size:.85rem}
 .admtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;position:sticky;top:0;z-index:5;background:var(--bg,#F4F1EA);padding:6px 0}
 .admtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.admsec[hidden]{display:none}
+.ivdlg.profdlg{max-width:min(900px,calc(100vw - 24px));width:100%;text-align:left;max-height:90vh;overflow:auto}.profdlg h4{margin:16px 0 6px}.aprof{color:inherit;text-decoration:underline dotted;cursor:pointer}
 .aday{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 6px;background:var(--paper)}.aday summary{cursor:pointer}.aday p{margin:6px 0;font-size:.9rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
 .kpi{border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:10px 12px;background:var(--paper)}
@@ -3037,6 +3038,12 @@ const Reg = (()=>{
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+  // visitas: una por pestaña (sessionStorage), con el día en hora local (vis: total; vd: {"2026-10-25": n}) para el perfil del panel
+  function visit(){
+    try{ if(sessionStorage.getItem("rodo-vis")) return {}; sessionStorage.setItem("rodo-vis","1"); }catch(e){ return {}; }
+    const d=new Date(), k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    return {vis:fb.increment(1), vd:{[k]:fb.increment(1)}};
+  }
   // Firebase se inicializa en el módulo del final de la página
   const ready=(async()=>{
     fb = await Promise.race([FB_READY, sleep(9000).then(()=>null)]);
@@ -3046,8 +3053,8 @@ const Reg = (()=>{
       try{
         const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
         if(s.exists()){ ficha=s.data(); seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
-          await fb.setDoc(ref,{last:fb.serverTimestamp()},{merge:true}); }
-        else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}});
+          await fb.setDoc(ref,{last:fb.serverTimestamp(), ...visit()},{merge:true}); }
+        else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}, ...visit()});
       }catch(e){}
       await loadNick();
       await Promise.all(["es","en"].map(loadClueUse));
@@ -5071,8 +5078,8 @@ const Admin = (()=>{
     let SG=null; try{ SG=[]; (await A.getDocs(A.collection(A.db,"sugs"))).forEach(d=>SG.push({id:d.id, ...d.data()})); }catch(e){ SG=null; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
-    const regAt={}; N.forEach(d=>{ names[d.id]=d.data().name; regAt[d.id]=ms(d.data().at); });
-    F.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}, inv:x.inv||0}; });
+    const regAt={}, avs={}; N.forEach(d=>{ names[d.id]=d.data().name; regAt[d.id]=ms(d.data().at); avs[d.id]=d.data().av||""; });
+    F.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}, inv:x.inv||0, vis:x.vis||0, vd:x.vd||{}}; });
     rows=[]; S.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
       const r={u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, e:x.e, c:x.c||0, m:x.m, ms:x.ms||0, at:ms(x.at)};
       r.sc=scoreOf(r.k, r); rows.push(r); });
@@ -5145,7 +5152,10 @@ const Admin = (()=>{
       <div class="barlbl"><span>0 h</span><span>12 h</span><span>23 h</span></div>`;
 
     // por día: quiénes jugaron, quiénes llegaron por primera vez y quiénes armaron su usuario (últimos 30 días, el más reciente arriba)
-    const nm=u=>names[u] ? esc(names[u]) : `<span class="m">anónimo ${esc(u.slice(0,6))}</span>`;
+    // cada nombre abre el perfil de ese jugador
+    const nm=u=>`<a href="#" class="aprof" data-u="${esc(u)}">${names[u] ? esc(names[u]) : `<span class="m">anónimo ${esc(u.slice(0,6))}</span>`}</a>`;
+    const LEu={}; LE.forEach(d=>{ const x=d.data(); if(x.yes) (LEu[x.u]=LEu[x.u]||[]).push(x); });
+    PROF={rows, P, fichas, names, regAt, avs, LEu};
     const dayRows=[...days].reverse().map(d=>{
       const r=rows.filter(x=>x.at && new Date(x.at).toDateString()===d), who=[...new Set(r.map(x=>x.u))];
       const nw=players.filter(p=>p.first && new Date(p.first).toDateString()===d).map(p=>p.u);
@@ -5160,7 +5170,7 @@ const Admin = (()=>{
     // jugadores más activos
     const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
     secPl+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
-      top.map(p=>[esc(names[p.u]||("anónimo "+p.u.slice(0,6))), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), p.inv||"–", p.dj?`${p.dj} / ${p.dg}`:"–", dt(p.first), dt(p.last)]));
+      top.map(p=>[nm(p.u), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), p.inv||"–", p.dj?`${p.dj} / ${p.dg}`:"–", dt(p.first), dt(p.last)]));
 
     // partidas con más jugadores
     const PZ={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (PZ[key]=PZ[key]||[]).push(r); });   // (va en Resumen)
@@ -5187,7 +5197,7 @@ const Admin = (()=>{
     // últimos resultados
     const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);
     secPl+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
-      last.map(r=>[dt(r.at), esc(names[r.u]||("anónimo "+r.u.slice(0,6))), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", fmt(r.ms), r.h]));
+      last.map(r=>[dt(r.at), nm(r.u), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", fmt(r.ms), r.h]));
     const note=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
     // solapas: se recuerda la última abierta
     const open=OR ? OR.filter(o=>o.st==="nuevo").length : 0, sgN=SG ? new Set(SG.filter(x=>!x.st||x.st==="nueva").map(x=>x.w)).size : 0;
@@ -5197,6 +5207,40 @@ const Admin = (()=>{
       TABS.map(([k,,c])=>`<section class="admsec" data-sec="${k}"${k===cur?"":" hidden"}>${c}</section>`).join("");
     payFill();
   }
+  // ---------- Perfil de un jugador (al tocar su nombre en el panel) ----------
+  let PROF=null;
+  function profile(u){
+    if(!PROF) return; const {rows, P, fichas, names, regAt, avs, LEu}=PROF, p=P[u]||{u,res:0,ok:0,time:0,games:new Set(),days:new Set(),inv:0,dj:0,dg:0}, f=fichas[u]||{};
+    const R=rows.filter(r=>r.u===u).sort((a,b)=>(b.at||0)-(a.at||0)), okR=R.filter(r=>r.ok);
+    const plays=Object.values(f.plays||{}).reduce((a,b)=>a+(b||0),0), seenN=Object.values(f.seen||{}).reduce((a,v)=>a+(Array.isArray(v)?v.length:0),0);
+    const pts=R.reduce((a,r)=>a+(r.sc.pts||0),0), best=R.length?Math.max(...R.map(r=>r.sc.pts||0)):0;
+    const vd=f.vd||{}, vdays=Object.keys(vd).sort().reverse();
+    const kp=(b,l)=>`<div class="kpi"><b>${b}</b><span>${l}</span></div>`;
+    // por juego: empezadas (plays), terminadas, resueltas, mejor puntaje
+    const keys=new Set([...Object.keys(f.plays||{}), ...R.map(r=>`${r.k}-${r.L}`)]);
+    const byG=[...keys].sort().map(key=>{ const [k,L]=key.split("-"), r=R.filter(x=>x.k===k && x.L===L), o=r.filter(x=>x.ok);
+      return [esc(gname(k)), (L||"").toUpperCase(), (f.plays||{})[key]||"–", r.length, o.length, r.length?Math.max(...r.map(x=>x.sc.pts||0)):"–", o.length?fmt(median(o.map(x=>x.ms))):"–"]; });
+    // días: partidas terminadas y visitas
+    const dayK=t=>{ const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+    const perDay={}; R.forEach(r=>{ if(r.at){ const k=dayK(r.at); perDay[k]=(perDay[k]||0)+1; } });
+    const allDays=[...new Set([...Object.keys(perDay), ...vdays])].sort().reverse();
+    const words=(LEu[u]||[]).flatMap(x=>{ const L=String(x.p||"").split("-")[1]||"es"; return (x.w||[]).map(n=>gWord(L,n)).filter(Boolean); });
+    const h=`<button class="wclose" id="profX" aria-label="Cerrar">✕</button>
+      <h3>${esc(avs[u]||"")} ${names[u] ? esc(names[u]) : `Jugador anónimo`} <small class="m">${esc(u.slice(0,8))}</small></h3>
+      <p class="m">${names[u] ? `Con usuario${regAt[u]?` desde ${dt(regAt[u])}`:""}` : "Sin usuario"} · primera vez ${dt(p.first||f.first)} · última ${dt(p.last||f.last)}</p>
+      <div class="kpis">${kp(f.vis||"–", `visitas${vdays.length?` en ${vdays.length} día${vdays.length===1?"":"s"}`:""} (se cuentan desde el 25/10)`)}${kp(p.days.size, "días con partidas terminadas")}
+        ${kp(seenN||"–","partidas abiertas")}${kp(plays||"–","partidas empezadas")}${kp(R.length, `terminadas · ${okR.length} resueltas (${R.length?Math.round(100*okR.length/R.length):0} %)`)}
+        ${kp(pts, `puntos en total · mejor ${best}`)}${kp(hrs(p.time||0),"de juego")}${kp(p.inv||f.inv||0,"invitaciones mandadas")}
+        ${p.dj?kp(`${p.dj} / ${p.dg}`,"duelo: jugadas / ganadas"):""}${kp(words.length,"palabras que marcó como aprendidas")}</div>
+      ${byG.length?`<h4>Por juego</h4>`+table(["Juego","Idioma","Empezadas","Terminadas","Resueltas","Mejor puntaje","Tiempo mediano"], byG):""}
+      ${allDays.length?`<h4>Por día</h4>`+table(["Día","Visitas","Partidas terminadas"], allDays.slice(0,60).map(k=>[new Date(k+"T12:00").toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}), vd[k]||"–", perDay[k]||"–"])):""}
+      ${R.length?`<h4>Todas sus partidas</h4>`+table(["Cuándo","Partida","Resultado","Puntos","Tiempo","Errores / ayudas"], R.slice(0,200).map(r=>[dt(r.at), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", r.sc.pts, fmt(r.ms), `${r.e??"–"} / ${r.h}`])):`<p class="m">Todavía no terminó ninguna partida.</p>`}
+      ${words.length?`<h4>Palabras que aprendió</h4><p>${words.map(esc).join(", ")}</p>`:""}`;
+    let d=$("profDlg"); if(!d){ d=document.createElement("dialog"); d.id="profDlg"; d.className="ivdlg profdlg"; document.body.appendChild(d);
+      d.addEventListener("click",e=>{ if(e.target.id==="profX" || e.target===d) d.close(); }); }
+    d.innerHTML=h; d.showModal(); d.scrollTop=0;
+  }
+  $("admBody").addEventListener("click",e=>{ const a=e.target.closest(".aprof"); if(!a) return; e.preventDefault(); profile(a.dataset.u); });
   // ---------- Pedidos de rompecabezas ----------
   const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
   const ST=["nuevo","confirmado","pagado","enviado","entregado","cancelado"];
