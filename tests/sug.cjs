@@ -33,7 +33,9 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
     ];
     window.__writes=[]; window.__clip='';
     try{ Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{ window.__clip=t; }}}); }catch(e){}
-    const snap=n=>({forEach:f=>(n==='sugs'?SG:[]).forEach(x=>{ const {id,...d}=x; f({id, data:()=>d}); })});
+    // un jugador nuevo hoy, que además armó su usuario hoy (para la solapa Jugadores → Por día)
+    const NOW=Date.now(), DB={sugs:SG, names:[{id:'u9', name:'Lola', at:NOW-60000}], fichas:[{id:'u9', first:NOW-120000, last:NOW-60000}]};
+    const snap=n=>({forEach:f=>(DB[n]||[]).forEach(x=>{ const {id,...d}=x; f({id, data:()=>d}); })});
     const A={ db:{}, collection:(db,n)=>n, collectionGroup:(db,n)=>n, getDocs:async n=>snap(n), doc:(db,c,id)=>c+'/'+id,
       setDoc:async(ref,d)=>{ window.__writes.push([ref,d]); }, deleteDoc:async()=>{}, serverTimestamp:()=>Date.now(),
       login:async()=>{}, logout:()=>{}, onState:cb=>setTimeout(()=>cb({email:'claudia@rodo.es'}),50) };
@@ -42,6 +44,11 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   });
   await a.goto(URL+'#admin');
   await a.waitForFunction(()=>/Palabras sugeridas/.test(document.getElementById('admBody').textContent),null,{timeout:20000});
+  ok((await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|'))).match(/^📈 Resumen\|👥 Jugadores\|🧩 Tienda\|💡 Sugeridas \(\d\)\|⚙️ Sistema$/),'solapas: '+await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|')));
+  await a.click('[data-admtab="jug"]');
+  const day=await a.$eval('#admBody .admsec[data-sec="jug"] .aday',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/1 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day),'por día: '+day.slice(0,160));
+  await a.click('[data-admtab="sug"]');   // el panel va en solapas
   const body=await a.$eval('#admBody',e=>e.innerText);
   const tbl=await a.$$eval('#admBody .sugst',s=>s.map(x=>x.dataset.k));
   ok(tbl.join()==='ZAPEAR,PLEBE','solo las que no están, nuevas primero: '+tbl.join());

@@ -162,6 +162,9 @@ const E = env.authenticatedContext("E").firestore(), F = env.authenticatedContex
 const nick2 = (db, u, name, extra = {}, more) => { const b = writeBatch(db); b.set(doc(db, "names/" + u), { name, ...extra }); b.set(doc(db, "nicks/" + name.toLowerCase()), { uid: u, v: "abc123" }); if (more) more(b); return b.commit(); };
 await t("usuario con avatar y versión", assertSucceeds(nick2(E, "E", "Elena", { av: "🦊" })));
 await t("avatar larguísimo no", assertFails(setDoc(doc(E, "names/E"), { name: "Elena", av: "x".repeat(20) })));
+await t("el alta del usuario con la hora del servidor", assertSucceeds(setDoc(doc(E, "names/E"), { name: "Elena", at: serverTimestamp() }, { merge: true })));
+await t("el alta no se cambia a mano", assertFails(setDoc(doc(E, "names/E"), { name: "Elena", at: Timestamp.fromMillis(1000) }, { merge: true })));
+await t("cambiar el avatar conserva el alta", assertSucceeds(setDoc(doc(E, "names/E"), { name: "Elena", av: "🦊" }, { merge: true })));
 await t("dueño cambia versión del PIN", assertSucceeds(setDoc(doc(E, "nicks/elena"), { uid: "E", v: "zzz999" })));
 await t("otro no cambia la versión", assertFails(setDoc(doc(F, "nicks/elena"), { uid: "F", v: "hack" })));
 const pf = o => setDoc(doc(F, "pinlocks/elena"), o);

@@ -90,6 +90,9 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .atab td button{padding:4px 9px;font-size:.8rem}
 .admlogin{text-align:center;padding:24px 0}.admlogin .m{color:var(--bad,#D64545);min-height:1.2em}
 #view-admin .bar{gap:8px;flex-wrap:wrap}#view-admin .bar button{padding:7px 12px;font-size:.85rem}
+.admtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;position:sticky;top:0;z-index:5;background:var(--bg,#F4F1EA);padding:6px 0}
+.admtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.admsec[hidden]{display:none}
+.aday{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 6px;background:var(--paper)}.aday summary{cursor:pointer}.aday p{margin:6px 0;font-size:.9rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
 .kpi{border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:10px 12px;background:var(--paper)}
 .kpi b{display:block;font:800 1.5rem "IBM Plex Mono",ui-monospace,monospace}.kpi span{color:var(--muted);font-size:.82rem}
@@ -3235,7 +3238,9 @@ const Reg = (()=>{
       const s=await withRetry(()=>fb.getDoc(ref));
       if(s.exists() && s.data().uid!==uid) return "taken";
       const b=fb.writeBatch(fb.db), a=opt.av||myAv;
-      b.set(fb.doc(fb.db,"names",uid), a ? {name:v, av:a} : {name:v});
+      // at: cuándo armó su usuario (solo la primera vez; al cambiar de apodo se conserva)
+      const nd=a ? {name:v, av:a} : {name:v}; if(!nick) nd.at=fb.serverTimestamp();
+      b.set(fb.doc(fb.db,"names",uid), nd, {merge:true});
       if(!s.exists() || opt.ver) b.set(ref, opt.ver ? {uid, v:opt.ver} : {uid});
       // libera el apodo anterior, si era suyo
       if(nick && nickKey(nick)!==key){
@@ -5066,7 +5071,7 @@ const Admin = (()=>{
     let SG=null; try{ SG=[]; (await A.getDocs(A.collection(A.db,"sugs"))).forEach(d=>SG.push({id:d.id, ...d.data()})); }catch(e){ SG=null; }
     const now=Date.now(), fichas={}, testers=new Set(); names={};
     X.forEach(d=>testers.add(d.id));
-    N.forEach(d=>names[d.id]=d.data().name);
+    const regAt={}; N.forEach(d=>{ names[d.id]=d.data().name; regAt[d.id]=ms(d.data().at); });
     F.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(); fichas[d.id]={first:ms(x.first), last:ms(x.last), seen:x.seen||{}, plays:x.plays||{}, inv:x.inv||0}; });
     rows=[]; S.forEach(d=>{ if(testers.has(d.id)) return; const x=d.data(), id=d.ref.parent.parent.id, [k,L,n]=id.split("-");
       const r={u:d.id, k:x.g||k, L, n:+n, ok:!!x.ok, s:x.s||0, h:x.h||0, e:x.e, c:x.c||0, m:x.m, ms:x.ms||0, at:ms(x.at)};
@@ -5113,7 +5118,8 @@ const Admin = (()=>{
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
 
-    h=ordersHtml(OR, CP)+payHtml()+couponsHtml(CP, OR)+sugsHtml(SG)+h;
+    const secShop=ordersHtml(OR, CP)+payHtml()+couponsHtml(CP, OR), secSug=sugsHtml(SG);
+    let secPl="", secSys="";
 
     // por juego e idioma
     const G={};
@@ -5135,13 +5141,26 @@ const Admin = (()=>{
     h+=`<h2>¿A qué hora juegan? (hora de Argentina de este navegador)</h2><div class="bars">${perH.map((v,i)=>`<div style="height:${v/mh*100}%" title="${i} h: ${v}"></div>`).join("")}</div>
       <div class="barlbl"><span>0 h</span><span>12 h</span><span>23 h</span></div>`;
 
+    // por día: quiénes jugaron, quiénes llegaron por primera vez y quiénes armaron su usuario (últimos 30 días, el más reciente arriba)
+    const nm=u=>names[u] ? esc(names[u]) : `<span class="m">anónimo ${esc(u.slice(0,6))}</span>`;
+    const dayRows=[...days].reverse().map(d=>{
+      const r=rows.filter(x=>x.at && new Date(x.at).toDateString()===d), who=[...new Set(r.map(x=>x.u))];
+      const nw=players.filter(p=>p.first && new Date(p.first).toDateString()===d).map(p=>p.u);
+      const reg=Object.keys(regAt).filter(u=>regAt[u] && !testers.has(u) && new Date(regAt[u]).toDateString()===d);
+      return {d, r, who, nw, reg};
+    }).filter(x=>x.r.length||x.nw.length||x.reg.length);
+    const lst=(l,ok)=>l.length ? l.map(u=>nm(u)+(ok && names[u]?" ✓":"")).join(", ") : "–";
+    secPl+=`<h2>Por día</h2><p class="m small">Quiénes jugaron, quiénes entraron por primera vez (✓ = ya tiene usuario) y quiénes armaron su usuario ese día. Tocá un día para ver los nombres.</p>`+
+      (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas</summary>
+        <p><b>Jugaron:</b> ${lst(x.who,false)}</p><p><b>Nuevos:</b> ${lst(x.nw,true)}</p><p><b>Usuarios nuevos:</b> ${lst(x.reg,false)}</p></details>`).join("") : `<p class="m small">Sin actividad en los últimos 30 días.</p>`)+
+      `<p class="m small">La fecha de alta del usuario se guarda desde el 25/10/2026: los anteriores no figuran en "Usuarios nuevos".</p>`;
     // jugadores más activos
     const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
-    h+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
+    secPl+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
       top.map(p=>[esc(names[p.u]||("anónimo "+p.u.slice(0,6))), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), p.inv||"–", p.dj?`${p.dj} / ${p.dg}`:"–", dt(p.first), dt(p.last)]));
 
     // partidas con más jugadores
-    const PZ={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (PZ[key]=PZ[key]||[]).push(r); });
+    const PZ={}; rows.forEach(r=>{ const key=`${r.k}-${r.L}-${r.n}`; (PZ[key]=PZ[key]||[]).push(r); });   // (va en Resumen)
     const topz=Object.entries(PZ).sort((a,b)=>b[1].length-a[1].length).slice(0,10);
     h+=`<h2>Partidas con más jugadores</h2>`+table(["Partida","Jugadores","Éxito","Mejor tiempo"],
       topz.map(([key,r])=>{ const [k,L,n]=key.split("-"), okr=r.filter(x=>x.ok); return [`${esc(gname(k))} ${L.toUpperCase()} #${n}`, r.length, pct(okr.length,r.length), okr.length?fmt(Math.min(...okr.map(x=>x.ms))):"–"]; }));
@@ -5150,23 +5169,30 @@ const Admin = (()=>{
     const locks=[]; PL.forEach(d=>{ const x=d.data(); if(x.level>=1) locks.push({k:d.id, level:x.level, at:ms(x.at)}); });
     if(locks.length){
       locks.sort((a,b)=>b.level-a.level||(b.at||0)-(a.at||0));
-      h+=`<h2>Usuarios bloqueados por PIN</h2>`+table(["Usuario","Bloqueos","Desde","Hasta",""],
+      secSys+=`<h2>Usuarios bloqueados por PIN</h2>`+table(["Usuario","Bloqueos","Desde","Hasta",""],
         locks.map(l=>[esc(l.k), l.level, dt(l.at), l.level>=3?"hasta que lo destrabes":dt((l.at||0)+(l.level===1?24:48)*3600000),
           `<button class="unlock" data-k="${esc(l.k)}">Destrabar</button>`]));
-      h+=`<p class="m small">Destrabar vuelve a cero los intentos. Si la persona olvidó el PIN, no se puede recuperar: tiene que crear un usuario nuevo con otro nombre.</p>`;
+      secSys+=`<p class="m small">Destrabar vuelve a cero los intentos. Si la persona olvidó el PIN, no se puede recuperar: tiene que crear un usuario nuevo con otro nombre.</p>`;
     }
 
     // errores que vieron los jugadores al guardar (p. ej. crear usuario)
     const errs=ER.map(x=>({...x, at:ms(x.at)})).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,20);
-    if(errs.length) h+=`<h2>Errores recientes</h2>`+table(["Cuándo","Dónde","Código","Nombre","Navegador",""],
-      errs.map(x=>[dt(x.at), esc(x.w), esc(x.c), esc(x.n||""), `<span class="small">${esc(x.ua.replace(/^Mozilla\/5\.0 /,"").slice(0,90))}</span>`, esc(names[x.u]||"")]));
+    secSys+=errs.length ? `<h2>Errores recientes</h2>`+table(["Cuándo","Dónde","Código","Nombre","Navegador",""],
+      errs.map(x=>[dt(x.at), esc(x.w), esc(x.c), esc(x.n||""), `<span class="small">${esc(x.ua.replace(/^Mozilla\/5\.0 /,"").slice(0,90))}</span>`, esc(names[x.u]||"")])) : `<p class="m small">Sin errores registrados.</p>`;
+    if(!locks.length) secSys=`<h2>Usuarios bloqueados por PIN</h2><p class="m small">Nadie bloqueado.</p>`+secSys;
 
     // últimos resultados
     const last=[...rows].filter(r=>r.at).sort((a,b)=>b.at-a.at).slice(0,20);
-    h+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
+    secPl+=`<h2>Últimos resultados</h2>`+table(["Cuándo","Jugador","Partida","Resultado","Tiempo","Ayudas/errores"],
       last.map(r=>[dt(r.at), esc(names[r.u]||("anónimo "+r.u.slice(0,6))), `${esc(gname(r.k))} ${r.L.toUpperCase()} #${r.n}`, r.ok?"✓":"✗", fmt(r.ms), r.h]));
-    h+=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
-    $("admBody").innerHTML=h; payFill();
+    const note=`<p class="m small">Cada "jugador" es un navegador: la misma persona en el celular y en la computadora cuenta como dos, y quien borra los datos del navegador empieza de nuevo.</p>`;
+    // solapas: se recuerda la última abierta
+    const open=OR ? OR.filter(o=>o.st==="nuevo").length : 0, sgN=SG ? new Set(SG.filter(x=>!x.st||x.st==="nueva").map(x=>x.w)).size : 0;
+    const TABS=[["res","📈 Resumen",h+note],["jug","👥 Jugadores",secPl+note],["tienda",`🧩 Tienda${open?` (${open})`:""}`,secShop],["sug",`💡 Sugeridas${sgN?` (${sgN})`:""}`,secSug],["sis",`⚙️ Sistema${locks.length||errs.length?` (${locks.length+errs.length})`:""}`,secSys]];
+    let cur="res"; try{ cur=localStorage.getItem("rodo-admtab")||"res"; }catch(e){} if(!TABS.some(t=>t[0]===cur)) cur="res";
+    $("admBody").innerHTML=`<div class="seg admtabs" role="tablist">${TABS.map(([k,l])=>`<button role="tab" data-admtab="${k}" aria-pressed="${k===cur}">${l}</button>`).join("")}</div>`+
+      TABS.map(([k,,c])=>`<section class="admsec" data-sec="${k}"${k===cur?"":" hidden"}>${c}</section>`).join("");
+    payFill();
   }
   // ---------- Pedidos de rompecabezas ----------
   const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
@@ -5274,6 +5300,10 @@ const Admin = (()=>{
     }catch(err){ b.disabled=false; bad(err.message||String(err)); }
   });
   $("admBody").addEventListener("change",e=>{ if(e.target.id==="pyKind") e.target.dataset.touched="1"; });
+  $("admBody").addEventListener("click",e=>{ const b=e.target.closest("[data-admtab]"); if(!b) return; const k=b.dataset.admtab;
+    document.querySelectorAll("#admBody [data-admtab]").forEach(x=>x.setAttribute("aria-pressed", x===b));
+    document.querySelectorAll("#admBody .admsec").forEach(x=>x.hidden=x.dataset.sec!==k);
+    try{ localStorage.setItem("rodo-admtab", k); }catch(e){} });
   // ---------- Palabras sugeridas por los jugadores ----------
   // Se agrupan por palabra (sin tildes ni espacios) y se muestran solo las que no están en el glosario en ningún idioma.
   // Traducción, 3 pistas por idioma e interés (1 a 10) los escribe Claude fuera del sitio (sin IA en tiempo real):

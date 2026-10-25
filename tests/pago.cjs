@@ -19,6 +19,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   });
   await a.goto('http://localhost:5055/#admin');
   await a.waitForFunction(()=>/Cobro en bitcoin on-chain/.test(document.getElementById('admBody').textContent),null,{timeout:20000});
+  await a.click('[data-admtab="tienda"]');   // el panel va en solapas
   ok(true,'la segunda administradora entra al panel');
   await a.waitForFunction(()=>/50000 sats confirmados/.test(document.getElementById('admBody').textContent) && /faltan 40000/.test(document.getElementById('admBody').textContent),null,{timeout:10000});
   ok(true,'el pedido on-chain muestra lo que llegó según mempool.space y cuánto falta');
