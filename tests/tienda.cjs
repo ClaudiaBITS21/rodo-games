@@ -19,6 +19,12 @@ const get=async p=>(await fetch(FS+p,{headers:H})).json();
     await p.click('#send'); await p.waitForSelector('#done:not([hidden])',{timeout:20000}); return p.$eval('#done',e=>e.textContent.replace(/\s+/g,' ')); };
   const A=await mk(), txt=(s)=>A.$eval(s,e=>e.textContent.trim());
   ok(/se cotiza por separado/.test(await A.$eval('body',e=>e.textContent)),'aclara que el envío se cotiza aparte');
+  // PDF para ampliar: el botón aparece solo en los que tienen archivo
+  ok(await A.$$eval('.pdfdl',l=>l.length)===0,'sin PDF cargado no hay botón');
+  await A.evaluate(()=>{ CFG.PDF.bip39='/pdf/bip39.pdf'; renderProducts(); });
+  const pdf=await A.$eval('.prod[data-id="bip39"] .pdf',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/Bajar PDF/.test(pdf) && /ampliar la imagen a gusto/.test(pdf) && await A.$$eval('.pdfdl',l=>l.length)===1,'botón «Bajar PDF» con la recomendación: '+pdf);
+  await A.evaluate(()=>{ CFG.PDF.bip39=''; renderProducts(); });
   ok(/Bitcoin \(on-chain\)/.test(await txt('#payA')),'opción: '+await txt('#payA'));
   ok(/Correo Argentino/.test(await txt('#shipA')) && /Shopping DOT/.test(await txt('#shipB')) && /LABITCONF/.test(await txt('#shipC')),'opciones de entrega: '+[await txt('#shipA'),await txt('#shipB'),await txt('#shipC')].join(' / '));
   await A.check('input[name=ship][value=labitconf]');

@@ -85,6 +85,9 @@ button:focus-visible,.btn:focus-visible,a:focus-visible{outline:3px solid var(--
 .prod h3{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
 .prod p{margin:0;color:var(--muted);font-size:.95rem}
 .specs{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0}
+.pdf{display:flex;flex-direction:column;gap:4px;margin:6px 0 2px}
+.pdfdl{align-self:flex-start;display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border:1px solid var(--line);border-radius:8px;font-size:.88rem;font-weight:600;color:inherit;text-decoration:none}
+.pdfdl:hover{border-color:#F7931A}.pdf small{font-size:.76rem;color:var(--muted);line-height:1.35}
 .specs span{font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted)}
 .buy{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .price{font:700 1.15rem "IBM Plex Mono",ui-monospace,monospace}
@@ -238,7 +241,9 @@ const CFG = {
   ARS_ALIAS: "RodolfoBITS",                          // alias de Mercado Pago o banco
   WHATSAPP: "",                                      // número con código de país, solo dígitos (ej. 5491100000000). Vacío = sin botón
   MAIL_TO: "claudia@rodo.es",                        // aviso de cada pedido por FormSubmit
-  MAX_QTY: 10
+  MAX_QTY: 10,
+  // PDF de cada rompecabezas para ampliar la imagen al armarlo (en public/pdf/). Sin archivo, no se muestra el botón
+  PDF: { bip39:"", whitepaper:"", times:"" }
 };
 
 const PRODUCTS = [
@@ -257,7 +262,7 @@ const T = {
   es:{ title:"Rompecabezas", back:"← Juegos", footBack:"Volver a los juegos",
     intro:"Tres piezas de la historia de Bitcoin para armar con las manos, de a una ficha, sin apuro. Rompecabezas premium de madera, de 1000 piezas cada uno.",
     badges:["1000 piezas","Madera premium","Pago en bitcoin o en pesos"], presale:"Preventa",
-    specs:["1000 piezas","Madera","Caja de 24 × 18 × 5,5 cm"], zoom:"Ampliar", each:"c/u", add:"Lo quiero", less:"Quitar uno", more:"Sumar uno",
+    specs:["1000 piezas","Madera","Caja de 24 × 18 × 5,5 cm"], zoom:"Ampliar", each:"c/u", pdf:"Bajar PDF", pdfNote:"Para armar estos rompecabezas con textos pequeños, te recomendamos usar este PDF para poder ampliar la imagen a gusto e idealmente desde una notebook.", add:"Lo quiero", less:"Quitar uno", more:"Sumar uno",
     orderT:"Encargá el tuyo", empty:"Todavía no elegiste ningún rompecabezas. Tocá “Lo quiero” en el que te guste.",
     total:"Total", nameL:"Nombre y apellido", mailL:"Email", phoneL:"WhatsApp o teléfono", placeL:"Ciudad y provincia (o país)",
     shipL:"¿Cómo lo recibís?", shipA:"Correo Argentino", shipB:"Retiro en Shopping DOT", shipC:"Retiro en LABITCONF",
@@ -291,7 +296,7 @@ const T = {
   en:{ title:"Puzzles", back:"← Games", footBack:"Back to the games",
     intro:"Three pieces of Bitcoin history to put together by hand, one piece at a time, no rush. Premium wooden jigsaw puzzles, 1000 pieces each.",
     badges:["1000 pieces","Premium wood","Pay in bitcoin or pesos"], presale:"Pre-order",
-    specs:["1000 pieces","Wood","Box 24 × 18 × 5.5 cm"], zoom:"Zoom", each:"each", add:"I want it", less:"One less", more:"One more",
+    specs:["1000 pieces","Wood","Box 24 × 18 × 5.5 cm"], zoom:"Zoom", each:"each", pdf:"Download PDF", pdfNote:"These puzzles have small print: we recommend using this PDF to zoom in as much as you like, ideally on a laptop.", add:"I want it", less:"One less", more:"One more",
     orderT:"Order yours", empty:"You haven’t picked a puzzle yet. Tap “I want it” on the one you like.",
     total:"Total", nameL:"Full name", mailL:"Email", phoneL:"WhatsApp or phone", placeL:"City and province (or country)",
     shipL:"How do you get it?", shipA:"Correo Argentino (shipping)", shipB:"Pick up at Shopping DOT", shipC:"Pick up at LABITCONF",
@@ -429,6 +434,7 @@ function renderProducts(){
         <h3>${esc(P.name)}</h3>
         <p>${esc(P.desc)}</p>
         <div class="specs">${t.specs.map(s=>`<span>${esc(s)}</span>`).join("")}<span>${esc(P.orient)}</span></div>
+        ${CFG.PDF[p.id] ? `<div class="pdf"><a class="pdfdl" href="${esc(CFG.PDF[p.id])}" download>📄 ${esc(t.pdf)}</a><small>${esc(t.pdfNote)}</small></div>` : ""}
         <div class="buy">
           <span class="price">${ars(CFG.PRICE_ARS)} <small style="font-weight:400;color:var(--muted)">${t.each}</small></span>
           ${q ? `<span class="qty"><button data-d="-1" aria-label="${esc(t.less)}">−</button><output>${q}</output><button data-d="1" aria-label="${esc(t.more)}"${q>=CFG.MAX_QTY?" disabled":""}>+</button></span>`
