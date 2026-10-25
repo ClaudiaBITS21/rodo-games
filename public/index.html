@@ -93,6 +93,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .admtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;position:sticky;top:0;z-index:5;background:var(--bg,#F4F1EA);padding:6px 0}
 .admtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.admsec[hidden]{display:none}
 .ivdlg.profdlg{max-width:min(900px,calc(100vw - 24px));width:100%;text-align:left;max-height:90vh;overflow:auto}.profdlg h4{margin:16px 0 6px}.aprof{color:inherit;text-decoration:underline dotted;cursor:pointer}
+.aplf{margin:0 0 8px}.aplf button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.aplq{width:100%;max-width:320px;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}tr[hidden]{display:none}
 .aday{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 6px;background:var(--paper)}.aday summary{cursor:pointer}.aday p{margin:6px 0;font-size:.9rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}
 .kpi{border:1px solid var(--line);border-top:4px solid var(--btc);border-radius:12px;padding:10px 12px;background:var(--paper)}
@@ -5167,6 +5168,11 @@ const Admin = (()=>{
       (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron (${x.who.filter(u=>names[u]).length} con usuario) · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas</summary>
         <p><b>Jugaron:</b> ${lst(x.who,false)}</p><p><b>Nuevos:</b> ${lst(x.nw,true)}</p><p><b>Usuarios nuevos:</b> ${lst(x.reg,false)}</p></details>`).join("") : `<p class="m small">Sin actividad en los últimos 30 días.</p>`)+
       `<p class="m small">La fecha de alta del usuario se guarda desde el 25/10/2026: los anteriores no figuran en "Usuarios nuevos".</p>`;
+    // todos los jugadores, con o sin usuario, el más reciente arriba; cada nombre abre su perfil
+    const allP=[...players].sort((a,b)=>(b.last||0)-(a.last||0));
+    secPl+=`<h2>Todos los jugadores (${allP.length})</h2><div class="seg aplf" role="group">${[["all","Todos"],["nick","Con usuario"],["anon","Anónimos"]].map(([k,l],i)=>`<button data-plf="${k}" aria-pressed="${!i}">${l}</button>`).join("")}</div>
+      <input class="aplq" placeholder="Buscar por nombre…">`+table(["Jugador","Terminadas","Días","Primera vez","Última vez"],
+      allP.map(p=>[nm(p.u), p.res, p.days.size, dt(p.first), dt(p.last)])).replace(/<tr>(?=<td><a href="#" class="aprof" data-u="([^"]+)")/g,(m,u)=>`<tr data-nick="${names[u]?1:0}" data-q="${esc((names[u]||"anónimo "+u.slice(0,6)).toLowerCase())}">`);
     // jugadores más activos
     const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
     secPl+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
@@ -5241,6 +5247,13 @@ const Admin = (()=>{
     d.innerHTML=h; d.showModal(); d.scrollTop=0;
   }
   $("admBody").addEventListener("click",e=>{ const a=e.target.closest(".aprof"); if(!a) return; e.preventDefault(); profile(a.dataset.u); });
+  // filtro de "Todos los jugadores": todos / con usuario / anónimos, y búsqueda por nombre
+  function plFilter(){ const sec=document.querySelector('#admBody .admsec[data-sec="jug"]'); if(!sec) return;
+    const f=(sec.querySelector(".aplf [aria-pressed=true]")||{}).dataset?.plf||"all", q=(sec.querySelector(".aplq")||{}).value?.trim().toLowerCase()||"";
+    sec.querySelectorAll("tr[data-nick]").forEach(tr=>{ tr.hidden=(f==="nick"&&tr.dataset.nick!=="1")||(f==="anon"&&tr.dataset.nick!=="0")||(q && !tr.dataset.q.includes(q)); }); }
+  $("admBody").addEventListener("click",e=>{ const b=e.target.closest("[data-plf]"); if(!b) return;
+    b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b)); plFilter(); });
+  $("admBody").addEventListener("input",e=>{ if(e.target.classList.contains("aplq")) plFilter(); });
   // ---------- Pedidos de rompecabezas ----------
   const PUZ={bip39:"BIP39",whitepaper:"White Paper",times:"The Times"};
   const ST=["nuevo","confirmado","pagado","enviado","entregado","cancelado"];

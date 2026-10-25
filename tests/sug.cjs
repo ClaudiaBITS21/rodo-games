@@ -57,6 +57,11 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   const prof=await a.$eval('#profDlg',e=>e.textContent.replace(/\s+/g,' '));
   ok(/Lola/.test(prof) && /Con usuario/.test(prof) && /3\s*visitas en 1 día/.test(prof) && /Sopa/.test(prof) && /Empezadas/.test(prof),'perfil del jugador: '+prof.slice(0,220));
   await a.click('#profX'); ok(!(await a.$('#profDlg[open]')),'el perfil se cierra');
+  // todos los jugadores: filtro de anónimos
+  await a.click('#admBody [data-plf="anon"]');
+  ok(await a.$$eval('#admBody tr[data-nick]:not([hidden])',l=>l.length)===0,'Lola tiene usuario: con el filtro de anónimos no aparece');
+  await a.click('#admBody [data-plf="all"]');
+  ok(await a.$$eval('#admBody tr[data-nick]:not([hidden])',l=>l.length)===1,'en «Todos» aparece');
   await a.click('[data-admtab="sug"]');   // el panel va en solapas
   const body=await a.$eval('#admBody',e=>e.innerText);
   const tbl=await a.$$eval('#admBody .sugst',s=>s.map(x=>x.dataset.k));
