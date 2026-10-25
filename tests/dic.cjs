@@ -19,15 +19,21 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const sec=()=>a.$eval('#admBody .admsec[data-sec="dic"]',e=>e.textContent.replace(/\s+/g,' '));
   const t0=await sec();
   ok(/En los dos diccionarios \(\d+\)/.test(t0) && /Solo en castellano \(\d+\)/.test(t0) && /Solo en inglés \(\d+\)/.test(t0),'secciones: '+(t0.match(/En los dos diccionarios \(\d+\)|Solo en castellano \(\d+\)|Solo en inglés \(\d+\)/g)||[]).join(' · '));
+  // categorías: filtro por sigla
+  await a.click('#admBody [data-dcat="sigla"]');
+  const sig=await a.$$eval('#admBody .dword:not([hidden]) .dent b',l=>l.map(e=>e.textContent));
+  ok(sig.includes('UTXO') && sig.includes('KYC') && !sig.includes('BITCOIN'),'filtro por categoría: '+sig.slice(0,12).join(' '));
+  await a.click('#admBody [data-dcat=""]');
   // BITCOIN está en los dos: se abren los dos formularios
   const first=a.locator('#admBody .admsec[data-sec="dic"] .dword').first();
   await first.locator('summary').click(); await first.locator('.dform').nth(1).waitFor({timeout:5000});
   await a.screenshot({path:__dirname+'/diccionarios.png'});
   ok(await first.locator('.dform').count()===2,'una palabra repetida muestra su entrada en castellano y en inglés');
   await first.locator('.dform[data-lg="es"] input[name="c0"]').fill('La primera moneda sin dueño');
+  await first.locator('.dform[data-lg="es"] input[name="k"][value="his"]').check();
   await first.locator('.dform[data-lg="es"] button').click();
   const e1=await until(async()=>{ const x=await get('dict/es-1'); return x && x.c && x.c[0]==='La primera moneda sin dueño' && x; });
-  ok(!!e1 && !e1.tr,'editar una pista la guarda en dict/es-1');
+  ok(!!e1 && !e1.tr && e1.k.includes('his') && e1.k.includes('eco'),'editar una pista y las categorías lo guarda en dict/es-1: '+JSON.stringify(e1&&e1.k));
   ok(await a.evaluate(()=>G_ES[0][1][0])==='La primera moneda sin dueño','y el glosario de la página ya la usa');
   // ocultar una palabra que está solo en castellano
   await a.fill('#admBody .dq','vuelto'); await a.waitForTimeout(200);
@@ -64,6 +70,10 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await p.goto(URL); await p.waitForFunction(()=>typeof Reg!=='undefined'&&Reg.uid&&Reg.uid(),null,{timeout:20000}); await p.waitForTimeout(1500);
   const g=await p.evaluate(()=>({es:G_ES[218]&&G_ES[218][0], en:G_EN[218]&&G_EN[218][0], c:G_ES[0][1][0], code:CLUES.byText.es.get('Mandar sats con un toque en Nostr')}));
   ok(g.es==='ZAPEAR' && g.en==='ZAPPING' && g.c==='La primera moneda sin dueño' && g.code==='219.1','el sitio carga los diccionarios editados: '+JSON.stringify(g));
+  // criptograma: quién lo dijo, entre paréntesis y a la derecha
+  await p.evaluate(()=>{ GAMES.criptograma.load({q:['No confíes, verificá.','Dicho bitcoiner'], map:GAMES.criptograma.gen().map}); });
+  const au=await p.$eval('#cAuthor',e=>[e.textContent, getComputedStyle(e).textAlign]);
+  ok(au[0]==='(Dicho bitcoiner)' && au[1]==='right','autor del criptograma: '+au.join(' · '));
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

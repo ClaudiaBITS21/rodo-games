@@ -80,7 +80,8 @@ service cloud.firestore {
     // w: palabra, c: hasta 3 pistas, d: definición, off: oculta en los juegos, tr: pendiente de traducir (réplica del otro idioma), src: de qué entrada salió
     match /dict/{id} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['L', 'n', 'w', 'c', 'd', 'off', 'tr', 'src', 'at'])
+      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['L', 'n', 'w', 'c', 'd', 'off', 'tr', 'src', 'at', 'k'])
+        && (!('k' in request.resource.data) || (request.resource.data.k is list && request.resource.data.k.size() <= 12))
         && request.resource.data.L in ['es', 'en'] && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 5000
         && id == request.resource.data.L + '-' + string(request.resource.data.n)
         && (!('w' in request.resource.data) || (request.resource.data.w is string && request.resource.data.w.size() <= 30))

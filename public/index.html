@@ -95,6 +95,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem;text-align:center}
 .ivdlg.profdlg{max-width:min(900px,calc(100vw - 24px));width:100%;text-align:left;max-height:90vh;overflow:auto}.profdlg h4{margin:16px 0 6px}.aprof{color:inherit;text-decoration:underline dotted;cursor:pointer}
 .aplf{margin:0 0 8px}.aplf button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.aplq{width:100%;max-width:320px;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}tr[hidden]{display:none}
 .dword{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0 0 4px;background:var(--paper)}.dword[hidden]{display:none}.dword summary{cursor:pointer}
+.dcat{font-style:normal;font-size:.7rem;border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:3px;color:var(--muted)}
+.dcatf{flex-wrap:wrap;margin:8px 0}.dcatf button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.dcats{display:flex;flex-wrap:wrap;gap:4px 12px;border:1px solid var(--line);border-radius:8px;padding:6px 10px}.dcats legend{font-size:.8rem;color:var(--muted)}
 .dtag{font-style:normal;font-size:.72rem;border-radius:5px;padding:0 5px;background:#eee;color:#555}.dtag.tr{background:#FFE7C2;color:#8A4B00}.dtag.ed{background:#DDF3E4;color:#1A7F37}
 .dbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 12px}.dform{display:grid;gap:6px;margin:10px 0;padding:10px;border:1px dashed var(--line);border-radius:8px}.dform label{display:grid;gap:3px;font-size:.85rem}.dform .dchk{display:flex;gap:6px;align-items:center}
 .dform input:not([type=checkbox]),.dform textarea,.dq,#dAns{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink);font:inherit}
@@ -553,7 +555,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .cl{display:flex;flex-direction:column;align-items:center;gap:2px}
 .cl .code{font:600 .75rem/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
 .cl .punct{width:12px;height:var(--cell);display:flex;align-items:center;justify-content:center;font:700 1.1rem "IBM Plex Mono",monospace}
-.cauthor{text-align:center;color:var(--muted);margin:0 0 16px}
+.cauthor{text-align:right;color:var(--muted);font-style:italic;margin:4px 0 16px}
 /* ---------- Anagrama ---------- */
 .aclue{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);border-radius:8px;padding:10px 12px;margin:0 auto 18px;max-width:620px}
 .atiles,.aslots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 auto 14px;max-width:620px;--t:clamp(32px,9vw,46px)}
@@ -1664,7 +1666,7 @@ const fmt = ms => { const s=Math.round(ms/1000); return `${Math.floor(s/60)}:${S
 // seen: las que este jugador ya vio (se guardan en su ficha); use: cuántas veces las vieron todos (colección clueuse).
 // Partida normal: primero una pista que el jugador no vio, y entre esas la menos usada.
 // Partida de invitación (duel): primero la menos usada por todos, y se prefieren las palabras menos vistas.
-const CLUES={ seen:{es:new Set(),en:new Set()}, use:{es:{},en:{}}, duel:false, trimWords:false, byText:{es:new Map(),en:new Map()} };
+const CLUES={ seen:{es:new Set(),en:new Set()}, use:{es:{},en:{}}, duel:false, trimWords:false, byText:{es:new Map(),en:new Map()}, avoid:new Set() };
 ["es","en"].forEach(L=>(L==="en"?G_EN:G_ES).forEach(([w,cs],i)=>cs.forEach((c,j)=>CLUES.byText[L].set(c,`${i+1}.${j+1}`))));
 const clueKey=id=>"c"+id.replace(".","_");
 const clueUse=(L,id)=>CLUES.use[L][clueKey(id)]||0;
@@ -1675,6 +1677,31 @@ const gWord=(L,n)=>((L==="en"?G_EN:G_ES)[n-1]||[""])[0];
 const DEFS={};
 const defsOf=L=>DEFS[L]||(DEFS[L]=fetch(`/defs-${L}.json`).then(r=>r.ok?r.json():null).catch(()=>{ delete DEFS[L]; return null; })
   .then(a=>{ if(!a) return a; Object.values(DICT.docs).forEach(x=>{ if(x.L===L && typeof x.d==="string" && x.d) a[x.n-1]=x.d; }); return a; }));
+// ---------- Categorías de las palabras del glosario ----------
+// Por defecto salen de estas listas (con las palabras de los dos diccionarios); desde el panel se cambian (dict.k).
+// "en": palabra en inglés dentro del diccionario en castellano.
+const CATS=[["en","Inglés"],["sigla","Sigla"],["per","Personaje"],["his","Historia"],["tec","Técnica"],["min","Minería"],["ln","Lightning y capas"],
+  ["seg","Seguridad y custodia"],["priv","Privacidad"],["eco","Economía y dinero"],["cul","Cultura y jerga"],["gen","General"]];
+const CAT_W=(()=>{ const W={
+  sigla:"UTXO TXID XPUB PSBT ASIC KYC QR BIP DCA ATH FUD CBDC",
+  en:"BLOCKCHAIN HALVING HASH NONCE WALLET KEY MEMPOOL LIGHTNING TAPROOT SEGWIT SOFTFORK HARDFORK CYPHERPUNK WHITEPAPER HODL MUSIG XPUB PSBT TESTNET ASIC POOL FIAT HASHCASH BITGOLD NOSTR ZAP COINJOIN PAYJOIN SCRIPT TIMELOCK EXCHANGE KYC WATCHTOWER SIDECHAIN LIQUID ORDINALS TIMES BIP HARDWARE DCA ATH FUD PLEBS TICK MAXI ALTCOIN OPRETURN HYPE FEDIMINT ECASH CASHU CHECKSUM COVENANT REORG HASHRATE COINBASE CORE KNOTS CBDC MEETUP SIGNET TOR FIRMWARE SWAP STACKEAR UTXO TXID QR",
+  per:"NAKAMOTO SATOSHI FINNEY SZABO LASZLO SCHNORR MERKLE BACK ANTONOPOULOS DAI HUGHES MAY CHAUM ANDRESEN MAXWELL WUILLE POON DRYJA SAYLOR AMMOUS DORSEY LOPP MALLERS GLADSTEIN HAL RALPH SHAMIR",
+  his:"GENESIS TIMES CANCILLER CHANCELLOR RESCATE BAILOUT WHITEPAPER CYPHERPUNK HASHCASH BITGOLD PIZZA LASZLO FINNEY EFECTIVO CASH ELECTRONICO ELECTRONIC PARES PEER BANCOS BANKS NAKAMOTO ECASH CHAUM TIMESTAMP SELLO",
+  min:"MINERO MINER MINERIA MINING HALVING HASH NONCE ASIC POOL DIFICULTAD DIFFICULTY RECOMPENSA SUBSIDIO SUBSIDY ENERGIA ENERGY HASHRATE COINBASE AJUSTE ADJUSTMENT EPOCA EPOCH ALTURA HEIGHT CABECERA HEADER HUERFANO ORPHAN REORG BLOQUE BLOCK CONFIRMACION CONFIRMATION",
+  tec:"BLOQUE BLOCK CADENA CHAIN BLOCKCHAIN TIMECHAIN NODO NODE HASH NONCE MEMPOOL TAPROOT SEGWIT SCHNORR MERKLE GENESIS COMISION FEE UTXO TXID CONSENSO CONSENSUS SOFTFORK HARDFORK CRIPTOGRAFIA CRYPTOGRAPHY MUSIG XPUB PSBT DIRECCION ADDRESS TESTNET CONFIRMACION CONFIRMATION SCRIPT TIMELOCK SIDECHAIN LIQUID ORDINALS BIP OPRETURN PROTOCOLO PROTOCOL CODIGO CODE RED NETWORK TRANSACCION TRANSACTION ENTRADA INPUT SALIDA OUTPUT VUELTO CHANGE SALDO BALANCE CHECKSUM DERIVACION DERIVATION PUBLICA PUBLIC PRIVADA PRIVATE CURVA CURVE ORACULO ORACLE COVENANT REORG HUERFANO ORPHAN CABECERA HEADER ALTURA HEIGHT CORE KNOTS EXPLORADOR EXPLORER POLVO DUST CONSOLIDAR CONSOLIDATE ETIQUETA LABEL SIGNET FIRMWARE PREIMAGEN PREIMAGE CUANTICA QUANTUM FIRMA SIGNATURE CLAVE LLAVE KEY ENTROPIA ENTROPY CAPA LAYER NOSTR BROADCAST SPEND DISTRIBUTED LIBRO LEDGER",
+  ln:"LIGHTNING CANAL CHANNEL ZAP WATCHTOWER PAGO PAYMENT FACTURA INVOICE RUTA ROUTE LIQUIDEZ LIQUIDITY CAPA LAYER SWAP SUBMARINO SUBMARINE PREIMAGEN PREIMAGE CEBOLLA ONION MICROPAGO MICROPAYMENT SIDECHAIN LIQUID FEDIMINT ECASH CASHU",
+  seg:"BILLETERA WALLET SEMILLA SEED CLAVE LLAVE KEY FIRMA SIGNATURE CUSTODIA CUSTODY MULTIFIRMA MULTISIG MUSIG XPUB PSBT CONTRASEÑA PASSPHRASE DUEÑO PALABRAS WORDS FRASE FRIO COLD HARDWARE RESPALDO BACKUP ACERO STEEL ENTROPIA ENTROPY DADOS DICE CHECKSUM DERIVACION DERIVATION PRIVADA PRIVATE BOVEDA VAULT CUSTODIO CUSTODIAN AUTOCUSTODIA SELFCUSTODY HERENCIA INHERITANCE MEMORIA MEMORY FIRMWARE SHAMIR TIMELOCK COVENANT VERIFICAR VERIFY CONFIANZA TRUST",
+  priv:"PRIVACIDAD PRIVACY CYPHERPUNK COINJOIN PAYJOIN KYC SEUDONIMO PSEUDONYM ANONIMATO ANONYMITY VIGILANCIA SURVEILLANCE TOR CENSURA CENSORSHIP CBDC NOSTR",
+  eco:"DINERO MONEY ORO GOLD FIAT INFLACION INFLATION ESCASEZ SCARCITY EMISION ISSUANCE VEINTIUNO MILLONES MILLION OFERTA SUPPLY VOLATILIDAD VOLATILITY DIVISIBLE FUNGIBLE AUDITABLE DEVALUACION DEVALUATION CEPO DOLAR DOLLAR AHORRO SAVINGS REMESA REMITTANCE ADOPCION ADOPTION COMERCIO COMMERCE MERCADO MARKET TORO BULL OSO BEAR BALLENA WHALE LUNA MOON ESTABLE STABLECOIN BANCOS BANKS EXCHANGE SATS SATOSHI BITCOIN SOBERANIA SOVEREIGNTY PREFERENCIA PREFERENCE RESCATE BAILOUT DCA ATH SALDO BALANCE PAGO PAYMENT ALTCOIN CBDC EFECTIVO CASH RESERVE LEVERAGE",
+  cul:"HODL STACKEAR STACK DCA ATH FUD PLEBS HUMILDE HUMBLE PREFERENCIA PREFERENCE TICK MAXI ALTCOIN LABITCONF HYPE MEETUP COMUNIDAD COMMUNITY LUNA MOON TORO BULL OSO BEAR BALLENA WHALE PIZZA ZAP NOSTR RELOJ CLOCK NEUTRAL RESILIENCIA RESILIENCE INMUTABLE IMMUTABLE PERMISO PERMISSION FRONTERAS BORDERS SOBERANIA SOVEREIGNTY BITCOINER PATIENCE ORDINALS"};
+  return Object.fromEntries(Object.entries(W).map(([k,v])=>[k,new Set(v.split(" "))])); })();
+// categorías de una palabra: las del panel, si las cambiaron; si no, las de las listas ("General" si no cae en ninguna)
+function catsOf(L, n){
+  const x=DICT.docs[`${L}-${n}`]; if(x && Array.isArray(x.k)) return x.k;
+  const w=((L==="en"?G_EN:G_ES)[n-1]||[""])[0], k=CATS.map(c=>c[0]).filter(c=>c!=="gen" && (c!=="en" || L==="es") && CAT_W[c] && CAT_W[c].has(w));
+  return k.length ? k : ["gen"];
+}
+const catName=k=>(CATS.find(c=>c[0]===k)||[k,k])[1];
 // ---------- Diccionarios editados desde el panel (dict/{idioma}-{número}) ----------
 // Cambian palabras, pistas y definiciones del glosario sin tocar el código; las palabras nuevas siguen al final (número = posición + 1,
 // así los códigos de pista "palabra.pista" no se mueven). Una palabra "off" no sale en los juegos (no se borra, para no correr los números).
@@ -1700,7 +1727,7 @@ const gloss = () => {
     const sc=ids.map(id=>{ const u=clueUse(L,id), s=seen.has(id)?1:0; return (CLUES.duel ? u*2+s : s*1e6+u) + Math.random()*0.9; });
     const j=sc.indexOf(Math.min(...sc));
     return [w, cs[j], ids[j], cs, ids.reduce((a,id)=>a+clueUse(L,id),0)];
-  }).filter((x,i)=>!DICT.off[L].has(i+1));   // las ocultadas desde el panel no salen en los juegos
+  }).filter((x,i)=>!DICT.off[L].has(i+1) && !CLUES.avoid.has(x[0]));   // las ocultadas desde el panel no salen; avoid: las elegidas para otras rondas del torneo
   // en las invitaciones se dejan afuera las palabras más vistas (el acróstico necesita todas para armar la frase)
   if(CLUES.duel && CLUES.trimWords) list=list.map(x=>[x,x[4]+Math.random()*0.9]).sort((a,b)=>a[1]-b[1]).slice(0,Math.ceil(list.length*0.6)).map(x=>x[0]);
   return list;
@@ -2792,7 +2819,7 @@ const Cripto = (()=>{
       }
       box.appendChild(wd);
     });
-    $("cAuthor").textContent=q[1] ? "— "+q[1] : "";
+    $("cAuthor").textContent=q[1] ? `(${q[1]})` : "";
     $("cWin").style.display="none"; $("cStatus").textContent=""; updateHint();
   }
   const group = c => cells.filter(x=>x.c===c);
@@ -2860,7 +2887,7 @@ const Cripto = (()=>{
     const {cv,x}=canvasBase(W,H,t.cripTitle);
     x.fillStyle="#1A1E23"; x.font=`700 24px ${MONO}`;
     const y=wrapText(x, norm(q[0]), 40, 150, W-80, 32);
-    x.fillStyle="#C76F00"; x.font=`600 18px ${SANS}`; if(q[1]) x.fillText("— "+q[1], 40, y+40);
+    x.fillStyle="#C76F00"; x.font=`600 18px ${SANS}`; if(q[1]) x.fillText(`(${q[1]})`, 40, y+40);
     x.fillStyle="#5B6672"; x.font=`400 16px ${SANS}`; x.fillText(t.cCard(fmt(elapsed),hints), 40, H-30);
     return toBlob(cv);
   }
@@ -3379,8 +3406,10 @@ const Reg = (()=>{
     await ready; const L=opt.L||lang;
     await loadClueUse(L);
     const prev=lang; lang=L; CLUES.duel=true; CLUES.trimWords=g!=="acrostico";
+    // torneo: las palabras elegidas a mano para otras rondas no se usan al azar (salvo en la sopa, donde están a la vista)
+    CLUES.avoid=new Set(g!=="sopa" && opt.avoid ? opt.avoid : []);
     try{ return g==="sopa" ? GAMES.sopa.gen(opt.s) : g==="semilla" ? GAMES.semilla.gen(opt.cw ? opt.cw.length : opt.w, opt.cw) : GAMES[g].gen(TOUR_GEN(opt)); }
-    finally{ lang=prev; CLUES.duel=false; CLUES.trimWords=false; }
+    finally{ lang=prev; CLUES.duel=false; CLUES.trimWords=false; CLUES.avoid=new Set(); }
   }
   // jugar la partida de una ronda de torneo. ctx: {k, m, R (rondas de la partida), t0 (arranque de la ronda, en hora de este dispositivo), label(), seen}
   function playTour(g, d, ctx){
@@ -5256,7 +5285,7 @@ const Admin = (()=>{
   let DEFV={es:[], en:[]};
   function dictRow(L,n){
     const [w,cs]=GOf(L)[n-1]||["",[]], x=DICT.docs[`${L}-${n}`]||{}, off=DICT.off[L].has(n);
-    return `<span class="dent" data-lg="${L}" data-n="${n}"><b>${esc(w)}</b> <small class="m">${L.toUpperCase()} ${n}</small>${off?` <em class="dtag">oculta</em>`:""}${x.tr?` <em class="dtag tr">por traducir</em>`:""}${x.at&&!x.tr?` <em class="dtag ed">editada</em>`:""}</span>`;
+    return `<span class="dent" data-lg="${L}" data-n="${n}"><b>${esc(w)}</b> <small class="m">${L.toUpperCase()} ${n}</small> ${catsOf(L,n).map(k=>`<i class="dcat">${esc(catName(k))}</i>`).join("")}${off?` <em class="dtag">oculta</em>`:""}${x.tr?` <em class="dtag tr">por traducir</em>`:""}${x.at&&!x.tr?` <em class="dtag ed">editada</em>`:""}</span>`;
   }
   function dictForm(L,n,isNew){
     const G=GOf(L), [w,cs]=isNew ? ["",[]] : (G[n-1]||["",[]]), off=DICT.off[L].has(n), d=isNew ? "" : ((DEFV[L]||[])[n-1]||"");
@@ -5265,6 +5294,7 @@ const Admin = (()=>{
       <label>Palabra<input name="w" value="${esc(w)}" maxlength="30" required></label>
       ${[0,1,2].map(j=>`<label>Pista ${j+1}<input name="c${j}" value="${esc(cs[j]||"")}" maxlength="200"${j?"":" required"}></label>`).join("")}
       <label>Definición<textarea name="d" rows="4" maxlength="1200">${esc(d)}</textarea></label>
+      <fieldset class="dcats"><legend>Categorías</legend>${CATS.filter(c=>c[0]!=="en" || L==="es").map(([k,l])=>`<label class="dchk"><input type="checkbox" name="k" value="${k}"${(isNew?[]:catsOf(L,n)).includes(k)?" checked":""}> ${esc(l)}</label>`).join("")}</fieldset>
       <label class="dchk"><input type="checkbox" name="off"${off?" checked":""}> Oculta: no sale en los juegos</label>
       <label class="dchk"><input type="checkbox" name="rep"> ${inOther?`Replicar en ${DL[otherL(L)]}: traducir pistas y definición sobre la misma palabra`:`Replicar en ${DL[otherL(L)]}: sumarla traducida`}</label>
       <button class="primary">Guardar</button></form>`;
@@ -5274,9 +5304,12 @@ const Admin = (()=>{
     G_ES.forEach(([w],i)=>{ const m=GW.en.get(w); if(m) both.push([i+1,m]); else only.es.push(i+1); });
     G_EN.forEach(([w],i)=>{ if(!GW.es.has(w)) only.en.push(i+1); });
     const pend=dictPend();
-    const item=(s,inner,body)=>`<details class="dword" data-s="${esc(s)}"><summary>${inner}</summary><div class="dbody" data-f="${esc(body)}"></div></details>`;
+    const item=(s,inner,body)=>{ const ks=[...new Set(body.split("|").flatMap(id=>{ const [L,n]=id.split("-"); return catsOf(L,+n); }))];
+      return `<details class="dword" data-s="${esc(s)}" data-k="${ks.join(" ")}"><summary>${inner}</summary><div class="dbody" data-f="${esc(body)}"></div></details>`; };
+    const cnt={}; [...G_ES.map((_,i)=>catsOf("es",i+1)), ...G_EN.map((_,i)=>catsOf("en",i+1))].forEach(ks=>ks.forEach(k=>cnt[k]=(cnt[k]||0)+1));
     return `<h2>Diccionarios</h2><p class="m small">${G_ES.length} palabras en castellano y ${G_EN.length} en inglés. Tocá una para editar la palabra, sus 3 pistas y su definición. "Oculta" la saca de los juegos sin borrarla (borrar correría los números de las pistas). Los cambios valen para las partidas que se generan desde ahora.</p>
       <div class="row"><input class="dq" placeholder="Buscar palabra, pista o definición…"><button data-dnew="es">+ Palabra en castellano</button><button data-dnew="en">+ Palabra en inglés</button></div>
+      <div class="seg dcatf" role="group" aria-label="Categoría"><button data-dcat="" aria-pressed="true">Todas</button>${CATS.filter(([k])=>cnt[k]).map(([k,l])=>`<button data-dcat="${k}" aria-pressed="false">${esc(l)} (${cnt[k]})</button>`).join("")}</div>
       <div class="dnew"></div>
       ${pend.length?`<div class="dpend"><b>${pend.length} pendiente${pend.length===1?"":"s"} de traducir:</b> ${pend.map(x=>esc((GOf(x.L)[x.n-1]||[x.w])[0]||x.w)+` (${x.L.toUpperCase()})`).join(", ")}
         <div class="row"><button id="dAsk">📋 Copiar pedido de traducción para Claude</button></div>
@@ -5297,7 +5330,8 @@ const Admin = (()=>{
     if(w.replace(/ /g,"").length<2){ dsay("La palabra tiene que tener al menos 2 letras.", true); return; }
     if(!c.length){ dsay("Hace falta al menos una pista.", true); return; }
     const dup=GW[L].get(w); if(dup && dup!==n){ dsay(`«${w}» ya está en el diccionario en ${DL[L]} (número ${dup}).`, true); return; }
-    const data={L, n, w, c, d, off:f.elements.off.checked, tr:false, at:A.serverTimestamp()};
+    const k=[...f.querySelectorAll('input[name="k"]:checked')].map(x=>x.value);
+    const data={L, n, w, c, d, k:k.length?k:["gen"], off:f.elements.off.checked, tr:false, at:A.serverTimestamp()};
     const writes=[[`${L}-${n}`, data]];
     if(f.elements.rep.checked){
       const O=otherL(L), src=`${L}-${n}`, same=GW[O].get(w), prev=Object.values(DICT.docs).find(x=>x.L===O && x.src===src);
@@ -5339,8 +5373,11 @@ ${JSON.stringify(items, null, 1)}`;
     if(e.target.id==="dAsk"){ let ok=true; try{ await navigator.clipboard.writeText(dictAsk()); }catch(err){ ok=false; } dsay(ok?"Pedido copiado: pegalo en el chat con Claude y pegá su respuesta abajo.":"No se pudo copiar: este navegador no deja usar el portapapeles.", !ok); return; }
     if(e.target.id==="dApply"){ dictApply($("dAns").value); }
   });
-  $("admBody").addEventListener("input",e=>{ if(!e.target.classList.contains("dq")) return; const q=norm(e.target.value.trim());
-    document.querySelectorAll('#admBody .dword').forEach(d=>{ d.hidden=!!q && !norm(d.dataset.s).includes(q); }); });
+  function dictFilter(){ const q=norm((document.querySelector('#admBody .dq')||{}).value?.trim()||""), k=(document.querySelector('#admBody .dcatf [aria-pressed=true]')||{}).dataset?.dcat||"";
+    document.querySelectorAll('#admBody .dword').forEach(d=>{ d.hidden=(!!q && !norm(d.dataset.s).includes(q)) || (!!k && !d.dataset.k.split(" ").includes(k)); }); }
+  $("admBody").addEventListener("input",e=>{ if(e.target.classList.contains("dq")) dictFilter(); });
+  $("admBody").addEventListener("click",e=>{ const b=e.target.closest("[data-dcat]"); if(!b) return;
+    b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b)); dictFilter(); });
   // ---------- Perfil de un jugador (al tocar su nombre en el panel) ----------
   let PROF=null;
   function profile(u){
@@ -6583,6 +6620,9 @@ const TourAdmin = (()=>{
     for(const c of ["ins","priv","secret"]) await Promise.all((await all(c)).map(d=>A.deleteDoc(d.ref)));
     await A.deleteDoc(A.doc(A.db,"tourneys",t));
   }
+  // palabras elegidas a mano en las otras rondas del torneo (ahorcado y anagrama): no se usan al azar en esta
+  function cwOthers(ci){ const out=[]; TD.rounds.forEach((rc,i)=>{ if(i===ci || (rc.g!=="ahorcado" && rc.g!=="anagrama")) return;
+    const t=rc.cwid && CW[rc.cwid]; if(!t) return; const p=cwParse(rc.g, t, rc.lang||TD.lang||"es"); (p.v||[]).forEach(([w])=>out.push(w)); }); return out; }
   async function loadCw(){ const t0=tid; try{ const s=await A.getDoc(cwRef()); if(t0!==tid) return; CW=s.exists() ? s.data() : {}; CWok=true; cfgFor=null; render(); }catch(e){ fail(e); } }
   const cwRef=(t=tid)=>A.doc(A.db,"tourneys",t,"secret","cw");
   // las palabras propias de la configuración c de una ronda, ya leídas (null = al azar)
@@ -6661,6 +6701,7 @@ const TourAdmin = (()=>{
     const L=c.lang||TD.lang||"es", opt={L};
     if(c.g==="sopa") opt.s=c.s||"media"; if(c.g==="semilla") opt.w=c.w||12; if(c.dif) opt.dif=c.dif; if(c.g==="ahorcado") opt.n=c.n||6;
     const cw=c.g!=="sopa" && cwOf(c); if(cw){ opt.cw=cw; if(c.g==="ahorcado") opt.n=cw.length; if(c.g==="semilla") opt.w=cw.length; }
+    if(c.g!=="sopa") opt.avoid=cwOthers(ci);
     const d=await Reg.genFor(c.g, opt), go=srv()+delay;
     const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
       pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
@@ -6750,7 +6791,7 @@ const TourAdmin = (()=>{
       if(a==="now" && (r.st==="sched"||r.st==="ready")){ const go=now+10000; say(`${r.final?"Final":"Ronda "+r.no}: arranca en 10 segundos.`); await A.updateDoc(rref(r.id),{st:"sched", left:0, go:A.Timestamp.fromMillis(go), end:r.dur?A.Timestamp.fromMillis(go+r.dur*60000):null}); return; }
       if(a==="regen" && (r.st==="ready" || (r.st==="sched" && now<tms(r.go)-5000))){
         const c={g:r.g, lang:r.lang, s:r.s, w:r.w, dif:r.dif, n:r.n}, opt={L:r.lang}; if(r.s) opt.s=r.s; if(r.w) opt.w=r.w; if(r.dif) opt.dif=r.dif; if(r.n) opt.n=r.n;
-        const cw=r.g!=="sopa" && cwOf({...(TD.rounds[r.ci]||{}), lang:r.lang}); if(cw) opt.cw=cw;
+        const cw=r.g!=="sopa" && cwOf({...(TD.rounds[r.ci]||{}), lang:r.lang}); if(cw) opt.cw=cw; if(r.g!=="sopa") opt.avoid=cwOthers(r.ci);
         await A.setDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p"), {d:await Reg.genFor(c.g, opt)}); prevD=null; say("Partida nueva generada."); renderLive(); return; }
       if(a==="peek"){ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"rounds",r.id,"data","p")); prevD=s.exists()?{id:r.id, d:s.data().d}:null; renderLive(); return; }
       if(a==="close" && r.st==="live" && sure(el, "¿Cerrar la ronda ahora con la tabla como está?")){ await close(r); return; }
@@ -6871,14 +6912,26 @@ const TourAdmin = (()=>{
     const box=tr.querySelector(".cwpick"), ta=tr.querySelector('[data-f="cw"]'), T1=tab||box.dataset.t||L; box.dataset.t=T1;
     const tabs=(n1,n2)=>`<div class="row cwtabs"><button data-ta="cwtab" data-t="es" aria-pressed="${T1==="es"}">Castellano${n1}</button><button data-ta="cwtab" data-t="en" aria-pressed="${T1==="en"}">English${n2}</button></div>`;
     if(g==="ahorcado" || g==="anagrama"){
-      const G=T1==="en"?G_EN:G_ES, p=cwParse(g, ta.value, L), have=new Set((p.v||[]).map(x=>x[0]));
+      const G=T1==="en"?G_EN:G_ES, p=cwParse(g, ta.value, L), have=new Set((p.v||[]).map(x=>x[0])), used=cwUsed(tr);
+      const kf=box.dataset.k||"";
       const okW=w=>{ const n=w.replace(/ /g,"").length; return g==="anagrama" ? !w.includes(" ") && n>=3 && n<=12 : n>=3 && n<=16; };
-      box.innerHTML=tabs(` (${G_ES.length})`,` (${G_EN.length})`)+`<div class="row"><input class="cwq" placeholder="Buscar palabra o pista…"> <span class="m small cwn">${have.size} elegida${have.size===1?"":"s"} · hasta ${CW_MAX[g]}</span></div><div class="cwlist">`+
-        G.map(([w,cs])=>`<label class="cwi${okW(w)?"":" off"}" data-s="${esc(norm(w+" "+cs.join(" ")))}" title="${esc(cs.join("\n"))}"><input type="checkbox" data-cw="${esc(w)}" data-c="${esc(cs[0])}"${have.has(w)?" checked":""}${okW(w)?"":" disabled"}> <b>${esc(w)}</b><small>${esc(cs[0])}</small></label>`).join("")+`</div>`;
+      // filtro por categoría; las palabras ya elegidas en otra ronda del torneo aparecen apagadas (no se repiten)
+      box.innerHTML=tabs(` (${G_ES.length})`,` (${G_EN.length})`)+`<div class="row"><input class="cwq" placeholder="Buscar palabra o pista…"> <select class="cwk"><option value="">Todas las categorías</option>${CATS.filter(c=>c[0]!=="en"||T1==="es").map(([k,l])=>`<option value="${k}"${k===kf?" selected":""}>${esc(l)}</option>`).join("")}</select> <span class="m small cwn">${have.size} elegida${have.size===1?"":"s"} · hasta ${CW_MAX[g]}</span></div><div class="cwlist">`+
+        G.map(([w,cs],i)=>{ const ks=catsOf(T1,i+1), u=!have.has(w) && used[w], dis=!okW(w) || !!u || DICT.off[T1].has(i+1);
+          return `<label class="cwi${dis?" off":""}" data-s="${esc(norm(w+" "+cs.join(" ")))}" data-k="${ks.join(" ")}" title="${esc(cs.join("\n"))}"${kf && !ks.includes(kf)?" hidden":""}><input type="checkbox" data-cw="${esc(w)}" data-c="${esc(cs[0])}"${have.has(w)?" checked":""}${dis?" disabled":""}> <b>${esc(w)}</b>${u?` <em class="m small">ya en ${esc(u)}</em>`:""}<small>${esc(cs[0])}</small></label>`; }).join("")+`</div>`;
       return;
     }
     const list=g==="criptograma" ? (QUOTES[T1]||[]).map(([q,a])=>a?`${q}\n— ${a}`:q) : (PHRASES[T1]||[]);
     box.innerHTML=tabs("","")+`<div class="cwlist">`+list.map(x=>`<label class="cwi"><input type="radio" name="cwp${row.dataset.i}" data-cwp="${esc(x)}"${ta.value.trim()===x?" checked":""}> ${esc(x).replace("\n","<br><span class='m'>")}${x.includes("\n")?"</span>":""}</label>`).join("")+`</div>`;
+  }
+  // palabras ya elegidas en las otras rondas del formulario (palabra → "ronda 2" / "la final")
+  function cwUsed(tr){
+    const all=[...document.querySelectorAll("#taCfg .tacwr")], out={};
+    all.forEach((t,i)=>{ if(t===tr) return; const row=t.previousElementSibling, g=row.querySelector('[data-f="g"]').value, L=row.querySelector('[data-f="lang"]').value||"es";
+      if(g!=="ahorcado" && g!=="anagrama") return; const p=cwParse(g, t.querySelector('[data-f="cw"]').value, L);
+      const nm=row.dataset.i==String(TD.rounds.length-1) ? "la final" : "la ronda "+(+row.dataset.i+1);
+      (p.v||[]).forEach(([w])=>{ if(!out[w]) out[w]=nm; }); });
+    return out;
   }
   // tildar o destildar una palabra: se agrega al final de la lista o se saca
   function cwToggle(cb){
@@ -7027,10 +7080,13 @@ const TourAdmin = (()=>{
     if(b.tagName!=="SELECT" && b.dataset.ta!=="auto") act(b.dataset.ta, b);
   });
   $("view-torneo-admin").addEventListener("input",e=>{ if(e.target.id==="taInvIn") searchOnline();
-    if(e.target.classList.contains("cwq")){ const q=norm(e.target.value.trim()); e.target.closest(".cwpick").querySelectorAll(".cwi").forEach(l=>{ l.hidden=!!q && !l.dataset.s.includes(q); }); } });
+    if(e.target.classList.contains("cwq")) cwFilter(e.target.closest(".cwpick")); });
+  function cwFilter(box){ const q=norm((box.querySelector(".cwq")||{}).value?.trim()||""), k=(box.querySelector(".cwk")||{}).value||""; box.dataset.k=k;
+    box.querySelectorAll(".cwi").forEach(l=>{ l.hidden=(!!q && !l.dataset.s.includes(q)) || (!!k && !(l.dataset.k||"").split(" ").includes(k)); }); }
   $("view-torneo-admin").addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target.id==="taAdmIn"){ e.preventDefault(); act("admadd"); } });
   $("view-torneo-admin").addEventListener("change",e=>{
     if(e.target.dataset.cw!==undefined) return cwToggle(e.target);
+    if(e.target.classList.contains("cwk")) return cwFilter(e.target.closest(".cwpick"));
     if(e.target.dataset.cwp!==undefined){ e.target.closest(".tacwr").querySelector('[data-f="cw"]').value=e.target.dataset.cwp; return; }
     const b=e.target.closest("[data-ta]"); if(!b) return;
     if(b.dataset.ta==="pick"||b.dataset.ta==="auto") act(b.dataset.ta, b);

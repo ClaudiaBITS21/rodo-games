@@ -72,6 +72,16 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(id0 && id2 && !t.rounds[1].cwid && t.rounds[0].n===3,'la configuración guarda solo el identificador y la cantidad: '+JSON.stringify(t.rounds[0]));
   ok(sec && /ZAPEAR|Zapéar/.test(sec[id0]) && /verificá/.test(sec[id2]) && !JSON.stringify(t).includes('MEMPOOL'),'las palabras van aparte, en secret');
   ok(/3 elegidas/.test(await a.$eval('.tacwr summary',e=>e.textContent)),'el resumen dice cuántas: '+await a.$eval('.tacwr summary',e=>e.textContent));
+  // otra ronda de anagrama: las palabras del ahorcado aparecen como «ya en la ronda 1»; filtro por categoría
+  await a.click('[data-ta="addr"]');
+  await a.waitForFunction(()=>document.querySelectorAll('.tacwr').length===3,null,{timeout:10000});
+  await a.locator('.tacwr summary').nth(1).click().catch(()=>{});
+  await a.locator('[data-ta="cwlist"]').nth(1).click();
+  const mem=a.locator('.tacwr').nth(1).locator('.cwi:has([data-cw="MEMPOOL"])');
+  ok(/ya en la ronda 1/.test(await mem.textContent()) && await mem.locator('input').isDisabled(),'lo elegido en otra ronda no se repite: '+(await mem.textContent()).replace(/\s+/g,' '));
+  await a.locator('.tacwr').nth(1).locator('.cwk').selectOption('sigla');
+  const sig=await a.locator('.tacwr').nth(1).locator('.cwi:not([hidden]) b').allTextContents();
+  ok(sig.includes('UTXO') && sig.includes('KYC') && !sig.includes('BITCOIN'),'filtro por categoría (siglas): '+sig.join(' '));
   // arrancar: la ronda 1 sale con esas palabras
   await a.click('[data-ta="startnow"]'); await a.click('[data-ta="startnow"]');
   const p=await until(()=>get(`${T}/rounds/1/data/p`));
@@ -86,16 +96,20 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
     const s=await Reg.genFor('semilla',{L:'en', cw:semi.v});
     const an=await Reg.genFor('anagrama',{L:'es', cw:cwParse('anagrama','NODO\nMINERO','es').v});
     const cr=await Reg.genFor('criptograma',{L:'es', cw:cwParse('criptograma','No confíes, verificá.','es').v});
+    // al azar no se usan las palabras elegidas para otras rondas
+    const av=G_ES.slice(0,150).map(x=>x[0]), an2=await Reg.genFor('anagrama',{L:'es', avoid:av}), ac2=await Reg.genFor('acrostico',{L:'es', avoid:av});
+    const avoidOk=an2.list.every(x=>!av.includes(x.w)) && ac2.rows.every(r=>r.gap || r.given || !av.includes(r.word));
     // sopa: cuántas tienen al menos un cruce entre palabras
     let crossed=0; for(let i=0;i<20;i++){ const d=await Reg.genFor('sopa',{L:'es', s:'media'}); const seen=new Map(); let x=false;
       d.words.forEach((w,k)=>w.cells.forEach(c=>{ if(seen.has(c) && seen.get(c)!==k) x=true; seen.set(c,k); })); if(x) crossed++; }
-    return {acro:acro.phrase, semi:s.words.join(' '), dec:s.decoys.length, semiBad:semiBad.err, an:an.list.length+':'+an.list.slice(0,2).map(x=>x.w).join(), cr:cr.q[0], crossed};
+    return {acro:acro.phrase, semi:s.words.join(' '), dec:s.decoys.length, semiBad:semiBad.err, an:an.list.length+':'+an.list.slice(0,2).map(x=>x.w).join(), cr:cr.q[0], crossed, avoidOk};
   });
   ok(g.acro==='STAY HUMBLE','acróstico con la frase elegida');
   ok(g.semi.startsWith('abandon ability') && g.dec===4,'semilla con las palabras elegidas');
   ok(/hola/.test(g.semiBad||''),'semilla: avisa la que no es BIP39: '+g.semiBad);
   ok(g.an==='10:NODO,MINERO','anagrama: las elegidas y el resto del glosario: '+g.an);
   ok(g.cr==='No confíes, verificá.','criptograma con la frase elegida');
+  ok(g.avoidOk,'el anagrama y el acróstico al azar no usan las palabras elegidas para otras rondas');
   ok(g.crossed>=14,'sopa: las palabras se cruzan ('+g.crossed+' de 20 sopas)');
 
   // varios torneos: el selector va por fecha y hora de arranque; se puede borrar uno con todo lo que tiene
