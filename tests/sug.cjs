@@ -45,6 +45,7 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   await a.goto(URL+'#admin');
   await a.waitForFunction(()=>/Palabras sugeridas/.test(document.getElementById('admBody').textContent),null,{timeout:20000});
   ok((await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|'))).match(/^📈 Resumen\|👥 Jugadores\|🧩 Tienda\|💡 Sugeridas \(\d\)\|⚙️ Sistema$/),'solapas: '+await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|')));
+  ok(/1\s*con usuario \(100\s*%\) · 0 sin usuario/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'con y sin usuario: '+(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)).match(/\d+\s*con usuario[^·]*·[^<]{0,20}/));
   await a.click('[data-admtab="jug"]');
   const day=await a.$eval('#admBody .admsec[data-sec="jug"] .aday',e=>e.textContent.replace(/\s+/g,' '));
   ok(/1 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day),'por día: '+day.slice(0,160));

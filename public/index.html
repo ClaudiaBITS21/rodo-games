@@ -5100,11 +5100,14 @@ const Admin = (()=>{
     const active=d=>players.filter(p=>p.last && now-p.last<d*DAY).length;
     const totalTime=players.reduce((a,p)=>a+p.time,0);
     const returning=players.filter(p=>p.days.size>=2).length;
+    // con usuario (apodo registrado) o sin usuario (jugador anónimo)
+    const withNick=players.filter(p=>names[p.u]).length;
     const seenTot=players.reduce((a,p)=>a+p.seen,0);
     const created=Object.values(counters).reduce((a,b)=>a+b,0);
 
     let h=`<div class="kpis">
       <div class="kpi"><b>${players.length}</b><span>jugadores (navegadores)</span></div>
+      <div class="kpi"><b>${withNick}</b><span>con usuario (${pct(withNick,players.length)}) · ${players.length-withNick} sin usuario</span></div>
       <div class="kpi"><b>${active(1)}</b><span>activos hoy · ${active(7)} en 7 días</span></div>
       <div class="kpi"><b>${since(7)}</b><span>nuevos en 7 días · ${since(30)} en 30</span></div>
       <div class="kpi"><b>${returning}</b><span>volvieron otro día (${pct(returning,players.length)})</span></div>
@@ -5151,7 +5154,7 @@ const Admin = (()=>{
     }).filter(x=>x.r.length||x.nw.length||x.reg.length);
     const lst=(l,ok)=>l.length ? l.map(u=>nm(u)+(ok && names[u]?" ✓":"")).join(", ") : "–";
     secPl+=`<h2>Por día</h2><p class="m small">Quiénes jugaron, quiénes entraron por primera vez (✓ = ya tiene usuario) y quiénes armaron su usuario ese día. Tocá un día para ver los nombres.</p>`+
-      (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas</summary>
+      (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron (${x.who.filter(u=>names[u]).length} con usuario) · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas</summary>
         <p><b>Jugaron:</b> ${lst(x.who,false)}</p><p><b>Nuevos:</b> ${lst(x.nw,true)}</p><p><b>Usuarios nuevos:</b> ${lst(x.reg,false)}</p></details>`).join("") : `<p class="m small">Sin actividad en los últimos 30 días.</p>`)+
       `<p class="m small">La fecha de alta del usuario se guarda desde el 25/10/2026: los anteriores no figuran en "Usuarios nuevos".</p>`;
     // jugadores más activos
