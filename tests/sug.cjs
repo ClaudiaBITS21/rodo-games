@@ -45,11 +45,11 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   await a.goto(URL+'#admin');
   await a.waitForFunction(()=>/Palabras sugeridas/.test(document.getElementById('admBody').textContent),null,{timeout:20000});
   ok((await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|'))).match(/^📈 Resumen\|👥 Jugadores\|🧩 Tienda\|💡 Sugeridas \(\d\)\|📚 Diccionarios\|⚙️ Sistema$/),'solapas: '+await a.$$eval('#admBody [data-admtab]',l=>l.map(b=>b.textContent).join('|')));
-  ok(/1\s*con usuario \(50\s*%\) · 1 sin usuario/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'con y sin usuario: '+(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)).match(/\d+\s*con usuario[^·]*·[^<]{0,20}/));
+  ok(/1\s*con usuario \(100\s*%\) · 0 sin usuario/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'con y sin usuario, solo entre los que jugaron: '+(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)).match(/\d+\s*con usuario[^·]*·[^<]{0,20}/));
   await a.click('[data-admtab="jug"]');
   const day=await a.$eval('#admBody .admsec[data-sec="jug"] .aday',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/2 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day) && /1 anónimo que no jugó/.test(day),'por día (el anónimo que no jugó solo se cuenta): '+day.slice(0,220));
-  ok(/1\s*anónimos que entraron y no jugaron/.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'el total de anónimos que no jugaron, en el resumen');
+  ok(/1 nuevos · 1 usuarios nuevos/.test(day) && /Lola ✓/.test(day) && /1 entraron y no jugaron/.test(day),'por día (el anónimo que no jugó va aparte): '+day.slice(0,220));
+  ok(/Entraron y no jugaron.*1\s*en total/s.test(await a.$eval('#admBody .admsec[data-sec="res"]',e=>e.textContent)),'los que entraron y no jugaron, en un apartado del resumen');
   // tocar el nombre abre su perfil
   await a.click('#admBody .admsec[data-sec="jug"] .aday summary');
   await a.click('#admBody .admsec[data-sec="jug"] .aday .aprof');

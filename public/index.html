@@ -5170,7 +5170,10 @@ const Admin = (()=>{
     DU.forEach(d=>{ const x=d.data(), [a,b]=x.p||[]; if(!a||!b||testers.has(a)||testers.has(b)) return; duels++;
       (x.games||[]).forEach(pid=>{ const R=byPid[pid]||{}, w=duelWinner(pid.split("-")[0], R[a], R[b], true); if(w==="void") return;
         duelGames++; pl(a).dj++; pl(b).dj++; if(w==="a") pl(a).dg++; if(w==="b") pl(b).dg++; }); });
-    const players=Object.values(P);
+    // estadísticas solo sobre quienes jugaron algo (abrieron y empezaron o terminaron una partida) o armaron su usuario;
+    // los anónimos que entraron y no jugaron (idle) van aparte, en "Entraron y no jugaron"
+    const idle=u=>!names[u] && !(P[u]&&P[u].res) && !Object.values((fichas[u]||{}).plays||{}).some(Boolean);
+    const players=Object.values(P).filter(p=>!idle(p.u)), idlePl=Object.values(P).filter(p=>idle(p.u)), idleN=idlePl.length;
     const inviters=players.filter(p=>p.inv>0).length, invTot=players.reduce((a,p)=>a+p.inv,0);
     // "¿Aprendiste alguna palabra nueva?": tildes por juego e idioma (sobre las partidas terminadas)
     const learnBy={}; let learnYes=0, learnDuel=0, learnN=0;
@@ -5182,16 +5185,12 @@ const Admin = (()=>{
     const returning=players.filter(p=>p.days.size>=2).length;
     // con usuario (apodo registrado) o sin usuario (jugador anónimo)
     const withNick=players.filter(p=>names[p.u]).length;
-    // anónimos que entraron pero no empezaron ni terminaron ninguna partida: solo se cuentan, no se listan
-    const idle=u=>!names[u] && !(P[u]&&P[u].res) && !Object.values((fichas[u]||{}).plays||{}).some(Boolean);
-    const idleN=players.filter(p=>idle(p.u)).length;
     const seenTot=players.reduce((a,p)=>a+p.seen,0);
     const created=Object.values(counters).reduce((a,b)=>a+b,0);
 
     let h=`<div class="kpis">
-      <div class="kpi"><b>${players.length}</b><span>jugadores (navegadores)</span></div>
+      <div class="kpi"><b>${players.length}</b><span>jugadores (navegadores que jugaron algo)</span></div>
       <div class="kpi"><b>${withNick}</b><span>con usuario (${pct(withNick,players.length)}) · ${players.length-withNick} sin usuario</span></div>
-      <div class="kpi"><b>${idleN}</b><span>anónimos que entraron y no jugaron (no se listan en Jugadores)</span></div>
       <div class="kpi"><b>${active(1)}</b><span>activos hoy · ${active(7)} en 7 días</span></div>
       <div class="kpi"><b>${since(7)}</b><span>nuevos en 7 días · ${since(30)} en 30</span></div>
       <div class="kpi"><b>${returning}</b><span>volvieron otro día (${pct(returning,players.length)})</span></div>
@@ -5204,6 +5203,13 @@ const Admin = (()=>{
       <div class="kpi"><b>${created}</b><span>partidas numeradas creadas</span></div>
       <div class="kpi"><b>${pct(rows.length,seenTot)}</b><span>de las partidas abiertas se terminan</span></div>
     </div>`;
+
+    // aparte: los que entraron y no jugaron (no cuentan en nada de lo de arriba)
+    const idleSince=d=>idlePl.filter(p=>p.first && now-p.first<d*DAY).length, idleVis=idlePl.reduce((a,p)=>a+((fichas[p.u]||{}).vis||0),0);
+    h+=`<h2>Entraron y no jugaron</h2><p class="m small">Navegadores anónimos que abrieron el sitio pero no empezaron ni terminaron ninguna partida (ni armaron usuario). No cuentan en ningún número de este panel; aparecen como jugadores cuando juegan.</p>
+      <div class="kpis idlek"><div class="kpi"><b>${idleN}</b><span>en total · ${pct(idleN,idleN+players.length)} de los que entraron</span></div>
+      <div class="kpi"><b>${idleSince(7)}</b><span>en 7 días · ${idleSince(30)} en 30</span></div>
+      <div class="kpi"><b>${idleVis}</b><span>visitas (contadas desde el 25/10/2026)</span></div></div>`;
 
     const secShop=ordersHtml(OR, CP)+payHtml()+couponsHtml(CP, OR), secSug=sugsHtml(SG);
     let secPl="", secSys="";
@@ -5235,23 +5241,23 @@ const Admin = (()=>{
     PROF={rows, P, fichas, names, regAt, avs, LEu};
     const dayRows=[...days].reverse().map(d=>{
       const r=rows.filter(x=>x.at && new Date(x.at).toDateString()===d), who=[...new Set(r.map(x=>x.u))];
-      const nw=players.filter(p=>p.first && new Date(p.first).toDateString()===d).map(p=>p.u);
+      const nw=players.filter(p=>p.first && new Date(p.first).toDateString()===d).map(p=>p.u), ni=idlePl.filter(p=>p.first && new Date(p.first).toDateString()===d).length;
       const reg=Object.keys(regAt).filter(u=>regAt[u] && !testers.has(u) && new Date(regAt[u]).toDateString()===d);
-      return {d, r, who, nw, reg};
-    }).filter(x=>x.r.length||x.nw.length||x.reg.length);
+      return {d, r, who, nw, ni, reg};
+    }).filter(x=>x.r.length||x.nw.length||x.reg.length||x.ni);
     const lst=(l,ok)=>{ const v=l.filter(u=>!idle(u)), n=l.length-v.length;
       return (v.length ? v.map(u=>nm(u)+(ok && names[u]?" ✓":"")).join(", ") : (n?"":"–"))+(n?`${v.length?" · ":""}<span class="m">${n} anónimo${n===1?"":"s"} que no jugó${n===1?"":"aron"}</span>`:""); };
     secPl+=`<h2>Por día</h2><p class="m small">Quiénes jugaron, quiénes entraron por primera vez (✓ = ya tiene usuario) y quiénes armaron su usuario ese día. Tocá un día para ver los nombres.</p>`+
-      (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron (${x.who.filter(u=>names[u]).length} con usuario) · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas</summary>
+      (dayRows.length ? dayRows.map(x=>`<details class="aday"><summary><b>${esc(new Date(x.d).toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"short"}))}</b> · ${x.who.length} jugaron (${x.who.filter(u=>names[u]).length} con usuario) · ${x.nw.length} nuevos · ${x.reg.length} usuarios nuevos · ${x.r.length} partidas${x.ni?` · <span class="m">${x.ni} entraron y no jugaron</span>`:""}</summary>
         <p><b>Jugaron:</b> ${lst(x.who,false)}</p><p><b>Nuevos:</b> ${lst(x.nw,true)}</p><p><b>Usuarios nuevos:</b> ${lst(x.reg,false)}</p></details>`).join("") : `<p class="m small">Sin actividad en los últimos 30 días.</p>`)+
       `<p class="m small">La fecha de alta del usuario se guarda desde el 25/10/2026: los anteriores no figuran en "Usuarios nuevos".</p>`;
     // todos los jugadores, con o sin usuario, el más reciente arriba; cada nombre abre su perfil
-    const allP=[...players].filter(p=>!idle(p.u)).sort((a,b)=>(b.last||0)-(a.last||0));
+    const allP=[...players].sort((a,b)=>(b.last||0)-(a.last||0));
     secPl+=`<h2>Todos los jugadores (${allP.length})</h2><p class="m small">Sin los ${idleN} anónimos que entraron y no jugaron ninguna partida: aparecen cuando juegan o arman su usuario.</p><div class="seg aplf" role="group">${[["all","Todos"],["nick","Con usuario"],["anon","Anónimos"]].map(([k,l],i)=>`<button data-plf="${k}" aria-pressed="${!i}">${l}</button>`).join("")}</div>
       <input class="aplq" placeholder="Buscar por nombre…">`+table(["Jugador","Terminadas","Días","Primera vez","Última vez"],
       allP.map(p=>[nm(p.u), p.res, p.days.size, dt(p.first), dt(p.last)])).replace(/<tr>(?=<td><a href="#" class="aprof" data-u="([^"]+)")/g,(m,u)=>`<tr data-nick="${names[u]?1:0}" data-q="${esc((names[u]||"anónimo "+u.slice(0,6)).toLowerCase())}">`);
     // jugadores más activos
-    const top=[...players].filter(p=>!idle(p.u)).sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
+    const top=[...players].sort((a,b)=>(b.res-a.res)||((b.last||0)-(a.last||0))).slice(0,25);
     secPl+=`<h2>Jugadores más activos</h2>`+table(["Jugador","Terminadas","Con éxito","Abiertas","Juegos","Días","Tiempo","Invitó","Duelo: jugadas / ganadas","Primera vez","Última vez"],
       top.map(p=>[nm(p.u), p.res, p.ok, p.seen||"–", p.games.size, p.days.size, hrs(p.time), p.inv||"–", p.dj?`${p.dj} / ${p.dg}`:"–", dt(p.first), dt(p.last)]));
 
