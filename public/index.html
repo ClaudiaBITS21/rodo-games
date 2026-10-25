@@ -1711,7 +1711,8 @@ const TAG_K=["en","sigla","per","tec"], TAG_EN={sigla:"Acronym",per:"Person",tec
 function wordTag(w){
   const L=lang==="en"?"en":"es", n=GW[L].get(w), o=L==="en"?"es":"en", n2=n?0:GW[o].get(w);
   const k=n ? catsOf(L,n) : n2 ? catsOf(o,n2) : TAG_K.filter(c=>CAT_W[c].has(w));
-  const t=TAG_K.filter(c=>k.includes(c) && (c!=="en" || L==="es"));
+  // una sigla dice solo "Sigla" (casi todas están en inglés y son técnicas: no se repite)
+  const t=k.includes("sigla") ? ["sigla"] : TAG_K.filter(c=>k.includes(c) && (c!=="en" || L==="es"));
   return t.length ? "("+t.map(c=>L==="en"?TAG_EN[c]:catName(c)).join(" · ")+")" : "";
 }
 // ---------- Diccionarios editados desde el panel (dict/{idioma}-{número}) ----------
