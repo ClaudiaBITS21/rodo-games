@@ -495,6 +495,8 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .blocks{display:block;margin:6px auto 4px;width:100%;max-width:520px;height:auto}
 .lives{text-align:center;color:var(--muted);margin:0 0 14px;font-size:.95rem}
 .hclue{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--btc);border-radius:8px;padding:10px 12px;margin:0 auto 16px;max-width:620px}
+.wtag{text-align:center;font-size:.8rem;color:var(--muted);margin:0 0 6px;min-height:1em}
+.wtag:empty{display:none}
 .hword{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 20px}
 .hl{width:clamp(30px,9vw,44px);height:clamp(38px,11vw,54px);border-bottom:3px solid var(--ink);
     font:700 clamp(20px,6vw,30px)/1 "IBM Plex Mono",ui-monospace,monospace;display:flex;align-items:center;justify-content:center}
@@ -817,6 +819,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     <p class="lives" id="hLives" aria-live="polite"></p>
     <div class="actions"><button id="hClueBtn"></button><button id="hSkip"></button><button class="giveup" id="hEnd"></button></div>
     <div class="hclue" id="hClue"></div>
+    <p class="wtag" id="hTag"></p>
     <div class="hword" id="hWord" aria-live="polite"></div>
     <div class="keys" id="hKeys"></div>
     </div>
@@ -901,6 +904,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
     <div id="aPlay">
       <div class="score" id="aScore"></div>
       <div class="aclue" id="aClue"></div>
+      <p class="wtag" id="aTag"></p>
       <div class="aslots" id="aSlots"></div>
       <div class="atiles" id="aTiles"></div>
       <div class="actions">
@@ -1702,6 +1706,14 @@ function catsOf(L, n){
   return k.length ? k : ["gen"];
 }
 const catName=k=>(CATS.find(c=>c[0]===k)||[k,k])[1];
+// etiqueta chica del ahorcado y el anagrama: solo Inglés, Sigla, Personaje y Técnica ("(Sigla · Técnica)"); vacía si no cae en ninguna
+const TAG_K=["en","sigla","per","tec"], TAG_EN={sigla:"Acronym",per:"Person",tec:"Technical"};
+function wordTag(w){
+  const L=lang==="en"?"en":"es", n=GW[L].get(w), o=L==="en"?"es":"en", n2=n?0:GW[o].get(w);
+  const k=n ? catsOf(L,n) : n2 ? catsOf(o,n2) : TAG_K.filter(c=>CAT_W[c].has(w));
+  const t=TAG_K.filter(c=>k.includes(c) && (c!=="en" || L==="es"));
+  return t.length ? "("+t.map(c=>L==="en"?TAG_EN[c]:catName(c)).join(" · ")+")" : "";
+}
 // ---------- Diccionarios editados desde el panel (dict/{idioma}-{número}) ----------
 // Cambian palabras, pistas y definiciones del glosario sin tocar el código; las palabras nuevas siguen al final (número = posición + 1,
 // así los códigos de pista "palabra.pista" no se mueven). Una palabra "off" no sale en los juegos (no se borra, para no correr los números).
@@ -2075,6 +2087,7 @@ const Hang = (()=>{
   }
   function drawWord(){
     const s=S(), w=W().w, done=!!(s&&s.r);
+    $("hTag").textContent=wordTag(w);
     $("hWord").innerHTML=[...w].map(ch=>{
       const show=s.g.has(ch)||done, miss=done&&!s.g.has(ch);
       return `<span class="hl${miss?' miss':''}">${show?ch:""}</span>`;
@@ -2938,7 +2951,7 @@ const Ana = (()=>{
   function round(){
     locked=false; tiles=scramble(word()); picks=[];
     // la pista ya pagada de esta palabra sigue visible al volver
-    shown=seenClue.has(i); $("aClue").textContent=list[i][1]; $("aClue").style.display=shown?"":"none"; updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
+    shown=seenClue.has(i); $("aClue").textContent=list[i][1]; $("aClue").style.display=shown?"":"none"; $("aTag").textContent=wordTag(list[i][0]); updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta();
   }
   function draw(cls){
     const w=word();

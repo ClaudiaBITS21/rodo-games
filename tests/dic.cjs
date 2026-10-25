@@ -74,6 +74,12 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await p.evaluate(()=>{ GAMES.criptograma.load({q:['No confíes, verificá.','Dicho bitcoiner'], map:GAMES.criptograma.gen().map}); });
   const au=await p.$eval('#cAuthor',e=>[e.textContent, getComputedStyle(e).textAlign]);
   ok(au[0]==='(Dicho bitcoiner)' && au[1]==='right','autor del criptograma: '+au.join(' · '));
+  // ahorcado y anagrama: categoría chica entre paréntesis (solo Inglés, Sigla, Personaje, Técnica)
+  await p.evaluate(()=>{ lang='es'; GAMES.ahorcado.load({list:[{w:'UTXO',c:'x'},{w:'DINERO',c:'y'}]}); GAMES.anagrama.load({list:[{w:'SZABO',c:'z'}]}); });
+  const tg=await p.evaluate(()=>[document.getElementById('hTag').textContent, document.getElementById('aTag').textContent]);
+  ok(tg[0]==='(Inglés · Sigla · Técnica)' && tg[1]==='(Personaje)','etiquetas: '+tg.join(' | '));
+  await p.evaluate(()=>{ GAMES.ahorcado.load({list:[{w:'DINERO',c:'y'}]}); });
+  ok(await p.$eval('#hTag',e=>e.textContent==='' && getComputedStyle(e).display==='none'),'sin etiqueta si no cae en esas categorías');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
