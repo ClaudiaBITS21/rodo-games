@@ -150,6 +150,16 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await j.click('.cfx-ok'); ok(!(await j.$('.champfx')),'se cierra');
   await j.reload(); await j.waitForFunction(()=>typeof Reg!=='undefined'&&Reg.uid&&Reg.uid(),null,{timeout:20000}); await j.waitForTimeout(3000);
   ok(!(await j.$('.champfx')),'no vuelve a aparecer');
+  // un organizador de un solo torneo que entra por «Entrar como administrador» va directo a su panel y ve solo ese
+  await db(async f => { await F.setDoc(F.doc(f, 'tourneys/T9'), { name:'SOLO DE MATI', st:'open', cap:64, fee:0, lnurl:'', when:null, orgs:['mati@x.com'], bases:'', lang:'es', cur:0,
+    rounds:[{g:'sopa',lang:'es',s:'media',m:'w',dur:10}], champ:null, at:F.Timestamp.now() }); });
+  const o=await (await br.newContext({viewport:{width:1300,height:900}})).newPage(); o.on('pageerror',e=>console.log('org pageerror',e.message));
+  await o.addInitScript(()=>{ window.__admTok=JSON.stringify({sub:'org1', email:'mati@x.com', email_verified:true}); });
+  await o.goto(URL+'#admin'); await o.click('#admIn');
+  await o.waitForFunction(()=>location.hash==='#torneo-admin',null,{timeout:20000}).catch(()=>{});
+  await o.waitForSelector('#taBody:not([hidden]) [data-ta="pick"]',{timeout:20000}).catch(()=>{});
+  const oOpts=await o.$$eval('[data-ta="pick"] option',l=>l.map(x=>x.textContent)).catch(()=>[]);
+  ok(await o.evaluate(()=>location.hash)==='#torneo-admin' && oOpts.length===1 && /SOLO DE MATI/.test(oOpts[0]),'el organizador va directo a su torneo: '+oOpts.join(' | '));
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

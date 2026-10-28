@@ -5113,7 +5113,10 @@ const Admin = (()=>{
       $("admLogin").style.display = ok ? "none" : "";
       document.querySelectorAll("#view-admin .bar button").forEach(b=>b.style.display = ok ? "" : "none");
       $("admWho").textContent = ok ? u.email : "";
-      if(u && !ok){ $("admErr").textContent=`${u.email} no tiene acceso.`; A.logout(); }
+      // quien no es de la administración pero organiza algún torneo va directo a su panel del torneo
+      if(u && !ok) A.getDocs(A.collection(A.db,"tourneys")).then(qs=>qs.docs.some(d=>(d.data().orgs||[]).includes(u.email))).catch(()=>false).then(org=>{
+        if(org && u.emailVerified){ if(view==="admin") location.hash="torneo-admin"; return; }
+        $("admErr").textContent=`${u.email} no tiene acceso.`; A.logout(); });
       if(ok && view==="admin") load();
       testBtn();
     });
