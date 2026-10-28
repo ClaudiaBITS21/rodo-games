@@ -23,11 +23,14 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.waitForTimeout(2500); if(await A.$('#userDlg[open]')) await A.click('#uX');
   const uid=await A.evaluate(()=>Reg.uid());
   await A.evaluate(()=>location.hash='torneo');
-  await A.waitForSelector('#tMail',{timeout:15000});
-  await A.fill('#tMail','ana@example.com'); await A.fill('#tTel','1155554444'); await A.check('#tOk'); await A.click('[data-act="join"]');
+  await A.waitForSelector('#tOk',{timeout:15000});
+  ok(!(await A.$('#tMail')) && !(await A.$('#tTel')),'la inscripción no pide mail ni teléfono');
+  await A.click('[data-act="join"]'); await A.waitForTimeout(500);
+  ok(/aceptar las bases/.test(await txt('#tJoinMsg')),'sin aceptar las bases no se inscribe');
+  await A.check('#tOk'); await A.click('[data-act="join"]');
   const ins=await until(()=>get(`${T}/ins/${uid}`));
   ok(ins && ins.nm==='Ana' && ins.ck===null,'Ana se inscribió');
-  ok(!!(await get(`${T}/priv/${uid}`)),'mail y teléfono en priv');
+  { const pv=await get(`${T}/priv/${uid}`); ok(pv && pv.ok===true && !('mail' in pv),'en priv queda solo que aceptó las bases'); }
   await db(f => F.updateDoc(F.doc(f, T), { st:'checkin' }));
   await A.waitForSelector('[data-act="ck"]',{timeout:15000}); await A.click('[data-act="ck"]');
   ok(await until(async()=>{ const x=await get(`${T}/ins/${uid}`); return x && x.ck; }),'check-in hecho');

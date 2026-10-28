@@ -500,7 +500,9 @@ service cloud.firestore {
     function isTest(tid) { return tour(tid).get('test', false) == true; }
     function validTour(d) {
       // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'nck', 'nlv', 'test', 'src', 'inv', 'place'])
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'ast', 'nck', 'nlv', 'test', 'src', 'inv', 'place'])
+        // ast: arranque automático a la hora fijada (sin el campo, lo inicia la administración)
+        && (!('ast' in d) || d.ast is bool)
         // place: dónde se juega (texto libre que se muestra en la portada y en la sala)
         && (!('place' in d) || (d.place is string && d.place.size() <= 120))
         && (!('test' in d) || d.test is bool)
@@ -552,13 +554,14 @@ service cloud.firestore {
         // borrarse: antes de que arranque
         allow delete: if (signedIn() && request.auth.uid == uid && tour(tid).st in ['open', 'checkin']) || isOrg(tid);
       }
-      // Datos de contacto para avisar que arranca la ronda: solo los ven el dueño y los organizadores
+      // Aceptación de las bases (y, en inscripciones viejas, mail y teléfono): solo los ven el dueño y los organizadores
       match /priv/{uid} {
         allow read: if (signedIn() && request.auth.uid == uid) || isOrg(tid);
         allow create, update: if signedIn() && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['mail', 'tel', 'ok', 'at'])
-          && request.resource.data.mail is string && request.resource.data.mail.size() <= 120 && request.resource.data.mail.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
-          && request.resource.data.tel is string && request.resource.data.tel.size() >= 6 && request.resource.data.tel.size() <= 30
+          // mail y teléfono ya no se piden (decisión de la dueña, 28/10/2026); si vienen (inscripciones viejas), se validan igual
+          && (!('mail' in request.resource.data) || (request.resource.data.mail is string && request.resource.data.mail.size() <= 120 && request.resource.data.mail.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')))
+          && (!('tel' in request.resource.data) || (request.resource.data.tel is string && request.resource.data.tel.size() >= 6 && request.resource.data.tel.size() <= 30))
           // ok: aceptó las bases y condiciones
           && request.resource.data.ok == true
           && request.resource.data.at == request.time;

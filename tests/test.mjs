@@ -268,6 +268,8 @@ await t("torneo: un organizador lo maneja", assertSucceeds(updateDoc(doc(ORG, "t
 await t("torneo: un organizador no cambia los organizadores", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { orgs: ["org@x.com", "otro@x.com"] })));
 await t("torneo: un jugador no lo cambia", assertFails(updateDoc(doc(A, "tourneys/T1"), { st: "live" })));
 await t("torneo: el organizador pone dónde se juega", assertSucceeds(updateDoc(doc(ORG, "tourneys/T1"), { place: "LABITCONF" })));
+await t("torneo: el organizador elige el arranque automático", assertSucceeds(updateDoc(doc(ORG, "tourneys/T1"), { ast: true })));
+await t("torneo: el arranque es sí o no", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { ast: "si" })));
 await t("torneo: el lugar tiene un largo máximo", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { place: "x".repeat(121) })));
 await t("torneo: el organizador guarda las palabras propias", assertSucceeds(setDoc(doc(ORG, "tourneys/T1/secret/cw"), { x1: "HALVING" })));
 await t("torneo: el organizador las lee", assertSucceeds(getDoc(doc(ORG, "tourneys/T1/secret/cw"))));
@@ -278,6 +280,8 @@ await t("torneo: Ana se inscribe con su apodo", assertSucceeds(setDoc(doc(A, "to
 await t("torneo: sin usuario no se inscribe", assertFails(setDoc(doc(B, "tourneys/T1/ins/B"), ins(""))));
 await t("torneo: no se inscribe con apodo ajeno", assertFails(setDoc(doc(C, "tourneys/T1/ins/C"), ins("Ana"))));
 await t("torneo: no se inscribe ya pagado", assertFails(setDoc(doc(C, "tourneys/T1/ins/C"), ins("Caro", { paid: true }))));
+await t("torneo: aceptar las bases sin mail ni teléfono", assertSucceeds(setDoc(doc(A, "tourneys/T1/priv/A"), { ok: true, at: serverTimestamp() })));
+await t("torneo: un mail inválido no", assertFails(setDoc(doc(A, "tourneys/T1/priv/A"), { mail: "nope", ok: true, at: serverTimestamp() })));
 await t("torneo: contacto privado propio", assertSucceeds(setDoc(doc(A, "tourneys/T1/priv/A"), { mail: "a@x.com", tel: "1155554444", ok: true, at: serverTimestamp() })));
 await t("torneo: otro jugador no lee el contacto", assertFails(getDoc(doc(B, "tourneys/T1/priv/A"))));
 await t("torneo: el organizador lee el contacto", assertSucceeds(getDoc(doc(ORG, "tourneys/T1/priv/A"))));

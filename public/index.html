@@ -54,9 +54,15 @@ body::before{content:"";position:fixed;inset:0;background:var(--bg);opacity:.86;
 /* celulares: los navegadores con barra flotante arriba (Safari, el de WhatsApp) tapaban los botones del encabezado */
 @media (max-width:640px){ .wrap{padding-top:64px} header .tools{gap:8px 6px} }
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.brand{display:inline-block;color:var(--ink);line-height:0;margin-bottom:12px;text-decoration:none}
+header{position:relative}
+.brands{margin-bottom:12px;line-height:0}
+.brand{display:inline-block;color:var(--ink);line-height:0;text-decoration:none}
+/* Bitcoin.AR, del lado derecho de la pantalla, a la altura del logo */
+.cobrand{position:absolute;top:4px;right:0;display:flex;align-items:center;gap:6px;line-height:1;color:var(--muted);text-decoration:none}
+.cobrand span{font-size:.72rem;white-space:nowrap}
+.cobrand img{display:block;height:22px;width:auto}
 .brand .logo{display:block;height:30px;width:auto}
-@media (max-width:640px){ .brand .logo{height:24px} }
+@media (max-width:640px){ .brand .logo{height:24px} .cobrand img{height:17px} .cobrand{top:3px} .cobrand span{font-size:.66rem} }
 h1{margin:0;font-size:clamp(2.2rem,8.5vw,4.2rem);line-height:.95;font-weight:800;letter-spacing:-.03em}
 h1 .k{display:inline-block;background:var(--btc);color:#1A1E23;padding:0 .12em;border-radius:6px;margin-right:.02em}
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -661,10 +667,6 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .buzon .msg.ok{color:var(--ok)} .buzon .msg.bad{color:var(--bad)}
 
 /* ---------- Créditos ---------- */
-.credit{margin:36px 0 0;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;color:var(--muted);font-size:.95rem}
-.credit p{margin:0}
-.credit a{display:block;border-radius:8px}
-.credit img{display:block;width:230px;max-width:70vw;height:auto}
 @media (max-width:520px){ .tools{width:100%} }
 @media print{
   body{background:#fff;color:#000}
@@ -683,7 +685,13 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 <div class="wrap">
   <header>
     <div>
+      <div class="brands">
       <a class="brand" href="#"><svg class="logo" viewBox="134 104 2342 382" role="img" aria-label="RODO ₿ Games"><path fill="currentColor" d="M218.8 278.5h16c9.9 0 17-6.5 17.4-15.8.4-10.1-6.2-17.4-16.6-17.7-11.6-.4-23.3 0-35-.2-2.5 0-2.9 1-2.9 3.3q.2 13.7 0 27.4c0 2.4.7 3.1 3.1 3zM316.7 385h-63c-3.2 0-3.8-2.3-4.7-4.2q-14.2-29.2-28.1-58.6c-1.2-2.5-2.6-3.7-5.6-3.5a92 92 0 0 1-13 0c-3.6-.3-4.7.8-4.6 4.6q.1 28.6.2 57.4c0 3.4-.8 4.5-4.4 4.4q-24.7-.3-49.4 0c-3.5 0-4.8-.7-4.8-4.6V208c0-3 .3-4.4 4-4.3 36.7.2 73.5-.2 110.2.4 17.5.2 33.6 5.6 45.2 19.6q15 18 12.2 41.6a53 53 0 0 1-16.6 33.3 42 42 0 0 1-13.6 8.4c-3.7 1.5-4.2 2.9-2.2 6.6q18.3 33.8 36.3 67.7zM610 294.7V338c-.1 2.8.6 3.7 3.5 3.6 6.5-.3 13 0 19.4-.3q27.5-1.7 31.9-28.2a124 124 0 0 0 .1-37.2q-3.6-24.3-26.4-28c-8-1.4-16.3-.6-24.4-.8-3.3-.1-4.2.8-4.2 4.1q.2 21.8 0 43.4m-58.2-.5v-85.9c0-3.6.6-4.8 4.5-4.8 26.8.3 53.6-.2 80.4.5 19.7.4 38.7 4.3 55.6 15.4 17.8 11.6 26.7 28.8 30.7 49q3.6 17.8 2 35.9a97 97 0 0 1-13.6 45.6 72 72 0 0 1-44.4 30.7 160 160 0 0 1-40.5 4.4q-34.2-.1-68.4.1c-4.8 0-6.5-.8-6.4-6q.3-42.6.1-85 M464.4 294c0-4.8.4-9.6-.1-14.4-1.5-13.6-6.3-25.3-19.6-31.6a44 44 0 0 0-23.7-3.5 33.5 33.5 0 0 0-31.3 27.6 143 143 0 0 0-1 40.1q1 9.8 6.8 18c9.3 13 22.7 15.6 37.4 14a33 33 0 0 0 28-20.8c4-9.6 3.5-19.5 3.5-29.4m-40.8-93.2c21.5-.3 40.6 2.9 58.4 12.2a75 75 0 0 1 39.2 52.9 125 125 0 0 1 3 34.8c-1.4 20.6-6 40.2-19.3 56.5q-12 15.1-30.3 22.3c-14 5.5-28.5 7.4-43.5 8.4-16.5 1-32-1-47.5-6q-37.3-12.4-50-49.7a128 128 0 0 1-4.9-47.5 92 92 0 0 1 15.4-49.1 77 77 0 0 1 44.7-30.5c11.8-3.4 24-4.8 34.8-4.3M805 294.2c0 5-.4 10 .1 15 1.6 16.4 9.3 30.3 26.7 34 23 5.1 43.7-3.4 48.4-29q3.4-19.9-.1-40.1-1.8-11.2-9.4-19.4c-9.3-9.9-21.2-11.4-33.8-10.1a32 32 0 0 0-28.6 21.2 67 67 0 0 0-3.3 28.4m36.7-93.4c19-.3 37.3 2.5 54.5 11a75 75 0 0 1 42.3 57.2c4.1 22.5 3.5 45-4.8 66.7a75 75 0 0 1-42.7 43.8c-13.6 5.7-28 7.2-42.6 8.4q-23.6 1.8-45.6-5.1c-25.4-8-43.4-24-52.2-49.8a133 133 0 0 1-5.4-50.4c.6-12.5 3.4-25 9.1-36.3q6.7-13.5 18.4-24c15.2-13.2 33-18.4 52.2-20.6 5.6-.7 11.2-.7 16.8-1"/><path fill="#F7931A" d="M1987.2 307.3q4.6-17 8.8-33.9l17.2-66.5c.5-2.1 1.6-3.3 4.1-3.3h73.4q3.5 0 3.1 3.2v2.5l.1 169.7c0 4.9-1.3 6.1-6.1 6q-23.7-.4-47.4 0c-3.5 0-4.5-1-4.4-4.5 0-26.6-.4-53.2.3-79.8.2-9.4.7-19 2.6-28.3.4-2 .1-4 .1-6.5-2.9 2.8-2.7 6.3-3.5 9.2q-14.4 52.3-28.4 104.7c-1 3.6-2.2 5.4-6.5 5.3q-18.2-.6-36.4 0c-3.6 0-5.1-1.4-5.9-4.4l-26.2-97.4q-2.5-9.3-6.2-18.4c.4 5.2.6 10.4 1.4 15.6q2.8 20.7 2.8 41.5c.2 19.3 0 38.6.2 57.9 0 4.3-1.3 5.2-5.3 5.1q-22.2-.2-44.4.2c-3.2 0-4.3-.8-4.3-4.1V207.9c0-3.2.8-4.3 4.2-4.3q37.2.1 74.4 0c3.1 0 4.3 1.2 5 3.9q12 46.9 24.3 93.8.8 3 2 6z M1647 334.4q-.1 22.7.1 45.4c0 4.3-1.3 5.4-5.3 5.2a170 170 0 0 0-20 0c-4.3.3-6-1.4-6.9-5.1-.6-2.7-1.8-5.3-2.4-8-.8-4.1-3-4-5.7-1.9a73 73 0 0 1-22.4 12.2c-7.8 2.7-15.8 4.1-24 5.4q-10.9 1.5-21.7.8c-23.5-1.5-45.4-7.3-62-25.6a82 82 0 0 1-17.6-35.7c-3.9-14.8-4-30-3-45.1a88 88 0 0 1 16.6-47.8 79 79 0 0 1 44.6-29.2c15.4-4.2 31.3-5 47-4 20.2 1.3 39.6 5.9 56.4 17.8a58 58 0 0 1 26 46c.2 3.2-.5 4.4-4 4.4q-23.6-.2-47.3 0c-2.2 0-4-.2-4.4-2.9-1.3-9.9-8-15.1-16.4-18.9-14-6-40-4.1-50.1 9.6a36 36 0 0 0-7.2 15 120 120 0 0 0 0 44.1 32 32 0 0 0 27.4 27.2c13.8 2.7 27 2 38.8-7q2.9-2.2 4.7-5.2c2-3 4-6.6 2.6-9.6-1-2.2-5-.8-7.8-.8q-14.4-.2-29 0c-3 0-4-.8-3.9-4q.2-14.6 0-29.4c0-2.7.7-3.7 3.6-3.7h89.4c3.6 0 4 1.4 4 4.4z M2125 293.7v-85.4c0-3.7.9-4.7 4.7-4.7h147.7c3.5 0 4.6.9 4.5 4.4q-.4 17.3 0 34.4c.1 4-1.1 5-5 5q-44 0-87.9-.2c-4.7 0-6 1.4-5.7 5.9a92 92 0 0 1 0 14c-.3 4.1 1.2 5.3 5.3 5.3 24.5-.2 49 0 73.4-.2 4.4 0 6 1 5.8 5.7q-.6 15.4 0 30.9c.1 4.4-1.3 5.1-5.3 5l-74.4-.1c-3.9 0-5.2 1-5 5q.6 9 0 17.9c-.3 4.3 1.4 5.1 5.4 5q45 .1 89.8-.1c4.8 0 5.7 1.4 5.6 5.8q-.4 16.5 0 33c0 3.6-.9 4.7-4.7 4.7H2130c-3.9 0-5-1-5-5q.2-43.2.1-86.3 M2330.4 323.6h24.5c2.7 0 3.6.7 3.7 3.6.6 11.1 6.3 16.7 17.3 18.5a68 68 0 0 0 27.8-1c4-1 8-2.8 8.7-7.6.5-3.8.6-8-3.3-10.2q-5.1-2.8-10.8-4.4c-18-5-36.6-7.5-54.1-13.9-16-5.9-29.6-14.8-35.4-32a57 57 0 0 1-.6-35c6.6-21.5 23.2-31 43-36.6 15.2-4.4 30.7-5.1 46.2-4 19.4 1.4 38.2 5.6 53.7 18.7a46 46 0 0 1 16.3 37q0 3.3-3 2.9h-48.9c-1.9 0-3-.3-3-2.7-.4-9.3-7.3-15-16.7-16-6.5-.6-13.2-1-19.8.8-9 2.5-12.8 9.8-8.3 16.4 2.2 3.3 6 4.3 9.5 5.6 12 4.3 24.7 5.9 37 9 13.6 3.5 27.4 6.3 39 15a43 43 0 0 1 19.3 36.3c0 14.6-3 28-12.2 39.7a60 60 0 0 1-26.3 17.7c-17 6.8-35 8-53 7a136 136 0 0 1-45.6-9.7 50 50 0 0 1-30.7-36.7c-1.2-5-.4-10.2-2-15.1-.8-2.5.7-3.4 3.3-3.3z M1761.9 254.3c-.9 1-1.3 1.3-1.4 1.7l-18 60c-.9 2.7.3 2.8 2.3 2.8h32.4c3.3 0 3.4-1 2.6-3.8q-5.7-18.7-11-37.6zm.3-50.6c9.8 0 19.7.2 29.4-.2 3.8 0 5.3 1.4 6.4 4.5q6.8 19.5 14 39l40.9 111.7 8.1 22.2c1 2.9.6 4.1-2.9 4h-53.9c-2.7 0-4-.7-4.8-3.6-1.5-6.1-3.7-12.1-5.4-18.2-.7-2.4-1.7-3.6-4.4-3.6h-57.4c-2 0-3.1.7-3.7 3-1.7 6.3-4 12.4-5.6 18.7-.7 2.8-1.8 3.8-4.6 3.8h-52c-3.2 0-4.2-.4-2.6-4.3 4.7-11.8 8.6-24 13-35.9l14-37.9q6.5-17.6 12.9-35.3 9-24.5 17.7-49 2.8-7.4 5.3-14.7c1-3 2.1-4.5 5.7-4.4 10 .4 20 .2 30 .2"/><path fill="#B9650B" d="M1020 383.3q.5-4.2 1.4-8.3l42-210a51.6 51.6 0 0 1 61.4-41.4q114.4 22.4 228.6 45.8a52 52 0 0 1 41.5 55.5q-1 9.4-3 18.7l-40.1 200.7-1.4 5.3q-1.5 2.5-2.8 5.2a53 53 0 0 1-56 27.8q-115.6-23.3-231.3-46.4a48 48 0 0 1-30-19.8 59 59 0 0 1-10.4-33"/><path fill="#F7931A" d="m1225 154.8 126.2 25.3 3.9.7q3.2.5 4.4-2.4 1.3-3-1.4-5.4c-1.4-1.1-3-1.3-4.7-1.6L1100 120.6c-1.6-.3-3.2-.7-4.9-.3q-3.1.5-3.5 3.5-.5 3.5 2.8 4.7 2.1.6 4.4 1zm-215 214.5q.5-4 1.4-8.3l42-210a51.6 51.6 0 0 1 61.4-41.4q114.4 22.4 228.6 45.8A52 52 0 0 1 1385 211a178 178 0 0 1-3 18.7l-40.1 200.7-1.4 5.3q-1.5 2.5-2.8 5.2a53 53 0 0 1-56 27.9q-115.6-23.4-231.3-46.4a48 48 0 0 1-29.9-19.9 59 59 0 0 1-10.4-33"/><path fill="#F8AC51" d="m1225 154.8-126.2-25.3q-2.3-.3-4.4-1-3.2-1.2-2.8-4.7.4-3 3.5-3.5c1.7-.4 3.3 0 5 .3l253.3 50.8c1.7.3 3.3.5 4.7 1.6q2.7 2.3 1.4 5.4-1.2 2.8-4.4 2.4l-4-.7z"/><path fill="#FFF" d="M1199.6 273q7.2 1.5 14.2 2.7c8.7 1.2 15.2-3.4 17.1-11.6s-1.4-14.4-10.4-16.9c-9.4-2.6-19.1-4.1-28.7-6.3-2.7-.6-3 1-3.5 3q-2 11.3-4.5 22.4c-.7 3 .5 3.8 3.1 4.3q6.4 1.1 12.7 2.5m-9.4 62.5v-.4c6.2 1.2 12.3 3 18.6 3.6q10.3 1 15.8-8.2c6.4-11 2.2-22.7-10-26.5-11.1-3.5-22.8-4.8-34-7.4q-3-1-3.4 2.2a1064 1064 0 0 1-5.8 29.3c-.6 3 .6 3.8 3.1 4.3q7.8 1.4 15.7 3m48.2-40c2.8 2.8 6.1 4.4 8.9 6.9 13.7 12.4 15.6 30.4 9.3 47.7a41 41 0 0 1-38.2 26.3c-6.1.2-12.3.2-18.2-1.6-4.9-1.6-6.3.1-7 4.8-.8 6.2-2.5 12.3-3.5 18.6-.5 2.8-1.6 3.4-4.4 3-12-2.1-12-2-9.7-13.8 1-5.4 5-12.4 2.1-16-3.2-4-11-3-16.8-4.5-2.7-.7-3.9 0-4.4 2.9-1.1 6.7-2.7 13.3-3.9 20-.5 3.3-1.4 4.5-5 3.8-11.5-2.3-11.5-2.2-9.2-13.7l2.7-13.2c.7-2.8-.1-3.7-2.9-4.3-8.6-2-8.6-2-6.8-10.8q14-70 27.9-140c1-4.7 2.3-6 7-4.7 7.2 1.9 6.3 2.3 7.8-5.1q2-9.3 3.7-18.6c.4-2.4 1.4-2.8 3.7-2.5 12.6 1.9 12.5 1.8 10.2 14.3-1 5.3-5.1 12.4-2.1 15.6 3.9 4.2 11.8 3.2 17.9 4.7 2.8.7 2.9-1.4 3.2-3.2q2.3-10.2 4-20.6c.6-3.3 2-3.8 5-3.1 11.5 2.2 11.5 2.1 9.2 13.6q-1 6.5-2.6 12.7c-.8 3.2 0 4.5 3.3 5a46 46 0 0 1 27.5 14.8c15.2 17.6 8.7 48.4-12.3 58z"/></svg></a>
+      <a class="cobrand" href="https://bitcoin.ar" target="_blank" rel="noopener" title="Un proyecto junto a Bitcoin.AR"><span id="cobrandT">Junto a</span><picture>
+        <source srcset="img/bitcoin-ar-oscuro.png" media="(prefers-color-scheme: dark)">
+        <img src="img/bitcoin-ar.png" alt="Bitcoin.AR" width="135" height="22">
+      </picture></a>
+      </div>
       <h1 id="title"></h1>
     </div>
     <div class="tools">
@@ -1021,17 +1029,6 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       <div class="row"><button class="primary" type="submit" id="bzSend"></button><p class="msg" id="bzStatus" role="status" aria-live="polite"></p></div>
     </form>
   </details>
-
-  <!-- ===== Créditos ===== -->
-  <div class="credit">
-    <p id="creditText">Un proyecto hecho con amor junto a</p>
-    <a href="https://bitcoin.ar" target="_blank" rel="noopener">
-      <picture>
-        <source srcset="img/bitcoin-ar-oscuro.png" media="(prefers-color-scheme: dark)">
-        <img src="img/bitcoin-ar.png" alt="Bitcoin.AR" width="230" height="37">
-      </picture>
-    </a>
-  </div>
 
   <p class="privnote" id="privNote"></p>
   <p class="privnote"><a href="#admin" class="adminlink" id="adminLink"></a></p>
@@ -1589,8 +1586,8 @@ const ADMIN_READY = new Promise(r=>{ window.__adminResolve = r; });
 
 // ================= Textos =================
 const PRIV = {
-  es:"Guardamos un identificador anónimo de este navegador para numerar tus partidas y armar el ranking. No pedimos datos personales (salvo mail y teléfono si te inscribís en un torneo: los ven solo sus organizadores, para avisarte) ni usamos rastreo ni publicidad.",
-  en:"We store an anonymous identifier for this browser to number your games and build the leaderboard. We don't ask for personal data (except email and phone if you register for a tournament: only its organizers see them, to notify you) or use tracking or ads."
+  es:"Guardamos un identificador anónimo de este navegador para numerar tus partidas y armar el ranking. No pedimos datos personales ni usamos rastreo ni publicidad.",
+  en:"We store an anonymous identifier for this browser to number your games and build the leaderboard. We don't ask for personal data or use tracking or ads."
 };
 const T = {
   es:{
@@ -4972,18 +4969,16 @@ const Nudge = (()=>{
 Object.assign(T.es,{
   bzTitle:"¿Ideas o comentarios?", bzIntro:"Sugerí un juego nuevo o contame qué te parece.", bzOpen:"Escribir",
   bzTypeL:"Tipo", bzTypes:["Sugerir un juego","Comentario","Algo no funciona"],
-  bzMsgL:"Mensaje", bzMsgPh:"Contame tu idea…", bzWhoL:"Tu nombre o mail", bzWhoOpt:"(opcional, si querés respuesta)",
+  bzMsgL:"Mensaje", bzMsgPh:"Contame tu idea…", bzWhoL:"Tu nombre o mail", cobrandT:"Junto a", bzWhoOpt:"(opcional, si querés respuesta)",
   bzSend:"Enviar", bzSending:"Enviando…", bzOk:"¡Gracias! Me llegó tu mensaje.", bzEmpty:"Escribí un mensaje primero.",
-  bzFail:"No se pudo enviar. Probá de nuevo en un rato.",
-  creditText:"Un proyecto hecho con amor junto a"
+  bzFail:"No se pudo enviar. Probá de nuevo en un rato."
 });
 Object.assign(T.en,{
   bzTitle:"Ideas or feedback?", bzIntro:"Suggest a new game or tell me what you think.", bzOpen:"Write",
   bzTypeL:"Type", bzTypes:["Suggest a game","Comment","Something's broken"],
-  bzMsgL:"Message", bzMsgPh:"Tell me your idea…", bzWhoL:"Your name or email", bzWhoOpt:"(optional, if you'd like a reply)",
+  bzMsgL:"Message", bzMsgPh:"Tell me your idea…", bzWhoL:"Your name or email", cobrandT:"Together with", bzWhoOpt:"(optional, if you'd like a reply)",
   bzSend:"Send", bzSending:"Sending…", bzOk:"Thanks! Your message got through.", bzEmpty:"Write a message first.",
-  bzFail:"Couldn't send it. Please try again later.",
-  creditText:"A project made with love together with"
+  bzFail:"Couldn't send it. Please try again later."
 });
 // Versión nueva: cada 5 minutos (con la pestaña a la vista) compara la página publicada con la abierta;
 // si cambió, ofrece recargar, así nadie juega con una versión vieja sin saberlo
@@ -5009,7 +5004,7 @@ const Buzon = (()=>{
   let sending = false;
   function texts(){
     const t=T[lang];
-    ["bzTitle","bzIntro","bzOpen","bzTypeL","bzMsgL","bzWhoL","bzWhoOpt","creditText"].forEach(k=>$(k).textContent=t[k]);
+    ["bzTitle","bzIntro","bzOpen","bzTypeL","bzMsgL","bzWhoL","bzWhoOpt","cobrandT"].forEach(k=>$(k).textContent=t[k]);
     [...$("bzType").options].forEach((o,i)=>o.textContent=t.bzTypes[i]);
     $("bzMsg").placeholder=t.bzMsgPh;
     $("bzSend").textContent = sending ? t.bzSending : t.bzSend;
@@ -5895,13 +5890,13 @@ Reg.ready.then(()=>{ try{ if("Notification" in window && Notification.permission
 Object.assign(T.es,{
   tTitle:"Torneo", tNone:"No hay ningún torneo anunciado por ahora.",
   tSt:{draft:"Borrador", open:"Inscripción abierta", checkin:"Check-in abierto", live:"En juego", done:"Terminado"},
-  tWhen:d=>`Arranca: ${d}`, tCount:(n,c)=>`${n} inscripto${n===1?"":"s"} · juegan ${c}`,
+  tWhen:d=>`Arranca: ${d}`, tCount:n=>`${n} inscripto${n===1?"":"s"}`,
   tNeedUser:"Para inscribirte necesitás un usuario (nombre y PIN). Se arma en menos de 30 segundos.", tUserBtn:"Elegí tu usuario",
-  tMail:"Mail", tTel:"Teléfono (con código de área)", tBasesOk:"Leí y acepto las bases y condiciones", tDataNote:"Tu mail y tu teléfono los ven solo los organizadores, para avisarte cuando arranca cada ronda.",
-  tJoin:"Inscribirme", tJoinBad:"Completá un mail y un teléfono válidos y aceptá las bases.", tJoinFail:"No se pudo completar la inscripción. Probá de nuevo.",
+  tBasesOk:"Leí y acepto las bases y condiciones",
+  tJoin:"Inscribirme", tJoinBad:"Para inscribirte tenés que aceptar las bases.", tJoinFail:"No se pudo completar la inscripción. Probá de nuevo.",
   tJoined:n=>`Estás inscripto como ${n}.`, tLeave:"Darme de baja", tLeaveQ:"¿Seguro que querés darte de baja del torneo?",
   tCk:"Estoy listo", tCkNote:"Juegan los primeros que confirman, hasta completar el cupo.", tCkFail:"No se pudo confirmar. Probá de nuevo.",
-  tCkIn:(p,c)=>`Confirmado: estás adentro (N° ${p} de ${c}).`, tCkWait:p=>`Confirmado, en lista de espera (N° ${p}). Si alguien no confirma, entrás.`,
+  tCkIn:p=>`Confirmado: estás adentro (N° ${p}).`,
   tNoCk:"Cuando abra el check-in, confirmá que estás.",
   tPushT:"Avisos", tPushOn:"Avisos activados en este dispositivo ✓", tPushOff:"Activá los avisos para enterarte cuando arranca cada ronda.", tPushBtn:"Activar avisos",
   tPushDenied:"Bloqueaste los avisos de este sitio: se habilitan desde la configuración del navegador.", tPushUns:"Este navegador no permite avisos.",
@@ -5939,13 +5934,13 @@ Object.assign(T.es,{
 Object.assign(T.en,{
   tTitle:"Tournament", tNone:"No tournament has been announced yet.",
   tSt:{draft:"Draft", open:"Registration open", checkin:"Check-in open", live:"Live", done:"Finished"},
-  tWhen:d=>`Starts: ${d}`, tCount:(n,c)=>`${n} registered · ${c} play`,
+  tWhen:d=>`Starts: ${d}`, tCount:n=>`${n} registered`,
   tNeedUser:"You need a username (name and PIN) to register. It takes less than 30 seconds.", tUserBtn:"Pick your username",
-  tMail:"Email", tTel:"Phone (with area code)", tBasesOk:"I've read and accept the rules", tDataNote:"Only the organizers see your email and phone, to let you know when each round starts.",
-  tJoin:"Register", tJoinBad:"Enter a valid email and phone and accept the rules.", tJoinFail:"Couldn't register. Please try again.",
+  tBasesOk:"I've read and accept the rules",
+  tJoin:"Register", tJoinBad:"To register you need to accept the rules.", tJoinFail:"Couldn't register. Please try again.",
   tJoined:n=>`You're registered as ${n}.`, tLeave:"Unregister", tLeaveQ:"Are you sure you want to leave the tournament?",
   tCk:"I'm ready", tCkNote:"The first ones to check in play, up to the limit.", tCkFail:"Couldn't check in. Please try again.",
-  tCkIn:(p,c)=>`Checked in: you're in (#${p} of ${c}).`, tCkWait:p=>`Checked in, on the waiting list (#${p}). If someone doesn't check in, you're in.`,
+  tCkIn:p=>`Checked in: you're in (#${p}).`,
   tNoCk:"When check-in opens, confirm you're here.",
   tPushT:"Notifications", tPushOn:"Notifications on for this device ✓", tPushOff:"Turn on notifications to know when each round starts.", tPushBtn:"Turn on notifications",
   tPushDenied:"You blocked notifications for this site: re-enable them in your browser settings.", tPushUns:"This browser doesn't support notifications.",
@@ -6065,6 +6060,8 @@ const tms=x=> x && x.toMillis ? x.toMillis() : (typeof x==="number" ? x : null);
 // orden de los torneos: por fecha y hora de arranque (los terminados, al final; sin fecha, después de los que tienen)
 const tourOrder=(a,b)=>((a.st==="done")-(b.st==="done")) || ((tms(a.when)||9e15)-(tms(b.when)||9e15)) || ((tms(b.at)||0)-(tms(a.at)||0));
 const pow2below=n=>{ let p=1; while(p*2<n) p*=2; return p; };
+// juegan todos los anotados, pero de una ronda pasan a lo sumo 32 (con 100 anotados, pasan 32, no 64)
+const MAX_ADV=32;
 // puntaje de una ronda: rd = la ronda, r = el resultado guardado de un jugador
 function tScore(rd, r){
   if(!r) return {pts:-1, p:0, ok:false, pen:0, adj:Infinity, fin:false};
@@ -6370,7 +6367,7 @@ const Tour = (()=>{
     const when=whenOf(TD);
     const picks=LIST.length>1 ? `<div class="tpicks" role="group">${LIST.map(k=>`<button data-tpick="${esc(k)}" aria-pressed="${k===tid}">${esc(ALL[k].name)}${whenOf(ALL[k],true)?" · "+esc(whenOf(ALL[k],true)):""}</button>`).join("")}</div>` : "";
     set("tHead", picks+`<div class="thead">${scrabHtml()}<div><h2 class="tname">${esc(TD.name)}</h2><button class="tshare" data-act="share">${esc(T0.tShare)}</button></div></div>`+(TD.test?`<p class="ttest">${esc(T0.tTest)}</p>`:"")+`<p class="tsub"><span class="tpill st-${esc(TD.st)}">${esc(T0.tSt[TD.st]||"")}</span>`+
-      `${when?` <span>${esc(T0.tWhen(when))}</span>`:""}${TD.place?` <span>· 📍 ${esc(TD.place)}</span>`:""}${nIns!==null?` <span>· ${esc(T0.tCount(nIns, TD.cap))}</span>`:""}</p>`+(flash?`<p class="tflash">${esc(flash)}</p>`:""));
+      `${when?` <span>${esc(T0.tWhen(when))}</span>`:""}${TD.place?` <span>· 📍 ${esc(TD.place)}</span>`:""}${nIns!==null?` <span>· ${esc(T0.tCount(nIns))}</span>`:""}</p>`+(flash?`<p class="tflash">${esc(flash)}</p>`:""));
     set("tStage", stageBox());
     set("tMe", meBox());
     set("tRound", roundBox());
@@ -6432,15 +6429,13 @@ const Tour = (()=>{
     let h="";
     if(st==="open"||st==="checkin"){
       if(!Reg.nick()) return `<div class="tbox"><p>${esc(T0.tNeedUser)}</p><button class="primary" data-act="user">${esc(T0.tUserBtn)}</button></div>`;
-      if(!mine) return `<div class="tbox tform"><label>${esc(T0.tMail)}<input id="tMail" type="email" autocomplete="email" maxlength="120"></label>`+
-        `<label>${esc(T0.tTel)}<input id="tTel" type="tel" autocomplete="tel" maxlength="30"></label>`+
-        `<label class="tchk"><input type="checkbox" id="tOk"> <span>${esc(T0.tBasesOk)}</span></label><p class="tsmall">${esc(T0.tDataNote)}</p>`+
+      if(!mine) return `<div class="tbox tform"><label class="tchk"><input type="checkbox" id="tOk"> <span>${esc(T0.tBasesOk)}</span></label>`+
         `<button class="primary" data-act="join">${esc(T0.tJoin)}</button><p class="tmsg" id="tJoinMsg" aria-live="polite"></p></div>`;
       h+=`<div class="tbox"><p><b>${esc(T0.tJoined((Reg.av()?Reg.av()+" ":"")+Reg.nick()))}</b></p>`;
       if(st==="checkin"){
         if(!mine.ck) h+=`<button class="primary tbig" data-act="ck">${esc(T0.tCk)}</button><p class="tsmall">${esc(T0.tCkNote)}</p>`;
         else if(INS){ const l=Object.entries(INS).filter(([,x])=>x.ck && !x.out).sort((a,b)=>(tms(a[1].ck)||0)-(tms(b[1].ck)||0)).map(([u])=>u); const p=l.indexOf(uid)+1;
-          h+=`<p class="tok">${esc(p>0 && p<=TD.cap ? T0.tCkIn(p, TD.cap) : T0.tCkWait(Math.max(1,p-TD.cap)))}</p>`; }
+          h+=`<p class="tok">${esc(T0.tCkIn(Math.max(1,p)))}</p>`; }
       } else h+=`<p class="tsmall">${esc(T0.tNoCk)}</p>`;
       h+=pushBox()+`<button class="tlink" data-act="leave">${esc(T0.tLeave)}</button></div>`;
       return h;
@@ -6526,11 +6521,11 @@ const Tour = (()=>{
     const a=b.dataset.act, T0=t(), r=curR();
     if(a==="user") User.open();
     if(a==="join"){
-      const mail=$("tMail").value.trim(), tel=$("tTel").value.trim(), ok=$("tOk").checked, m=$("tJoinMsg");
-      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail) || tel.replace(/\D/g,"").length<6 || !ok){ m.textContent=T0.tJoinBad; return; }
+      const ok=$("tOk").checked, m=$("tJoinMsg");
+      if(!ok){ m.textContent=T0.tJoinBad; return; }
       b.disabled=true;
       try{
-        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid),{mail, tel, ok:true, at:fb.serverTimestamp()});
+        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid),{ok:true, at:fb.serverTimestamp()});
         const d={nm:Reg.nick(), at:fb.serverTimestamp(), ck:null, paid:false, out:false}; if(Reg.av()) d.av=Reg.av();
         await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid), d);
         pushState();
@@ -6672,14 +6667,14 @@ const TourAdmin = (()=>{
     if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
     const r=last(), now=srv();
     // varios torneos programados: si llega la hora de otro y el que se está mirando no está en juego ni por arrancar, el panel pasa a ese
-    const inWin=x=>{ const w0=tms(x.when); return x.auto!==false && (x.st==="open"||x.st==="checkin") && w0 && now>=w0-NEXT && now<w0+30*60000; };
+    const inWin=x=>{ const w0=tms(x.when); return x.ast===true && (x.st==="open"||x.st==="checkin") && w0 && now>=w0-NEXT && now<w0+30*60000; };
     if(!busy && TD.st!=="live" && !inWin(TD)){
       const o=Object.keys(ALL).find(k=>k!==tid && mine(ALL[k]) && inWin(ALL[k]) && autoFor!==k);
       if(o){ pickT(o); say(`Llegó la hora de «${ALL[o].name}»: el panel pasó a ese torneo.`); return; }
     }
-    // a la hora de arranque (when), con este panel abierto, la ronda 1 se programa sola para esa hora (5 min antes)
+    // a la hora de arranque (when), si eligieron arranque automático (ast) y con este panel abierto, la ronda 1 se programa sola para esa hora (5 min antes)
     const w=tms(TD.when);
-    if(!r && !busy && rsFor===tid && (TD.st==="open"||TD.st==="checkin") && TD.auto!==false && w && now>=w-NEXT && now<w+30*60000 && autoFor!==tid){
+    if(!r && !busy && rsFor===tid && (TD.st==="open"||TD.st==="checkin") && TD.ast===true && w && now>=w-NEXT && now<w+30*60000 && autoFor!==tid){
       autoFor=tid; const pl=firstPl();
       if(pl.length<2) say("Llegó la hora de arranque pero hay menos de 2 jugadores: arrancalo a mano cuando haya.", true);
       else { busy=true; try{ await mk(1, pl.length<=2 ? TD.rounds.length-1 : 0, pl, Math.max(10000, w-now)); say(`Arranca solo a la hora: ${pl.length} jugadores.`); }catch(e){ fail(e); } finally{ busy=false; } }
@@ -6724,7 +6719,7 @@ const TourAdmin = (()=>{
     if(c.g!=="sopa") opt.avoid=cwOthers(ci);
     const d=await Reg.genFor(c.g, opt), go=srv()+delay;
     const rd={no, ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, dur:c.dur||0, nr:tourRounds({g:c.g, n:opt.n}), final:fin,
-      pl, adv:fin ? 1 : pow2below(pl.length), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
+      pl, adv:fin ? 1 : Math.min(MAX_ADV, pow2below(pl.length)), st:"sched", go:A.Timestamp.fromMillis(go), end:c.dur ? A.Timestamp.fromMillis(go+c.dur*60000) : null, left:0, at:A.serverTimestamp()};
     // ensayo: la organizadora que juega desde este navegador pasa siempre de ronda (tOwn)
     if(TD.test && Reg.uid() && pl.includes(Reg.uid())) rd.own=Reg.uid();
     if(c.g==="sopa"){ rd.s=opt.s; rd.m=c.m||"w"; } if(c.g==="semilla") rd.w=opt.w; if(c.dif) rd.dif=c.dif; if(c.g==="ahorcado") rd.n=opt.n;
@@ -6739,11 +6734,11 @@ const TourAdmin = (()=>{
     say(`${fin?"Final":"Ronda "+no} programada: arranca a las ${new Date(loc0(go)).toLocaleTimeString("es-AR")}.`);
   }
   const loc0=ms=>ms-(Live.now()-Date.now());
-  // primera ronda: los primeros que confirmaron (o, si no hubo check-in, los primeros inscriptos), hasta el cupo
+  // primera ronda: juegan todos los que confirmaron (o, si no hubo check-in, todos los inscriptos); sin cupo
   function firstPl(){
     const l=Object.entries(INS).filter(([,x])=>!x.out), ck=l.filter(([,x])=>x.ck);
     const src=ck.length ? ck.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||(tms(a[1].ck)-tms(b[1].ck))) : l.sort((a,b)=>(isBot(a[0])-isBot(b[0]))||((tms(a[1].at)||0)-(tms(b[1].at)||0)));
-    return src.slice(0, TD.cap).map(([u])=>u);
+    return src.map(([u])=>u);
   }
 
   // ---------- acciones ----------
@@ -6895,10 +6890,10 @@ const TourAdmin = (()=>{
     const sel=(name,opts,v,dis)=>`<select data-f="${name}"${dis?" disabled":""}>${opts.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v??"")?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
     let h=`<h2>Configuración</h2><div class="tacfg">
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
-      <label>Arranca (fecha y hora; con el panel abierto, arranca sola)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      <label>Arranca (fecha y hora)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      <label>Arranque${sel("ast",[["0","Lo inicia la administración (botón «Arrancar»)"],["1","Automático a la hora fijada (con el panel abierto)"]],T0.ast===true?"1":"0")}</label>
       ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label class="wide">Dónde se juega (se ve en la portada y en la sala; por ejemplo «Online» o «LABITCONF, Costa Salguero»)<input data-f="place" value="${esc(T0.place||"")}" maxlength="120"></label>
-      <label>Cupo<input data-f="cap" type="number" min="2" max="64" value="${T0.cap}"></label>
       <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
       <label class="wide">LNURL o Lightning Address para el pozo<input data-f="lnurl" value="${esc(T0.lnurl||"")}" maxlength="400" spellcheck="false"></label>
       <label class="wide">Bases y condiciones (vacío = el texto por defecto, en el idioma de cada jugador)<textarea data-f="bases" maxlength="3000" placeholder="${esc(T.es.tBasesDef)}">${esc(T0.bases||"")}</textarea></label>
@@ -6985,7 +6980,7 @@ const TourAdmin = (()=>{
       return c;
     });
     const w=v("when"), pb=v("pub"), ts=x=>x ? A.Timestamp.fromMillis(new Date(x).getTime()) : null;
-    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), cap:Math.max(2,Math.min(64,parseInt(v("cap"),10)||64)),
+    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), ast:v("ast")==="1",
       fee:Math.max(0,parseInt(v("fee"),10)||0), lnurl:v("lnurl").trim(), place:v("place").trim().slice(0,120), bases:v("bases").trim(), rounds:rs, lang:(rs[0]&&rs[0].lang)||"es"};
     if(!TD.test) c.pub=ts(pb);
     return c;
@@ -7025,13 +7020,14 @@ const TourAdmin = (()=>{
     const ph=h+admHtml()+testHtml(); if($("taPick").dataset.h!==ph){ $("taPick").dataset.h=ph; $("taPick").innerHTML=ph; }
     // estado y botones
     const st=TD.st, r=last(), nIns=Object.values(INS).filter(x=>!x.out).length, nCk=Object.values(INS).filter(x=>x.ck&&!x.out).length;
-    let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · cupo ${TD.cap}</span></div>
+    let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · juegan todos; pasan a lo sumo ${MAX_ADV} de la ronda 1</span></div>
       <div class="kpi"><b>${Object.values(INS).filter(x=>x.paid&&!x.out).length*(TD.fee||0)}</b><span>sats en el pozo (${Object.values(INS).filter(x=>x.paid&&!x.out).length} aportes)</span></div></div><div class="row">`;
     if(st==="draft") c+=`<button class="primary" data-ta="st" data-s="open">Abrir la inscripción</button>`;
     if(st==="open") c+=`<button class="primary" data-ta="st" data-s="checkin">Abrir el check-in</button><button data-ta="st" data-s="draft">Volver a borrador</button>`;
     if(st==="checkin") c+=`<button data-ta="st" data-s="open">Cerrar el check-in</button>`;
     if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button><button data-ta="startnow">Arrancar ya (10 s)</button>`+
-      (tms(TD.when) ? `<p class="m small">Con este panel abierto, arranca solo a la hora fijada (${new Date(tms(TD.when)).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}). Los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>` : `<p class="m small">Si ponés la hora de arranque en la configuración, arranca solo a esa hora y los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>`);
+      (tms(TD.when) && TD.ast===true ? `<p class="m small">Arranque automático: con este panel abierto, arranca solo a la hora fijada (${new Date(tms(TD.when)).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}). Los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>`
+        : `<p class="m small">Arranque a mano: el torneo empieza cuando toques «Arrancar el torneo» o «Arrancar ya».${tms(TD.when)?" La hora fijada solo se usa para la cuenta regresiva que ven los jugadores.":""} Para que arranque solo, elegí «Automático» en la configuración.</p>`);
     if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
     if(st==="live") c+=(TD.test ? `<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, arrancar sola la siguiente al minuto</label>` : "")+`<button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;

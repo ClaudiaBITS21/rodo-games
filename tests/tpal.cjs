@@ -32,6 +32,12 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.click('[data-ta="save"]');
   await a.waitForFunction(()=>/Configuración guardada/.test(document.getElementById('taMsg').textContent),null,{timeout:10000});
   ok(/Faltan pistas: ronda 1: ZAPEAR/.test(await msg()),'guarda y avisa la pista que falta: '+await msg());
+  // arranque: por defecto lo inicia la administración; se puede elegir automático
+  ok(await a.$eval('[data-f="ast"]',e=>e.value)==='0' && /Arranque a mano/.test(await a.$eval('#taCtl',e=>e.textContent)),'sin elegir, el arranque es a mano');
+  ok(!(await a.$('[data-f="cap"]')),'ya no hay cupo: juegan todos');
+  await a.selectOption('[data-f="ast"]','1'); await a.click('[data-ta="save"]');
+  ok(!!(await until(async()=>{ const x=await get(T); return x && x.ast===true; })),'elegir «Automático» guarda ast');
+  ok(await a.evaluate(()=>Math.min(MAX_ADV,pow2below(100))===32 && Math.min(MAX_ADV,pow2below(40))===32 && Math.min(MAX_ADV,pow2below(20))===16),'con más de 64 anotados juegan todos y pasan 32');
   ok(/falta 1 pista/.test(await a.$eval('.tacwr summary',e=>e.textContent)),'el resumen lo marca');
   await a.click('[data-ta="cwask"]'); await a.waitForTimeout(300);
   const ask=await a.evaluate(()=>window.__clip);
