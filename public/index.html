@@ -403,6 +403,12 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tarounds input[type=number]{width:4.5em}
 .cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}#taToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;background:#1A7F37;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
 #taToast.bad{background:#B3261E}#taToast[hidden]{display:none}
+/* QR para inscribirse: a pantalla completa, fondo blanco para que la cámara lo lea bien */
+.tqr{position:fixed;inset:0;z-index:90;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px 16px;text-align:center;overflow:auto}
+.tqr h2{margin:0;font-size:clamp(1.3rem,4vw,2.2rem)}.tqr .tqrk{margin:0;font-size:clamp(1rem,2.6vw,1.4rem);font-weight:700;color:#C2410C}
+.tqr .tqrc{width:min(72vh,82vw);max-width:620px}.tqr .tqrc svg{display:block;width:100%;height:auto}
+.tqr .tqrw{margin:0;color:#444}.tqr .tqru{margin:0;font:600 clamp(.95rem,2.4vw,1.25rem) "IBM Plex Mono",ui-monospace,monospace;word-break:break-all}
+.tqr .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.tqr button{padding:8px 14px;border-radius:10px;border:1px solid #bbb;background:#f4f4f4;color:#111;font:inherit;cursor:pointer}
 .tadel{color:#B3261E}.cwpick{margin-top:8px}.cwq{flex:1;min-width:200px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .cwlist{max-height:340px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:8px}
 .cwi{display:block;min-width:0;overflow:hidden;white-space:normal;overflow-wrap:anywhere;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:.92rem;text-align:left}.cwi:hover{background:rgba(247,147,26,.08)}.cwi[hidden]{display:none}
@@ -6117,6 +6123,8 @@ const Tour = (()=>{
   let RES={}, resId=null, resUnsub=null, closedRes={};
   let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
   let LIST=[], wantT=null; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
+  // link del QR del torneo (games.rodo.es/?t={id}): elige ese torneo y abre su sala
+  { const qt=new URLSearchParams(location.search).get("t"); if(qt && /^[A-Za-z0-9_-]{1,40}$/.test(qt)){ wantT=qt; try{ sessionStorage.setItem("rodo-tid", qt); }catch(e){} } }
   const choose=id=>{ wantT=id; try{ sessionStorage.setItem("rodo-tid", id); }catch(e){} pick(); };
   // "sábado 15 de noviembre, 22:00" y "📍 Dónde se juega"
   const whenOf=(x,short)=>tms(x.when) ? new Date(tms(x.when)).toLocaleString(lang==="en"?"en-US":"es-AR", {...(short ? {weekday:"short",day:"numeric",month:"short"} : {weekday:"long",day:"numeric",month:"long"}), hour:"2-digit", minute:"2-digit", hour12:lang==="en"}) : "";
@@ -6627,6 +6635,25 @@ const TourAdmin = (()=>{
     TD=tid ? ALL[tid] : null;
     render();
   }
+  // QR a pantalla completa para los que se acercan: lleva directo a la sala de este torneo (?t=), donde se arma el usuario y se inscriben
+  const tourUrl=id=>`${/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin}/?t=${encodeURIComponent(id)}`;
+  async function showQr(){
+    if(!tid || !TD) return;
+    const url=tourUrl(tid), w=tms(TD.when);
+    const when=w ? new Date(w).toLocaleString("es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
+    const o=document.createElement("div"); o.className="tqr"; o.setAttribute("role","dialog"); o.setAttribute("aria-label","QR para inscribirse");
+    o.innerHTML=`<h2>${esc(TD.name)}</h2><p class="tqrk">Escaneá y anotate en el torneo · Scan to join</p><div class="tqrc" id="tqrCode">…</div>
+      <p class="tqrw">${esc([when?"🗓 "+when:"", TD.place?"📍 "+TD.place:""].filter(Boolean).join(" · "))}</p><p class="tqru">${esc(url.replace(/^https?:\/\//,""))}</p>
+      <div class="row"><button data-q="copy">Copiar link</button><button data-q="x">Cerrar</button></div>`;
+    document.body.appendChild(o);
+    const close=()=>{ o.remove(); document.removeEventListener("keydown",key); }, key=e=>{ if(e.key==="Escape") close(); };
+    document.addEventListener("keydown",key);
+    o.addEventListener("click",async e=>{ const q=e.target.dataset.q;
+      if(q==="x") close();
+      if(q==="copy"){ try{ await navigator.clipboard.writeText(url); e.target.textContent="✓ Copiado"; }catch(err){ e.target.textContent=url; } } });
+    try{ const {qrSvg}=await import("/js/qr.js"); $("tqrCode").innerHTML=qrSvg(url, 8); }
+    catch(err){ $("tqrCode").textContent="No se pudo dibujar el QR: "+(err.message||err); }
+  }
   // borra un torneo con todo lo que tiene adentro (Firestore no borra solas las subcolecciones)
   async function wipe(t){
     const all=async(...p)=>(await A.getDocs(A.collection(A.db,"tourneys",t,...p))).docs;
@@ -6797,6 +6824,7 @@ const TourAdmin = (()=>{
       if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
+      if(a==="qr") return showQr();
       if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
       if(a==="start"||a==="startnow"){
         const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
@@ -7031,6 +7059,7 @@ const TourAdmin = (()=>{
     if(st==="open"||st==="checkin") c+=`<button class="primary" data-ta="start">Arrancar el torneo (ronda 1 en 5 min)</button><button data-ta="startnow">Arrancar ya (10 s)</button>`+
       (tms(TD.when) && TD.ast===true ? `<p class="m small">Arranque automático: con este panel abierto, arranca solo a la hora fijada (${new Date(tms(TD.when)).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}). Los jugadores ven la cuenta regresiva desde 10 minutos antes.</p>`
         : `<p class="m small">Arranque a mano: el torneo empieza cuando toques «Arrancar el torneo» o «Arrancar ya».${tms(TD.when)?" La hora fijada solo se usa para la cuenta regresiva que ven los jugadores.":""} Para que arranque solo, elegí «Automático» en la configuración.</p>`);
+    if(!TD.test && st!=="done") c+=`<button data-ta="qr">📱 Mostrar QR para inscribirse</button>`;
     if(!TD.test && st!=="done") c+=`<button data-ta="mktest">🧪 Armar un ensayo</button>`;
     if(st==="live") c+=(TD.test ? `<label class="taauto"><input type="checkbox" data-ta="auto"${TD.auto!==false?" checked":""}> Al cerrar una ronda, arrancar sola la siguiente al minuto</label>` : "")+`<button data-ta="st" data-s="done">Terminar el torneo</button>`;
     c+=`</div><p class="m small">Dejá este panel abierto durante el torneo: es el que abre y cierra las rondas a tiempo. Los jugadores ven todo en <a href="#torneo">la sala</a>.</p>`;
@@ -7142,6 +7171,8 @@ function setLang(L){
   lang=L; store.set("rodo-lang",lang); applyTexts();
 }
 window.addEventListener("hashchange",route);
+// link del QR del torneo: va a la sala y se saca el parámetro de la barra
+if(new URLSearchParams(location.search).get("t")) history.replaceState(null,"",location.pathname+"#torneo");
 route();
 // entrar por un link compartido: propone elegir usuario (se puede seguir sin) y abre esa misma partida
 (async()=>{

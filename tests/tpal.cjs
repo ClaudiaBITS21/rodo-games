@@ -160,6 +160,18 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await o.waitForSelector('#taBody:not([hidden]) [data-ta="pick"]',{timeout:20000}).catch(()=>{});
   const oOpts=await o.$$eval('[data-ta="pick"] option',l=>l.map(x=>x.textContent)).catch(()=>[]);
   ok(await o.evaluate(()=>location.hash)==='#torneo-admin' && oOpts.length===1 && /SOLO DE MATI/.test(oOpts[0]),'el organizador va directo a su torneo: '+oOpts.join(' | '));
+  // QR para inscribirse: a pantalla completa, con el link directo a la sala de ese torneo
+  await o.click('[data-ta="qr"]'); await o.waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
+  await o.screenshot({path:__dirname+'/qr-torneo.png'});
+  const qr=await o.$eval('.tqr',e=>e.textContent.replace(/\s+/g,' ')).catch(()=>'');
+  ok(!!(await o.$('.tqr svg')) && /SOLO DE MATI/.test(qr) && /\?t=T9/.test(qr) && /Escaneá/.test(qr),'QR del torneo: '+qr.slice(0,140));
+  await o.click('.tqr [data-q="x"]'); ok(!(await o.$('.tqr')),'el QR se cierra');
+  const v=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); v.on('pageerror',e=>console.log('qr pageerror',e.message));
+  await v.goto(URL+'?t=T9'); await v.waitForFunction(()=>location.hash==='#torneo',null,{timeout:10000}).catch(()=>{});
+  await v.waitForFunction(()=>/SOLO DE MATI/.test(document.getElementById('view-torneo').textContent),null,{timeout:20000}).catch(()=>{});
+  const vt=await v.$eval('#view-torneo',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/SOLO DE MATI/.test(vt) && !/\?t=/.test(await v.evaluate(()=>location.search)),'el link del QR abre la sala de ese torneo: '+vt.slice(0,120));
+  ok(/Elegí tu usuario|usuario/i.test(vt),'y ofrece armar el usuario para inscribirse');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
