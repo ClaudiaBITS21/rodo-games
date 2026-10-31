@@ -853,6 +853,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       <div class="row"><button id="sAgain"></button><button id="sShare"></button></div>
       <p class="note" id="sNote"></p>
     </div>
+    <!-- las palabras van arriba de la sopa (pedido de la dueña) -->
+    <h2 id="sListTitle"></h2>
+    <ul class="wlist" id="sList"></ul>
     <div class="gridbox"><div class="sgrid" id="sGrid"></div></div>
     <p class="snote2" id="sNote2" aria-live="polite"></p>
     <div class="actions">
@@ -860,8 +863,6 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       <button class="giveup" id="sGiveUp"></button>
       <button id="sPrint"></button>
     </div>
-    <h2 id="sListTitle"></h2>
-    <ul class="wlist" id="sList"></ul>
     <footer id="sFoot"></footer>
   </section>
   <!-- ===== Semilla perdida ===== -->
@@ -5904,7 +5905,7 @@ Object.assign(T.es,{
   tBasesOk:"Leí y acepto las bases y condiciones",
   tJoin:"Inscribirme", tJoinBad:"Para inscribirte tenés que aceptar las bases.", tJoinFail:"No se pudo completar la inscripción. Probá de nuevo.",
   tJoined:n=>`Estás inscripto como ${n}.`, tLeave:"Darme de baja", tLeaveQ:"¿Seguro que querés darte de baja del torneo?",
-  tCk:"Estoy listo", tCkNote:"Juegan los primeros que confirman, hasta completar el cupo.", tCkFail:"No se pudo confirmar. Probá de nuevo.",
+  tCk:"Estoy listo", tCkNote:"Juegan todos los que confirman.", tQrDone:"¡Listo, estás anotado! Quedate en esta pantalla: cuando arranque la ronda entrás solo. Al anotarte aceptaste las bases (están abajo).", tCkFail:"No se pudo confirmar. Probá de nuevo.",
   tCkIn:p=>`Confirmado: estás adentro (N° ${p}).`,
   tNoCk:"Cuando abra el check-in, confirmá que estás.",
   tPushT:"Avisos", tPushOn:"Avisos activados en este dispositivo ✓", tPushOff:"Activá los avisos para enterarte cuando arranca cada ronda.", tPushBtn:"Activar avisos",
@@ -5948,7 +5949,7 @@ Object.assign(T.en,{
   tBasesOk:"I've read and accept the rules",
   tJoin:"Register", tJoinBad:"To register you need to accept the rules.", tJoinFail:"Couldn't register. Please try again.",
   tJoined:n=>`You're registered as ${n}.`, tLeave:"Unregister", tLeaveQ:"Are you sure you want to leave the tournament?",
-  tCk:"I'm ready", tCkNote:"The first ones to check in play, up to the limit.", tCkFail:"Couldn't check in. Please try again.",
+  tCk:"I'm ready", tCkNote:"Everyone who checks in plays.", tQrDone:"Done, you're in! Stay on this screen: when the round starts you'll go in automatically. By joining you accepted the rules (see below).", tCkFail:"Couldn't check in. Please try again.",
   tCkIn:p=>`Checked in: you're in (#${p}).`,
   tNoCk:"When check-in opens, confirm you're here.",
   tPushT:"Notifications", tPushOn:"Notifications on for this device ✓", tPushOff:"Turn on notifications to know when each round starts.", tPushBtn:"Turn on notifications",
@@ -6123,8 +6124,10 @@ const Tour = (()=>{
   let RES={}, resId=null, resUnsub=null, closedRes={};
   let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
   let LIST=[], wantT=null; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
+  // QR: quien llega por el QR va directo a armar su usuario y queda anotado (y con check-in, si está abierto), sin más botones
+  const QR={on:false, asked:false, busy:false, loaded:false};
   // link del QR del torneo (games.rodo.es/?t={id}): elige ese torneo y abre su sala
-  { const qt=new URLSearchParams(location.search).get("t"); if(qt && /^[A-Za-z0-9_-]{1,40}$/.test(qt)){ wantT=qt; try{ sessionStorage.setItem("rodo-tid", qt); }catch(e){} } }
+  { const qt=new URLSearchParams(location.search).get("t"); if(qt && /^[A-Za-z0-9_-]{1,40}$/.test(qt)){ wantT=qt; QR.on=true; try{ sessionStorage.setItem("rodo-tid", qt); }catch(e){} } }
   const choose=id=>{ wantT=id; try{ sessionStorage.setItem("rodo-tid", id); }catch(e){} pick(); };
   // "sábado 15 de noviembre, 22:00" y "📍 Dónde se juega"
   const whenOf=(x,short)=>tms(x.when) ? new Date(tms(x.when)).toLocaleString(lang==="en"?"en-US":"es-AR", {...(short ? {weekday:"short",day:"numeric",month:"short"} : {weekday:"long",day:"numeric",month:"long"}), hour:"2-digit", minute:"2-digit", hour12:lang==="en"}) : "";
@@ -6151,7 +6154,7 @@ const Tour = (()=>{
       if(rUnsub){ rUnsub(); rUnsub=null; } if(mUnsub){ mUnsub(); mUnsub=null; } if(iUnsub){ iUnsub(); iUnsub=null; } if(resUnsub){ resUnsub(); resUnsub=null; }
       if(tid){
         rUnsub=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); onRounds(); }, ()=>{});
-        mUnsub=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid,"ins",uid), s=>{ mine=s.exists() ? s.data() : null; render(); }, ()=>{});
+        mUnsub=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid,"ins",uid), s=>{ mine=s.exists() ? s.data() : null; QR.loaded=true; render(); qrStep(); }, ()=>{});
       }
       watchIns();
     }
@@ -6524,6 +6527,30 @@ const Tour = (()=>{
     return h;
   }
 
+  // inscribirse: aceptación de las bases (priv) y la inscripción
+  async function joinT(){
+    await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid),{ok:true, at:fb.serverTimestamp()});
+    const d={nm:Reg.nick(), at:fb.serverTimestamp(), ck:null, paid:false, out:false}; if(Reg.av()) d.av=Reg.av();
+    await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid), d);
+  }
+  async function qrStep(){
+    if(!QR.on || QR.busy || !fb || !TD || tid!==wantT || !QR.loaded || view!=="torneo") return;
+    const st=TD.st, T0=t();
+    if(st!=="open" && st!=="checkin"){ QR.on=false; return; }
+    if(!Reg.nick()){
+      if(QR.asked) return; QR.asked=true;
+      $("userDlg").addEventListener("close",()=>{ QR.asked=false; if(Reg.nick()) qrStep(); else QR.on=false; },{once:true});
+      User.open(); return;
+    }
+    QR.busy=true;
+    try{
+      if(!mine) await joinT();
+      if(st==="checkin" && !(mine&&mine.ck)) await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid),{ck:fb.serverTimestamp()});
+      QR.on=false; flash=T0.tQrDone; pushState();
+    }catch(err){ flash=T0.tJoinFail; QR.on=false; }
+    QR.busy=false; render();
+  }
+
   // ---------- acciones ----------
   $("tBanner").addEventListener("click",e=>{ const a=e.target.closest("[data-tid]"); if(a) choose(a.dataset.tid); });
   $("view-torneo").addEventListener("click",async e=>{
@@ -6536,9 +6563,7 @@ const Tour = (()=>{
       if(!ok){ m.textContent=T0.tJoinBad; return; }
       b.disabled=true;
       try{
-        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"priv",uid),{ok:true, at:fb.serverTimestamp()});
-        const d={nm:Reg.nick(), at:fb.serverTimestamp(), ck:null, paid:false, out:false}; if(Reg.av()) d.av=Reg.av();
-        await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid), d);
+        await joinT();
         pushState();
       }catch(err){ m.textContent=T0.tJoinFail; b.disabled=false; }
     }

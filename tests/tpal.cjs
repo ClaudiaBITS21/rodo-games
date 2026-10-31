@@ -167,11 +167,27 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(!!(await o.$('.tqr svg')) && /SOLO DE MATI/.test(qr) && /\?t=T9/.test(qr) && /Escaneá/.test(qr),'QR del torneo: '+qr.slice(0,140));
   await o.click('.tqr [data-q="x"]'); ok(!(await o.$('.tqr')),'el QR se cierra');
   const v=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); v.on('pageerror',e=>console.log('qr pageerror',e.message));
-  await v.goto(URL+'?t=T9'); await v.waitForFunction(()=>location.hash==='#torneo',null,{timeout:10000}).catch(()=>{});
-  await v.waitForFunction(()=>/SOLO DE MATI/.test(document.getElementById('view-torneo').textContent),null,{timeout:20000}).catch(()=>{});
-  const vt=await v.$eval('#view-torneo',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/SOLO DE MATI/.test(vt) && !/\?t=/.test(await v.evaluate(()=>location.search)),'el link del QR abre la sala de ese torneo: '+vt.slice(0,120));
-  ok(/Elegí tu usuario|usuario/i.test(vt),'y ofrece armar el usuario para inscribirse');
+  await v.goto(URL+'?t=T9');
+  // sin usuario: se abre solo «Elegí tu usuario»; al crearlo queda anotado, sin tocar más botones
+  await v.waitForSelector('#userDlg[open]',{timeout:20000}).catch(()=>{});
+  ok(!!(await v.$('#userDlg[open]')) && await v.evaluate(()=>location.hash)==='#torneo' && !/\?t=/.test(await v.evaluate(()=>location.search)),'el QR abre directo la ventanita para crear el usuario');
+  await v.fill('#uName','Lucia'); await v.fill('#uPin','123456'); await v.fill('#uPin2','123456'); await v.click('#uGo');
+  await v.waitForTimeout(2500); if(await v.$('#userDlg[open]')) await v.click('#uX');
+  const vu=await v.evaluate(()=>Reg.uid());
+  const vi=await until(()=>get(`tourneys/T9/ins/${vu}`));
+  ok(vi && vi.nm==='Lucia','y queda anotada en ese torneo');
+  await v.waitForFunction(()=>/estás anotado/.test(document.getElementById('view-torneo').textContent),null,{timeout:10000}).catch(()=>{});
+  ok(/SOLO DE MATI/.test(await v.$eval('#view-torneo',e=>e.textContent)) && /estás anotado/.test(await v.$eval('#view-torneo',e=>e.textContent)),'y la sala lo confirma');
+  // con check-in abierto y usuario ya hecho: queda anotado y con check-in solo
+  await db(async f => { await F.updateDoc(F.doc(f,'tourneys/T9'),{st:'checkin'}); });
+  const w2=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); w2.on('pageerror',e=>console.log('qr2 pageerror',e.message));
+  await w2.goto(URL); await w2.waitForFunction(()=>typeof Reg!=='undefined'&&Reg.uid&&Reg.uid(),null,{timeout:20000});
+  await w2.click('#userBtn'); await w2.waitForSelector('#userDlg[open]'); await w2.fill('#uName','Pedro'); await w2.fill('#uPin','123456'); await w2.fill('#uPin2','123456'); await w2.click('#uGo');
+  await w2.waitForTimeout(2500); if(await w2.$('#userDlg[open]')) await w2.click('#uX');
+  await w2.goto(URL+'?t=T9'); await w2.waitForFunction(()=>typeof Reg!=='undefined'&&Reg.uid&&Reg.uid()&&Reg.nick(),null,{timeout:20000});
+  const wu=await w2.evaluate(()=>Reg.uid());
+  const wi=await until(async()=>{ const x=await get(`tourneys/T9/ins/${wu}`); return x && x.ck && x; });
+  ok(!!wi,'con usuario y check-in abierto: anotado y con check-in, sin botones');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

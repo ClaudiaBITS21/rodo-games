@@ -13,6 +13,7 @@ const rest=async p=>(await fetch(FS+p,{headers:{Authorization:'Bearer owner'}}))
   const X=d.bonus.arrayValue.values.map(v=>({w:v.mapValue.fields.w.stringValue, cells:v.mapValue.fields.cells.arrayValue.values.map(x=>+x.integerValue)}));
   ok(N===12 && W.length===14 && X.length===2,`mediana: ${W.length} palabras y ${X.length} extra (${X.map(x=>x.w).join(', ')})`);
   ok((await txt('#sList')).includes('… …'),'las extra se ven como "…": '+(await txt('#sList')).slice(-60));
+  ok(await p.evaluate(()=>{ const l=document.getElementById('sList'), g=document.getElementById('sGrid'); return !!(l.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING) && l.getBoundingClientRect().top < g.getBoundingClientRect().top; }),'las palabras van arriba de la sopa');
   await p.click('#view-sopa .gatecard button'); await p.waitForTimeout(300);
   const tap=async i=>{ await p.click(`#sGrid .scell[data-r="${Math.floor(i/N)}"][data-c="${i%N}"]`); await p.waitForTimeout(120); };
   const x=X[0]; await tap(x.cells[x.cells.length-1]); await tap(x.cells[0]);   // al revés también vale
