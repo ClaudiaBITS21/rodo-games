@@ -6679,8 +6679,8 @@ const Mesa = (()=>{
   const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const MT={
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
-      none:"Esta mesa no existe o el torneo ya no está disponible.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
-      same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.",
+      none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
+      same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
       inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", waitStart:"Esperando que arranque el torneo…",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
@@ -6689,8 +6689,8 @@ const Mesa = (()=>{
       fin:"¡Terminó el torneo!", podium:"Podio", total:"Total", saveQ:"Guardá tu resultado: creá tu usuario", saveDone:n=>`Ya está guardado con tu usuario ${n}.`,
       back:"Volver al juego", allDone:"Tu mesa terminó todas las partidas. Esperen a las demás mesas.", sala:"Pantalla de sala", waitTable:"Esperando que arranque…"},
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
-      none:"This table doesn't exist or the tournament is no longer available.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
-      same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.",
+      none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
+      same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
       inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", waitStart:"Waiting for the tournament to start…",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
@@ -6701,6 +6701,7 @@ const Mesa = (()=>{
   };
   const t=()=>MT[lang]||MT.es;
   let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
+  let loadedT=false, noted=false;
   let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
   const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
@@ -6723,7 +6724,7 @@ const Mesa = (()=>{
   async function boot(){
     if(fb || !tid) return; await Reg.ready; fb=Reg.fb(); uid=Reg.uid(); if(!fb) return;
     uT=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid), s=>{ T=s.exists() && s.data().mode==="mesas" ? s.data() : null; step(); render(); }, ()=>{ T=null; render(); });
-    uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"})); G=gid ? GS[gid]||null : null; step(); render(); }, ()=>{});
+    uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"})); G=gid ? GS[gid]||null : null; loadedT=true; step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
   }
   const active=()=>!!(tid && !sala && gid && T && member() && (T.st==="live" || T.st==="open"));
 
@@ -6811,9 +6812,15 @@ const Mesa = (()=>{
     const nm=($("mName")||{}).value ? $("mName").value.trim().replace(/\s+/g," ").slice(0,24) : "", em=(document.querySelector("#mEmo [aria-pressed=true]")||{}).dataset;
     if(!nm){ joinMsg=t().badName; render(); return; }
     const m={n:nm}; if(em && em.e) m.e=em.e;
-    const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
-    try{ await fb.updateDoc(ref, G.cap ? {["mem."+uid]:m} : {["mem."+uid]:m, cap:uid}); }
-    catch(e){ try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }catch(e2){ joinMsg=t().joinFail; render(); return; } }
+    // el jugador puede haber cambiado (entró con su usuario en otra pestaña): siempre el de ahora
+    await Reg.ready; uid=Reg.uid()||uid;
+    if(!uid){ joinMsg=t().joinOff; render(); return; }
+    if(!T || (T.st!=="open" && T.st!=="live")){ joinMsg=t().wait; render(); return; }
+    const b=document.querySelector('[data-mesa="join"]'); if(b) b.disabled=true;
+    joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
+    try{ await fb.updateDoc(ref, G && !G.cap ? {["mem."+uid]:m, cap:uid} : {["mem."+uid]:m}); }
+    catch(e){ try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
+      catch(e2){ const c=e2.code||e2.message||e.code||"?"; Reg.logErr("mesa", c, nm); joinMsg=`${t().joinFail} (${t().code}: ${c})`; if(b) b.disabled=false; $("mesaBody").dataset.f=""; render(); return; } }
     try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
     joinMsg=""; save();
   }
@@ -6849,7 +6856,10 @@ const Mesa = (()=>{
     const T0=t(); setTitle(T0.title);
     if(!tid || !gid){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
     if(!fb){ set("mesaBody", `<p class="intro">…</p>`); boot(); return; }
-    if(!T || !G){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
+    if(!T || !G){
+      // dice cuál es el problema y lo anota en "Errores recientes" del panel
+      const why=!T ? "torneo" : "mesa"; if(loadedT && !noted){ noted=true; Reg.logErr("mesa-"+why, (tid||"")+"~"+(gid||"")); }
+      set("mesaBody", `<p class="intro">${esc(loadedT ? (!T ? T0.noneT : T0.noneG) : "…")}</p>`); return; }
     let h=`<div class="mhead"><h2>${esc(mesaName(G))}</h2><p class="m">${esc(T.name)}</p></div>`;
     if(finished()){
       h+=`<div class="mfin"><h3>🏆 ${esc(T0.fin)}</h3>${podiumHtml()}${standHtml()}`;
@@ -6864,6 +6874,7 @@ const Mesa = (()=>{
         <div><span class="m small">${esc(T0.emoL)}</span><div class="memo" id="mEmo">${MESA_EMO.map(x=>`<button data-mesa="emo" data-e="${x}" aria-pressed="false">${x}</button>`).join("")}</div></div>
         <p class="mnote">⚠️ ${esc(T0.same)}</p><button class="primary" data-mesa="join">${esc(T0.join)}</button><p class="tmsg">${esc(joinMsg)}</p></div>`;
       if($("mesaBody").dataset.f!=="join"){ $("mesaBody").dataset.f="join"; $("mesaBody").innerHTML=h; }
+      else { const el=document.querySelector("#mesaBody .tmsg"); if(el) el.textContent=joinMsg; }
       return;
     }
     $("mesaBody").dataset.f="";
@@ -6910,7 +6921,9 @@ const Mesa = (()=>{
     h+=standHtml(true);
     set("mesaSala", h);
   }
-  setInterval(()=>{ if(!fb) return; document.querySelectorAll("[data-mcd]").forEach(el=>{ el.textContent=clock(+el.dataset.mcd-srv()); });
+  setInterval(()=>{ if(!fb) return;
+    { const u=Reg.uid(); if(u && u!==uid){ uid=u; render(); } }
+    document.querySelectorAll("[data-mcd]").forEach(el=>{ el.textContent=clock(+el.dataset.mcd-srv()); });
     if(T && T.go && srv()>=tms(T.go) && view==="mesa") render();
     step(); publish(); bar(); }, 800);
   return {

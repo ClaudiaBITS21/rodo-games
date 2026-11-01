@@ -43,6 +43,11 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.click('[data-ta="mopen"]');
   await A.waitForSelector('#mName',{timeout:15000});
   ok(/mismo navegador/.test(await A.$eval('#mesaBody',e=>e.textContent)),'aviso de usar el mismo navegador');
+  // QR de una mesa que ya no existe: lo dice y queda anotado para la organización
+  const X=await page('X'); await X.goto(URL+'?mesa=M1~noexiste');
+  await X.waitForFunction(()=>/ya no existe/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
+  ok(/pedí el QR actualizado/.test(await X.$eval('#mesaBody',e=>e.textContent)),'QR de una mesa borrada: «Esta mesa ya no existe…»');
+  ok(!!(await until(async()=>{ const e=await all('errs'); return Object.values(e).some(x=>x.w==='mesa-mesa'); },10000)),'y queda en «Errores recientes»');
   const enter=async(p,name,emo)=>{ await p.fill('#mName',name); if(emo) await p.click(`#mEmo [data-e="${emo}"]`); await p.click('[data-mesa="join"]'); await p.waitForSelector('.mmem',{timeout:15000}); };
   await enter(A,'Ana','🦊');
   await B.goto(URL+`?mesa=M1~${g1}`); await B.waitForSelector('#mName',{timeout:20000}); await enter(B,'Beto');
