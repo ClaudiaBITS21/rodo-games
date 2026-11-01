@@ -624,15 +624,17 @@ service cloud.firestore {
     }
     // ---------- Torneo por mesas ----------
     function mesaDiff() { return request.resource.data.diff(resource.data).affectedKeys(); }
-    // entrar a la mesa (con la entrada abierta o el torneo en juego): agregarse a sí mismo; el primero queda de capitán
+    // entrar a la mesa (con la entrada abierta o el torneo en juego): agregarse a sí mismo (t: orden de llegada)
     function mesaJoin(tid) {
       let me = request.auth.uid;
       let m = request.resource.data.mem;
       return signedIn() && tour(tid).st in ['open', 'live'] && mesaDiff().hasOnly(['mem', 'cap'])
         && m.diff(resource.data.mem).affectedKeys().hasOnly([me])
-        && m[me].keys().hasOnly(['n', 'e']) && m[me].n is string && m[me].n.size() > 0 && m[me].n.size() <= 24
+        && m[me].keys().hasOnly(['n', 'e', 't']) && m[me].n is string && m[me].n.size() > 0 && m[me].n.size() <= 24
         && (!('e' in m[me]) || (m[me].e is string && m[me].e.size() <= 8))
-        && (request.resource.data.cap == resource.data.cap || (resource.data.cap == null && request.resource.data.cap == me));
+        && (!('t' in m[me]) || m[me].t is int)
+        // el capitán lo elige la organización (al arrancar, si falta, queda el primero que entró)
+        && request.resource.data.cap == resource.data.cap;
     }
     // el capitán pasa el teclado a otro de la mesa (o acepta/rechaza un pedido)
     function mesaCap(tid) {

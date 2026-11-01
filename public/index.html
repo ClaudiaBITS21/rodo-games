@@ -6681,7 +6681,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", waitStart:"Esperando que arranque el torneo…",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", waitStart:"Esperando que arranque el torneo…",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6691,7 +6691,7 @@ const Mesa = (()=>{
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", waitStart:"Waiting for the tournament to start…",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", waitStart:"Waiting for the tournament to start…",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6811,15 +6811,15 @@ const Mesa = (()=>{
   async function join(){
     const nm=($("mName")||{}).value ? $("mName").value.trim().replace(/\s+/g," ").slice(0,24) : "", em=(document.querySelector("#mEmo [aria-pressed=true]")||{}).dataset;
     if(!nm){ joinMsg=t().badName; render(); return; }
-    const m={n:nm}; if(em && em.e) m.e=em.e;
+    const m={n:nm, t:Date.now()}; if(em && em.e) m.e=em.e;
     // el jugador puede haber cambiado (entró con su usuario en otra pestaña): siempre el de ahora
     await Reg.ready; uid=Reg.uid()||uid;
     if(!uid){ joinMsg=t().joinOff; render(); return; }
     if(!T || (T.st!=="open" && T.st!=="live")){ joinMsg=t().wait; render(); return; }
     const b=document.querySelector('[data-mesa="join"]'); if(b) b.disabled=true;
     joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
-    try{ await fb.updateDoc(ref, G && !G.cap ? {["mem."+uid]:m, cap:uid} : {["mem."+uid]:m}); }
-    catch(e){ try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
+    try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
+    catch(e){ try{ await new Promise(r=>setTimeout(r,800)); await fb.updateDoc(ref, {["mem."+uid]:m}); }
       catch(e2){ const c=e2.code||e2.message||e.code||"?"; Reg.logErr("mesa", c, nm); joinMsg=`${t().joinFail} (${t().code}: ${c})`; if(b) b.disabled=false; $("mesaBody").dataset.f=""; render(); return; } }
     try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
     joinMsg=""; save();
@@ -6842,8 +6842,8 @@ const Mesa = (()=>{
   // ---------- pantallas ----------
   function standHtml(big){
     const L=mesaStand(GS), tt=total();
-    return `<table class="mtab${big?" big":""}"><thead><tr><th>#</th><th></th><th>${esc(t().pts)}</th><th>${esc(t().games)}</th></tr></thead><tbody>`+
-      L.map((x,k)=>`<tr${x.id===gid?' class="me"':""}><td>${k+1}º</td><td>${esc(mesaName(x.G))}</td><td>${esc(mesaNum(x.pts))}</td><td>${x.n}/${tt}</td></tr>`).join("")+`</tbody></table>`;
+    return `<table class="mtab${big?" big":""}"><thead><tr><th>#</th><th></th><th>👥</th><th>${esc(t().pts)}</th><th>${esc(t().games)}</th></tr></thead><tbody>`+
+      L.map((x,k)=>`<tr${x.id===gid?' class="me"':""}><td>${k+1}º</td><td>${esc(mesaName(x.G))}</td><td>${Object.keys(x.G.mem||{}).length}</td><td>${esc(mesaNum(x.pts))}</td><td>${x.n}/${tt}</td></tr>`).join("")+`</tbody></table>`;
   }
   function podiumHtml(){
     const L=mesaStand(GS).slice(0,3), med=["🥇","🥈","🥉"];
@@ -6878,7 +6878,7 @@ const Mesa = (()=>{
       return;
     }
     $("mesaBody").dataset.f="";
-    const mem=Object.entries(G.mem||{}), cap=G.cap===uid;
+    const mem=Object.entries(G.mem||{}).sort((a,b)=>(a[1].t||0)-(b[1].t||0)), cap=G.cap===uid;
     const live=T.st==="live" && T.go, go=live ? tms(T.go) : 0, now=srv();
     if(live && now<go) h+=`<p class="mcd">${esc(T0.startsIn)} <b data-mcd="${go}">${clock(go-now)}</b></p>`;
     else if(live && n0()>=total()) h+=`<p class="mbig">✓ ${esc(T0.allDone)}</p>`;
@@ -6886,6 +6886,7 @@ const Mesa = (()=>{
     else h+=`<p class="m">${esc(T0.waitStart)}</p>`;
     h+=`<h3>${esc(T0.inMesa(mem.length))}</h3><ul class="mmem">${mem.map(([u,m])=>`<li><button data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}>${esc((m.e?m.e+" ":"")+m.n)}${u===uid?` (${esc(T0.you)})`:""}${u===G.cap?` · 👑 ${esc(T0.cap)}`:""}</button></li>`).join("")}</ul>`;
     if(cap && mem.length>1) h+=`<p class="m small">${esc(T0.capNote)}</p>`;
+    if(!G.cap) h+=`<p class="m small">${esc(T0.noCap)}</p>`;
     h+=`<h3>${esc(T0.table)}</h3>${standHtml()}`;
     set("mesaBody", h);
   }
@@ -7029,12 +7030,12 @@ const TourAdmin = (()=>{
     let h=`<h2>Mesas (${L.length})</h2>`;
     if(TD.st!=="live" && TD.st!=="done") h+=`<div class="row">Agregar <input id="taMesaN" type="number" min="1" max="40" value="${L.length?1:4}"> mesas <button data-ta="madd">+ Agregar</button></div>`;
     h+=`<div class="madms">`+L.map(([g,x])=>{
-      const mem=Object.entries(x.mem||{}), req=x.req, late=req && req.at && now-tms(req.at)>=60000;
+      const mem=Object.entries(x.mem||{}).sort((a,b)=>(a[1].t||0)-(b[1].t||0)), req=x.req, late=req && req.at && now-tms(req.at)>=60000;
       return `<div class="madm" data-g="${esc(g)}"><div class="row"><b>${pos[g]||"–"}º</b> <input data-mg="em" value="${esc(x.em||"")}" maxlength="8" size="3" aria-label="Emoji"> <input data-mg="nm" value="${esc(x.nm||"")}" maxlength="30" aria-label="Nombre">
-        <button data-ta="mren" data-g="${esc(g)}">Guardar</button> <span>${esc(mesaNum(mesaTot(x)))} pts · ${mesaDone(x)}/${N} partidas</span> <a href="${esc(mesaUrl(g))}" target="_blank" rel="noopener">link de la mesa</a>
+        <button data-ta="mren" data-g="${esc(g)}">Guardar</button> <span>👥 <b>${mem.length}</b> jugador${mem.length===1?"":"es"} · ${esc(mesaNum(mesaTot(x)))} pts · ${mesaDone(x)}/${N} partidas</span> <a href="${esc(mesaUrl(g))}" target="_blank" rel="noopener">link de la mesa</a>
         ${TD.st!=="live"?`<button class="tadel" data-ta="mdel" data-g="${esc(g)}">Borrar</button>`:""}</div>
         <p>${mem.length ? mem.map(([u,m])=>esc((m.e?m.e+" ":"")+m.n)+(u===x.cap?" 👑":"")).join(", ") : `<span class="m">Nadie todavía</span>`}</p>
-        ${mem.length>1 ? `<label>Capitán <select data-ta="mcap" data-g="${esc(g)}">${mem.map(([u,m])=>`<option value="${esc(u)}"${u===x.cap?" selected":""}>${esc(m.n)}</option>`).join("")}</select></label>` : ""}
+        ${mem.length ? `<label>Capitán <select data-ta="mcap" data-g="${esc(g)}">${x.cap ? "" : `<option value="" selected>— elegí quién —</option>`}${mem.map(([u,m])=>`<option value="${esc(u)}"${u===x.cap?" selected":""}>${esc(m.n)}</option>`).join("")}</select></label>${x.cap ? "" : ` <span class="mreq">⚠ sin capitán</span>`}` : ""}
         ${req && req.u ? `<p class="mreq">✋ ${esc(((x.mem||{})[req.u]||{}).n||"…")} pide el teclado. ${late ? `El capitán no respondió en 60 s: <button class="primary" data-ta="mauth" data-g="${esc(g)}">Autorizar</button>` : "Si el capitán no responde en 60 s, aparece «Autorizar»."}</p>` : ""}</div>`; }).join("")+`</div>`;
     return h;
   }
@@ -7242,7 +7243,7 @@ const TourAdmin = (()=>{
       if(a==="mdel"){ if(!sure(el, "¿Borrar esta mesa?")) return;
         const gs=await A.getDocs(A.collection(A.db,"tourneys",tid,"groups",el.dataset.g,"games")); await Promise.all(gs.docs.map(d=>A.deleteDoc(d.ref)));
         await A.deleteDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g)); return; }
-      if(a==="mcap"){ await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {cap:el.value, req:null}); say("Capitán cambiado."); return; }
+      if(a==="mcap"){ if(!el.value) return; await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {cap:el.value, req:null}); say("Capitán cambiado."); return; }
       if(a==="mauth"){ const x=GRP[el.dataset.g]; if(!x || !x.req) return; await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {cap:x.req.u, req:null}); say("Teclado autorizado."); return; }
       if(a==="mopen"){ if(!grpList().length){ say("Primero agregá las mesas.", true); return; } await A.updateDoc(tref(),{st:"open"}); say("Entrada habilitada: ya pueden escanear el QR de su mesa."); return; }
       if(a==="mdraft"){ await A.updateDoc(tref(),{st:"draft"}); return; }
@@ -7251,14 +7252,18 @@ const TourAdmin = (()=>{
       if(a==="mstart"){
         const L=grpList(), sin=L.filter(([,x])=>!Object.keys(x.mem||{}).length).length;
         if(!L.length){ say("No hay mesas.", true); return; }
-        if(!sure(el, sin ? `${sin} mesa${sin===1?"":"s"} sin nadie. ¿Arrancar igual?` : `¿Arrancar con ${L.length} mesas?`)) return;
+        const sc=L.filter(([,x])=>!x.cap && Object.keys(x.mem||{}).length).length;
+        if(!sure(el, sin ? `${sin} mesa${sin===1?"":"s"} sin nadie. ¿Arrancar igual?` : sc ? `${sc} mesa${sc===1?"":"s"} sin capitán (queda el primero que entró). ¿Arrancar?` : `¿Arrancar con ${L.length} mesas?`)) return;
         busy=true; el.disabled=true; say("Armando las partidas…");
         try{
           const P=[]; for(let ci=0; ci<TD.rounds.length; ci++) P.push(await genMesa(ci));
           for(const x of P) await A.setDoc(A.doc(A.db,"tourneys",tid,"mpz",String(x.i)), x);
           const old=await A.getDocs(A.collection(A.db,"tourneys",tid,"mpz")); await Promise.all(old.docs.filter(d=>+d.id>=P.length).map(d=>A.deleteDoc(d.ref)));
+          const auto=[];
+          for(const [g,x] of grpList()){ const mem=Object.entries(x.mem||{}).sort((a,b)=>(a[1].t||0)-(b[1].t||0));
+            if(!x.cap && mem.length){ await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {cap:mem[0][0]}); auto.push(`${mesaName(x)}: ${mem[0][1].n}`); } }
           await A.updateDoc(tref(),{st:"live", go:A.Timestamp.fromMillis(srv()+15000)});
-          say("¡Arranca en 15 segundos en todas las mesas!");
+          say("¡Arranca en 15 segundos en todas las mesas!"+(auto.length ? ` Sin capitán elegido, quedó el primero que entró: ${auto.join(" · ")}.` : ""));
         } finally{ busy=false; el.disabled=false; }
         return; }
       // administradores del torneo (solo claudia@rodo.es)

@@ -54,8 +54,15 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await C.goto(URL+`?mesa=M1~${g2}`); await C.waitForSelector('#mName',{timeout:20000}); await enter(C,'Caro','🚀');
   const ua=await A.evaluate(()=>Reg.uid()), ub=await B.evaluate(()=>Reg.uid());
   const G1=await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return Object.keys(x.mem||{}).length===2 && x; });
-  ok(G1 && G1.cap===ua && G1.mem[ua].e==='🦊' && !G1.mem[ub].e,'el primero queda de capitán; nombre y emoji sin usuario');
+  ok(G1 && G1.cap===null && G1.mem[ua].e==='🦊' && !G1.mem[ub].e && G1.mem[ua].t<=G1.mem[ub].t,'nombre y emoji sin usuario; nadie queda de capitán solo');
+  await A.waitForFunction(()=>/lo elige la organización/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
+  ok(/lo elige la organización/.test(await A.$eval('#mesaBody',e=>e.textContent)),'la mesa ve que el capitán lo elige la organización');
+  await a.waitForFunction(g=>/2<\/b> jugadores/.test(document.querySelector(`.madm[data-g="${g}"]`).innerHTML) && /sin capitán/.test(document.querySelector(`.madm[data-g="${g}"]`).textContent),g1,{timeout:10000}).catch(()=>{});
+  ok(/👥 2 jugadores/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)) && /sin capitán/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)),'el panel muestra cuántos hay en la mesa y que falta capitán');
+  await a.selectOption(`[data-ta="mcap"][data-g="${g1}"]`, ua);
+  ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ua)),'la organización elige el capitán');
   await A.waitForFunction(()=>/Beto/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
+  await A.waitForFunction(()=>/👑/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
   ok(/👑/.test(await A.$eval('#mesaBody',e=>e.textContent)) && /Beto/.test(await A.$eval('#mesaBody',e=>e.textContent)),'el lobby muestra quiénes entraron y el capitán');
   // el capitán pasa el teclado tocando un nombre, y el panel lo devuelve
   await A.click(`.mmem [data-u="${ub}"]`); await A.click(`.mmem [data-u="${ub}"]`);
@@ -66,6 +73,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.click('[data-ta="mstart"]'); await a.click('[data-ta="mstart"]');
   const tr=await until(async()=>{ const x=await get(T); return x.st==='live' && x.go && x; });
   const pz=await all(`${T}/mpz`);
+  const uc=await C.evaluate(()=>Reg.uid());
+  ok((await get(`${T}/groups/${g2}`)).cap===uc,'al arrancar, la mesa sin capitán elegido queda con el primero que entró');
   ok(tr && Object.keys(pz).length===2 && pz['0'].g==='ahorcado' && pz['1'].g==='criptograma','arranca: se generan las partidas en orden');
   await A.waitForFunction(()=>/Arranca en/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
   ok(/Arranca en/.test(await A.$eval('#mesaBody',e=>e.textContent)),'cuenta regresiva en la mesa');
@@ -115,6 +124,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await S.waitForFunction(()=>/Los Plebs/.test(document.getElementById('mesaSala').textContent),null,{timeout:20000}).catch(()=>{});
   ok(await S.evaluate(()=>location.hash)==='#mesa-sala' && /Los Plebs/.test(await S.$eval('#mesaSala',e=>e.textContent)) && /Mesa 2/.test(await S.$eval('#mesaSala',e=>e.textContent)),'pantalla de sala con la tabla entre mesas');
   const pts=await S.$$eval('#mesaSala .mtab tbody tr',l=>l.map(r=>r.textContent));
+  ok(await S.$$eval('#mesaSala .mtab tbody tr',l=>l.map(r=>r.children[2].textContent).join(','))==='2,1','la tabla dice cuántos hay en cada mesa');
   ok(/Los Plebs/.test(pts[0]),'la mesa con más puntos va primera: '+pts.join(' | '));
   await a.click('[data-ta="mdone"]'); await a.click('[data-ta="mdone"]');
   await S.waitForFunction(()=>/Terminó el torneo/.test(document.getElementById('mesaSala').textContent),null,{timeout:15000}).catch(()=>{});
