@@ -80,6 +80,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/Arranca en/.test(await A.$eval('#mesaBody',e=>e.textContent)),'cuenta regresiva en la mesa');
   for(const p of [A,B,C]) await p.waitForFunction(()=>location.hash==='#ahorcado' && !document.getElementById('mesaTop').hidden,null,{timeout:30000});
   ok(true,'las tres pantallas entran solas a la primera partida');
+  await a.waitForFunction(g=>/Partida 1 de 2 · Ahorcado · ⏱ quedan 1[45]:\d\d/.test(document.querySelector(`.madm[data-g="${g}"]`).textContent),g1,{timeout:15000}).catch(()=>{});
+  ok(/Partida 1 de 2 · Ahorcado · ⏱ quedan 1[45]:\d\d/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)),'el panel muestra en qué partida está cada mesa y cuánto le queda: '+(await a.$eval(`.madm[data-g="${g1}"] .mnow`,e=>e.textContent).catch(()=>'-')));
   ok(/Tenés el teclado/.test(await A.$eval('#mesaTop',e=>e.textContent)) && /Mirando cómo juega 🦊 Ana/.test(await B.$eval('#mesaTop',e=>e.textContent)),'arriba: quién tiene el teclado');
   ok(/Los Plebs/.test(await B.$eval('#mesaTop',e=>e.textContent)) && /Partida 1 de 2/.test(await B.$eval('#mesaTop',e=>e.textContent)),'arriba: mesa y partida');
   ok(await B.evaluate(()=>document.body.classList.contains('mesaro')) && await B.$eval('#hKeys',e=>e.closest('[inert]')!==null || e.inert),'quien mira no puede tocar el tablero');
@@ -93,6 +95,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.click(`#hKeys .key[data-k="${wrong}"]`);
   await B.waitForFunction(()=>/te quedan 5|5 bloques|5/.test(document.getElementById('hLives').textContent),null,{timeout:10000}).catch(()=>{});
   ok(await B.$eval('#hLives',e=>e.textContent)===await A.$eval('#hLives',e=>e.textContent),'y los errores (bloques): '+await B.$eval('#hLives',e=>e.textContent));
+  await a.waitForFunction(g=>/0\/2 palabras · 1 error/.test(document.querySelector(`.madm[data-g="${g}"] .mnow`).textContent),g1,{timeout:15000}).catch(()=>{});
+  ok(/0\/2 palabras · 1 error/.test(await a.$eval(`.madm[data-g="${g1}"] .mnow`,e=>e.textContent)),'y el avance en vivo: '+(await a.$eval(`.madm[data-g="${g1}"] .mnow`,e=>e.textContent).catch(()=>'-')));
   // Beto pide el teclado; Ana se lo da y él sigue desde ahí
   await B.click('[data-mesa="take"]');
   await A.waitForSelector('[data-mesa="give"]',{timeout:10000});

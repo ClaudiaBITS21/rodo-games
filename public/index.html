@@ -419,7 +419,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .mpod{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:14px 0}.mpod>div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:12px;background:var(--paper);border:1px solid var(--line);min-width:90px;text-align:center}
 .mpod .mp1{order:2;padding-top:24px;border-color:var(--btc)}.mpod .mp2{order:1}.mpod .mp3{order:3}.mpod .mmed{font-size:2rem}
 #view-mesa-sala .msname{text-align:center;font-size:clamp(1.6rem,4vw,3rem);margin:0 0 10px}#view-mesa-sala .msfin{text-align:center;font-size:clamp(1.4rem,3vw,2.4rem)}
-.madms{display:grid;gap:10px}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
+.madms{display:grid;gap:10px}.madm .mnow{font-weight:600;background:rgba(247,147,26,.1);border-radius:8px;padding:4px 8px}.madm .mnow.ok{background:rgba(46,160,67,.12)}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
 body.mesaro .view.on{user-select:none}
 body.mesamode .view.on .pcost,body.mesamode .view.on .ptime{display:none}.mesatop .mrule{font-size:.8rem;color:var(--muted)}
 /* pantalla de sala (para proyectar): sin botones arriba ni recuadros del pie */
@@ -6991,7 +6991,7 @@ const TourAdmin = (()=>{
     if(!id || !ok.includes(id)) id=ok[0]||null;
     if(id!==tid){
       tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null; CW={}; CWok=false;
-      [uR,uI,uRes,uGr].forEach(f=>f&&f()); uR=uI=uRes=uGr=null; GRP={};
+      [uR,uI,uRes,uGr].forEach(f=>f&&f()); uR=uI=uRes=uGr=null; GRP={}; Object.values(GTW).forEach(w=>w.off()); GTW={}; GT={};
       if(tid){
         const t0=tid; rsFor=null;
         // torneo por mesas: las mesas, con sus miembros, capitán, pedidos de teclado y resultados
@@ -7025,6 +7025,17 @@ const TourAdmin = (()=>{
     c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los 15 minutos. Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
     return c;
   }
+  // en juego: qué partida está jugando cada mesa, cuánto le queda y cuánto avanzó
+  function mesaNow(g, x, N){
+    if(TD.st!=="live") return "";
+    const n=mesaDone(x), go=tms(TD.go)||0;
+    if(n>=N) return `<p class="mnow ok">✓ Terminó las ${N} partidas</p>`;
+    if(srv()<go) return `<p class="mnow">Arranca en <b data-cd="${go}">${clock(go-srv())}</b></p>`;
+    const d=GT[g], rc=TD.rounds[n]||{}, gn=GN[rc.g]||rc.g||"";
+    if(!d || d.n!==n || !d.t0) return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ${x.cap ? "cargando…" : "⚠ sin capitán: no puede empezar"}</p>`;
+    const end=tms(d.t0)+MESA_MAX, pr=mesaProg(rc.g, d.s);
+    return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ⏱ quedan <b data-cd="${end}">${clock(end-srv())}</b>${pr?` · ${esc(pr)}`:""}${(d.e|0)||(d.h|0)?` · ${d.e|0} error${(d.e|0)===1?"":"es"}, ${d.h|0} pista${(d.h|0)===1?"":"s"}`:""}</p>`;
+  }
   function mesaLive(){
     const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
     let h=`<h2>Mesas (${L.length})</h2>`;
@@ -7034,12 +7045,34 @@ const TourAdmin = (()=>{
       return `<div class="madm" data-g="${esc(g)}"><div class="row"><b>${pos[g]||"–"}º</b> <input data-mg="em" value="${esc(x.em||"")}" maxlength="8" size="3" aria-label="Emoji"> <input data-mg="nm" value="${esc(x.nm||"")}" maxlength="30" aria-label="Nombre">
         <button data-ta="mren" data-g="${esc(g)}">Guardar</button> <span>👥 <b>${mem.length}</b> jugador${mem.length===1?"":"es"} · ${esc(mesaNum(mesaTot(x)))} pts · ${mesaDone(x)}/${N} partidas</span> <a href="${esc(mesaUrl(g))}" target="_blank" rel="noopener">link de la mesa</a>
         ${TD.st!=="live"?`<button class="tadel" data-ta="mdel" data-g="${esc(g)}">Borrar</button>`:""}</div>
+        ${mesaNow(g, x, N)}
         <p>${mem.length ? mem.map(([u,m])=>esc((m.e?m.e+" ":"")+m.n)+(u===x.cap?" 👑":"")).join(", ") : `<span class="m">Nadie todavía</span>`}</p>
         ${mem.length ? `<label>Capitán <select data-ta="mcap" data-g="${esc(g)}">${x.cap ? "" : `<option value="" selected>— elegí quién —</option>`}${mem.map(([u,m])=>`<option value="${esc(u)}"${u===x.cap?" selected":""}>${esc(m.n)}</option>`).join("")}</select></label>${x.cap ? "" : ` <span class="mreq">⚠ sin capitán</span>`}` : ""}
         ${req && req.u ? `<p class="mreq">✋ ${esc(((x.mem||{})[req.u]||{}).n||"…")} pide el teclado. ${late ? `El capitán no respondió en 60 s: <button class="primary" data-ta="mauth" data-g="${esc(g)}">Autorizar</button>` : "Si el capitán no responde en 60 s, aparece «Autorizar»."}</p>` : ""}</div>`; }).join("")+`</div>`;
     return h;
   }
+  // el panel escucha en vivo el tablero de la partida en curso de cada mesa (tiempo que queda y avance)
+  let GT={}, GTW={};
+  function mesaWatch(){
+    const live=TD.st==="live" || TD.st==="done", N=TD.rounds.length, ids=new Set();
+    if(live) for(const [g,x] of grpList()){ const n=mesaDone(x); if(n>=N) continue; ids.add(g);
+      if(GTW[g] && GTW[g].n===n) continue;
+      if(GTW[g]) GTW[g].off(); const t0=tid;
+      GTW[g]={n, off:A.onSnapshot(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n)), sn=>{ if(t0!==tid) return; GT[g]=sn.exists() ? {n, ...sn.data({serverTimestamps:"estimate"})} : {n}; mesaLiveRender(); }, ()=>{})}; }
+    Object.keys(GTW).forEach(g=>{ if(!ids.has(g)){ GTW[g].off(); delete GTW[g]; delete GT[g]; } });
+  }
+  // avance de la partida, leído del tablero publicado por el capitán
+  function mesaProg(g, x){
+    try{ const v=x ? JSON.parse(x) : null; if(!v) return "";
+      if(g==="ahorcado") return `${(v.st||[]).filter(y=>y.r==="ok").length}/${(v.st||[]).length} palabras`;
+      if(g==="anagrama") return `${v.sc|0}/${(v.r||[]).length} palabras`;
+      if(g==="sopa") return `${(v.f||[]).length} palabras encontradas`;
+      if(g==="semilla") return v.st==="memo" ? "memorizando" : `${v.n|0} palabras ubicadas`;
+      if(g==="acrostico"||g==="criptograma"){ const c=(v.v||[]).filter(y=>y && y[0]).length; return `${c} de ${(v.v||[]).length} casillas`; }
+    }catch(e){} return "";
+  }
   function mesaLiveRender(){
+    if(A && TD) mesaWatch();
     const el=$("taLive"), h=mesaLive(); if(el.dataset.h===h) return;
     // no se pierde lo que se está escribiendo en el nombre o el emoji de una mesa
     const keep={}; el.querySelectorAll("[data-mg]").forEach(i=>{ if(i.value!==i.defaultValue || document.activeElement===i) keep[i.closest(".madm").dataset.g+i.dataset.mg]=[i.value, document.activeElement===i]; });
@@ -7081,7 +7114,7 @@ const TourAdmin = (()=>{
     for(const [g,x] of L){
       const n=mesaDone(x); if(n>=N) continue;
       try{ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n))); if(!s.exists()) continue;
-        const d=s.data(); if(now-tms(d.t0)<MESA_MAX+30000) continue;
+        const d=s.data(); if(!d.t0 || now-tms(d.t0)<MESA_MAX+30000) continue;
         await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0}}); }
       catch(e){}
     }
