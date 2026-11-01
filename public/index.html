@@ -403,6 +403,27 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tarounds input[type=number]{width:4.5em}
 .cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}#taToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;background:#1A7F37;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
 #taToast.bad{background:#B3261E}#taToast[hidden]{display:none}
+/* torneo por mesas */
+.mesatop{border:1px solid var(--line);border-left:5px solid var(--btc);background:var(--paper);border-radius:10px;padding:8px 12px;margin:0 0 14px}
+.mesatop[hidden]{display:none}.mesatop p{margin:4px 0}.mesatop .mtop1{font-weight:600}.mesatop .mlow{color:var(--bad);font-weight:700}
+.mesatop .mrole{font-weight:600}.mesatop .mreq{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.mesatop button{padding:5px 10px;font-size:.88rem}
+.mesatop .mnote,.mjoin .mnote{color:#B45309;font-weight:600}.mtabd summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+.mtab{width:100%;border-collapse:collapse;margin:6px 0 10px;font-size:.92rem}.mtab th,.mtab td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+.mtab td:nth-child(n+3),.mtab th:nth-child(n+3){text-align:right;font-variant-numeric:tabular-nums}.mtab tr.me td{font-weight:700;background:rgba(247,147,26,.12)}
+.mtab.big{font-size:clamp(1rem,2.4vw,1.6rem)}.mtab.big td{padding:10px 8px}
+.mhead h2{margin:0;font-size:1.6rem}.mhead p{margin:2px 0 14px}.mwait{text-align:center;padding:30px 0}.mbig{font-size:1.25rem;font-weight:700}
+.mjoin{display:grid;gap:12px;max-width:420px}.mjoin label{display:grid;gap:4px;font-weight:600}.mjoin input{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.memo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.memo button{font-size:1.4rem;padding:4px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper)}.memo button[aria-pressed=true]{border-color:var(--btc);box-shadow:0 0 0 2px var(--btc)}
+.mmem{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}.mmem button{width:100%;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit}
+.mmem button:disabled{opacity:1;cursor:default}.mcd{font-size:1.2rem;text-align:center}.mcd b{font-size:2.2rem;font-variant-numeric:tabular-nums}.mcd.big b{font-size:clamp(3rem,10vw,7rem)}
+.mpod{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:14px 0}.mpod>div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:12px;background:var(--paper);border:1px solid var(--line);min-width:90px;text-align:center}
+.mpod .mp1{order:2;padding-top:24px;border-color:var(--btc)}.mpod .mp2{order:1}.mpod .mp3{order:3}.mpod .mmed{font-size:2rem}
+#view-mesa-sala .msname{text-align:center;font-size:clamp(1.6rem,4vw,3rem);margin:0 0 10px}#view-mesa-sala .msfin{text-align:center;font-size:clamp(1.4rem,3vw,2.4rem)}
+.madms{display:grid;gap:10px}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
+body.mesaro .view.on{user-select:none}
+body.mesamode .view.on .pcost,body.mesamode .view.on .ptime{display:none}.mesatop .mrule{font-size:.8rem;color:var(--muted)}
+/* pantalla de sala (para proyectar): sin botones arriba ni recuadros del pie */
+body.vsala header .tools,body.vsala .buzon,body.vsala .privnote,body.vsala #title{display:none!important}
 /* QR para inscribirse: a pantalla completa, fondo blanco para que la cámara lo lea bien */
 .tqr{position:fixed;inset:0;z-index:90;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px 16px;text-align:center;overflow:auto}
 .tqr h2{margin:0;font-size:clamp(1.3rem,4vw,2.2rem)}.tqr .tqrk{margin:0;font-size:clamp(1rem,2.6vw,1.4rem);font-weight:700;color:#C2410C}
@@ -710,6 +731,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
       </div>
     </div>
   </header>
+  <div class="mesatop" id="mesaTop" hidden></div>
 
   <!-- ===== Menú ===== -->
   <section class="view" id="view-menu">
@@ -973,6 +995,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
   </section>
 
   <!-- ===== Torneo en vivo: la sala de los jugadores ===== -->
+  <!-- ===== Torneo por mesas: la mesa del jugador y la pantalla de sala ===== -->
+  <section class="view" id="view-mesa"><div id="mesaBody"></div></section>
+  <section class="view" id="view-mesa-sala"><div id="mesaSala"></div></section>
   <section class="view" id="view-torneo">
     <div id="tHead"></div>
     <div id="tStage"></div>
@@ -2049,7 +2074,20 @@ const Acro = (()=>{
   $("hintBtn").addEventListener("click",hint);
   $("printBtn").addEventListener("click",()=>window.print());
   $("shareBtn").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"acrostic-rodo-games.png":"acrostico-rodo-games.png", $("shareNote"), $("shareBtn")));
-  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P, progress, difs:DIFS};
+  // torneo por mesas: el estado del tablero (para mostrarlo a la mesa y para que otro capitán siga desde ahí)
+  const CLS=["","ok","bad","rev"];
+  function snap(){
+    if(!P) return null;
+    return {v:[...document.querySelectorAll("#grid .cell")].map(c=>[c.value, c.classList.contains("ok")?1:c.classList.contains("bad")?2:c.classList.contains("rev")?3:0]), h:hintsUsed, b:[...badSeen]};
+  }
+  function restore(x){
+    if(!P || !x) return;
+    [...document.querySelectorAll("#grid .cell")].forEach((c,i)=>{ const y=(x.v||[])[i]; if(!y || c.classList.contains("given")) return;
+      c.value=y[0]||""; c.classList.remove("ok","bad","rev"); if(y[1]) c.classList.add(CLS[y[1]]);
+      realRows()[+c.dataset.r].entry[+c.dataset.k]=c.value; });
+    hintsUsed=x.h||0; badSeen=new Set(x.b||[]); updateHintBtn();
+  }
+  return {texts, create, gen, load, words:()=>P ? realRows().filter(r=>!r.given).map(r=>r.word) : [], started:()=>!!P, progress, difs:DIFS, snap, restore};
 })();
 
 // =====================================================================
@@ -2184,7 +2222,9 @@ const Hang = (()=>{
     return {p:part/list.length, s:solved()};
   }
   return {texts, create, gen, load, words:()=>list.map(o=>o.w), started:()=>list.length>0, key:()=>"ahorcado6", redrawLives:()=>{ if(list.length) drawBlocks(); },
-    progress, rounds:()=>list.length||ROUNDS, difs:DIFS};
+    progress, rounds:()=>list.length||ROUNDS, difs:DIFS,
+    snap:()=>list.length ? {i, st:st.map(x=>({g:[...x.g].join(""), w:x.wrong, c:x.clue?1:0, r:x.r}))} : null,
+    restore:x=>{ if(!list.length || !x || !x.st) return; st=x.st.map(y=>({g:new Set([...(y.g||"")]), wrong:y.w|0, clue:!!y.c, r:y.r||""})); i=x.i|0; draw(); }};
 })();
 
 // =====================================================================
@@ -2407,7 +2447,10 @@ const Sopa = (()=>{
   const tag=()=>{ const p=[]; if(size!=="media") p.push(T[lang].sSize[size].toLowerCase()); if(showClues) p.push(T[lang].sModeTag); return p.length ? ` (${p.join(", ")})` : ""; };
   return {texts, create, gen, load, words:()=>[...words.map(o=>o.w), ...bonus.map(o=>o.w)], setKey, setMode, mode:()=>showClues?"c":"w", size:()=>size, started:()=>words.length>0, key:()=> size==="media" ? "sopa" : "sopa"+size, tag,
     // avance: palabras encontradas (las que marca "Me rindo" no entran en found)
-    progress:()=>({p:words.length ? found.size/words.length : 0, s:0})};
+    progress:()=>({p:words.length ? found.size/words.length : 0, s:0}),
+    snap:()=>words.length ? {f:[...found], fi:[...first], t:[...tried], b:bonus.map(o=>({w:o.w, c:o.cells.map(p=>[p.r,p.c])})), u:usedFirst} : null,
+    restore:x=>{ if(!words.length || !x) return; found=new Set(x.f||[]); first=new Set(x.fi||[]); tried=new Set(x.t||[]);
+      bonus=(x.b||[]).map(o=>({w:o.w, cells:o.c.map(([r,c])=>({r,c}))})); usedFirst=x.u|0; render(); renderList(); updHint(); }};
 })();
 
 
@@ -2663,7 +2706,18 @@ const Seed = (()=>{
     shareBlob(await cardImage(t.seedTitle, t.pSize(words.length), t.pCard(words.length,errors,fmt(elapsed)), null), lang==="en"?"lost-seed-rodo-games.png":"semilla-rodo-games.png", $("pNote"), $("pShare")); });
   return {texts, create, gen, load, pause, started:()=>!!pz, clockOff:()=>stage!=="play"&&stage!=="end",
     // avance: palabras bien ubicadas (mientras memoriza, 0)
-    progress:()=>({p:(stage==="play"||stage==="end") && words.length ? next/words.length : 0, s:0})};
+    progress:()=>({p:(stage==="play"||stage==="end") && words.length ? next/words.length : 0, s:0}),
+    snap:()=>pz ? {st:stage, l:left, n:next, e:errors, ch:[...document.querySelectorAll("#pChips .chip")].map(b=>[b.dataset.w, b.classList.contains("used")?1:0])} : null,
+    // ro: quien solo mira no corre la cuenta regresiva (la manda el capitán)
+    restore:(x, ro)=>{ if(!pz || !x) return;
+      if(x.st==="memo"){ if(stage!=="memo") start(); left=x.l|0; $("pTimerFill").style.width=(total?left/total*100:0)+"%"; if(ro) clearInterval(timer); status(); return; }
+      if(x.st!=="play" && x.st!=="end") return;
+      clearInterval(timer); words=[...pz.words]; Seed._decoys=[...pz.decoys];
+      if(stage!=="play"){ stage="play"; playStart=Date.now(); playWait=Reg.wait("semilla"); show("pIntro",false); show("pTimer",false); show("pMemoActions",false); }
+      next=x.n|0; errors=x.e|0;
+      $("pSeed").innerHTML = words.map((w,k)=>`<div class="slot${k<next?" filled":k===next?" next":""}" data-i="${k}"><span class="i">${k+1}</span><span class="v">${k<next?w:""}</span></div>`).join("");
+      $("pChips").innerHTML = (x.ch||[]).map(([w,u])=>`<button class="chip${u?" used":""}" data-w="${w}">${w}</button>`).join("");
+      status(); }};
 })();
 
 // =====================================================================
@@ -2914,7 +2968,11 @@ const Cripto = (()=>{
   $("cShare").addEventListener("click",async()=>shareBlob(await image(), lang==="en"?"cryptogram-rodo-games.png":"criptograma-rodo-games.png", $("cNote"), $("cShare")));
   return {texts, create, gen, load, started:()=>!!q, difs:DIFS,
     // avance: casillas con la letra correcta (las que completa "Me rindo" quedan con la clase miss y no cuentan)
-    progress:()=>({p:q && cells.length ? cells.filter(x=>x.el.value===x.p && !x.el.classList.contains("miss")).length/cells.length : 0, s:0})};
+    progress:()=>({p:q && cells.length ? cells.filter(x=>x.el.value===x.p && !x.el.classList.contains("miss")).length/cells.length : 0, s:0}),
+    snap:()=>q ? {v:cells.map(x=>[x.el.value, x.el.classList.contains("ok")?1:x.el.classList.contains("bad")?2:x.el.classList.contains("rev")?3:0, x.el.readOnly?1:0]), h:hints, b:[...cBad]} : null,
+    restore:x=>{ if(!q || !x) return;
+      cells.forEach((y,k)=>{ const z=(x.v||[])[k]; if(!z) return; y.el.value=z[0]||""; y.el.classList.remove("ok","bad","rev"); if(z[1]) y.el.classList.add(["","ok","bad","rev"][z[1]]); y.el.readOnly=!!z[2]; });
+      hints=x.h|0; cBad=new Set(x.b||[]); updateHint(); }};
 })();
 
 // =====================================================================
@@ -3009,7 +3067,12 @@ const Ana = (()=>{
     shareBlob(await cardImage(t.anaTitle, t.aWin(score,ROUNDS), t.aCard(score,ROUNDS,fmt(elapsed)), results), lang==="en"?"anagram-rodo-games.png":"anagrama-rodo-games.png", $("aNote"), $("aShare")); });
   return {texts, create, gen, load, words:()=>list.map(x=>x[0]), started:()=>list.length>0, difs:DIFS,
     // avance (torneo): palabras acertadas (las pasadas no suman)
-    progress:()=>({p:list.length ? score/ROUNDS : 0, s:score})};
+    progress:()=>({p:list.length ? score/ROUNDS : 0, s:score}),
+    snap:()=>list.length ? {i, t:tiles, p:picks, r:list.map((_,k)=>results[k]||""), sc:score, h:hints, sh:[...seenClue]} : null,
+    restore:x=>{ if(!list.length || !x || !x.t) return;
+      i=x.i|0; tiles=[...x.t]; picks=[...(x.p||[])]; results=(x.r||[]).map(v=>v||undefined); score=x.sc|0; hints=x.h|0; seenClue=new Set(x.sh||[]); locked=false;
+      shown=seenClue.has(i); $("aClue").textContent=list[i][1]; $("aClue").style.display=shown?"":"none"; $("aTag").textContent=wordTag(list[i][0]);
+      updHint(); draw(); scoreDots($("aScore"),ROUNDS,results,i); meta(); }};
 })();
 
 function applyTexts2(){
@@ -5761,6 +5824,7 @@ function applyTexts(){
   if(view==="stats") return setTitle(t.stTitle);
   if(view==="torneo") return setTitle(t.tTitle);
   if(view==="torneo-admin") return setTitle("Torneo · organización");
+  if(view==="mesa" || view==="mesa-sala") return setTitle(view==="mesa" ? (lang==="en"?"Table tournament":"Torneo por mesas") : (lang==="en"?"Room screen":"Pantalla de sala"));
   setTitle({menu:t.menuTitle, acrostico:t.acroTitle, ahorcado:t.hangTitle, sopa:t.sopaTitle, criptograma:t.cripTitle, anagrama:t.anaTitle, semilla:t.seedTitle, esbip:t.bipTitle, placa:t.plateTitle}[view]);
 }
 const HIDDEN = new Set(["esbip","placa"]); // juegos BIP39 ocultos por ahora
@@ -6145,7 +6209,7 @@ const Tour = (()=>{
   // ---------- suscripciones ----------
   function pick(){
     const vis=x=> x.test ? (x.inv||[]).includes(uid) : (!tms(x.pub) || srv()>=tms(x.pub));
-    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && vis(x) && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
+    const pri={live:0, checkin:1, open:2, done:3}, l=Object.entries(ALL).filter(([,x])=>pri[x.st]!==undefined && x.mode!=="mesas" && vis(x) && (x.st!=="done" || srv()-(tms(x.at)||0)<14*86400000))
       .sort((a,b)=>tourOrder(a[1],b[1]));
     // puede haber varios programados: se ve el que eligió el jugador (tocando su tarjeta o en la sala) o, si no, el más próximo
     LIST=l.map(([k])=>k);
@@ -6593,6 +6657,270 @@ const Tour = (()=>{
 })();
 
 // =====================================================================
+// TORNEO POR MESAS (presencial, cooperativo): cada mesa juega como un solo competidor.
+// El capitán tipea con el motor de cada juego; el resto de la mesa ve su tablero en vivo (solo lectura).
+// Datos: tourneys/{tid} (mode "mesas", st, go), mpz/{i} (partidas), groups/{gid} (mesa: nm, em, mem, cap, req, res),
+// groups/{gid}/games/{n} (tablero del capitán: s = estado del juego, t0 = arranque de esa partida, e, h).
+// =====================================================================
+const MESA_MAX=15*60000, MESA_GAP=3000;
+// puntos de una partida: resuelta, 1000 − segundos − 100 por pista o error (piso 100); en ahorcado y anagrama, cada palabra
+// sin resolver suma 900/rondas s, como en el resto del sitio. Sin resolver a los 15 min: 0.
+const mesaPts=x=>{ if(!x || !x.ok) return 0; const sec=Math.floor(Math.max(0,(tms(x.at)||0)-(tms(x.t0)||0))/1000), miss=x.R ? (x.R-(x.s|0))*900/x.R : 0;
+  return Math.max(100, Math.round(1000-sec-100*((x.e|0)+(x.h|0))-miss)); };
+const mesaTot=G=>Object.values(G.res||{}).reduce((a,x)=>a+mesaPts(x),0);
+const mesaDone=G=>Object.keys(G.res||{}).length;
+const mesaStand=GS=>Object.entries(GS||{}).map(([id,G])=>({id, G, pts:mesaTot(G), n:mesaDone(G)}))
+  .sort((a,b)=>b.pts-a.pts || b.n-a.n || (a.G.i|0)-(b.G.i|0));
+const mesaName=G=>(G.em ? G.em+" " : "")+(G.nm||"Mesa");
+const mesaNum=n=>Math.round(n).toLocaleString(lang==="en"?"en-US":"es-AR");
+const MESA_EMO=["🍀","🔥","⚡","🚀","🦊","🐻","🦉","🐙","🌕","🎲","🧠","🍕"];
+
+const Mesa = (()=>{
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const MT={
+    es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
+      none:"Esta mesa no existe o el torneo ya no está disponible.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
+      same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", waitStart:"Esperando que arranque el torneo…",
+      startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
+      bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
+      take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
+      rule:"Resuelta: 1000 − 1 por segundo − 100 por pista o error (mínimo 100). Sin resolver a los 15 min: 0.", table:"Tabla entre mesas", pos:(p,n,x)=>`van ${p}º de ${n} · ${x} pts`, pts:"pts", games:"partidas", next:"¡Partida terminada! Pasan a la siguiente…", timeup:"Se terminaron los 15 minutos: pasan a la siguiente.",
+      fin:"¡Terminó el torneo!", podium:"Podio", total:"Total", saveQ:"Guardá tu resultado: creá tu usuario", saveDone:n=>`Ya está guardado con tu usuario ${n}.`,
+      back:"Volver al juego", allDone:"Tu mesa terminó todas las partidas. Esperen a las demás mesas.", sala:"Pantalla de sala", waitTable:"Esperando que arranque…"},
+    en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
+      none:"This table doesn't exist or the tournament is no longer available.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
+      same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", waitStart:"Waiting for the tournament to start…",
+      startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
+      bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
+      take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
+      rule:"Solved: 1000 − 1 per second − 100 per hint or mistake (at least 100). Unsolved after 15 min: 0.", table:"Table standings", pos:(p,n,x)=>`#${p} of ${n} · ${x} pts`, pts:"pts", games:"games", next:"Game over! Moving to the next one…", timeup:"15 minutes are up: moving to the next one.",
+      fin:"The tournament is over!", podium:"Podium", total:"Total", saveQ:"Save your result: create your user", saveDone:n=>`Saved with your user ${n}.`,
+      back:"Back to the game", allDone:"Your table finished all the games. Wait for the other tables.", sala:"Room screen", waitTable:"Waiting for the start…"}
+  };
+  const t=()=>MT[lang]||MT.es;
+  let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
+  let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
+  const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
+  const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+  const set=(id,h)=>{ const el=$(id); if(el && el.innerHTML!==h) el.innerHTML=h; };
+  const n0=()=>G ? mesaDone(G) : 0;
+  const member=()=>!!(G && uid && G.mem && G.mem[uid]);
+  const memName=u=>{ const m=G && G.mem && G.mem[u]; return m ? (m.e?m.e+" ":"")+m.n : "…"; };
+  const total=()=>PZ ? PZ.length : (T && T.rounds ? T.rounds.length : 0);
+  // el link del QR de cada mesa (y la pantalla de sala) queda guardado: si recarga, vuelve a su mesa
+  const keyS="rodo-mesa";
+  function saved(){ try{ const x=JSON.parse(localStorage.getItem(keyS)||"null"); return x && x.until>Date.now() ? x : null; }catch(e){ return null; } }
+  function save(){ try{ localStorage.setItem(keyS, JSON.stringify({tid, gid, until:Date.now()+12*3600000})); }catch(e){} }
+
+  // ---------- entrada por link: ?mesa={tid}~{gid} o ?pantalla={tid} ----------
+  { const q=new URLSearchParams(location.search), m=q.get("mesa"), p=q.get("pantalla"), ok=x=>/^[A-Za-z0-9_-]{1,40}$/.test(x||"");
+    if(m && m.includes("~")){ const [a,b]=m.split("~"); if(ok(a) && ok(b)){ tid=a; gid=b; save(); history.replaceState(null,"",location.pathname+"#mesa"); } }
+    else if(ok(p)){ tid=p; sala=true; history.replaceState(null,"",location.pathname+"#mesa-sala"); }
+    else { const s=saved(); if(s){ tid=s.tid; gid=s.gid; if(GAMES[location.hash.slice(1)]) history.replaceState(null,"",location.pathname+"#mesa"); } } }
+
+  async function boot(){
+    if(fb || !tid) return; await Reg.ready; fb=Reg.fb(); uid=Reg.uid(); if(!fb) return;
+    uT=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid), s=>{ T=s.exists() && s.data().mode==="mesas" ? s.data() : null; step(); render(); }, ()=>{ T=null; render(); });
+    uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"})); G=gid ? GS[gid]||null : null; step(); render(); }, ()=>{});
+  }
+  const active=()=>!!(tid && !sala && gid && T && member() && (T.st==="live" || T.st==="open"));
+
+  // ---------- el motor: cargar la partida en curso, publicar o mirar el tablero ----------
+  async function loadPZ(){
+    if(pzFor===tid) return; pzFor=tid;
+    try{ const qs=await fb.getDocs(fb.collection(fb.db,"tourneys",tid,"mpz")); const a=[]; qs.forEach(d=>a.push(d.data())); a.sort((x,y)=>x.i-y.i); PZ=a; }
+    catch(e){ pzFor=null; }
+    step();
+  }
+  function watchGD(n){
+    if(gdN===n) return; if(uGD){ uGD(); uGD=null; } gdN=n; GD=null; gdOk=false;
+    uGD=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(n)), s=>{ if(gdN!==n) return; GD=s.exists() ? s.data({serverTimestamps:"estimate"}) : null; GD_raw=s.exists() ? s.data() : null; gdOk=true; step(); }, ()=>{});
+  }
+  let GD_raw=null;
+  function ro(on, g){
+    document.body.classList.toggle("mesaro", on);
+    if(g) [...$("view-"+g).children].forEach(el=>{ if(!el.matches(".bar")) el.inert=on; });
+  }
+  async function step(){
+    if(!fb || sala || !T || !G || !member()) return;
+    if(T.st!=="live" || !T.go || srv()<tms(T.go)) return;
+    if(!PZ){ loadPZ(); return; }
+    const n=n0();
+    if(n!==prevN){ if(prevN>=0 && n>prevN) nextAt=Date.now()+MESA_GAP; prevN=n; }
+    if(n>=PZ.length){ if(loaded){ ro(false, loaded.g); loaded=null; } if(GAMES[view]) location.hash="mesa"; render(); return; }
+    if(Date.now()<nextAt){ return; }
+    watchGD(n); if(!gdOk) return;
+    const cap=G.cap===uid;
+    if(cap && !GD && creating!==n){ creating=n;
+      try{ await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(n)), {s:"", t0:fb.serverTimestamp(), at:fb.serverTimestamp(), e:0, h:0, by:uid}); }catch(e){ creating=-1; } return; }
+    if(!GD || !GD.t0) return;
+    const p=PZ[n];
+    if(!loaded || loaded.n!==n || loaded.cap!==cap){
+      if(lang!==p.lang) setLang(p.lang);
+      Reg.playTour(p.g, JSON.parse(JSON.stringify(p.d)), {k:p.k, m:p.m, R:p.nr||0, t0:loc(tms(GD.t0)), seen:true, mesa:{tid, gid, n},
+        label:()=>`${mesaName(G)} · ${t().bar(n+1, PZ.length)}`});
+      loaded={n, cap, g:p.g, s:null}; lastKey=""; note="";
+      apply(true);
+      ro(!cap, p.g);
+      if(location.hash!=="#"+p.g) location.hash=p.g;
+    } else if(!cap) apply(false);
+    // 15 minutos: la partida se cierra sin resolver (la cierra el capitán; si no está, el panel de la organización)
+    if(cap && finishing!==n && srv()-tms(GD.t0)>=MESA_MAX) done(false);
+    bar();
+  }
+  // aplica el tablero publicado (al cargar, también el del capitán que retoma)
+  function apply(force){
+    if(!loaded || !GD) return; const g=loaded.g, c=Reg.cur(g);
+    if(!force && GD.s===loaded.s) return;
+    loaded.s=GD.s;
+    try{ if(GD.s && GAMES[g].restore) GAMES[g].restore(JSON.parse(GD.s), !loaded.cap); }catch(e){}
+    if(c){ c.e=GD.e|0; c.h=GD.h|0; Reg.tick(); }
+  }
+  // el capitán publica su tablero cuando cambia (a lo sumo una vez por segundo)
+  async function publish(){
+    if(!loaded || !loaded.cap || !GD || finishing===loaded.n || Date.now()-lastW<1000) return;
+    const g=loaded.g, c=Reg.cur(g); if(!c || !c.tour || !c.tour.mesa) return;
+    let js=""; try{ js=JSON.stringify(GAMES[g].snap ? GAMES[g].snap() : null); }catch(e){ return; }
+    const key=js+"|"+(c.e|0)+"|"+(c.h|0); if(key===lastKey) return;
+    lastKey=key; lastW=Date.now(); loaded.s=js;
+    try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(loaded.n)), {s:js, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, by:uid}); }catch(e){ lastKey=""; }
+  }
+  // fin de la partida (resuelta, perdida o por tiempo): se anota el resultado y la mesa pasa a la siguiente
+  async function done(okFromGame, rec){
+    if(!loaded || !loaded.cap || finishing===loaded.n || !GD_raw) return;
+    const n=loaded.n, g=loaded.g, p=PZ[n], c=Reg.cur(g)||{}; finishing=n;
+    const R=p.nr||0, s=R ? (rec && rec.s|0) : 0, ok = rec ? (R ? s>0 : !!rec.ok) : false;
+    if(!rec){ note=t().timeup; ro(true, g); }
+    lastW=0; lastKey=""; await publish().catch(()=>{});
+    const x={ok, t0:GD_raw.t0, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, s, R};
+    for(let i=0;i<4;i++){
+      try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid), {["res."+n]:x}); return; }
+      catch(e){ await new Promise(r=>setTimeout(r,700)); }
+    }
+    finishing=-1;
+  }
+  const prevTour=Reg.onTour;
+  Reg.onTour=(g, rec, c)=>{ if(c && c.tour && c.tour.mesa){ if(loaded && loaded.cap) done(true, rec); return; } if(prevTour) prevTour(g, rec, c); };
+  // quien solo mira no puede tipear en los juegos que escuchan el teclado (ahorcado, anagrama)
+  window.addEventListener("keydown", e=>{ if(document.body.classList.contains("mesaro") && GAMES[view]) e.stopImmediatePropagation(); }, true);
+
+  // ---------- acciones ----------
+  async function join(){
+    const nm=($("mName")||{}).value ? $("mName").value.trim().replace(/\s+/g," ").slice(0,24) : "", em=(document.querySelector("#mEmo [aria-pressed=true]")||{}).dataset;
+    if(!nm){ joinMsg=t().badName; render(); return; }
+    const m={n:nm}; if(em && em.e) m.e=em.e;
+    const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
+    try{ await fb.updateDoc(ref, G.cap ? {["mem."+uid]:m} : {["mem."+uid]:m, cap:uid}); }
+    catch(e){ try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }catch(e2){ joinMsg=t().joinFail; render(); return; } }
+    try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
+    joinMsg=""; save();
+  }
+  const upd=d=>fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid), d).catch(()=>{});
+  document.addEventListener("click", e=>{
+    const b=e.target.closest("[data-mesa]"); if(!b || !fb) return;
+    const a=b.dataset.mesa;
+    if(a==="join") join();
+    if(a==="emo"){ document.querySelectorAll("#mEmo button").forEach(x=>x.setAttribute("aria-pressed", x===b && x.getAttribute("aria-pressed")!=="true")); }
+    if(a==="pass" && G.cap===uid && b.dataset.u!==uid && sure(b, t().giveTo(memName(b.dataset.u)))) upd({cap:b.dataset.u});
+    if(a==="take") upd({req:{u:uid, at:fb.serverTimestamp()}});
+    if(a==="untake") upd({req:null});
+    if(a==="give" && G.req) upd({cap:G.req.u, req:null});
+    if(a==="deny") upd({req:null});
+    if(a==="back" && loaded) location.hash=loaded.g;
+    if(a==="user") User.open();
+  });
+
+  // ---------- pantallas ----------
+  function standHtml(big){
+    const L=mesaStand(GS), tt=total();
+    return `<table class="mtab${big?" big":""}"><thead><tr><th>#</th><th></th><th>${esc(t().pts)}</th><th>${esc(t().games)}</th></tr></thead><tbody>`+
+      L.map((x,k)=>`<tr${x.id===gid?' class="me"':""}><td>${k+1}º</td><td>${esc(mesaName(x.G))}</td><td>${esc(mesaNum(x.pts))}</td><td>${x.n}/${tt}</td></tr>`).join("")+`</tbody></table>`;
+  }
+  function podiumHtml(){
+    const L=mesaStand(GS).slice(0,3), med=["🥇","🥈","🥉"];
+    return `<div class="mpod">${L.map((x,k)=>`<div class="mp${k+1}"><span class="mmed">${med[k]}</span><b>${esc(mesaName(x.G))}</b><span>${esc(mesaNum(x.pts))} ${esc(t().pts)}</span></div>`).join("")}</div>`;
+  }
+  const finished=()=>T && (T.st==="done" || (T.st==="live" && Object.keys(GS).length && Object.values(GS).every(x=>mesaDone(x)>=total())));
+  function render(){
+    if(view==="mesa-sala") return renderSala();
+    if(view!=="mesa") return bar();
+    const T0=t(); setTitle(T0.title);
+    if(!tid || !gid){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
+    if(!fb){ set("mesaBody", `<p class="intro">…</p>`); boot(); return; }
+    if(!T || !G){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
+    let h=`<div class="mhead"><h2>${esc(mesaName(G))}</h2><p class="m">${esc(T.name)}</p></div>`;
+    if(finished()){
+      h+=`<div class="mfin"><h3>🏆 ${esc(T0.fin)}</h3>${podiumHtml()}${standHtml()}`;
+      if(member()) h+= Reg.nick() ? `<p class="m">${esc(T0.saveDone(Reg.nick()))}</p>` : `<button class="primary" data-mesa="user">${esc(T0.saveQ)}</button>`;
+      set("mesaBody", h+`</div>`); return;
+    }
+    if(T.st==="draft" && !member()){ set("mesaBody", h+`<div class="mwait"><p class="mbig">⏳ ${esc(T0.wait)}</p><p class="m">${esc(T0.waitSub)}</p></div>`); return; }
+    if(!member()){
+      if(T.st==="done"){ set("mesaBody", h+`<p class="intro">${esc(T0.none)}</p>`); return; }
+      let nm=""; try{ nm=localStorage.getItem("rodo-mesa-nm")||Reg.nick()||""; }catch(e){}
+      h+=`<div class="mjoin"><label>${esc(T0.nameL)}<input id="mName" maxlength="24" autocomplete="nickname" value="${esc(nm)}"></label>
+        <div><span class="m small">${esc(T0.emoL)}</span><div class="memo" id="mEmo">${MESA_EMO.map(x=>`<button data-mesa="emo" data-e="${x}" aria-pressed="false">${x}</button>`).join("")}</div></div>
+        <p class="mnote">⚠️ ${esc(T0.same)}</p><button class="primary" data-mesa="join">${esc(T0.join)}</button><p class="tmsg">${esc(joinMsg)}</p></div>`;
+      if($("mesaBody").dataset.f!=="join"){ $("mesaBody").dataset.f="join"; $("mesaBody").innerHTML=h; }
+      return;
+    }
+    $("mesaBody").dataset.f="";
+    const mem=Object.entries(G.mem||{}), cap=G.cap===uid;
+    const live=T.st==="live" && T.go, go=live ? tms(T.go) : 0, now=srv();
+    if(live && now<go) h+=`<p class="mcd">${esc(T0.startsIn)} <b data-mcd="${go}">${clock(go-now)}</b></p>`;
+    else if(live && n0()>=total()) h+=`<p class="mbig">✓ ${esc(T0.allDone)}</p>`;
+    else if(live && loaded) h+=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
+    else h+=`<p class="m">${esc(T0.waitStart)}</p>`;
+    h+=`<h3>${esc(T0.inMesa(mem.length))}</h3><ul class="mmem">${mem.map(([u,m])=>`<li><button data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}>${esc((m.e?m.e+" ":"")+m.n)}${u===uid?` (${esc(T0.you)})`:""}${u===G.cap?` · 👑 ${esc(T0.cap)}`:""}</button></li>`).join("")}</ul>`;
+    if(cap && mem.length>1) h+=`<p class="m small">${esc(T0.capNote)}</p>`;
+    h+=`<h3>${esc(T0.table)}</h3>${standHtml()}`;
+    set("mesaBody", h);
+  }
+  // barra de arriba mientras se juega: mesa, partida, reloj, quién tiene el teclado y tabla entre mesas
+  function bar(){
+    const el=$("mesaTop"); if(!el) return;
+    const on=active() && loaded && GAMES[view] && view===loaded.g;
+    // en la mesa valen sus reglas: se esconden el reloj y los costos en segundos del juego
+    document.body.classList.toggle("mesamode", !!on);
+    el.hidden=!on; if(!on) return;
+    const T0=t(), cap=G.cap===uid, n=loaded.n, left=GD && GD.t0 ? MESA_MAX-(srv()-tms(GD.t0)) : MESA_MAX;
+    let h=`<div class="mtop1"><b>${esc(mesaName(G))}</b> · ${esc(T0.bar(n+1, total()))} · ⏱ <span class="${left<120000?"mlow":""}">${clock(left)}</span> ${esc(T0.left)}</div>`;
+    h+=`<p class="mrule">${esc(T0.rule)}</p>`;
+    if(note) h+=`<p class="mnote">${esc(note)}</p>`;
+    if(cap){ h+=`<p class="mrole">${esc(T0.youCap)}</p>`;
+      if(G.req && G.req.u && G.req.u!==uid) h+=`<p class="mreq">${esc(T0.wants(memName(G.req.u)))} <button class="primary" data-mesa="give">${esc(T0.give)}</button> <button data-mesa="deny">${esc(T0.no)}</button></p>`; }
+    else { h+=`<p class="mrole">${esc(T0.watching(memName(G.cap)))}</p>`;
+      h+= G.req && G.req.u===uid ? `<p class="mreq">${esc(T0.asked)} <button data-mesa="untake">${esc(T0.cancel)}</button></p>` : `<p><button data-mesa="take">✋ ${esc(T0.take)}</button></p>`; }
+    const L=mesaStand(GS), k=L.findIndex(x=>x.id===gid), open=!!document.querySelector("#mesaTop details[open]");
+    h+=`<details class="mtabd"${open?" open":""}><summary>${esc(T0.table)} · ${esc(T0.pos(k+1, L.length, mesaNum(k>=0?L[k].pts:0)))}</summary>${standHtml()}</details>`;
+    set("mesaTop", h);
+  }
+  // pantalla de sala: para proyectar (tabla en vivo y podio al final)
+  function renderSala(){
+    const T0=t(); setTitle(T0.sala);
+    if(!fb){ set("mesaSala", "…"); boot(); return; }
+    if(!T){ set("mesaSala", `<p class="intro">${esc(T0.none)}</p>`); return; }
+    let h=`<h2 class="msname">${esc(T.name)}</h2>`;
+    const go=T.go ? tms(T.go) : 0, now=srv();
+    if(finished()) h+=`<h3 class="msfin">🏆 ${esc(T0.fin)}</h3>${podiumHtml()}`;
+    else if(T.st==="live" && go && now<go) h+=`<p class="mcd big">${esc(T0.startsIn)} <b data-mcd="${go}">${clock(go-now)}</b></p>`;
+    else if(T.st!=="live") h+=`<p class="mcd">${esc(T0.waitTable)}</p>`;
+    h+=standHtml(true);
+    set("mesaSala", h);
+  }
+  setInterval(()=>{ if(!fb) return; document.querySelectorAll("[data-mcd]").forEach(el=>{ el.textContent=clock(+el.dataset.mcd-srv()); });
+    if(T && T.go && srv()>=tms(T.go) && view==="mesa") render();
+    step(); publish(); bar(); }, 800);
+  return {
+    show(){ boot(); render(); },
+    route(){ if(view==="mesa" || view==="mesa-sala"){ boot(); render(); } bar(); },
+    texts(){ render(); bar(); }
+  };
+})();
+
+// =====================================================================
 // TORNEO: PANEL DEL ORGANIZADOR (#torneo-admin)
 // Entra con Google (la misma app separada de la administración). Crea torneos solo claudia@rodo.es; los manejan
 // ella y los organizadores que figuren en el torneo (orgs). Las reglas de Firestore son la seguridad real.
@@ -6649,9 +6977,11 @@ const TourAdmin = (()=>{
     if(!id || !ok.includes(id)) id=ok[0]||null;
     if(id!==tid){
       tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null; CW={}; CWok=false;
-      [uR,uI,uRes].forEach(f=>f&&f()); uR=uI=uRes=null;
+      [uR,uI,uRes,uGr].forEach(f=>f&&f()); uR=uI=uRes=uGr=null; GRP={};
       if(tid){
         const t0=tid; rsFor=null;
+        // torneo por mesas: las mesas, con sus miembros, capitán, pedidos de teclado y resultados
+        uGr=A.onSnapshot(A.collection(A.db,"tourneys",tid,"groups"), qs=>{ GRP={}; qs.forEach(d=>GRP[d.id]=d.data({serverTimestamps:"estimate"})); render(); }, fail);
         uR=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); if(t0===tid) rsFor=t0; watchRes(); render(); }, fail);
         uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); privNew(); }, fail);
         loadPriv(); loadCw();
@@ -6661,7 +6991,87 @@ const TourAdmin = (()=>{
     render();
   }
   // QR a pantalla completa para los que se acercan: lleva directo a la sala de este torneo (?t=), donde se arma el usuario y se inscriben
-  const tourUrl=id=>`${/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin}/?t=${encodeURIComponent(id)}`;
+  const baseUrl=()=>/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
+  const tourUrl=id=>`${baseUrl()}/?t=${encodeURIComponent(id)}`;
+
+  // ---------- torneo por mesas (panel) ----------
+  let GRP={}, uGr=null, mesaT=0;
+  const isMesa=()=>!!(TD && TD.mode==="mesas");
+  const mesaUrl=g=>`${baseUrl()}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(g)}`;
+  const salaUrl=()=>`${baseUrl()}/?pantalla=${encodeURIComponent(tid)}`;
+  const grpList=()=>Object.entries(GRP).sort((a,b)=>(a[1].i|0)-(b[1].i|0));
+  const MST={draft:"Entrada cerrada", open:"Entrada abierta", live:"En juego", done:"Terminado"};
+  function mesaCtl(){
+    const st=TD.st, L=grpList(), nMem=L.reduce((a,[,g])=>a+Object.keys(g.mem||{}).length,0);
+    let c=`<div class="kpis"><div class="kpi"><b>${esc(MST[st]||st)}</b><span>torneo por mesas</span></div><div class="kpi"><b>${L.length}</b><span>mesas · ${nMem} jugadores</span></div><div class="kpi"><b>${TD.rounds.length}</b><span>partidas (15 min cada una, como máximo)</span></div></div><div class="row">`;
+    if(st==="draft") c+=`<button class="primary" data-ta="mopen">Habilitar la entrada a las mesas</button>`;
+    if(st==="open") c+=`<button data-ta="mdraft">Cerrar la entrada</button><button class="primary" data-ta="mstart">▶ Arrancar torneo (cuenta regresiva de 15 s)</button>`;
+    if(st==="live") c+=`<button data-ta="mdone">Terminar el torneo</button>`;
+    c+=`<button data-ta="mqr">🖨 QR de las mesas (para imprimir)</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
+    c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los 15 minutos. Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
+    return c;
+  }
+  function mesaLive(){
+    const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
+    let h=`<h2>Mesas (${L.length})</h2>`;
+    if(TD.st!=="live" && TD.st!=="done") h+=`<div class="row">Agregar <input id="taMesaN" type="number" min="1" max="40" value="${L.length?1:4}"> mesas <button data-ta="madd">+ Agregar</button></div>`;
+    h+=`<div class="madms">`+L.map(([g,x])=>{
+      const mem=Object.entries(x.mem||{}), req=x.req, late=req && req.at && now-tms(req.at)>=60000;
+      return `<div class="madm" data-g="${esc(g)}"><div class="row"><b>${pos[g]||"–"}º</b> <input data-mg="em" value="${esc(x.em||"")}" maxlength="8" size="3" aria-label="Emoji"> <input data-mg="nm" value="${esc(x.nm||"")}" maxlength="30" aria-label="Nombre">
+        <button data-ta="mren" data-g="${esc(g)}">Guardar</button> <span>${esc(mesaNum(mesaTot(x)))} pts · ${mesaDone(x)}/${N} partidas</span> <a href="${esc(mesaUrl(g))}" target="_blank" rel="noopener">link de la mesa</a>
+        ${TD.st!=="live"?`<button class="tadel" data-ta="mdel" data-g="${esc(g)}">Borrar</button>`:""}</div>
+        <p>${mem.length ? mem.map(([u,m])=>esc((m.e?m.e+" ":"")+m.n)+(u===x.cap?" 👑":"")).join(", ") : `<span class="m">Nadie todavía</span>`}</p>
+        ${mem.length>1 ? `<label>Capitán <select data-ta="mcap" data-g="${esc(g)}">${mem.map(([u,m])=>`<option value="${esc(u)}"${u===x.cap?" selected":""}>${esc(m.n)}</option>`).join("")}</select></label>` : ""}
+        ${req && req.u ? `<p class="mreq">✋ ${esc(((x.mem||{})[req.u]||{}).n||"…")} pide el teclado. ${late ? `El capitán no respondió en 60 s: <button class="primary" data-ta="mauth" data-g="${esc(g)}">Autorizar</button>` : "Si el capitán no responde en 60 s, aparece «Autorizar»."}</p>` : ""}</div>`; }).join("")+`</div>`;
+    return h;
+  }
+  function mesaLiveRender(){
+    const el=$("taLive"), h=mesaLive(); if(el.dataset.h===h) return;
+    // no se pierde lo que se está escribiendo en el nombre o el emoji de una mesa
+    const keep={}; el.querySelectorAll("[data-mg]").forEach(i=>{ if(i.value!==i.defaultValue || document.activeElement===i) keep[i.closest(".madm").dataset.g+i.dataset.mg]=[i.value, document.activeElement===i]; });
+    const n=($("taMesaN")||{}).value;
+    el.dataset.h=h; el.innerHTML=h;
+    el.querySelectorAll("[data-mg]").forEach(i=>{ const k=keep[i.closest(".madm").dataset.g+i.dataset.mg]; if(k){ i.value=k[0]; if(k[1]) i.focus(); } });
+    if(n && $("taMesaN")) $("taMesaN").value=n;
+  }
+  // la partida de una ronda configurada (como al programar una ronda del torneo, con las palabras propias)
+  async function genMesa(ci){
+    const c=TD.rounds[ci], L=c.lang||TD.lang||"es", opt={L};
+    if(c.g==="sopa") opt.s=c.s||"media"; if(c.g==="semilla") opt.w=c.w||12; if(c.dif) opt.dif=c.dif; if(c.g==="ahorcado") opt.n=c.n||6;
+    const cw=c.g!=="sopa" && cwOf(c); if(cw){ opt.cw=cw; if(c.g==="ahorcado") opt.n=cw.length; if(c.g==="semilla") opt.w=cw.length; }
+    if(c.g!=="sopa") opt.avoid=cwOthers(ci);
+    const d=await Reg.genFor(c.g, opt);
+    const x={i:ci, g:c.g, k:c.g==="sopa" ? (opt.s==="media"?"sopa":"sopa"+opt.s) : c.g==="ahorcado" ? "ahorcado6" : c.g, lang:L, nr:tourRounds({g:c.g, n:opt.n}), d};
+    if(c.g==="sopa") x.m=c.m||"w";
+    return x;
+  }
+  async function mesaQr(){
+    const L=grpList(); if(!L.length){ say("Primero agregá las mesas.", true); return; }
+    const w=window.open("", "_blank"); if(!w){ say("El navegador bloqueó la ventana: permití las ventanas emergentes de este sitio.", true); return; }
+    w.document.write("<p style='font-family:sans-serif'>Armando los QR…</p>");
+    const {qrSvg}=await import("/js/qr.js");
+    const cards=L.map(([g,x])=>`<div class="c"><h1>${esc(mesaName(x))}</h1><p class="t">${esc(TD.name)}</p>${qrSvg(mesaUrl(g),8)}<p class="s">Escaneá para entrar a tu mesa · Scan to join your table</p><p class="u">${esc(mesaUrl(g).replace(/^https?:\/\//,""))}</p></div>`).join("");
+    w.document.open();
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QR de las mesas · ${esc(TD.name)}</title><style>
+      body{font-family:system-ui,sans-serif;margin:0;color:#111;background:#fff}.c{break-after:page;page-break-after:always;min-height:96vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;box-sizing:border-box}
+      .c svg{width:min(62vh,80vw);height:auto}h1{font-size:48px;margin:0}.t{margin:0;color:#555;font-size:18px}.s{font-size:22px;font-weight:700;color:#C2410C;margin:0}.u{font-family:monospace;margin:0;word-break:break-all;color:#333}
+      @media screen{.c{border-bottom:2px dashed #ccc}}</style></head><body>${cards}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
+    w.document.close();
+  }
+  // cada tanto: cierra por tiempo las partidas de las mesas sin capitán y termina el torneo cuando terminaron todas
+  async function mesaTick(now){
+    renderLive();
+    if(TD.st!=="live" || !TD.go || now<tms(TD.go) || busy || now-mesaT<10000) return;
+    mesaT=now; const N=TD.rounds.length, L=grpList();
+    if(L.length && L.every(([,x])=>mesaDone(x)>=N)){ if(isSuper()){ try{ await A.updateDoc(tref(),{st:"done"}); say("Terminaron todas las mesas: el torneo quedó terminado."); }catch(e){ fail(e); } } return; }
+    for(const [g,x] of L){
+      const n=mesaDone(x); if(n>=N) continue;
+      try{ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n))); if(!s.exists()) continue;
+        const d=s.data(); if(now-tms(d.t0)<MESA_MAX+30000) continue;
+        await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0}}); }
+      catch(e){}
+    }
+  }
   async function showQr(){
     if(!tid || !TD) return;
     const url=tourUrl(tid), w=tms(TD.when);
@@ -6720,6 +7130,7 @@ const TourAdmin = (()=>{
   async function tick(){
     if(!A || !me || !TD) return;
     if(view==="torneo-admin") document.querySelectorAll("#view-torneo-admin [data-cd]").forEach(el=>el.textContent=clock(+el.dataset.cd-srv()));
+    if(isMesa()) return mesaTick(srv());
     const r=last(), now=srv();
     // varios torneos programados: si llega la hora de otro y el que se está mirando no está en juego ni por arrancar, el panel pasa a ese
     const inWin=x=>{ const w0=tms(x.when); return x.ast===true && (x.st==="open"||x.st==="checkin") && w0 && now>=w0-NEXT && now<w0+30*60000; };
@@ -6804,6 +7215,39 @@ const TourAdmin = (()=>{
         await A.setDoc(ref,{name:"BITCOIN.AR HALVING GAMES", st:"draft", cap:64, fee:2100, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS, champ:null, auto:true, at:A.serverTimestamp()});
         cfgFor=null; pickT(ref.id); return; }
       if(a==="pick"){ pickT(el.value); return; }
+      // torneo por mesas
+      if(a==="mnew"){ const ref=A.doc(A.collection(A.db,"tourneys"));
+        await A.setDoc(ref,{name:"TORNEO POR MESAS", mode:"mesas", st:"draft", cap:64, fee:0, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS.map(r=>({...r, dur:15})), champ:null, go:null, at:A.serverTimestamp()});
+        cfgFor=null; pickT(ref.id); say("Torneo por mesas creado: elegí las partidas en «Rondas» y agregá las mesas."); return; }
+      if(a==="madd"){ const n=Math.max(1, Math.min(40, parseInt(($("taMesaN")||{}).value,10)||1)), L=grpList(), i0=L.reduce((m,[,x])=>Math.max(m, x.i|0), 0);
+        if(L.length+n>60){ say("Hasta 60 mesas por torneo.", true); return; }
+        for(let k=1;k<=n;k++) await A.setDoc(A.doc(A.collection(A.db,"tourneys",tid,"groups")), {i:i0+k, nm:"Mesa "+(i0+k), em:"", mem:{}, cap:null, req:null, res:{}});
+        say(`Listo: ${n} mesa${n===1?"":"s"} más.`); return; }
+      if(a==="mren"){ const box=el.closest(".madm"), nm=box.querySelector('[data-mg="nm"]').value.trim().slice(0,30), em=box.querySelector('[data-mg="em"]').value.trim().slice(0,8);
+        if(!nm){ say("La mesa necesita un nombre.", true); return; }
+        await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {nm, em}); say("Mesa guardada."); return; }
+      if(a==="mdel"){ if(!sure(el, "¿Borrar esta mesa?")) return;
+        const gs=await A.getDocs(A.collection(A.db,"tourneys",tid,"groups",el.dataset.g,"games")); await Promise.all(gs.docs.map(d=>A.deleteDoc(d.ref)));
+        await A.deleteDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g)); return; }
+      if(a==="mcap"){ await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {cap:el.value, req:null}); say("Capitán cambiado."); return; }
+      if(a==="mauth"){ const x=GRP[el.dataset.g]; if(!x || !x.req) return; await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",el.dataset.g), {cap:x.req.u, req:null}); say("Teclado autorizado."); return; }
+      if(a==="mopen"){ if(!grpList().length){ say("Primero agregá las mesas.", true); return; } await A.updateDoc(tref(),{st:"open"}); say("Entrada habilitada: ya pueden escanear el QR de su mesa."); return; }
+      if(a==="mdraft"){ await A.updateDoc(tref(),{st:"draft"}); return; }
+      if(a==="mdone"){ if(!sure(el, "¿Terminar el torneo? Se muestra el podio.")) return; await A.updateDoc(tref(),{st:"done"}); return; }
+      if(a==="mqr"){ await mesaQr(); return; }
+      if(a==="mstart"){
+        const L=grpList(), sin=L.filter(([,x])=>!Object.keys(x.mem||{}).length).length;
+        if(!L.length){ say("No hay mesas.", true); return; }
+        if(!sure(el, sin ? `${sin} mesa${sin===1?"":"s"} sin nadie. ¿Arrancar igual?` : `¿Arrancar con ${L.length} mesas?`)) return;
+        busy=true; el.disabled=true; say("Armando las partidas…");
+        try{
+          const P=[]; for(let ci=0; ci<TD.rounds.length; ci++) P.push(await genMesa(ci));
+          for(const x of P) await A.setDoc(A.doc(A.db,"tourneys",tid,"mpz",String(x.i)), x);
+          const old=await A.getDocs(A.collection(A.db,"tourneys",tid,"mpz")); await Promise.all(old.docs.filter(d=>+d.id>=P.length).map(d=>A.deleteDoc(d.ref)));
+          await A.updateDoc(tref(),{st:"live", go:A.Timestamp.fromMillis(srv()+15000)});
+          say("¡Arranca en 15 segundos en todas las mesas!");
+        } finally{ busy=false; el.disabled=false; }
+        return; }
       // administradores del torneo (solo claudia@rodo.es)
       if(a==="admadd"){ const m=$("taAdmIn").value.trim().toLowerCase();
         if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){ say("Escribí un mail válido.", true); return; }
@@ -6953,7 +7397,7 @@ const TourAdmin = (()=>{
       <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
       <label class="wide">LNURL o Lightning Address para el pozo<input data-f="lnurl" value="${esc(T0.lnurl||"")}" maxlength="400" spellcheck="false"></label>
       <label class="wide">Bases y condiciones (vacío = el texto por defecto, en el idioma de cada jugador)<textarea data-f="bases" maxlength="3000" placeholder="${esc(T.es.tBasesDef)}">${esc(T0.bases||"")}</textarea></label>
-    </div><h2>Rondas</h2><p class="m small">La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. El idioma de cada ronda queda fijo cuando se genera su partida. Duración 0 = sin límite.</p>
+    </div><h2>${TD && TD.mode==="mesas" ? "Partidas" : "Rondas"}</h2><p class="m small">${TD && TD.mode==="mesas" ? "Todas las mesas juegan estas partidas, en este orden (la columna «Minutos» no se usa: cada una se cierra a los 15)." : "La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. Duración 0 = sin límite."} El idioma de cada ronda queda fijo cuando se genera su partida.</p>
     <div class="atabw"><table class="atab tarounds"><thead><tr><th>#</th><th>Juego</th><th>Idioma</th><th>Opciones</th><th>Dificultad</th><th>Minutos</th><th></th></tr></thead><tbody>`;
     T0.rounds.forEach((c,i)=>{
       const lock=used.has(i) && rounds().some(r=>r.ci===i && r.st!=="sched" && r.st!=="ready");
@@ -7069,11 +7513,19 @@ const TourAdmin = (()=>{
     const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>tourOrder(ALL[a],ALL[b]));
     const wh=x=>tms(x.when) ? " · "+new Date(tms(x.when)).toLocaleString("es-AR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
     let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)}${esc(wh(ALL[k]))} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
-      (isSuper()?` <button data-ta="new">Nuevo torneo</button>`:"")+(isSuper() && TD && !TD.test?` <button class="tadel" data-ta="deltour">🗑 Borrar este torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
+      (isSuper()?` <button data-ta="new">Nuevo torneo</button> <button data-ta="mnew">Nuevo torneo por mesas</button>`:"")+(isSuper() && TD && !TD.test?` <button class="tadel" data-ta="deltour">🗑 Borrar este torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
     if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
     // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
     const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });
-    const ph=h+admHtml()+testHtml(); if($("taPick").dataset.h!==ph){ $("taPick").dataset.h=ph; $("taPick").innerHTML=ph; }
+    const ph=h+admHtml()+(isMesa()?"":testHtml()); if($("taPick").dataset.h!==ph){ $("taPick").dataset.h=ph; $("taPick").innerHTML=ph; }
+    if(isMesa()){
+      const c=mesaCtl(); if($("taCtl").dataset.h!==c){ $("taCtl").dataset.h=c; $("taCtl").innerHTML=c; }
+      Object.entries(keep).forEach(([i,[v,f]])=>{ const el=$(i); if(el){ el.value=v; if(f) el.focus(); } });
+      mesaLiveRender();
+      if(cfgFor!==tid+JSON.stringify(TD.rounds)+TD.st){ cfgFor=tid+JSON.stringify(TD.rounds)+TD.st; $("taCfg").innerHTML=cfgHtml(); }
+      ["taIns","taHist"].forEach(i=>{ $(i).innerHTML=""; $(i).dataset.h=""; });
+      return;
+    }
     // estado y botones
     const st=TD.st, r=last(), nIns=Object.values(INS).filter(x=>!x.out).length, nCk=Object.values(INS).filter(x=>x.ck&&!x.out).length;
     let c=`<div class="kpis"><div class="kpi"><b>${esc(T.es.tSt[st]||st)}</b><span>estado</span></div><div class="kpi"><b>${nIns}</b><span>inscriptos · ${nCk} con check-in · juegan todos; pasan a lo sumo ${MAX_ADV} de la ronda 1</span></div>
@@ -7106,6 +7558,7 @@ const TourAdmin = (()=>{
   // ronda en curso, con el avance de todos
   function renderLive(){
     if(view!=="torneo-admin" || !TD) return;
+    if(isMesa()) return mesaLiveRender();
     const r=last(), now=srv(), el=$("taLive");
     if(!r){ el.innerHTML=""; return; }
     let h=`<h2>${r.final?"Final":"Ronda "+r.no} · ${esc(tDesc(r))} · ${r.dur?r.dur+" min":"sin límite"} · pasan ${r.adv} de ${(r.pl||[]).length}</h2><div class="row">`;
@@ -7162,15 +7615,16 @@ const TourAdmin = (()=>{
     if(e.target.classList.contains("cwk")) return cwFilter(e.target.closest(".cwpick"));
     if(e.target.dataset.cwp!==undefined){ e.target.closest(".tacwr").querySelector('[data-f="cw"]').value=e.target.dataset.cwp; return; }
     const b=e.target.closest("[data-ta]"); if(!b) return;
-    if(b.dataset.ta==="pick"||b.dataset.ta==="auto") act(b.dataset.ta, b);
+    if(b.dataset.ta==="pick"||b.dataset.ta==="auto"||b.dataset.ta==="mcap") act(b.dataset.ta, b);
     if(b.closest(".tarounds") && b.dataset.f==="g"){ /* el juego nuevo trae sus opciones al guardar */ } });
   return {show};
 })();
 
 function route(){
   const h=location.hash.replace("#","");
-  view = h==="admin" ? "admin" : h==="stats" ? "stats" : h==="torneo" ? "torneo" : h==="torneo-admin" ? "torneo-admin" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
+  view = h==="admin" ? "admin" : h==="stats" ? "stats" : h==="torneo" ? "torneo" : h==="torneo-admin" ? "torneo-admin" : h==="mesa" ? "mesa" : h==="mesa-sala" ? "mesa-sala" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
+  document.body.classList.toggle("vsala", view==="mesa-sala");
   $("menuBtn").style.display = view==="menu" ? "none" : "";
   applyTexts();
   if(GAMES[view]) Reg.enter(view);
@@ -7178,7 +7632,7 @@ function route(){
   if(view==="stats") Stats.show();
   if(view==="torneo") Tour.show();
   if(view==="torneo-admin") TourAdmin.show();
-  Tour.route();
+  Tour.route(); Mesa.route();
   if(view==="menu") Nudge.maybe();
   window.scrollTo(0,0);
 }

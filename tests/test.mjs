@@ -371,6 +371,46 @@ const ADM2X = env.authenticatedContext("adm3", { email: "ce.andragnes@gmail.com"
 await t("admin 2: lee las fichas", assertSucceeds(getDoc(doc(ADM2, "fichas/A"))));
 await t("admin 2 sin verificar no", assertFails(getDoc(doc(ADM2X, "fichas/A"))));
 await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext("x", { email: "otro@gmail.com", email_verified: true }).firestore(), "fichas/A"))));
+// ---------- torneo por mesas ----------
+{
+  const C = env.authenticatedContext("C").firestore();
+  const mt = (o = {}) => ({ name: "MESAS", mode: "mesas", st: "draft", cap: 64, orgs: [], rounds: [], lang: "es", cur: 0, go: null, at: serverTimestamp(), ...o });
+  await t("mesas: un organizador común no crea el torneo", assertFails(setDoc(doc(A, "tourneys/M9"), mt())));
+  await t("mesas: la administración crea el torneo", assertSucceeds(setDoc(doc(ADM, "tourneys/M9"), mt())));
+  await t("mesas: la administración crea las mesas", assertSucceeds(setDoc(doc(ADM, "tourneys/M9/groups/g1"), { i: 1, nm: "Mesa 1", em: "", mem: {}, cap: null, req: null, res: {} })));
+  await t("mesas: un jugador no crea mesas", assertFails(setDoc(doc(A, "tourneys/M9/groups/g2"), { i: 2, nm: "Mesa 2", em: "", mem: {}, cap: null, req: null, res: {} })));
+  await t("mesas: con la entrada cerrada no se entra", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana" }, cap: "A" })));
+  await t("mesas: abre la entrada", assertSucceeds(updateDoc(doc(ADM, "tourneys/M9"), { st: "open" })));
+  await t("mesas: el primero entra y queda de capitán", assertSucceeds(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana", e: "🦊" }, cap: "A" })));
+  await t("mesas: el segundo no puede ponerse de capitán", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.B": { n: "Beto" }, cap: "B" })));
+  await t("mesas: el segundo entra", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.B": { n: "Beto" } })));
+  await t("mesas: nadie agrega a otro", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.X": { n: "Falso" } })));
+  await t("mesas: la tabla entre mesas es pública", assertSucceeds(getDoc(doc(C, "tourneys/M9/groups/g1"))));
+  await t("mesas: pedir el teclado", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { req: { u: "B", at: serverTimestamp() } })));
+  await t("mesas: no se pide a nombre de otro", assertFails(updateDoc(doc(C, "tourneys/M9/groups/g1"), { req: { u: "C", at: serverTimestamp() } })));
+  await t("mesas: el que no es capitán no se queda con el teclado", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { cap: "B", req: null })));
+  await t("mesas: el capitán acepta el pedido", assertSucceeds(updateDoc(doc(A, "tourneys/M9/groups/g1"), { cap: "B", req: null })));
+  await t("mesas: el capitán no le pasa el teclado a alguien de afuera", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { cap: "C" })));
+  await t("mesas: un organizador común no arranca el torneo", assertFails(updateDoc(doc(ORG, "tourneys/M9"), { st: "live" })));
+  await t("mesas: la administración arranca", assertSucceeds(updateDoc(doc(ADM, "tourneys/M9"), { st: "live", go: serverTimestamp() })));
+  await t("mesas: las partidas las genera la administración", assertSucceeds(setDoc(doc(ADM, "tourneys/M9/mpz/0"), { i: 0, g: "anagrama", k: "anagrama", lang: "es", nr: 10, d: { list: [] } })));
+  await t("mesas: con el torneo en juego, cualquiera con sesión lee las partidas", assertSucceeds(getDoc(doc(C, "tourneys/M9/mpz/0"))));
+  const gm = (u) => ({ s: "{}", t0: serverTimestamp(), at: serverTimestamp(), e: 0, h: 0, by: u });
+  await t("mesas: quien no es capitán no escribe el tablero", assertFails(setDoc(doc(A, "tourneys/M9/groups/g1/games/0"), gm("A"))));
+  await t("mesas: el capitán escribe el tablero de la partida en curso", assertSucceeds(setDoc(doc(B, "tourneys/M9/groups/g1/games/0"), gm("B"))));
+  await t("mesas: no el de una partida que no toca", assertFails(setDoc(doc(B, "tourneys/M9/groups/g1/games/1"), gm("B"))));
+  await t("mesas: el capitán actualiza sin cambiar el arranque", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1/games/0"), { s: "{\"a\":1}", at: serverTimestamp(), e: 1, h: 0, by: "B" })));
+  await t("mesas: los de la mesa leen el tablero", assertSucceeds(getDoc(doc(A, "tourneys/M9/groups/g1/games/0"))));
+  await t("mesas: los de otra mesa no", assertFails(getDoc(doc(C, "tourneys/M9/groups/g1/games/0"))));
+  let t0 = null; await env.withSecurityRulesDisabled(async c => { t0 = (await getDoc(doc(c.firestore(), "tourneys/M9/groups/g1/games/0"))).data().t0; });
+  const rs = (o = {}) => ({ ok: true, t0, at: serverTimestamp(), e: 1, h: 0, s: 0, R: 0, ...o });
+  await t("mesas: quien no es capitán no anota el resultado", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "res.0": rs() })));
+  await t("mesas: el arranque de la partida tiene que ser el del tablero", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ t0: serverTimestamp() }) })));
+  await t("mesas: el capitán anota el resultado", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs() })));
+  await t("mesas: el resultado anotado no cambia", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ e: 0 }) })));
+  await t("mesas: el tablero de una partida anotada no cambia", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1/games/0"), { s: "{}", at: serverTimestamp(), e: 0, h: 0, by: "B" })));
+  await t("mesas: un organizador no cambia el modo de un torneo", assertFails(updateDoc(doc(ORG, "tourneys/T1"), { mode: "mesas" })));
+}
 await env.cleanup();
 console.log(`\n${pass} ok, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

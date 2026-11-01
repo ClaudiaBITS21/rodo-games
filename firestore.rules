@@ -500,7 +500,10 @@ service cloud.firestore {
     function isTest(tid) { return tour(tid).get('test', false) == true; }
     function validTour(d) {
       // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'ast', 'nck', 'nlv', 'test', 'src', 'inv', 'place'])
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'ast', 'nck', 'nlv', 'test', 'src', 'inv', 'place', 'mode', 'go'])
+        // torneo por mesas: mode 'mesas'; go = arranque simultáneo de todas las mesas
+        && (!('mode' in d) || d.mode == 'mesas')
+        && (!('go' in d) || d.go == null || d.go is timestamp)
         // ast: arranque automático a la hora fijada (sin el campo, lo inicia la administración)
         && (!('ast' in d) || d.ast is bool)
         // place: dónde se juega (texto libre que se muestra en la portada y en la sala)
@@ -522,6 +525,10 @@ service cloud.firestore {
       allow update: if isOrg(tid) && validTour(request.resource.data)
         // la lista de organizadores la cambia solo la administración; un ensayo no deja de serlo
         && (isAdmin() || request.resource.data.orgs == resource.data.orgs)
+        // por mesas: abrir la entrada, arrancar y terminar lo hace solo la administración; el modo no cambia
+        && request.resource.data.get('mode', '') == resource.data.get('mode', '')
+        && (resource.data.get('mode', '') != 'mesas' || isAdmin()
+          || (request.resource.data.st == resource.data.st && request.resource.data.get('go', null) == resource.data.get('go', null)))
         && request.resource.data.get('test', false) == resource.data.get('test', false);
       allow delete: if isAdmin() || (isOrg(tid) && resource.data.get('test', false) == true);
 
@@ -573,6 +580,27 @@ service cloud.firestore {
       match /secret/{x} {
         allow read, write: if isOrg(tid);
       }
+
+      // ---------- Torneo por mesas ----------
+      // Partidas (una por ronda configurada): las genera la administración al arrancar; se leen desde el arranque.
+      match /mpz/{n} {
+        allow read: if isOrg(tid) || (signedIn() && tour(tid).st in ['live', 'done']);
+        allow write: if isAdmin();
+      }
+      // Mesas: nombre y emoji (nm, em), miembros (mem: {uid: {n, e}}), capitán (cap), pedido de teclado (req: {u, at})
+      // y resultados (res: {"0": {ok, t0, at, e, h, s, R}, ...}). La tabla entre mesas es pública.
+      match /groups/{gid} {
+        allow read: if true;
+        allow create, delete: if isAdmin();
+        allow update: if isOrg(tid) || mesaJoin(tid) || mesaCap(tid) || mesaReq() || mesaRes(tid, gid);
+        // Estado del tablero de cada partida: lo escribe solo el capitán; lo leen los de la mesa.
+        match /games/{n} {
+          allow read: if isOrg(tid) || (signedIn() && request.auth.uid in get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)).data.mem);
+          allow create: if mesaGame(tid, gid, n) && request.resource.data.t0 == request.time;
+          allow update: if mesaGame(tid, gid, n) && request.resource.data.t0 == resource.data.t0;
+          allow delete: if isAdmin();
+        }
+      }
       match /rounds/{r} {
         allow read: if true;
         allow write: if isOrg(tid);
@@ -593,6 +621,51 @@ service cloud.firestore {
           allow delete: if isOrg(tid);
         }
       }
+    }
+    // ---------- Torneo por mesas ----------
+    function mesaDiff() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // entrar a la mesa (con la entrada abierta o el torneo en juego): agregarse a sí mismo; el primero queda de capitán
+    function mesaJoin(tid) {
+      let me = request.auth.uid;
+      let m = request.resource.data.mem;
+      return signedIn() && tour(tid).st in ['open', 'live'] && mesaDiff().hasOnly(['mem', 'cap'])
+        && m.diff(resource.data.mem).affectedKeys().hasOnly([me])
+        && m[me].keys().hasOnly(['n', 'e']) && m[me].n is string && m[me].n.size() > 0 && m[me].n.size() <= 24
+        && (!('e' in m[me]) || (m[me].e is string && m[me].e.size() <= 8))
+        && (request.resource.data.cap == resource.data.cap || (resource.data.cap == null && request.resource.data.cap == me));
+    }
+    // el capitán pasa el teclado a otro de la mesa (o acepta/rechaza un pedido)
+    function mesaCap(tid) {
+      return signedIn() && request.auth.uid == resource.data.cap && mesaDiff().hasOnly(['cap', 'req'])
+        && request.resource.data.cap in resource.data.mem
+        && (request.resource.data.req == null || request.resource.data.req == resource.data.req);
+    }
+    // pedir el teclado (o retirar el propio pedido)
+    function mesaReq() {
+      let me = request.auth.uid;
+      return signedIn() && me in resource.data.mem && mesaDiff().hasOnly(['req'])
+        && ((request.resource.data.req.u == me && request.resource.data.req.at == request.time && request.resource.data.req.keys().hasOnly(['u', 'at']))
+          || (request.resource.data.req == null && resource.data.req != null && resource.data.req.u == me));
+    }
+    // el capitán anota el resultado de la partida en curso: solo agrega la que sigue; las anotadas no cambian
+    function mesaRes(tid, gid) {
+      let o = resource.data.res;
+      let k = string(o.size());
+      let r = request.resource.data.res;
+      let x = r[k];
+      return signedIn() && request.auth.uid == resource.data.cap && tour(tid).st == 'live' && mesaDiff().hasOnly(['res'])
+        && r.diff(o).addedKeys().hasOnly([k]) && r.diff(o).changedKeys().size() == 0 && r.diff(o).removedKeys().size() == 0
+        && x.keys().hasOnly(['ok', 't0', 'at', 'e', 'h', 's', 'R'])
+        && x.ok is bool && x.at == request.time && x.e is int && x.h is int && x.s is int && x.R is int
+        && x.t0 == get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)/games/$(k)).data.t0;
+    }
+    // el tablero de la partida en curso lo escribe solo el capitán, mientras no tenga resultado
+    function mesaGame(tid, gid, n) {
+      let G = get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)).data;
+      let d = request.resource.data;
+      return signedIn() && request.auth.uid == G.cap && tour(tid).st == 'live' && n == string(G.res.size())
+        && d.keys().hasOnly(['s', 't0', 'at', 'e', 'h', 'by']) && d.s is string && d.s.size() <= 60000
+        && d.at == request.time && d.e is int && d.h is int && d.by == request.auth.uid;
     }
     function resOk(tid, r, uid) {
       let R = get(/databases/$(database)/documents/tourneys/$(tid)/rounds/$(r)).data;
