@@ -403,6 +403,11 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tarounds input[type=number]{width:4.5em}
 .cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}#taToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;background:#1A7F37;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
 #taToast.bad{background:#B3261E}#taToast[hidden]{display:none}
+/* cargando (lo primero que se ve al abrir el link de un QR) */
+.loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 16px;text-align:center}
+.loading p{margin:0;font-weight:600;font-size:1.1rem}.loading .slow{font-weight:400;font-size:.85rem;color:var(--muted);opacity:0;animation:ldshow 0s 10s forwards}
+.loading .spin{width:42px;height:42px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--btc);animation:ldspin .9s linear infinite}
+@keyframes ldspin{to{transform:rotate(360deg)}}@keyframes ldshow{to{opacity:1}}
 /* torneo por mesas */
 .mesatop{border:1px solid var(--line);border-left:5px solid var(--btc);background:var(--paper);border-radius:10px;padding:8px 12px;margin:0 0 14px}
 .mesatop[hidden]{display:none}.mesatop p{margin:4px 0}.mesatop .mtop1{font-weight:600}.mesatop .mlow{color:var(--bad);font-weight:700}
@@ -999,10 +1004,10 @@ body.vsala header .tools,body.vsala .buzon,body.vsala .privnote,body.vsala #titl
 
   <!-- ===== Torneo en vivo: la sala de los jugadores ===== -->
   <!-- ===== Torneo por mesas: la mesa del jugador y la pantalla de sala ===== -->
-  <section class="view" id="view-mesa"><div id="mesaBody"></div></section>
-  <section class="view" id="view-mesa-sala"><div id="mesaSala"></div></section>
+  <section class="view" id="view-mesa"><div id="mesaBody"><div class="loading"><span class="spin" aria-hidden="true"></span><p>Cargando tu mesa… · Loading your table…</p><p class="slow">Si tarda mucho, revisá la conexión y recargá la página · If it takes too long, check your connection and reload.</p></div></div></section>
+  <section class="view" id="view-mesa-sala"><div id="mesaSala"><div class="loading"><span class="spin" aria-hidden="true"></span><p>Cargando… · Loading…</p><p class="slow">Si tarda mucho, revisá la conexión y recargá la página · If it takes too long, check your connection and reload.</p></div></div></section>
   <section class="view" id="view-torneo">
-    <div id="tHead"></div>
+    <div id="tHead"><div class="loading"><span class="spin" aria-hidden="true"></span><p>Cargando el torneo… · Loading the tournament…</p><p class="slow">Si tarda mucho, revisá la conexión y recargá la página · If it takes too long, check your connection and reload.</p></div></div>
     <div id="tStage"></div>
     <div id="tMe"></div>
     <div id="tRound"></div>
@@ -5967,7 +5972,7 @@ Reg.ready.then(()=>{ try{ if("Notification" in window && Notification.permission
 // Más puntos gana; empates: más resuelto, menos tiempo ajustado.
 // =====================================================================
 Object.assign(T.es,{
-  tTitle:"Torneo", tNone:"No hay ningún torneo anunciado por ahora.",
+  tTitle:"Torneo", tLoading:"Cargando el torneo…", tNone:"No hay ningún torneo anunciado por ahora.",
   tSt:{draft:"Borrador", open:"Inscripción abierta", checkin:"Check-in abierto", live:"En juego", done:"Terminado"},
   tWhen:d=>`Arranca: ${d}`, tCount:n=>`${n} inscripto${n===1?"":"s"}`,
   tNeedUser:"Para inscribirte necesitás un usuario (nombre y PIN). Se arma en menos de 30 segundos.", tUserBtn:"Elegí tu usuario",
@@ -6011,7 +6016,7 @@ Object.assign(T.es,{
   tScoreHow:"Puntos: si terminás, 100 por resolverla más 1 por cada segundo antes de los 15 minutos (errores y ayudas suman segundos, como siempre). Si se acaba el tiempo, 1 punto por cada 1 % resuelto, menos 1 por cada 10 segundos de penalidad. El tiempo corre para todos desde el arranque de la ronda."
 });
 Object.assign(T.en,{
-  tTitle:"Tournament", tNone:"No tournament has been announced yet.",
+  tTitle:"Tournament", tLoading:"Loading the tournament…", tNone:"No tournament has been announced yet.",
   tSt:{draft:"Draft", open:"Registration open", checkin:"Check-in open", live:"Live", done:"Finished"},
   tWhen:d=>`Starts: ${d}`, tCount:n=>`${n} registered`,
   tNeedUser:"You need a username (name and PIN) to register. It takes less than 30 seconds.", tUserBtn:"Pick your username",
@@ -6192,6 +6197,7 @@ const Tour = (()=>{
   let RS={}, rUnsub=null, mine=null, mUnsub=null, INS=null, iUnsub=null;
   let RES={}, resId=null, resUnsub=null, closedRes={};
   let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
+  let tReady=false, tLoaded=false;
   let LIST=[], wantT=null; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
   // QR: quien llega por el QR va directo a armar su usuario y queda anotado (y con check-in, si está abierto), sin más botones
   const QR={on:false, asked:false, busy:false, loaded:false};
@@ -6444,6 +6450,7 @@ const Tour = (()=>{
   function render(){
     if(view!=="torneo") return;
     const T0=t();
+    if(!tReady || (fb && !tLoaded)){ set("tHead", loadingHtml(esc(T0.tLoading))); ["tStage","tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
     if(!fb){ set("tHead",`<p class="intro">${esc(T0.rkLocal)}</p>`); ["tStage","tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
     if(!TD){ set("tHead",`<p class="intro">${esc(T0.tNone)}</p>`); ["tStage","tMe","tRound","tTable","tMore"].forEach(i=>set(i,"")); return; }
     const nIns=INS ? Object.values(INS).filter(x=>!x.out).length : null;
@@ -6648,9 +6655,9 @@ const Tour = (()=>{
   async function pushState(){ try{ pushSt=typeof Push!=="undefined" ? await Push.state() : null; }catch(e){ pushSt=null; } render(); }
 
   (async()=>{
-    await Reg.ready; fb=Reg.fb(); if(!fb) return render();
+    await Reg.ready; fb=Reg.fb(); tReady=true; if(!fb) return render();
     uid=Reg.uid();
-    fb.onSnapshot(fb.collection(fb.db,"tourneys"), qs=>{ ALL={}; qs.forEach(d=>ALL[d.id]=d.data()); pick(); }, ()=>{});
+    fb.onSnapshot(fb.collection(fb.db,"tourneys"), qs=>{ ALL={}; qs.forEach(d=>ALL[d.id]=d.data()); tLoaded=true; pick(); render(); }, ()=>{ tLoaded=true; render(); });
   })();
 
   return {
@@ -6668,6 +6675,8 @@ const Tour = (()=>{
 // groups/{gid}/games/{n} (tablero del capitán: s = estado del juego, t0 = arranque de esa partida, e, h).
 // =====================================================================
 const MESA_MAX=15*60000, MESA_GAP=3000;
+// "Cargando…" mientras llega la información (el link del QR abre antes de que conecte)
+function loadingHtml(txt){ return `<div class="loading"><span class="spin" aria-hidden="true"></span><p>${txt}</p><p class="slow">${lang==="en"?"If it takes too long, check your connection and reload the page.":"Si tarda mucho, revisá la conexión y recargá la página."}</p></div>`; }
 // puntos de una partida: resuelta, 1000 − segundos − 100 por pista o error (piso 100); en ahorcado y anagrama, cada palabra
 // sin resolver suma 900/rondas s, como en el resto del sitio. Sin resolver a los 15 min: 0.
 const mesaPts=x=>{ if(!x || !x.ok) return 0; const sec=Math.floor(Math.max(0,(tms(x.at)||0)-(tms(x.t0)||0))/1000), miss=x.R ? (x.R-(x.s|0))*900/x.R : 0;
@@ -6684,7 +6693,7 @@ const Mesa = (()=>{
   const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const MT={
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
-      none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
+      loading:"Cargando tu mesa…", loadingS:"Cargando la tabla…", none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
       inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", waitStart:"Esperando que arranque el torneo…",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
@@ -6694,7 +6703,7 @@ const Mesa = (()=>{
       fin:"¡Terminó el torneo!", podium:"Podio", total:"Total", saveQ:"Guardá tu resultado: creá tu usuario", saveDone:n=>`Ya está guardado con tu usuario ${n}.`,
       back:"Volver al juego", allDone:"Tu mesa terminó todas las partidas. Esperen a las demás mesas.", sala:"Pantalla de sala", waitTable:"Esperando que arranque…"},
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
-      none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
+      loading:"Loading your table…", loadingS:"Loading the standings…", none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
       inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", waitStart:"Waiting for the tournament to start…",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
@@ -6706,7 +6715,7 @@ const Mesa = (()=>{
   };
   const t=()=>MT[lang]||MT.es;
   let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
-  let loadedT=false, noted=false;
+  let loadedT=false, noted=false, booting=false;
   let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
   const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
@@ -6727,7 +6736,8 @@ const Mesa = (()=>{
     else { const s=saved(); if(s){ tid=s.tid; gid=s.gid; if(GAMES[location.hash.slice(1)]) history.replaceState(null,"",location.pathname+"#mesa"); } } }
 
   async function boot(){
-    if(fb || !tid) return; await Reg.ready; fb=Reg.fb(); uid=Reg.uid(); if(!fb) return;
+    if(fb || !tid || booting) return; booting=true; await Reg.ready; fb=Reg.fb(); uid=Reg.uid(); booting=false;
+    if(!fb){ set(sala ? "mesaSala" : "mesaBody", `<p class="intro">${esc(T[lang].rkLocal)}</p>`); return; }
     uT=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid), s=>{ T=s.exists() && s.data().mode==="mesas" ? s.data() : null; step(); render(); }, ()=>{ T=null; render(); });
     uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"})); G=gid ? GS[gid]||null : null; loadedT=true; step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
   }
@@ -6860,11 +6870,11 @@ const Mesa = (()=>{
     if(view!=="mesa") return bar();
     const T0=t(); setTitle(T0.title);
     if(!tid || !gid){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
-    if(!fb){ set("mesaBody", `<p class="intro">…</p>`); boot(); return; }
+    if(!fb){ if(!booting) set("mesaBody", loadingHtml(esc(T0.loading))); boot(); return; }
     if(!T || !G){
       // dice cuál es el problema y lo anota en "Errores recientes" del panel
       const why=!T ? "torneo" : "mesa"; if(loadedT && !noted){ noted=true; Reg.logErr("mesa-"+why, (tid||"")+"~"+(gid||"")); }
-      set("mesaBody", `<p class="intro">${esc(loadedT ? (!T ? T0.noneT : T0.noneG) : "…")}</p>`); return; }
+      set("mesaBody", loadedT ? `<p class="intro">${esc(!T ? T0.noneT : T0.noneG)}</p>` : loadingHtml(esc(T0.loading))); return; }
     let h=`<div class="mhead"><h2>${esc(mesaName(G))}</h2><p class="m">${esc(T.name)}</p></div>`;
     if(finished()){
       h+=`<div class="mfin"><h3>🏆 ${esc(T0.fin)}</h3>${podiumHtml()}${standHtml()}`;
@@ -6917,7 +6927,7 @@ const Mesa = (()=>{
   // pantalla de sala: para proyectar (tabla en vivo y podio al final)
   function renderSala(){
     const T0=t(); setTitle(T0.sala);
-    if(!fb){ set("mesaSala", "…"); boot(); return; }
+    if(!fb || !loadedT){ set("mesaSala", loadingHtml(esc(T0.loadingS))); boot(); return; }
     if(!T){ set("mesaSala", `<p class="intro">${esc(T0.none)}</p>`); return; }
     let h=`<h2 class="msname">${esc(T.name)}</h2>`;
     const go=T.go ? tms(T.go) : 0, now=srv();

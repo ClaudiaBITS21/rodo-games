@@ -37,6 +37,13 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await qp.close();
   // sin entrada habilitada, el QR dice que espera
   const A=await page('A'), B=await page('B'), C=await page('C');
+  // apenas se abre el link del QR, antes de que cargue nada, ya dice «Cargando»
+  const L0=await page('L0'); await L0.route(/\/(fb|__\/firebase)\//, r=>new Promise(res=>setTimeout(()=>res(r.continue()),4000))).catch(()=>{});
+  await L0.goto(URL+`?mesa=M1~${g1}`, {waitUntil:'domcontentloaded'});
+  ok(/Cargando/.test(await L0.$eval('#mesaBody',e=>e.textContent)) && await L0.evaluate(()=>location.hash)==='#mesa','al abrir el QR, lo primero que se ve es «Cargando tu mesa…»');
+  await L0.goto(URL+'?t=OTRO', {waitUntil:'domcontentloaded'}); await L0.waitForTimeout(300);
+  ok(/Cargando el torneo/.test(await L0.$eval('#tHead',e=>e.textContent)) && !/Sin conexión/.test(await L0.$eval('#view-torneo',e=>e.textContent)),'el QR del torneo también: «Cargando el torneo…», no «Sin conexión»');
+  await L0.close();
   await A.goto(URL+`?mesa=M1~${g1}`);
   await A.waitForFunction(()=>/Esperando que abra la mesa/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
   ok(/Esperando que abra la mesa/.test(await A.$eval('#mesaBody',e=>e.textContent)) && await A.evaluate(()=>location.hash)==='#mesa','sin entrada habilitada: «Esperando que abra la mesa»');
