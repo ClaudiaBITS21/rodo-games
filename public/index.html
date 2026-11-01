@@ -419,6 +419,9 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .mpod{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:14px 0}.mpod>div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:12px;background:var(--paper);border:1px solid var(--line);min-width:90px;text-align:center}
 .mpod .mp1{order:2;padding-top:24px;border-color:var(--btc)}.mpod .mp2{order:1}.mpod .mp3{order:3}.mpod .mmed{font-size:2rem}
 #view-mesa-sala .msname{text-align:center;font-size:clamp(1.6rem,4vw,3rem);margin:0 0 10px}#view-mesa-sala .msfin{text-align:center;font-size:clamp(1.4rem,3vw,2.4rem)}
+.mboard td,.mboard th{text-align:center;white-space:nowrap}.mboard td:nth-child(2),.mboard th:nth-child(2){text-align:left}
+.mboard .mz{color:var(--bad)}.mboard .mcur{background:rgba(247,147,26,.15);font-weight:700}.mboard .mlate{background:rgba(179,38,30,.15);color:var(--bad)}
+.malerts{border:1px solid var(--bad);border-radius:10px;padding:6px 10px;margin:0 0 10px;background:rgba(179,38,30,.06)}.malerts p{margin:3px 0;font-weight:600}
 .madms{display:grid;gap:10px}.madm .mnow{font-weight:600;background:rgba(247,147,26,.1);border-radius:8px;padding:4px 8px}.madm .mnow.ok{background:rgba(46,160,67,.12)}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
 body.mesaro .view.on{user-select:none}
 body.mesamode .view.on .pcost,body.mesamode .view.on .ptime{display:none}.mesatop .mrule{font-size:.8rem;color:var(--muted)}
@@ -5059,6 +5062,8 @@ Object.assign(T.en,{newVer:"There's a new version of the site.", newVerB:"Refres
   const tag=async()=>{ try{ const r=await fetch("/?v="+Date.now(),{method:"HEAD",cache:"no-store"}); return r.ok ? (r.headers.get("etag")||r.headers.get("last-modified")) : null; }catch(e){ return null; } };
   const check=async()=>{
     if(document.visibilityState!=="visible") return;
+    // en una mesa del torneo por mesas no se ofrece recargar en medio del juego
+    if(document.body.classList.contains("mesamode") || view==="mesa") return;
     const t=await tag(); if(!t) return;
     if(mine===null){ mine=t; return; }
     if(t!==mine){ $("newVerT").textContent=T[lang].newVer; $("newVerB").textContent=T[lang].newVerB; $("newVer").hidden=false; }
@@ -7036,9 +7041,37 @@ const TourAdmin = (()=>{
     const end=tms(d.t0)+MESA_MAX, pr=mesaProg(rc.g, d.s);
     return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ⏱ quedan <b data-cd="${end}">${clock(end-srv())}</b>${pr?` · ${esc(pr)}`:""}${(d.e|0)||(d.h|0)?` · ${d.e|0} error${(d.e|0)===1?"":"es"}, ${d.h|0} pista${(d.h|0)===1?"":"s"}`:""}</p>`;
   }
+  // tabla de posiciones en vivo: puntos de cada partida, la que se está jugando con su tiempo, y avisos (solo muestra; no cambia nada)
+  function mesaBoard(){
+    if(TD.st!=="live" && TD.st!=="done") return "";
+    const N=TD.rounds.length, S=mesaStand(GRP), now=srv(), go=tms(TD.go)||0;
+    const fin=S.filter(x=>mesaDone(x.G)>=N).length, late=[], reqs=[], nocap=[];
+    const rows=S.map((x,k)=>{ const g=x.id, G=x.G, n=mesaDone(G), d=GT[g], nm=mesaName(G);
+      const cells=TD.rounds.map((r,i)=>{ const y=(G.res||{})[i];
+        if(y) return `<td class="${y.ok?"mok":"mz"}">${y.ok ? esc(mesaNum(mesaPts(y))) : "0"}</td>`;
+        if(i===n && TD.st==="live" && now>=go){
+          if(d && d.n===n && d.t0){ const end=tms(d.t0)+MESA_MAX, lt=end-now<120000; if(lt) late.push(nm);
+            return `<td class="mcur${lt?" mlate":""}">▶ <span data-cd="${end}">${clock(end-now)}</span></td>`; }
+          return `<td class="mcur">▶</td>`; }
+        return `<td class="m">·</td>`; }).join("");
+      if(G.req && G.req.u) reqs.push(nm);
+      if(!G.cap && Object.keys(G.mem||{}).length) nocap.push(nm);
+      return `<tr><td>${k+1}º</td><td>${esc(nm)}</td><td>${Object.keys(G.mem||{}).length}</td>${cells}<td><b>${esc(mesaNum(x.pts))}</b></td></tr>`; }).join("");
+    const al=[late.length?`⏰ Les quedan menos de 2 minutos: ${late.map(esc).join(", ")}`:"", reqs.length?`✋ Piden el teclado: ${reqs.map(esc).join(", ")}`:"", nocap.length?`⚠ Sin capitán: ${nocap.map(esc).join(", ")}`:""].filter(Boolean);
+    return `<h2>Tabla en vivo</h2><p class="m small">${S.length} mesas · ${fin} terminaron todas las partidas · ${S.length-fin} jugando${TD.st==="live" && now<go ? ` · arranca en <b data-cd="${go}">${clock(go-now)}</b>` : ""}</p>`+
+      (al.length ? `<div class="malerts">${al.map(x=>`<p>${x}</p>`).join("")}</div>` : "")+
+      `<div class="atabw"><table class="atab mboard"><thead><tr><th>#</th><th>Mesa</th><th>👥</th>${TD.rounds.map((r,i)=>`<th title="${esc(GN[r.g]||r.g)}">${i+1}. ${esc(GN[r.g]||r.g)}</th>`).join("")}<th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  // detalle de las partidas terminadas de una mesa
+  function mesaDetail(g, x){
+    const R=Object.entries(x.res||{}).sort((a,b)=>+a[0]-+b[0]); if(!R.length) return "";
+    return `<details data-k="det-${esc(g)}"><summary>Partidas terminadas (${R.length})</summary><div class="atabw"><table class="atab"><thead><tr><th>#</th><th>Juego</th><th>Resultado</th><th>Tiempo</th><th>Errores</th><th>Pistas</th><th>Puntos</th></tr></thead><tbody>`+
+      R.map(([i,y])=>{ const r=TD.rounds[+i]||{}, sec=Math.max(0,Math.round(((tms(y.at)||0)-(tms(y.t0)||0))/1000));
+        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=MESA_MAX/1000 ? "⏱ se acabó el tiempo" : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
+  }
   function mesaLive(){
     const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
-    let h=`<h2>Mesas (${L.length})</h2>`;
+    let h=mesaBoard()+`<h2>Mesas (${L.length})</h2>`;
     if(TD.st!=="live" && TD.st!=="done") h+=`<div class="row">Agregar <input id="taMesaN" type="number" min="1" max="40" value="${L.length?1:4}"> mesas <button data-ta="madd">+ Agregar</button></div>`;
     h+=`<div class="madms">`+L.map(([g,x])=>{
       const mem=Object.entries(x.mem||{}).sort((a,b)=>(a[1].t||0)-(b[1].t||0)), req=x.req, late=req && req.at && now-tms(req.at)>=60000;
@@ -7046,6 +7079,7 @@ const TourAdmin = (()=>{
         <button data-ta="mren" data-g="${esc(g)}">Guardar</button> <span>👥 <b>${mem.length}</b> jugador${mem.length===1?"":"es"} · ${esc(mesaNum(mesaTot(x)))} pts · ${mesaDone(x)}/${N} partidas</span> <a href="${esc(mesaUrl(g))}" target="_blank" rel="noopener">link de la mesa</a>
         ${TD.st!=="live"?`<button class="tadel" data-ta="mdel" data-g="${esc(g)}">Borrar</button>`:""}</div>
         ${mesaNow(g, x, N)}
+        ${mesaDetail(g, x)}
         <p>${mem.length ? mem.map(([u,m])=>esc((m.e?m.e+" ":"")+m.n)+(u===x.cap?" 👑":"")).join(", ") : `<span class="m">Nadie todavía</span>`}</p>
         ${mem.length ? `<label>Capitán <select data-ta="mcap" data-g="${esc(g)}">${x.cap ? "" : `<option value="" selected>— elegí quién —</option>`}${mem.map(([u,m])=>`<option value="${esc(u)}"${u===x.cap?" selected":""}>${esc(m.n)}</option>`).join("")}</select></label>${x.cap ? "" : ` <span class="mreq">⚠ sin capitán</span>`}` : ""}
         ${req && req.u ? `<p class="mreq">✋ ${esc(((x.mem||{})[req.u]||{}).n||"…")} pide el teclado. ${late ? `El capitán no respondió en 60 s: <button class="primary" data-ta="mauth" data-g="${esc(g)}">Autorizar</button>` : "Si el capitán no responde en 60 s, aparece «Autorizar»."}</p>` : ""}</div>`; }).join("")+`</div>`;
@@ -7076,8 +7110,9 @@ const TourAdmin = (()=>{
     const el=$("taLive"), h=mesaLive(); if(el.dataset.h===h) return;
     // no se pierde lo que se está escribiendo en el nombre o el emoji de una mesa
     const keep={}; el.querySelectorAll("[data-mg]").forEach(i=>{ if(i.value!==i.defaultValue || document.activeElement===i) keep[i.closest(".madm").dataset.g+i.dataset.mg]=[i.value, document.activeElement===i]; });
-    const n=($("taMesaN")||{}).value;
+    const n=($("taMesaN")||{}).value, open=[...el.querySelectorAll("details[open][data-k]")].map(d=>d.dataset.k);
     el.dataset.h=h; el.innerHTML=h;
+    open.forEach(k=>{ const d=el.querySelector(`details[data-k="${k}"]`); if(d) d.open=true; });
     el.querySelectorAll("[data-mg]").forEach(i=>{ const k=keep[i.closest(".madm").dataset.g+i.dataset.mg]; if(k){ i.value=k[0]; if(k[1]) i.focus(); } });
     if(n && $("taMesaN")) $("taMesaN").value=n;
   }

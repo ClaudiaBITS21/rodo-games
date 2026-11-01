@@ -105,6 +105,13 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await B.waitForFunction(()=>/Tenés el teclado/.test(document.getElementById('mesaTop').textContent) && !document.body.classList.contains('mesaro'),null,{timeout:15000});
   ok(await B.evaluate(ch=>[...document.querySelectorAll('#hWord .hl')].some(e=>e.textContent===ch),letters[0]) && await B.evaluate(()=>Reg.cur('ahorcado').e)===1,'el nuevo capitán sigue desde el estado guardado (letras y errores)');
   ok(await A.evaluate(()=>document.body.classList.contains('mesaro')),'y el anterior pasa a mirar');
+  // recargar la página en medio de la partida no resetea nada: vuelve a la mesa con el mismo tablero
+  await B.reload();
+  await B.waitForFunction(()=>location.hash==='#ahorcado' && /Tenés el teclado/.test(document.getElementById('mesaTop').textContent),null,{timeout:30000}).catch(()=>{});
+  ok(await B.evaluate(ch=>[...document.querySelectorAll('#hWord .hl')].some(e=>e.textContent===ch),letters[0]) && await B.evaluate(()=>Reg.cur('ahorcado').e)===1,'el capitán recarga la página y sigue con el mismo tablero y los mismos errores');
+  await a.waitForSelector('.mboard',{timeout:10000}).catch(()=>{});
+  const brd=await a.$eval('.mboard',e=>e.textContent.replace(/\s+/g,' ')).catch(()=>'');
+  ok(/Los Plebs/.test(brd) && /▶/.test(brd) && /Ahorcado/.test(brd),'tabla en vivo en el panel: '+brd.slice(0,140));
   for(const ch of letters.slice(1)) await B.click(`#hKeys .key[data-k="${ch}"]`);
   await B.waitForTimeout(1200);
   for(const ch of [...new Set(W[1])]){ await B.waitForSelector(`#hKeys .key[data-k="${ch}"]:not([disabled])`,{timeout:5000}).catch(()=>{}); await B.click(`#hKeys .key[data-k="${ch}"]`).catch(()=>{}); }
