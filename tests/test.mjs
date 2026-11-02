@@ -377,6 +377,14 @@ await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext
   const mt = (o = {}) => ({ name: "MESAS", mode: "mesas", st: "draft", cap: 64, orgs: [], rounds: [], lang: "es", cur: 0, go: null, at: serverTimestamp(), ...o });
   await t("mesas: la entrada puede ser con un QR único", assertSucceeds(setDoc(doc(ADM, "tourneys/M8"), mt({ asg: "azar" }))));
   await t("mesas: la entrada es por mesa o al azar", assertFails(setDoc(doc(ADM, "tourneys/M7"), mt({ asg: "otra" }))));
+  await t("mesas al azar: abre la entrada", assertSucceeds(updateDoc(doc(ADM, "tourneys/M8"), { st: "open" })));
+  await t("mesas al azar: cada uno entra a la sala de espera", assertSucceeds(setDoc(doc(A, "tourneys/M8/pool/A"), { n: "Ana", e: "🦊", t: 1 })));
+  await t("mesas al azar: nadie anota a otro", assertFails(setDoc(doc(A, "tourneys/M8/pool/B"), { n: "Beto" })));
+  await t("mesas al azar: nadie se elige la mesa", assertFails(setDoc(doc(B, "tourneys/M8/pool/B"), { n: "Beto", g: "g1" })));
+  await t("mesas al azar: la sala de espera es pública", assertSucceeds(getDoc(doc(C, "tourneys/M8/pool/A"))));
+  await t("mesas al azar: la organización reparte", assertSucceeds(updateDoc(doc(ADM, "tourneys/M8/pool/A"), { g: "g1" })));
+  await t("mesas al azar: ya repartido, no se reescribe", assertFails(setDoc(doc(A, "tourneys/M8/pool/A"), { n: "Ana" })));
+  await t("mesas por QR de mesa: no hay sala de espera", assertFails(setDoc(doc(A, "tourneys/M9/pool/A"), { n: "Ana" })));
   await t("mesas: un organizador común no crea el torneo", assertFails(setDoc(doc(A, "tourneys/M9"), mt())));
   await t("mesas: la administración crea el torneo", assertSucceeds(setDoc(doc(ADM, "tourneys/M9"), mt())));
   await t("mesas: la administración crea las mesas", assertSucceeds(setDoc(doc(ADM, "tourneys/M9/groups/g1"), { i: 1, nm: "Mesa 1", em: "", mem: {}, cap: null, req: null, res: {} })));

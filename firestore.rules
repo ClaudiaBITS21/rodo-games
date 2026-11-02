@@ -591,6 +591,20 @@ service cloud.firestore {
       }
       // Mesas: nombre y emoji (nm, em), miembros (mem: {uid: {n, e}}), capitán (cap), pedido de teclado (req: {u, at})
       // y resultados (res: {"0": {ok, t0, at, e, h, s, R}, ...}). La tabla entre mesas es pública.
+      // Mesas al azar: sala de espera común. Cada uno se anota a sí mismo (nombre y emoji); la organización
+      // reparte las mesas (agrega a cada uno a una mesa y anota g). Pública, como la tabla entre mesas.
+      match /pool/{u} {
+        allow read: if true;
+        allow create, update: if (signedIn() && request.auth.uid == u && tour(tid).get('mode', '') == 'mesas'
+            && tour(tid).get('asg', 'qr') == 'azar' && tour(tid).st in ['open', 'live']
+            && (resource == null || !('g' in resource.data))
+            && request.resource.data.keys().hasOnly(['n', 'e', 't'])
+            && request.resource.data.n is string && request.resource.data.n.size() > 0 && request.resource.data.n.size() <= 24
+            && (!('e' in request.resource.data) || (request.resource.data.e is string && request.resource.data.e.size() <= 8))
+            && (!('t' in request.resource.data) || request.resource.data.t is int))
+          || isOrg(tid);
+        allow delete: if isOrg(tid) || (signedIn() && request.auth.uid == u);
+      }
       match /groups/{gid} {
         allow read: if true;
         allow create, delete: if isAdmin();

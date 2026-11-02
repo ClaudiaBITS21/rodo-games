@@ -430,6 +430,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 /* sala de espera de la mesa: tarjeta tipo ventanita */
 .mlobby{max-width:460px;margin:8px auto 22px;padding:22px 18px 18px;border-radius:20px;background:var(--paper);border:2px solid var(--btc);box-shadow:0 14px 40px rgba(0,0,0,.14);text-align:center}
 .mlobby .medit{background:rgba(247,147,26,.08);border-radius:12px;padding:10px;margin:10px 0}.mlobby .medit label{display:block;margin:4px 0}.mlobby .medit input#mEdNm{width:100%;max-width:280px;font-size:1.1rem;text-align:center}.mlobby .medbtn{font-size:.9rem}
+.mlobby .mgot{margin:0 0 6px;font-weight:700;color:var(--btc)}.mpool .mpl{cursor:default}
 .mlobby .mlem{font-size:3.4rem;line-height:1}.mlobby h2{margin:6px 0 0;font-size:1.8rem}.mlobby>.m{margin:2px 0 12px}
 .mlstate{margin:6px 0 14px;padding:12px;border-radius:14px;background:rgba(247,147,26,.1)}.mlst{margin:0;font-weight:700;font-size:1.1rem}.mlst.ok{color:#2e7d32}
 .mlcd{margin:4px 0 0;font:800 3rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--btc)}
@@ -449,6 +450,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .mboard td,.mboard th{text-align:center;white-space:nowrap}.mboard td:nth-child(2),.mboard th:nth-child(2){text-align:left}
 .mboard .mz{color:var(--bad)}.mboard .mcur{background:rgba(247,147,26,.15);font-weight:700}.mboard .mlate{background:rgba(179,38,30,.15);color:var(--bad)}
 .malerts{border:1px solid var(--bad);border-radius:10px;padding:6px 10px;margin:0 0 10px;background:rgba(179,38,30,.06)}.malerts p{margin:3px 0;font-weight:600}
+.mpoolA{margin:10px 0;padding:8px 10px;border-radius:10px;background:rgba(247,147,26,.1)}.mpoolA p{margin:4px 0 0}
 .madms{display:grid;gap:10px}.madm .mnow{font-weight:600;background:rgba(247,147,26,.1);border-radius:8px;padding:4px 8px}.madm .mnow.ok{background:rgba(46,160,67,.12)}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
 body.mesaro .view.on{user-select:none}
 body.mesamode .view.on .pcost,body.mesamode .view.on .ptime{display:none}.mesatop .mrule{font-size:.8rem;color:var(--muted)}
@@ -6750,7 +6752,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu mesa…", loadingS:"Cargando la tabla…", none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a esta mesa", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this table`, editL:"Nombre de la mesa", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji a la mesa hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a esta mesa", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this table`, editL:"Nombre de la mesa", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji a la mesa hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y entrás a la sala de espera: la organización reparte las mesas.", poolT:"Sala de espera", poolWait:"Esperando que la organización reparta las mesas", poolIn:n=>`En la sala de espera (${n})`, poolNote:"Cuando repartan, acá te aparece tu mesa. No cierres esta pantalla.", poolQr:"📱 Mostrar QR para que se sumen amigos", poolQrSub:"Escaneá y entrá a la sala de espera · Scan to join", got:"🎲 ¡Te tocó esta mesa!", joinPool:"Entrar a la sala de espera",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6760,7 +6762,7 @@ const Mesa = (()=>{
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your table…", loadingS:"Loading the standings…", none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this table", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Table name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the table and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this table", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Table name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the table and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name to join the waiting room: the organizers will split everyone into tables.", poolT:"Waiting room", poolWait:"Waiting for the organizers to assign the tables", poolIn:n=>`In the waiting room (${n})`, poolNote:"Your table will show up here once they assign them. Keep this screen open.", poolQr:"📱 Show a QR so friends can join", poolQrSub:"Scan to join the waiting room · Escaneá y entrá", got:"🎲 This is your table!", joinPool:"Join the waiting room",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6770,7 +6772,7 @@ const Mesa = (()=>{
   };
   const t=()=>MT[lang]||MT.es;
   let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
-  let loadedT=false, noted=false, booting=false, rnd=false;
+  let loadedT=false, noted=false, booting=false, rnd=false, POOL={}, uPool=null;
   let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
   const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
@@ -6799,7 +6801,13 @@ const Mesa = (()=>{
     uT=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid), s=>{ T=s.exists() && s.data().mode==="mesas" ? s.data() : null; step(); render(); }, ()=>{ T=null; render(); });
     uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"}));
       if(!gid && uid){ const m=Object.keys(GS).find(k=>(GS[k].mem||{})[uid]); if(m){ gid=m; save(); } }
-      G=gid ? GS[gid]||null : null; loadedT=true; step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
+      G=gid ? GS[gid]||null : null; loadedT=true; poolWatch(); step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
+  }
+  // mesas al azar: la sala de espera común (pool/{uid}) se escucha solo mientras no le tocó mesa
+  function poolWatch(){
+    const on=rnd && !gid && fb;
+    if(on && !uPool) uPool=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"pool"), qs=>{ POOL={}; qs.forEach(d=>POOL[d.id]=d.data()); render(); }, ()=>{});
+    if(!on && uPool){ uPool(); uPool=null; }
   }
   const active=()=>!!(tid && !sala && gid && T && member() && (T.st==="live" || T.st==="open"));
 
@@ -6895,11 +6903,15 @@ const Mesa = (()=>{
     if(!gid && !rnd){ joinMsg=t().none; render(); return; }
     const b=document.querySelector('[data-mesa="join"]'); if(b) b.disabled=true;
     if(!gid){
-      const L=Object.entries(GS); if(!L.length){ joinMsg=t().noMesas; if(b) b.disabled=false; render(); return; }
-      const mine=L.find(([,x])=>(x.mem||{})[uid]);
-      if(mine) gid=mine[0];
-      else { const lo=Math.min(...L.map(([,x])=>Object.keys(x.mem||{}).length)), c=L.filter(([,x])=>Object.keys(x.mem||{}).length===lo); gid=c[Math.floor(Math.random()*c.length)][0]; }
-      G=GS[gid]; save();
+      // mesas al azar: entra a la sala de espera; la organización reparte las mesas
+      const mine=Object.keys(GS).find(k=>(GS[k].mem||{})[uid]);
+      if(mine){ gid=mine; G=GS[gid]; save(); poolWatch(); render(); return; }
+      const ref=fb.doc(fb.db,"tourneys",tid,"pool",uid);
+      try{ await fb.setDoc(ref, m); }
+      catch(e){ try{ await new Promise(r=>setTimeout(r,800)); await fb.setDoc(ref, m); }
+        catch(e2){ const c=e2.code||e2.message||e.code||"?"; Reg.logErr("mesa-pool", c, nm); joinMsg=`${t().joinFail} (${t().code}: ${c})`; if(b) b.disabled=false; $("mesaBody").dataset.f=""; render(); return; } }
+      try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
+      joinMsg=""; $("mesaBody").dataset.f=""; render(); return;
     }
     joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
     try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
@@ -6926,6 +6938,8 @@ const Mesa = (()=>{
     if(a==="edcancel"){ ed=null; render(); }
     if(a==="qr" && gid){ const base=/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
       qrPop(mesaName(G), t().qrSub(mesaName(G)), T && T.name || "", `${base}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(gid)}`, lang==="en"); }
+    if(a==="qrpool"){ const base=/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
+      qrPop(T && T.name || "", t().poolQrSub, t().poolT, `${base}/?mesas=${encodeURIComponent(tid)}`, lang==="en"); }
     if(a==="edemo"){ edRead(); ed.em= ed.em===b.dataset.e ? "" : b.dataset.e; render(); }
     if(a==="edsave" && ed){ edRead(); const nm=ed.nm.trim().replace(/\s+/g," ").slice(0,24), em=[...ed.em.trim()].slice(0,2).join("").slice(0,8);
       if(!nm){ const i=$("mEdNm"); if(i) i.focus(); return; }
@@ -6963,12 +6977,22 @@ const Mesa = (()=>{
       set("mesaBody", h+`</div>`); return;
     }
     if(T.st==="draft" && !member()){ set("mesaBody", h+`<div class="mwait"><p class="mbig">⏳ ${esc(T0.wait)}</p><p class="m">${esc(T0.waitSub)}</p></div>`); return; }
+    if(!member() && rnd && !gid && POOL[uid] && (T.st==="open" || T.st==="live")){
+      $("mesaBody").dataset.f="";
+      const P=Object.entries(POOL).filter(([u,x])=>!x.g && !Object.values(GS).some(y=>(y.mem||{})[u])).sort((a,b)=>(a[1].t||0)-(b[1].t||0));
+      const chip=([u,m])=>`<span class="mpl${u===uid?" me":""}"><span class="mav">${esc(m.e||(m.n||"?").trim().charAt(0).toUpperCase())}</span><span class="mnm">${esc(m.n)}${u===uid?` <small>(${esc(T0.you)})</small>`:""}</span></span>`;
+      set("mesaBody", `<div class="mlobby mpool"><div class="mlem">🎲</div><h2>${esc(T0.poolT)}</h2><p class="m">${esc(T.name)}</p>
+        <div class="mlstate"><p class="mlst">${esc(T0.poolWait)}<span class="mdots"><i></i><i></i><i></i></span></p></div>
+        <p class="mlcnt">${esc(T0.poolIn(P.length))}</p><div class="mpls">${P.map(chip).join("")}</div>
+        <p class="m small">${esc(T0.poolNote)}</p><p><button class="medbtn" data-mesa="qrpool">${esc(T0.poolQr)}</button></p></div>`);
+      return;
+    }
     if(!member()){
       if(T.st==="done"){ set("mesaBody", h+`<p class="intro">${esc(T0.none)}</p>`); return; }
       let nm=""; try{ nm=localStorage.getItem("rodo-mesa-nm")||Reg.nick()||""; }catch(e){}
       h+=`<div class="mjoin"><label>${esc(T0.nameL)}<input id="mName" maxlength="24" autocomplete="nickname" value="${esc(nm)}"></label>
         <div><span class="m small">${esc(T0.emoL)}</span><div class="memo" id="mEmo">${MESA_EMO.map(x=>`<button data-mesa="emo" data-e="${x}" aria-pressed="false">${x}</button>`).join("")}</div></div>
-        <p class="mnote">⚠️ ${esc(T0.same)}</p><button class="primary" data-mesa="join">${esc(T0.join)}</button><p class="tmsg">${esc(joinMsg)}</p></div>`;
+        <p class="mnote">⚠️ ${esc(T0.same)}</p><button class="primary" data-mesa="join">${esc(rnd && !gid ? T0.joinPool : T0.join)}</button><p class="tmsg">${esc(joinMsg)}</p></div>`;
       if($("mesaBody").dataset.f!=="join"){ $("mesaBody").dataset.f="join"; $("mesaBody").innerHTML=h; }
       else { const el=document.querySelector("#mesaBody .tmsg"); if(el) el.textContent=joinMsg; }
       return;
@@ -6991,7 +7015,7 @@ const Mesa = (()=>{
         <label class="small">${esc(T0.emoOther)} <input id="mEdEm" maxlength="8" size="3" value="${MESA_EMO.includes(ed.em)?"":esc(ed.em)}"></label>
         <p><button class="primary" data-mesa="edsave">${esc(T0.saveB)}</button> <button data-mesa="edcancel">${esc(T0.cancelB)}</button></p>${ed.msg?`<p class="tmsg">${esc(ed.msg)}</p>`:""}</div>`;
       ed.foc=foc; }
-    h=`<div class="mlobby"><div class="mlem">${esc((ed&&ed.em)||G.em||"🎲")}</div><h2>${esc(G.nm||"Mesa")}</h2><p class="m">${esc(T.name)}</p>
+    h=`<div class="mlobby">${rnd ? `<p class="mgot">${esc(T0.got)}</p>` : ""}<div class="mlem">${esc((ed&&ed.em)||G.em||"🎲")}</div><h2>${esc(G.nm||"Mesa")}</h2><p class="m">${esc(T.name)}</p>
       ${canEd ? (eh || `<p><button class="medbtn" data-mesa="edit">${esc(T0.edit)}</button></p>`) : ""}
       <div class="mlstate">${st}</div>
       <p class="mlcnt">${esc(T0.inMesa(mem.length))}</p><div class="mpls">${mem.map(chip).join("")}</div>
@@ -7101,11 +7125,12 @@ const TourAdmin = (()=>{
     if(!id || !ok.includes(id)) id=ok[0]||null;
     if(id!==tid){
       tid=id; RS={}; INS={}; PRIV={}; RESL={}; resFor=null; resOk=false; cfgFor=null; CW={}; CWok=false;
-      [uR,uI,uRes,uGr].forEach(f=>f&&f()); uR=uI=uRes=uGr=null; GRP={}; Object.values(GTW).forEach(w=>w.off()); GTW={}; GT={};
+      [uR,uI,uRes,uGr,uPo].forEach(f=>f&&f()); uR=uI=uRes=uGr=uPo=null; GRP={}; POOL={}; Object.values(GTW).forEach(w=>w.off()); GTW={}; GT={};
       if(tid){
         const t0=tid; rsFor=null;
         // torneo por mesas: las mesas, con sus miembros, capitán, pedidos de teclado y resultados
         uGr=A.onSnapshot(A.collection(A.db,"tourneys",tid,"groups"), qs=>{ GRP={}; qs.forEach(d=>GRP[d.id]=d.data({serverTimestamps:"estimate"})); render(); }, fail);
+        uPo=A.onSnapshot(A.collection(A.db,"tourneys",tid,"pool"), qs=>{ POOL={}; qs.forEach(d=>POOL[d.id]=d.data()); render(); }, ()=>{});
         uR=A.onSnapshot(A.collection(A.db,"tourneys",tid,"rounds"), qs=>{ RS={}; qs.forEach(d=>RS[d.id]={...d.data(), id:d.id}); if(t0===tid) rsFor=t0; watchRes(); render(); }, fail);
         uI=A.onSnapshot(A.collection(A.db,"tourneys",tid,"ins"), qs=>{ INS={}; qs.forEach(d=>INS[d.id]=d.data()); render(); privNew(); }, fail);
         loadPriv(); loadCw();
@@ -7119,7 +7144,27 @@ const TourAdmin = (()=>{
   const tourUrl=id=>`${baseUrl()}/?t=${encodeURIComponent(id)}`;
 
   // ---------- torneo por mesas (panel) ----------
-  let GRP={}, uGr=null, mesaT=0;
+  let GRP={}, uGr=null, mesaT=0, POOL={}, uPo=null, dealing=false, dealT=0;
+  // mesas al azar: los de la sala de espera que todavía no tienen mesa
+  const poolWait=()=>{ const inM=new Set(); Object.values(GRP).forEach(x=>Object.keys(x.mem||{}).forEach(u=>inM.add(u)));
+    return Object.entries(POOL).filter(([u,p])=>!p.g && !inM.has(u)).sort((a,b)=>(a[1].t||0)-(b[1].t||0)); };
+  // reparte la sala de espera: a cada uno, al azar, la mesa con menos gente (los que ya tienen mesa no se mueven)
+  async function mesaDeal(){
+    const L=grpList(); if(!L.length) throw new Error("Primero agregá las mesas.");
+    const W=poolWait(); if(!W.length) return 0;
+    const sh=W.map(x=>[Math.random(), x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const cnt={}; L.forEach(([g,x])=>cnt[g]=Object.keys(x.mem||{}).length);
+    for(let i=0;i<sh.length;i+=200){
+      const b=A.writeBatch(A.db);
+      for(const [u,p] of sh.slice(i,i+200)){
+        const lo=Math.min(...Object.values(cnt)), c=Object.keys(cnt).filter(g=>cnt[g]===lo), g=c[Math.floor(Math.random()*c.length)]; cnt[g]++;
+        const m={n:p.n, t:typeof p.t==="number" ? p.t : Date.now()}; if(p.e) m.e=p.e;
+        b.update(A.doc(A.db,"tourneys",tid,"groups",g), {["mem."+u]:m}); b.update(A.doc(A.db,"tourneys",tid,"pool",u), {g});
+      }
+      await b.commit();
+    }
+    return sh.length;
+  }
   const isMesa=()=>!!(TD && TD.mode==="mesas");
   const mesaUrl=g=>`${baseUrl()}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(g)}`;
   const salaUrl=()=>`${baseUrl()}/?pantalla=${encodeURIComponent(tid)}`;
@@ -7133,8 +7178,11 @@ const TourAdmin = (()=>{
     if(st==="draft") c+=`<button class="primary" data-ta="mopen">Habilitar la entrada a las mesas</button>`;
     if(st==="open") c+=`<button data-ta="mdraft">Cerrar la entrada</button><button class="primary" data-ta="mstart">▶ Arrancar torneo (cuenta regresiva de 15 s)</button>`;
     if(st==="live") c+=`<button data-ta="mdone">Terminar el torneo</button>`;
-    if(TD.asg==="azar") c+=`<button class="primary" data-ta="mqr1">📱 Mostrar el QR único (mesa al azar)</button>`;
+    if(TD.asg==="azar") c+=`<button class="primary" data-ta="mqr1">📱 Mostrar el QR único (sala de espera)</button>`;
+    const W=TD.asg==="azar" ? poolWait() : [];
+    if(TD.asg==="azar" && (st==="open" || st==="live")) c+=`<button class="primary" data-ta="mdeal"${W.length?"":" disabled"}>🎲 Repartir mesas${W.length?` (${W.length})`:""}</button>`;
     c+=`<button data-ta="mqr">🖨 ${TD.asg==="azar" ? "QR único para imprimir" : "QR de las mesas (para imprimir)"}</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
+    if(TD.asg==="azar") c+=`<div class="mpoolA"><b>🎲 Sala de espera: ${W.length} sin mesa</b>${W.length ? ` · ${W.map(([,p])=>esc((p.e?p.e+" ":"")+p.n)).join(", ")}` : ""}<p class="m small">Con el QR único todos entran a una sala de espera. «Repartir mesas» los distribuye al azar, parejo, en las mesas que hay (los que ya tienen mesa no se mueven) y a cada uno le aparece su mesa. Al arrancar se reparten solos los que falten, y con el torneo en juego este panel reparte solo a los que lleguen tarde.</p></div>`;
     c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los minutos que diga su columna «Minutos» (vacío o 0 = 7). Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
     return c;
   }
@@ -7240,7 +7288,7 @@ const TourAdmin = (()=>{
     const w=window.open("", "_blank"); if(!w){ say("El navegador bloqueó la ventana: permití las ventanas emergentes de este sitio.", true); return; }
     w.document.write("<p style='font-family:sans-serif'>Armando los QR…</p>");
     const {qrSvg}=await import("/js/qr.js");
-    const cards=TD.asg==="azar" ? `<div class="c"><h1>${esc(TD.name)}</h1><p class="t">${L.length} mesas · te toca una al entrar</p>${qrSvg(mesaUrlAll(),8)}<p class="s">Escaneá y entrá: te toca una mesa · Scan to join a table</p><p class="u">${esc(mesaUrlAll().replace(/^https?:\/\//,""))}</p></div>`
+    const cards=TD.asg==="azar" ? `<div class="c"><h1>${esc(TD.name)}</h1><p class="t">${L.length} mesas · se reparten al azar</p>${qrSvg(mesaUrlAll(),8)}<p class="s">Escaneá y entrá a la sala de espera · Scan to join</p><p class="u">${esc(mesaUrlAll().replace(/^https?:\/\//,""))}</p></div>`
       : L.map(([g,x])=>`<div class="c"><h1>${esc(mesaName(x))}</h1><p class="t">${esc(TD.name)}</p>${qrSvg(mesaUrl(g),8)}<p class="s">Escaneá para entrar a tu mesa · Scan to join your table</p><p class="u">${esc(mesaUrl(g).replace(/^https?:\/\//,""))}</p></div>`).join("");
     w.document.open();
     w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QR de las mesas · ${esc(TD.name)}</title><style>
@@ -7252,6 +7300,8 @@ const TourAdmin = (()=>{
   // cada tanto: cierra por tiempo las partidas de las mesas sin capitán y termina el torneo cuando terminaron todas
   async function mesaTick(now){
     renderLive();
+    if(TD.st==="live" && TD.asg==="azar" && !busy && !dealing && now-dealT>5000 && poolWait().length){ dealT=now; dealing=true;
+      try{ const n=await mesaDeal(); if(n) say(`Llegaron tarde ${n}: ya tienen mesa.`); }catch(e){} dealing=false; }
     if(TD.st!=="live" || !TD.go || now<tms(TD.go) || busy || now-mesaT<10000) return;
     mesaT=now; const N=TD.rounds.length, L=grpList();
     if(L.length && L.every(([,x])=>mesaDone(x)>=N)){ if(isSuper()){ try{ await A.updateDoc(tref(),{st:"done"}); say("Terminaron todas las mesas: el torneo quedó terminado."); }catch(e){ fail(e); } } return; }
@@ -7414,6 +7464,9 @@ const TourAdmin = (()=>{
       if(a==="mdraft"){ await A.updateDoc(tref(),{st:"draft"}); return; }
       if(a==="mdone"){ if(!sure(el, "¿Terminar el torneo? Se muestra el podio.")) return; await A.updateDoc(tref(),{st:"done"}); return; }
       if(a==="mqr"){ await mesaQr(); return; }
+      if(a==="mdeal"){ if(dealing) return; dealing=true; el.disabled=true;
+        try{ const n=await mesaDeal(); say(n ? `Listo: ${n} repartido${n===1?"":"s"} en las mesas.` : "No hay nadie esperando mesa."); }catch(e){ fail(e); }
+        dealing=false; return; }
       if(a==="mstart"){
         const L=grpList(), sin=L.filter(([,x])=>!Object.keys(x.mem||{}).length).length;
         if(!L.length){ say("No hay mesas.", true); return; }
@@ -7421,6 +7474,7 @@ const TourAdmin = (()=>{
         if(!sure(el, sin ? `${sin} mesa${sin===1?"":"s"} sin nadie. ¿Arrancar igual?` : sc ? `${sc} mesa${sc===1?"":"s"} sin capitán (queda el primero que entró). ¿Arrancar?` : `¿Arrancar con ${L.length} mesas?`)) return;
         busy=true; el.disabled=true; say("Armando las partidas…");
         try{
+          if(TD.asg==="azar" && poolWait().length){ const n=await mesaDeal(); say(`Repartí ${n} de la sala de espera. Armando las partidas…`); await new Promise(r=>setTimeout(r,800)); }
           const P=[]; for(let ci=0; ci<TD.rounds.length; ci++) P.push(await genMesa(ci));
           for(const x of P) await A.setDoc(A.doc(A.db,"tourneys",tid,"mpz",String(x.i)), x);
           const old=await A.getDocs(A.collection(A.db,"tourneys",tid,"mpz")); await Promise.all(old.docs.filter(d=>+d.id>=P.length).map(d=>A.deleteDoc(d.ref)));
@@ -7477,7 +7531,7 @@ const TourAdmin = (()=>{
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
       if(a==="qr") return showQr();
-      if(a==="mqr1") return showQr(mesaUrlAll(), "Escaneá y entrá: te toca una mesa · Scan to join a table");
+      if(a==="mqr1") return showQr(mesaUrlAll(), "Escaneá y entrá a la sala de espera: después se reparten las mesas · Scan to join");
       if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
       if(a==="start"||a==="startnow"){
         const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
@@ -7575,7 +7629,7 @@ const TourAdmin = (()=>{
     let h=`<h2>Configuración</h2><div class="tacfg">
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
       <label>Arranca (fecha y hora)<input data-f="when" type="datetime-local" value="${whenV}"></label>
-      ${T0.mode==="mesas" ? `<label>Entrada a las mesas${sel("asg",[["qr","Un QR por mesa (cada uno escanea el de su mesa)"],["azar","Un solo QR: a cada uno le toca una mesa (se reparten parejo)"]],T0.asg==="azar"?"azar":"qr")}</label>` : ""}
+      ${T0.mode==="mesas" ? `<label>Entrada a las mesas${sel("asg",[["qr","Un QR por mesa (cada uno escanea el de su mesa)"],["azar","Un solo QR: sala de espera y después «Repartir mesas» (al azar, parejo)"]],T0.asg==="azar"?"azar":"qr")}</label>` : ""}
       <label>Arranque${sel("ast",[["0","Lo inicia la administración (botón «Arrancar»)"],["1","Automático a la hora fijada (con el panel abierto)"]],T0.ast===true?"1":"0")}</label>
       ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label class="wide">Dónde se juega (se ve en la portada y en la sala; por ejemplo «Online» o «LABITCONF, Costa Salguero»)<input data-f="place" value="${esc(T0.place||"")}" maxlength="120"></label>
