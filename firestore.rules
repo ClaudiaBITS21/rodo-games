@@ -594,7 +594,7 @@ service cloud.firestore {
       match /groups/{gid} {
         allow read: if true;
         allow create, delete: if isAdmin();
-        allow update: if isOrg(tid) || mesaJoin(tid) || mesaCap(tid) || mesaReq() || mesaRes(tid, gid);
+        allow update: if isOrg(tid) || mesaJoin(tid) || mesaCap(tid) || mesaReq() || mesaRes(tid, gid) || mesaName(tid);
         // Estado del tablero de cada partida: lo escribe solo el capitán; lo leen los de la mesa.
         match /games/{n} {
           allow read: if isOrg(tid) || (signedIn() && request.auth.uid in get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)).data.mem);
@@ -643,6 +643,14 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == resource.data.cap && mesaDiff().hasOnly(['cap', 'req'])
         && request.resource.data.cap in resource.data.mem
         && (request.resource.data.req == null || request.resource.data.req == resource.data.req);
+    }
+    // el capitán le pone nombre y emoji a la mesa mientras espera (antes de que arranque el torneo)
+    function mesaName(tid) {
+      let d = request.resource.data;
+      return signedIn() && request.auth.uid == resource.data.cap && mesaDiff().hasOnly(['nm', 'em'])
+        && (tour(tid).st in ['draft', 'open'] || (tour(tid).st == 'live' && tour(tid).go != null && request.time < tour(tid).go))
+        && d.nm is string && d.nm.size() > 0 && d.nm.size() <= 24
+        && (!('em' in d) || (d.em is string && d.em.size() <= 8));
     }
     // pedir el teclado (o retirar el propio pedido)
     function mesaReq() {

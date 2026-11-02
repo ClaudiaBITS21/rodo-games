@@ -394,8 +394,13 @@ await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext
   await t("mesas: el que no es capitán no se queda con el teclado", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { cap: "B", req: null })));
   await t("mesas: el capitán acepta el pedido", assertSucceeds(updateDoc(doc(A, "tourneys/M9/groups/g1"), { cap: "B", req: null })));
   await t("mesas: el capitán no le pasa el teclado a alguien de afuera", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { cap: "C" })));
+  await t("mesas: el capitán le pone nombre y emoji a la mesa mientras espera", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { nm: "Los Satoshis", em: "🚀" })));
+  await t("mesas: quien no es capitán no le cambia el nombre", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { nm: "Otra" })));
+  await t("mesas: el nombre no puede quedar vacío", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { nm: "" })));
+  await t("mesas: con el nombre no se cambia otra cosa", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { nm: "Ok", i: 9 })));
   await t("mesas: un organizador común no arranca el torneo", assertFails(updateDoc(doc(ORG, "tourneys/M9"), { st: "live" })));
   await t("mesas: la administración arranca", assertSucceeds(updateDoc(doc(ADM, "tourneys/M9"), { st: "live", go: serverTimestamp() })));
+  await t("mesas: ya arrancado, el capitán no cambia el nombre", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { nm: "Tarde" })));
   await t("mesas: las partidas las genera la administración", assertSucceeds(setDoc(doc(ADM, "tourneys/M9/mpz/0"), { i: 0, g: "anagrama", k: "anagrama", lang: "es", nr: 10, d: { list: [] } })));
   await t("mesas: con el torneo en juego, cualquiera con sesión lee las partidas", assertSucceeds(getDoc(doc(C, "tourneys/M9/mpz/0"))));
   const gm = (u) => ({ s: "{}", t0: serverTimestamp(), at: serverTimestamp(), e: 0, h: 0, by: u });

@@ -429,6 +429,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .memo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.memo button{font-size:1.4rem;padding:4px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper)}.memo button[aria-pressed=true]{border-color:var(--btc);box-shadow:0 0 0 2px var(--btc)}
 /* sala de espera de la mesa: tarjeta tipo ventanita */
 .mlobby{max-width:460px;margin:8px auto 22px;padding:22px 18px 18px;border-radius:20px;background:var(--paper);border:2px solid var(--btc);box-shadow:0 14px 40px rgba(0,0,0,.14);text-align:center}
+.mlobby .medit{background:rgba(247,147,26,.08);border-radius:12px;padding:10px;margin:10px 0}.mlobby .medit label{display:block;margin:4px 0}.mlobby .medit input#mEdNm{width:100%;max-width:280px;font-size:1.1rem;text-align:center}.mlobby .medbtn{font-size:.9rem}
 .mlobby .mlem{font-size:3.4rem;line-height:1}.mlobby h2{margin:6px 0 0;font-size:1.8rem}.mlobby>.m{margin:2px 0 12px}
 .mlstate{margin:6px 0 14px;padding:12px;border-radius:14px;background:rgba(247,147,26,.1)}.mlst{margin:0;font-weight:700;font-size:1.1rem}.mlst.ok{color:#2e7d32}
 .mlcd{margin:4px 0 0;font:800 3rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--btc)}
@@ -6733,7 +6734,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu mesa…", loadingS:"Cargando la tabla…", none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", editL:"Nombre de la mesa", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji a la mesa hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6743,7 +6744,7 @@ const Mesa = (()=>{
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your table…", loadingS:"Loading the standings…", none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", editL:"Table name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the table and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6892,6 +6893,9 @@ const Mesa = (()=>{
     joinMsg=""; save();
   }
   const upd=d=>fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid), d).catch(()=>{});
+  // el capitán le cambia el nombre y el emoji a la mesa mientras espera (ed: lo que está escribiendo)
+  let ed=null;
+  function edRead(){ if(!ed) return; const i=$("mEdNm"), o=$("mEdEm"); if(i) ed.nm=i.value; if(o && o.value.trim()) ed.em=o.value.trim(); }
   document.addEventListener("click", e=>{
     const b=e.target.closest("[data-mesa]"); if(!b || !fb) return;
     const a=b.dataset.mesa;
@@ -6902,6 +6906,13 @@ const Mesa = (()=>{
     if(a==="untake") upd({req:null});
     if(a==="give" && G.req) upd({cap:G.req.u, req:null});
     if(a==="deny") upd({req:null});
+    if(a==="edit"){ ed={nm:G.nm||"", em:G.em||"", msg:""}; render(); const i=$("mEdNm"); if(i) i.focus(); }
+    if(a==="edcancel"){ ed=null; render(); }
+    if(a==="edemo"){ edRead(); ed.em= ed.em===b.dataset.e ? "" : b.dataset.e; render(); }
+    if(a==="edsave" && ed){ edRead(); const nm=ed.nm.trim().replace(/\s+/g," ").slice(0,24), em=[...ed.em.trim()].slice(0,2).join("").slice(0,8);
+      if(!nm){ const i=$("mEdNm"); if(i) i.focus(); return; }
+      b.disabled=true; fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid), {nm, em}).then(()=>{ ed=null; render(); })
+        .catch(e=>{ Reg.logErr("mesa-nombre", e.code||e.message||"?", nm); ed.msg=t().editFail+" ("+(e.code||"?")+")"; render(); }); }
     if(a==="back" && loaded) location.hash=loaded.g;
     if(a==="user") User.open();
   });
@@ -6953,12 +6964,23 @@ const Mesa = (()=>{
     else if(live && loaded) st=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
     else st=`<p class="mlst">${esc(T0.waitStart)}<span class="mdots"><i></i><i></i><i></i></span></p>`;
     const chip=([u,m])=>`<button class="mpl${u===uid?" me":""}${u===G.cap?" cap":""}" data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}><span class="mav">${esc(m.e||(m.n||"?").trim().charAt(0).toUpperCase())}</span><span class="mnm">${esc(m.n)}${u===uid?` <small>(${esc(T0.you)})</small>`:""}</span>${u===G.cap?`<span class="mcap">👑 ${esc(T0.cap)}</span>`:""}</button>`;
-    h=`<div class="mlobby"><div class="mlem">${esc(G.em||"🎲")}</div><h2>${esc(G.nm||"Mesa")}</h2><p class="m">${esc(T.name)}</p>
+    const canEd=cap && (T.st==="open" || T.st==="draft" || (live && now<go));
+    if(!canEd) ed=null;
+    let eh="";
+    if(canEd && ed){ edRead(); const foc=document.activeElement && document.activeElement.id;
+      eh=`<div class="medit"><label>${esc(T0.editL)}<input id="mEdNm" maxlength="24" value="${esc(ed.nm)}"></label>
+        <div class="memo">${MESA_EMO.map(x=>`<button data-mesa="edemo" data-e="${x}" aria-pressed="${ed.em===x}">${x}</button>`).join("")}</div>
+        <label class="small">${esc(T0.emoOther)} <input id="mEdEm" maxlength="8" size="3" value="${MESA_EMO.includes(ed.em)?"":esc(ed.em)}"></label>
+        <p><button class="primary" data-mesa="edsave">${esc(T0.saveB)}</button> <button data-mesa="edcancel">${esc(T0.cancelB)}</button></p>${ed.msg?`<p class="tmsg">${esc(ed.msg)}</p>`:""}</div>`;
+      ed.foc=foc; }
+    h=`<div class="mlobby"><div class="mlem">${esc((ed&&ed.em)||G.em||"🎲")}</div><h2>${esc(G.nm||"Mesa")}</h2><p class="m">${esc(T.name)}</p>
+      ${canEd ? (eh || `<p><button class="medbtn" data-mesa="edit">${esc(T0.edit)}</button></p>`) : ""}
       <div class="mlstate">${st}</div>
       <p class="mlcnt">${esc(T0.inMesa(mem.length))}</p><div class="mpls">${mem.map(chip).join("")}</div>
-      ${cap && mem.length>1 ? `<p class="m small">${esc(T0.capNote)}</p>` : ""}${!G.cap ? `<p class="m small">${esc(T0.noCap)}</p>` : ""}</div>`;
+      ${cap && mem.length>1 ? `<p class="m small">${esc(T0.capNote)}</p>` : ""}${canEd && !ed ? `<p class="m small">${esc(T0.capEdit)}</p>` : ""}${!G.cap ? `<p class="m small">${esc(T0.noCap)}</p>` : ""}</div>`;
     h+=`<h3>${esc(T0.table)}</h3>${standHtml()}`;
     set("mesaBody", h);
+    if(ed && ed.foc){ const i=$(ed.foc); if(i && document.activeElement!==i){ i.focus(); try{ i.setSelectionRange(i.value.length, i.value.length); }catch(e){} } }
   }
   // barra de arriba mientras se juega: mesa, partida, reloj, quién tiene el teclado y tabla entre mesas
   function bar(){

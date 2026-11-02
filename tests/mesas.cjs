@@ -78,6 +78,16 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ub)),'el capitán le pasa el teclado a otro tocando su nombre');
   await a.waitForSelector(`[data-ta="mcap"][data-g="${g1}"]`,{timeout:10000}); await a.selectOption(`[data-ta="mcap"][data-g="${g1}"]`, ua);
   ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ua)),'el panel reasigna el capitán');
+  // mientras espera, el capitán le cambia el nombre y el emoji a la mesa; el panel lo ve
+  await B.waitForFunction(()=>!document.querySelector('[data-mesa="edit"]'),null,{timeout:8000}).catch(()=>{});
+  ok(!(await B.$('[data-mesa="edit"]')),'quien no es capitán no puede cambiar el nombre de la mesa');
+  await A.waitForSelector('[data-mesa="edit"]',{timeout:10000}); await A.click('[data-mesa="edit"]');
+  await A.fill('#mEdNm','Los Plebs del Halving'); await A.click('[data-mesa="edemo"][data-e="🚀"]'); await A.click('[data-mesa="edsave"]');
+  ok(!!(await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return x.nm==='Los Plebs del Halving' && x.em==='🚀'; })),'el capitán le pone nombre y emoji a la mesa');
+  await B.waitForFunction(()=>/del Halving/.test(document.querySelector('.mlobby').textContent) && /🚀/.test(document.querySelector('.mlobby .mlem').textContent),null,{timeout:10000}).catch(()=>{});
+  ok(/del Halving/.test(await B.$eval('.mlobby',e=>e.textContent)),'la mesa ve el nombre nuevo');
+  await a.waitForFunction(g=>document.querySelector(`.madm[data-g="${g}"] [data-mg="nm"]`).value==='Los Plebs del Halving',g1,{timeout:10000}).catch(()=>{});
+  ok(await a.$eval(`.madm[data-g="${g1}"] [data-mg="nm"]`,e=>e.value)==='Los Plebs del Halving','el panel del admin ve el nombre que le puso la mesa');
   // arrancar: cuenta regresiva y todos a la vez
   await a.click('[data-ta="mstart"]'); await a.click('[data-ta="mstart"]');
   const tr=await until(async()=>{ const x=await get(T); return x.st==='live' && x.go && x; });
