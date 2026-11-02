@@ -682,6 +682,14 @@ body.vsala header .tools,body.vsala .buzon,body.vsala .privnote,body.vsala #titl
 
 /* ---------- Buzón de sugerencias (visible en todas las pantallas) ---------- */
 .buzon{margin-top:32px;border-radius:14px;background:var(--paper);border:1px solid var(--line)}
+/* sugerir palabra e ideas: dos links chicos al pie; se abren al tocarlos (pedido de la dueña, 02/11/2026) */
+.footlinks{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 22px;margin-top:30px}
+.footlinks .buzon{margin:0;background:none;border:0;border-radius:14px}
+.footlinks .buzon:not([open]) summary{padding:4px 0}
+.footlinks .buzon:not([open]) summary b{font-size:.85rem;font-weight:500;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.footlinks .buzon:not([open]) summary span,.footlinks .buzon:not([open]) summary i{display:none}
+.footlinks .buzon[open]{flex-basis:100%;background:var(--paper);border:1px solid var(--line)}
+body.vadmin .footlinks{display:none}
 .buzon summary{cursor:pointer;list-style:none;padding:16px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .buzon summary::-webkit-details-marker{display:none}
 .buzon summary b{font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
@@ -1039,6 +1047,7 @@ body.vsala header .tools,body.vsala .buzon,body.vsala .privnote,body.vsala #titl
   </section>
 
   <!-- ===== Sugerir una palabra para el glosario: se guarda en Firestore (sugs) ===== -->
+  <div class="footlinks">
   <details class="buzon" id="sugBox">
     <summary><b id="sgTitle"></b><span id="sgIntro"></span><i id="sgOpen"></i></summary>
     <form id="sgForm" novalidate>
@@ -1069,6 +1078,7 @@ body.vsala header .tools,body.vsala .buzon,body.vsala .privnote,body.vsala #titl
       <div class="row"><button class="primary" type="submit" id="bzSend"></button><p class="msg" id="bzStatus" role="status" aria-live="polite"></p></div>
     </form>
   </details>
+  </div>
 
   <p class="privnote" id="privNote"></p>
   <p class="privnote"><a href="#admin" class="adminlink" id="adminLink"></a></p>
@@ -6675,6 +6685,9 @@ const Tour = (()=>{
 // groups/{gid}/games/{n} (tablero del capitán: s = estado del juego, t0 = arranque de esa partida, e, h).
 // =====================================================================
 const MESA_MAX=15*60000, MESA_GAP=3000;
+// duración máxima de cada partida de mesas: la columna «Minutos» de esa partida (vacío o 0 = 7 minutos)
+const mesaMin=(T, n)=>{ const d=+(((T && T.rounds) || [])[n] || {}).dur; return d>0 ? d : 7; };
+const mesaMs=(T, n)=>mesaMin(T, n)*60000;
 // "Cargando…" mientras llega la información (el link del QR abre antes de que conecte)
 function loadingHtml(txt){ return `<div class="loading"><span class="spin" aria-hidden="true"></span><p>${txt}</p><p class="slow">${lang==="en"?"If it takes too long, check your connection and reload the page.":"Si tarda mucho, revisá la conexión y recargá la página."}</p></div>`; }
 // puntos de una partida: resuelta, 1000 − segundos − 100 por pista o error (piso 100); en ahorcado y anagrama, cada palabra
@@ -6699,7 +6712,7 @@ const Mesa = (()=>{
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
-      rule:"Resuelta: 1000 − 1 por segundo − 100 por pista o error (mínimo 100). Sin resolver a los 15 min: 0.", table:"Tabla entre mesas", pos:(p,n,x)=>`van ${p}º de ${n} · ${x} pts`, pts:"pts", games:"partidas", next:"¡Partida terminada! Pasan a la siguiente…", timeup:"Se terminaron los 15 minutos: pasan a la siguiente.",
+      rule:m=>`Resuelta: 1000 − 1 por segundo − 100 por pista o error (mínimo 100). Sin resolver a los ${m} min: 0.`, table:"Tabla entre mesas", pos:(p,n,x)=>`van ${p}º de ${n} · ${x} pts`, pts:"pts", games:"partidas", next:"¡Partida terminada! Pasan a la siguiente…", timeup:"Se terminó el tiempo: pasan a la siguiente.",
       fin:"¡Terminó el torneo!", podium:"Podio", total:"Total", saveQ:"Guardá tu resultado: creá tu usuario", saveDone:n=>`Ya está guardado con tu usuario ${n}.`,
       back:"Volver al juego", allDone:"Tu mesa terminó todas las partidas. Esperen a las demás mesas.", sala:"Pantalla de sala", waitTable:"Esperando que arranque…"},
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
@@ -6709,7 +6722,7 @@ const Mesa = (()=>{
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
-      rule:"Solved: 1000 − 1 per second − 100 per hint or mistake (at least 100). Unsolved after 15 min: 0.", table:"Table standings", pos:(p,n,x)=>`#${p} of ${n} · ${x} pts`, pts:"pts", games:"games", next:"Game over! Moving to the next one…", timeup:"15 minutes are up: moving to the next one.",
+      rule:m=>`Solved: 1000 − 1 per second − 100 per hint or mistake (at least 100). Unsolved after ${m} min: 0.`, table:"Table standings", pos:(p,n,x)=>`#${p} of ${n} · ${x} pts`, pts:"pts", games:"games", next:"Game over! Moving to the next one…", timeup:"Time's up: moving to the next one.",
       fin:"The tournament is over!", podium:"Podium", total:"Total", saveQ:"Save your result: create your user", saveDone:n=>`Saved with your user ${n}.`,
       back:"Back to the game", allDone:"Your table finished all the games. Wait for the other tables.", sala:"Room screen", waitTable:"Waiting for the start…"}
   };
@@ -6783,7 +6796,7 @@ const Mesa = (()=>{
       if(location.hash!=="#"+p.g) location.hash=p.g;
     } else if(!cap) apply(false);
     // 15 minutos: la partida se cierra sin resolver (la cierra el capitán; si no está, el panel de la organización)
-    if(cap && finishing!==n && srv()-tms(GD.t0)>=MESA_MAX) done(false);
+    if(cap && finishing!==n && srv()-tms(GD.t0)>=mesaMs(T, n)) done(false);
     bar();
   }
   // aplica el tablero publicado (al cargar, también el del capitán que retoma)
@@ -6807,7 +6820,8 @@ const Mesa = (()=>{
   async function done(okFromGame, rec){
     if(!loaded || !loaded.cap || finishing===loaded.n || !GD_raw) return;
     const n=loaded.n, g=loaded.g, p=PZ[n], c=Reg.cur(g)||{}; finishing=n;
-    const R=p.nr||0, s=R ? (rec && rec.s|0) : 0, ok = rec ? (R ? s>0 : !!rec.ok) : false;
+    // sin rec (se acabó el tiempo) no hay palabras resueltas que contar: s tiene que ser un número igual (lo exigen las reglas)
+    const R=p.nr||0, s=R && rec ? (rec.s|0) : 0, ok = rec ? (R ? s>0 : !!rec.ok) : false;
     if(!rec){ note=t().timeup; ro(true, g); }
     lastW=0; lastKey=""; await publish().catch(()=>{});
     const x={ok, t0:GD_raw.t0, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, s, R};
@@ -6912,9 +6926,9 @@ const Mesa = (()=>{
     // en la mesa valen sus reglas: se esconden el reloj y los costos en segundos del juego
     document.body.classList.toggle("mesamode", !!on);
     el.hidden=!on; if(!on) return;
-    const T0=t(), cap=G.cap===uid, n=loaded.n, left=GD && GD.t0 ? MESA_MAX-(srv()-tms(GD.t0)) : MESA_MAX;
+    const T0=t(), cap=G.cap===uid, n=loaded.n, left=GD && GD.t0 ? mesaMs(T, n)-(srv()-tms(GD.t0)) : mesaMs(T, n);
     let h=`<div class="mtop1"><b>${esc(mesaName(G))}</b> · ${esc(T0.bar(n+1, total()))} · ⏱ <span class="${left<120000?"mlow":""}">${clock(left)}</span> ${esc(T0.left)}</div>`;
-    h+=`<p class="mrule">${esc(T0.rule)}</p>`;
+    h+=`<p class="mrule">${esc(T0.rule(mesaMin(T, n)))}</p>`;
     if(note) h+=`<p class="mnote">${esc(note)}</p>`;
     if(cap){ h+=`<p class="mrole">${esc(T0.youCap)}</p>`;
       if(G.req && G.req.u && G.req.u!==uid) h+=`<p class="mreq">${esc(T0.wants(memName(G.req.u)))} <button class="primary" data-mesa="give">${esc(T0.give)}</button> <button data-mesa="deny">${esc(T0.no)}</button></p>`; }
@@ -7032,12 +7046,12 @@ const TourAdmin = (()=>{
   const MST={draft:"Entrada cerrada", open:"Entrada abierta", live:"En juego", done:"Terminado"};
   function mesaCtl(){
     const st=TD.st, L=grpList(), nMem=L.reduce((a,[,g])=>a+Object.keys(g.mem||{}).length,0);
-    let c=`<div class="kpis"><div class="kpi"><b>${esc(MST[st]||st)}</b><span>torneo por mesas</span></div><div class="kpi"><b>${L.length}</b><span>mesas · ${nMem} jugadores</span></div><div class="kpi"><b>${TD.rounds.length}</b><span>partidas (15 min cada una, como máximo)</span></div></div><div class="row">`;
+    let c=`<div class="kpis"><div class="kpi"><b>${esc(MST[st]||st)}</b><span>torneo por mesas</span></div><div class="kpi"><b>${L.length}</b><span>mesas · ${nMem} jugadores</span></div><div class="kpi"><b>${TD.rounds.length}</b><span>partidas (cada una dura lo que diga «Minutos»; vacío o 0 = 7)</span></div></div><div class="row">`;
     if(st==="draft") c+=`<button class="primary" data-ta="mopen">Habilitar la entrada a las mesas</button>`;
     if(st==="open") c+=`<button data-ta="mdraft">Cerrar la entrada</button><button class="primary" data-ta="mstart">▶ Arrancar torneo (cuenta regresiva de 15 s)</button>`;
     if(st==="live") c+=`<button data-ta="mdone">Terminar el torneo</button>`;
     c+=`<button data-ta="mqr">🖨 QR de las mesas (para imprimir)</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
-    c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los 15 minutos. Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
+    c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los minutos que diga su columna «Minutos» (vacío o 0 = 7). Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
     return c;
   }
   // en juego: qué partida está jugando cada mesa, cuánto le queda y cuánto avanzó
@@ -7048,7 +7062,7 @@ const TourAdmin = (()=>{
     if(srv()<go) return `<p class="mnow">Arranca en <b data-cd="${go}">${clock(go-srv())}</b></p>`;
     const d=GT[g], rc=TD.rounds[n]||{}, gn=GN[rc.g]||rc.g||"";
     if(!d || d.n!==n || !d.t0) return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ${x.cap ? "cargando…" : "⚠ sin capitán: no puede empezar"}</p>`;
-    const end=tms(d.t0)+MESA_MAX, pr=mesaProg(rc.g, d.s);
+    const end=tms(d.t0)+mesaMs(TD, n), pr=mesaProg(rc.g, d.s);
     return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ⏱ quedan <b data-cd="${end}">${clock(end-srv())}</b>${pr?` · ${esc(pr)}`:""}${(d.e|0)||(d.h|0)?` · ${d.e|0} error${(d.e|0)===1?"":"es"}, ${d.h|0} pista${(d.h|0)===1?"":"s"}`:""}</p>`;
   }
   // tabla de posiciones en vivo: puntos de cada partida, la que se está jugando con su tiempo, y avisos (solo muestra; no cambia nada)
@@ -7060,7 +7074,7 @@ const TourAdmin = (()=>{
       const cells=TD.rounds.map((r,i)=>{ const y=(G.res||{})[i];
         if(y) return `<td class="${y.ok?"mok":"mz"}">${y.ok ? esc(mesaNum(mesaPts(y))) : "0"}</td>`;
         if(i===n && TD.st==="live" && now>=go){
-          if(d && d.n===n && d.t0){ const end=tms(d.t0)+MESA_MAX, lt=end-now<120000; if(lt) late.push(nm);
+          if(d && d.n===n && d.t0){ const end=tms(d.t0)+mesaMs(TD, i), lt=end-now<120000; if(lt) late.push(nm);
             return `<td class="mcur${lt?" mlate":""}">▶ <span data-cd="${end}">${clock(end-now)}</span></td>`; }
           return `<td class="mcur">▶</td>`; }
         return `<td class="m">·</td>`; }).join("");
@@ -7077,7 +7091,7 @@ const TourAdmin = (()=>{
     const R=Object.entries(x.res||{}).sort((a,b)=>+a[0]-+b[0]); if(!R.length) return "";
     return `<details data-k="det-${esc(g)}"><summary>Partidas terminadas (${R.length})</summary><div class="atabw"><table class="atab"><thead><tr><th>#</th><th>Juego</th><th>Resultado</th><th>Tiempo</th><th>Errores</th><th>Pistas</th><th>Puntos</th></tr></thead><tbody>`+
       R.map(([i,y])=>{ const r=TD.rounds[+i]||{}, sec=Math.max(0,Math.round(((tms(y.at)||0)-(tms(y.t0)||0))/1000));
-        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=MESA_MAX/1000 ? "⏱ se acabó el tiempo" : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
+        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=mesaMs(TD, +i)/1000 ? "⏱ se acabó el tiempo" : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
   }
   function mesaLive(){
     const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
@@ -7159,7 +7173,7 @@ const TourAdmin = (()=>{
     for(const [g,x] of L){
       const n=mesaDone(x); if(n>=N) continue;
       try{ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n))); if(!s.exists()) continue;
-        const d=s.data(); if(!d.t0 || now-tms(d.t0)<MESA_MAX+30000) continue;
+        const d=s.data(); if(!d.t0 || now-tms(d.t0)<mesaMs(TD, n)+30000) continue;
         await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0}}); }
       catch(e){}
     }
@@ -7309,7 +7323,7 @@ const TourAdmin = (()=>{
       if(a==="pick"){ pickT(el.value); return; }
       // torneo por mesas
       if(a==="mnew"){ const ref=A.doc(A.collection(A.db,"tourneys"));
-        await A.setDoc(ref,{name:"TORNEO POR MESAS", mode:"mesas", st:"draft", cap:64, fee:0, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS.map(r=>({...r, dur:15})), champ:null, go:null, at:A.serverTimestamp()});
+        await A.setDoc(ref,{name:"TORNEO POR MESAS", mode:"mesas", st:"draft", cap:64, fee:0, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS.map(r=>({...r, dur:7})), champ:null, go:null, at:A.serverTimestamp()});
         cfgFor=null; pickT(ref.id); say("Torneo por mesas creado: elegí las partidas en «Rondas» y agregá las mesas."); return; }
       if(a==="madd"){ const n=Math.max(1, Math.min(40, parseInt(($("taMesaN")||{}).value,10)||1)), L=grpList(), i0=L.reduce((m,[,x])=>Math.max(m, x.i|0), 0);
         if(L.length+n>60){ say("Hasta 60 mesas por torneo.", true); return; }
@@ -7493,7 +7507,7 @@ const TourAdmin = (()=>{
       <label>Aporte sugerido (sats)<input data-f="fee" type="number" min="0" value="${T0.fee||0}"></label>
       <label class="wide">LNURL o Lightning Address para el pozo<input data-f="lnurl" value="${esc(T0.lnurl||"")}" maxlength="400" spellcheck="false"></label>
       <label class="wide">Bases y condiciones (vacío = el texto por defecto, en el idioma de cada jugador)<textarea data-f="bases" maxlength="3000" placeholder="${esc(T.es.tBasesDef)}">${esc(T0.bases||"")}</textarea></label>
-    </div><h2>${TD && TD.mode==="mesas" ? "Partidas" : "Rondas"}</h2><p class="m small">${TD && TD.mode==="mesas" ? "Todas las mesas juegan estas partidas, en este orden (la columna «Minutos» no se usa: cada una se cierra a los 15)." : "La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. Duración 0 = sin límite."} El idioma de cada ronda queda fijo cuando se genera su partida.</p>
+    </div><h2>${TD && TD.mode==="mesas" ? "Partidas" : "Rondas"}</h2><p class="m small">${TD && TD.mode==="mesas" ? "Todas las mesas juegan estas partidas, en este orden. «Minutos»: cuánto dura como máximo cada partida (vacío o 0 = 7); al terminarse, la partida se cierra sin resolver y la mesa pasa a la siguiente." : "La última es la final (1 a 1). Si hay menos jugadores, se saltean rondas del medio. Duración 0 = sin límite."} El idioma de cada ronda queda fijo cuando se genera su partida.</p>
     <div class="atabw"><table class="atab tarounds"><thead><tr><th>#</th><th>Juego</th><th>Idioma</th><th>Opciones</th><th>Dificultad</th><th>Minutos</th><th></th></tr></thead><tbody>`;
     T0.rounds.forEach((c,i)=>{
       const lock=used.has(i) && rounds().some(r=>r.ci===i && r.st!=="sched" && r.st!=="ready");
@@ -7721,6 +7735,7 @@ function route(){
   view = h==="admin" ? "admin" : h==="stats" ? "stats" : h==="torneo" ? "torneo" : h==="torneo-admin" ? "torneo-admin" : h==="mesa" ? "mesa" : h==="mesa-sala" ? "mesa-sala" : (GAMES[h] && !HIDDEN.has(h) ? h : "menu");
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+view));
   document.body.classList.toggle("vsala", view==="mesa-sala");
+  document.body.classList.toggle("vadmin", view==="admin" || view==="torneo-admin");
   $("menuBtn").style.display = view==="menu" ? "none" : "";
   applyTexts();
   if(GAMES[view]) Reg.enter(view);
