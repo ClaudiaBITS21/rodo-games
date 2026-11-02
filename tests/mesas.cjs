@@ -88,6 +88,10 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/del Halving/.test(await B.$eval('.mlobby',e=>e.textContent)),'la mesa ve el nombre nuevo');
   await a.waitForFunction(g=>document.querySelector(`.madm[data-g="${g}"] [data-mg="nm"]`).value==='Los Plebs del Halving',g1,{timeout:10000}).catch(()=>{});
   ok(await a.$eval(`.madm[data-g="${g1}"] [data-mg="nm"]`,e=>e.value)==='Los Plebs del Halving','el panel del admin ve el nombre que le puso la mesa');
+  // cualquiera de la mesa muestra el QR de su mesa para que se sumen amigos
+  await B.click('[data-mesa="qr"]'); await B.waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
+  ok(!!(await B.$('.tqr svg')) && (await B.$eval('.tqr',e=>e.textContent)).includes(`?mesa=${T.split('/')[1]}~${g1}`) && /del Halving/.test(await B.$eval('.tqr h2',e=>e.textContent)),'cualquiera de la mesa muestra el QR de su mesa');
+  await B.click('.tqr [data-q="x"]');
   // arrancar: cuenta regresiva y todos a la vez
   await a.click('[data-ta="mstart"]'); await a.click('[data-ta="mstart"]');
   const tr=await until(async()=>{ const x=await get(T); return x.st==='live' && x.go && x; });

@@ -6715,6 +6715,22 @@ const MESA_MAX=15*60000, MESA_GAP=3000;
 const mesaMin=(T, n)=>{ const d=+(((T && T.rounds) || [])[n] || {}).dur; return d>0 ? d : 7; };
 const mesaMs=(T, n)=>mesaMin(T, n)*60000;
 // "Cargando…" mientras llega la información (el link del QR abre antes de que conecte)
+// QR a pantalla completa (torneo, mesas): título, bajada, una línea de datos y el link, con «Copiar link» y «Cerrar» (o Esc)
+async function qrPop(title, sub, info, url, en){
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const o=document.createElement("div"); o.className="tqr"; o.setAttribute("role","dialog"); o.setAttribute("aria-label","QR");
+  o.innerHTML=`<h2>${esc(title)}</h2><p class="tqrk">${esc(sub)}</p><div class="tqrc" id="tqrCode">…</div>
+    <p class="tqrw">${esc(info||"")}</p><p class="tqru">${esc(url.replace(/^https?:\/\//,""))}</p>
+    <div class="row"><button data-q="copy">${en?"Copy link":"Copiar link"}</button><button data-q="x">${en?"Close":"Cerrar"}</button></div>`;
+  document.body.appendChild(o);
+  const close=()=>{ o.remove(); document.removeEventListener("keydown",key); }, key=e=>{ if(e.key==="Escape") close(); };
+  document.addEventListener("keydown",key);
+  o.addEventListener("click",async e=>{ const q=e.target.dataset.q;
+    if(q==="x") close();
+    if(q==="copy"){ try{ await navigator.clipboard.writeText(url); e.target.textContent="✓"; }catch(err){ e.target.textContent=url; } } });
+  try{ const {qrSvg}=await import("/js/qr.js"); o.querySelector("#tqrCode").innerHTML=qrSvg(url, 8); }
+  catch(err){ o.querySelector("#tqrCode").textContent="QR: "+(err.message||err); }
+}
 function loadingHtml(txt){ return `<div class="loading"><span class="spin" aria-hidden="true"></span><p>${txt}</p><p class="slow">${lang==="en"?"If it takes too long, check your connection and reload the page.":"Si tarda mucho, revisá la conexión y recargá la página."}</p></div>`; }
 // puntos de una partida: resuelta, 1000 − segundos − 100 por pista o error (piso 100); en ahorcado y anagrama, cada palabra
 // sin resolver suma 900/rondas s, como en el resto del sitio. Sin resolver a los 15 min: 0.
@@ -6734,7 +6750,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu mesa…", loadingS:"Cargando la tabla…", none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", editL:"Nombre de la mesa", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji a la mesa hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a esta mesa", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this table`, editL:"Nombre de la mesa", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji a la mesa hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6744,7 +6760,7 @@ const Mesa = (()=>{
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your table…", loadingS:"Loading the standings…", none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", editL:"Table name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the table and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this table", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Table name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the table and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6908,6 +6924,8 @@ const Mesa = (()=>{
     if(a==="deny") upd({req:null});
     if(a==="edit"){ ed={nm:G.nm||"", em:G.em||"", msg:""}; render(); const i=$("mEdNm"); if(i) i.focus(); }
     if(a==="edcancel"){ ed=null; render(); }
+    if(a==="qr" && gid){ const base=/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
+      qrPop(mesaName(G), t().qrSub(mesaName(G)), T && T.name || "", `${base}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(gid)}`, lang==="en"); }
     if(a==="edemo"){ edRead(); ed.em= ed.em===b.dataset.e ? "" : b.dataset.e; render(); }
     if(a==="edsave" && ed){ edRead(); const nm=ed.nm.trim().replace(/\s+/g," ").slice(0,24), em=[...ed.em.trim()].slice(0,2).join("").slice(0,8);
       if(!nm){ const i=$("mEdNm"); if(i) i.focus(); return; }
@@ -6964,7 +6982,7 @@ const Mesa = (()=>{
     else if(live && loaded) st=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
     else st=`<p class="mlst">${esc(T0.waitStart)}<span class="mdots"><i></i><i></i><i></i></span></p>`;
     const chip=([u,m])=>`<button class="mpl${u===uid?" me":""}${u===G.cap?" cap":""}" data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}><span class="mav">${esc(m.e||(m.n||"?").trim().charAt(0).toUpperCase())}</span><span class="mnm">${esc(m.n)}${u===uid?` <small>(${esc(T0.you)})</small>`:""}</span>${u===G.cap?`<span class="mcap">👑 ${esc(T0.cap)}</span>`:""}</button>`;
-    const canEd=cap && (T.st==="open" || T.st==="draft" || (live && now<go));
+    const waiting=T.st==="open" || T.st==="draft" || (live && now<go), canEd=cap && waiting;
     if(!canEd) ed=null;
     let eh="";
     if(canEd && ed){ edRead(); const foc=document.activeElement && document.activeElement.id;
@@ -6977,7 +6995,7 @@ const Mesa = (()=>{
       ${canEd ? (eh || `<p><button class="medbtn" data-mesa="edit">${esc(T0.edit)}</button></p>`) : ""}
       <div class="mlstate">${st}</div>
       <p class="mlcnt">${esc(T0.inMesa(mem.length))}</p><div class="mpls">${mem.map(chip).join("")}</div>
-      ${cap && mem.length>1 ? `<p class="m small">${esc(T0.capNote)}</p>` : ""}${canEd && !ed ? `<p class="m small">${esc(T0.capEdit)}</p>` : ""}${!G.cap ? `<p class="m small">${esc(T0.noCap)}</p>` : ""}</div>`;
+      ${cap && mem.length>1 ? `<p class="m small">${esc(T0.capNote)}</p>` : ""}${canEd && !ed ? `<p class="m small">${esc(T0.capEdit)}</p>` : ""}${waiting ? `<p><button class="medbtn" data-mesa="qr">${esc(T0.qrB)}</button></p>` : ""}${!G.cap ? `<p class="m small">${esc(T0.noCap)}</p>` : ""}</div>`;
     h+=`<h3>${esc(T0.table)}</h3>${standHtml()}`;
     set("mesaBody", h);
     if(ed && ed.foc){ const i=$(ed.foc); if(i && document.activeElement!==i){ i.focus(); try{ i.setSelectionRange(i.value.length, i.value.length); }catch(e){} } }
@@ -7245,22 +7263,10 @@ const TourAdmin = (()=>{
       catch(e){}
     }
   }
-  async function showQr(url0, sub){
+  function showQr(url0, sub){
     if(!tid || !TD) return;
-    const url=url0||tourUrl(tid), w=tms(TD.when);
-    const when=w ? new Date(w).toLocaleString("es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
-    const o=document.createElement("div"); o.className="tqr"; o.setAttribute("role","dialog"); o.setAttribute("aria-label","QR para inscribirse");
-    o.innerHTML=`<h2>${esc(TD.name)}</h2><p class="tqrk">${esc(sub||"Escaneá y anotate en el torneo · Scan to join")}</p><div class="tqrc" id="tqrCode">…</div>
-      <p class="tqrw">${esc([when?"🗓 "+when:"", TD.place?"📍 "+TD.place:""].filter(Boolean).join(" · "))}</p><p class="tqru">${esc(url.replace(/^https?:\/\//,""))}</p>
-      <div class="row"><button data-q="copy">Copiar link</button><button data-q="x">Cerrar</button></div>`;
-    document.body.appendChild(o);
-    const close=()=>{ o.remove(); document.removeEventListener("keydown",key); }, key=e=>{ if(e.key==="Escape") close(); };
-    document.addEventListener("keydown",key);
-    o.addEventListener("click",async e=>{ const q=e.target.dataset.q;
-      if(q==="x") close();
-      if(q==="copy"){ try{ await navigator.clipboard.writeText(url); e.target.textContent="✓ Copiado"; }catch(err){ e.target.textContent=url; } } });
-    try{ const {qrSvg}=await import("/js/qr.js"); $("tqrCode").innerHTML=qrSvg(url, 8); }
-    catch(err){ $("tqrCode").textContent="No se pudo dibujar el QR: "+(err.message||err); }
+    const w=tms(TD.when), when=w ? new Date(w).toLocaleString("es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
+    qrPop(TD.name, sub||"Escaneá y anotate en el torneo · Scan to join", [when?"🗓 "+when:"", TD.place?"📍 "+TD.place:""].filter(Boolean).join(" · "), url0||tourUrl(tid));
   }
   // borra un torneo con todo lo que tiene adentro (Firestore no borra solas las subcolecciones)
   async function wipe(t){

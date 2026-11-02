@@ -54,6 +54,9 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const g0=await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid);
   await who[0].goto(URL+'?mesas=MR'); await who[0].waitForSelector('.mlobby',{timeout:20000});
   ok(await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid)===g0 && /Uno/.test(await who[0].$eval('.mlobby',e=>e.textContent)),'si vuelve a escanear el QR único, vuelve a su misma mesa');
+  await who[1].click('[data-mesa="qr"]'); await who[1].waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
+  const g1=await who[1].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid);
+  ok((await who[1].$eval('.tqr',e=>e.textContent)).includes('?mesa=MR~'+g1),'con mesas al azar, el QR que muestra un jugador lleva a su propia mesa');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
