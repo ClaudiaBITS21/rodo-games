@@ -20,6 +20,14 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="RODO ₿ Games: un mini crucigrama con SATOSHI, CLAVE, NODO y HODL">
 <meta name="twitter:card" content="summary_large_image">
+<!-- Firebase: se empieza a bajar y a conectar desde el primer instante (el script que lo usa está al final de la página) -->
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
+<link rel="preload" href="/__/firebase/init.json" as="fetch" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com">
+<link rel="preconnect" href="https://securetoken.googleapis.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -419,6 +427,19 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .mhead h2{margin:0;font-size:1.6rem}.mhead p{margin:2px 0 14px}.mwait{text-align:center;padding:30px 0}.mbig{font-size:1.25rem;font-weight:700}
 .mjoin{display:grid;gap:12px;max-width:420px}.mjoin label{display:grid;gap:4px;font-weight:600}.mjoin input{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
 .memo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.memo button{font-size:1.4rem;padding:4px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper)}.memo button[aria-pressed=true]{border-color:var(--btc);box-shadow:0 0 0 2px var(--btc)}
+/* sala de espera de la mesa: tarjeta tipo ventanita */
+.mlobby{max-width:460px;margin:8px auto 22px;padding:22px 18px 18px;border-radius:20px;background:var(--paper);border:2px solid var(--btc);box-shadow:0 14px 40px rgba(0,0,0,.14);text-align:center}
+.mlobby .mlem{font-size:3.4rem;line-height:1}.mlobby h2{margin:6px 0 0;font-size:1.8rem}.mlobby>.m{margin:2px 0 12px}
+.mlstate{margin:6px 0 14px;padding:12px;border-radius:14px;background:rgba(247,147,26,.1)}.mlst{margin:0;font-weight:700;font-size:1.1rem}.mlst.ok{color:#2e7d32}
+.mlcd{margin:4px 0 0;font:800 3rem "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--btc)}
+.mdots{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}.mdots i{width:6px;height:6px;border-radius:50%;background:var(--btc);animation:mdot 1.2s infinite ease-in-out}
+.mdots i:nth-child(2){animation-delay:.2s}.mdots i:nth-child(3){animation-delay:.4s}@keyframes mdot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1.15)}}
+.mlcnt{margin:0 0 8px;font-weight:600;color:var(--muted)}
+.mpls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.mpl{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;animation:mpin .35s ease-out}
+.mpl:disabled{opacity:1;cursor:default}.mpl.me{border-color:var(--btc)}.mpl.cap{background:rgba(247,147,26,.15)}
+.mpl .mav{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--paper);font-size:1.2rem;font-weight:700}
+.mpl .mcap{font-size:.75rem;font-weight:600}@keyframes mpin{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
 .mmem{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}.mmem button{width:100%;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit}
 .mmem button:disabled{opacity:1;cursor:default}.mcd{font-size:1.2rem;text-align:center}.mcd b{font-size:2.2rem;font-variant-numeric:tabular-nums}.mcd.big b{font-size:clamp(3rem,10vw,7rem)}
 .mpod{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:14px 0}.mpod>div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px;border-radius:12px;background:var(--paper);border:1px solid var(--line);min-width:90px;text-align:center}
@@ -3200,19 +3221,22 @@ const Reg = (()=>{
     fb = await Promise.race([FB_READY, sleep(9000).then(()=>null)]);
     if(fb){
       uid=fb.uid;
-      // ficha del jugador: primera y última visita, partidas vistas y jugadas
-      try{
-        const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
-        if(s.exists()){ ficha=s.data(); seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
-          await fb.setDoc(ref,{last:fb.serverTimestamp(), ...visit()},{merge:true}); }
-        else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}, ...visit()});
-      }catch(e){}
-      await loadNick();
-      await Promise.all(["es","en"].map(loadClueUse));
-      try{ (await fb.getDocs(fb.collection(fb.db,"testers"))).forEach(d=>testers.add(d.id)); }catch(e){}
+      // todo a la vez (antes iba una consulta detrás de otra y tardaba varios segundos en el celular)
+      await Promise.all([
+        // ficha del jugador: primera y última visita, partidas vistas y jugadas
+        (async()=>{ try{
+          const ref=fb.doc(fb.db,"fichas",uid), s=await fb.getDoc(ref);
+          if(s.exists()){ ficha=s.data(); seen=s.data().seen||{}; const cl=s.data().cl||{}; ["es","en"].forEach(L=>(cl[L]||[]).forEach(id=>CLUES.seen[L].add(id)));
+            await fb.setDoc(ref,{last:fb.serverTimestamp(), ...visit()},{merge:true}); }
+          else await fb.setDoc(ref,{first:fb.serverTimestamp(), last:fb.serverTimestamp(), seen:{}, plays:{}, ...visit()});
+        }catch(e){} })(),
+        loadNick(),
+        ...["es","en"].map(loadClueUse),
+        (async()=>{ try{ (await fb.getDocs(fb.collection(fb.db,"testers"))).forEach(d=>testers.add(d.id)); }catch(e){} })(),
+        // cambios del glosario hechos desde el panel
+        (async()=>{ try{ const L0=[]; (await fb.getDocs(fb.collection(fb.db,"dict"))).forEach(d=>L0.push(d.data())); applyDict(L0); }catch(e){} })()
+      ]);
       document.body.classList.toggle("tester", testers.has(uid));
-      // cambios del glosario hechos desde el panel
-      try{ const L0=[]; (await fb.getDocs(fb.collection(fb.db,"dict"))).forEach(d=>L0.push(d.data())); applyDict(L0); }catch(e){}
     }
     KEYS.forEach(setPid);
   })();
@@ -6207,7 +6231,7 @@ const Tour = (()=>{
   let RS={}, rUnsub=null, mine=null, mUnsub=null, INS=null, iUnsub=null;
   let RES={}, resId=null, resUnsub=null, closedRes={};
   let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
-  let tReady=false, tLoaded=false;
+  let tReady=false, tLoaded=false, regOk=false;
   let LIST=[], wantT=null; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
   // QR: quien llega por el QR va directo a armar su usuario y queda anotado (y con check-in, si está abierto), sin más botones
   const QR={on:false, asked:false, busy:false, loaded:false};
@@ -6620,7 +6644,7 @@ const Tour = (()=>{
     await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"ins",uid), d);
   }
   async function qrStep(){
-    if(!QR.on || QR.busy || !fb || !TD || tid!==wantT || !QR.loaded || view!=="torneo") return;
+    if(!QR.on || QR.busy || !fb || !regOk || !TD || tid!==wantT || !QR.loaded || view!=="torneo") return;
     const st=TD.st, T0=t();
     if(st!=="open" && st!=="checkin"){ QR.on=false; return; }
     if(!Reg.nick()){
@@ -6665,8 +6689,9 @@ const Tour = (()=>{
   async function pushState(){ try{ pushSt=typeof Push!=="undefined" ? await Push.state() : null; }catch(e){ pushSt=null; } render(); }
 
   (async()=>{
-    await Reg.ready; fb=Reg.fb(); tReady=true; if(!fb) return render();
-    uid=Reg.uid();
+    fb=await Promise.race([FB_READY, new Promise(r=>setTimeout(()=>r(null),12000))]); tReady=true; if(!fb) return render();
+    uid=fb.uid;
+    Reg.ready.then(()=>{ regOk=true; qrStep(); render(); });
     fb.onSnapshot(fb.collection(fb.db,"tourneys"), qs=>{ ALL={}; qs.forEach(d=>ALL[d.id]=d.data()); tLoaded=true; pick(); render(); }, ()=>{ tLoaded=true; render(); });
   })();
 
@@ -6708,7 +6733,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por mesas", wait:"Esperando que abra la mesa…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu mesa…", loadingS:"Cargando la tabla…", none:"Esta mesa no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Esta mesa ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar a la mesa",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", waitStart:"Esperando que arranque el torneo…",
+      inMesa:n=>`En la mesa (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay mesas armadas: avisale a la organización.", rndNote:"Escribí tu nombre y te toca una mesa.",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6718,7 +6743,7 @@ const Mesa = (()=>{
     en:{title:"Table tournament", wait:"Waiting for the table to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your table…", loadingS:"Loading the standings…", none:"This table doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This table no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the table",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", waitStart:"Waiting for the tournament to start…",
+      inMesa:n=>`At the table (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", waitStart:"Waiting for the tournament to start", noMesas:"There are no tables yet: tell the organizers.", rndNote:"Enter your name and you'll get a table.",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6728,7 +6753,7 @@ const Mesa = (()=>{
   };
   const t=()=>MT[lang]||MT.es;
   let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
-  let loadedT=false, noted=false, booting=false;
+  let loadedT=false, noted=false, booting=false, rnd=false;
   let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
   const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
   const clock=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
@@ -6746,13 +6771,18 @@ const Mesa = (()=>{
   { const q=new URLSearchParams(location.search), m=q.get("mesa"), p=q.get("pantalla"), ok=x=>/^[A-Za-z0-9_-]{1,40}$/.test(x||"");
     if(m && m.includes("~")){ const [a,b]=m.split("~"); if(ok(a) && ok(b)){ tid=a; gid=b; save(); history.replaceState(null,"",location.pathname+"#mesa"); } }
     else if(ok(p)){ tid=p; sala=true; history.replaceState(null,"",location.pathname+"#mesa-sala"); }
+    else if(ok(q.get("mesas"))){ const s0=saved(); tid=q.get("mesas"); gid=s0 && s0.tid===tid ? s0.gid : null; rnd=true; history.replaceState(null,"",location.pathname+"#mesa"); }
     else { const s=saved(); if(s){ tid=s.tid; gid=s.gid; if(GAMES[location.hash.slice(1)]) history.replaceState(null,"",location.pathname+"#mesa"); } } }
 
   async function boot(){
-    if(fb || !tid || booting) return; booting=true; await Reg.ready; fb=Reg.fb(); uid=Reg.uid(); booting=false;
+    // la mesa solo necesita la conexión: no espera la carga general del sitio (ficha, apodo, diccionarios…)
+    if(fb || !tid || booting) return; booting=true;
+    fb=await Promise.race([FB_READY, new Promise(r=>setTimeout(()=>r(null),12000))]); uid=fb ? fb.uid : null; booting=false;
     if(!fb){ set(sala ? "mesaSala" : "mesaBody", `<p class="intro">${esc(T[lang].rkLocal)}</p>`); return; }
     uT=fb.onSnapshot(fb.doc(fb.db,"tourneys",tid), s=>{ T=s.exists() && s.data().mode==="mesas" ? s.data() : null; step(); render(); }, ()=>{ T=null; render(); });
-    uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"})); G=gid ? GS[gid]||null : null; loadedT=true; step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
+    uGS=fb.onSnapshot(fb.collection(fb.db,"tourneys",tid,"groups"), qs=>{ GS={}; qs.forEach(d=>GS[d.id]=d.data({serverTimestamps:"estimate"}));
+      if(!gid && uid){ const m=Object.keys(GS).find(k=>(GS[k].mem||{})[uid]); if(m){ gid=m; save(); } }
+      G=gid ? GS[gid]||null : null; loadedT=true; step(); render(); }, e=>{ loadedT=true; Reg.logErr("mesa-leer", e.code||e.message); render(); });
   }
   const active=()=>!!(tid && !sala && gid && T && member() && (T.st==="live" || T.st==="open"));
 
@@ -6784,7 +6814,7 @@ const Mesa = (()=>{
     const cap=G.cap===uid;
     if(cap && !GD && creating!==n){ creating=n;
       try{ await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(n)), {s:"", t0:fb.serverTimestamp(), at:fb.serverTimestamp(), e:0, h:0, by:uid}); }catch(e){ creating=-1; } return; }
-    if(!GD || !GD.t0) return;
+    if(!GD || !GD.t0 || !Reg.fb()) return;
     const p=PZ[n];
     if(!loaded || loaded.n!==n || loaded.cap!==cap){
       if(lang!==p.lang) setLang(p.lang);
@@ -6842,10 +6872,18 @@ const Mesa = (()=>{
     if(!nm){ joinMsg=t().badName; render(); return; }
     const m={n:nm, t:Date.now()}; if(em && em.e) m.e=em.e;
     // el jugador puede haber cambiado (entró con su usuario en otra pestaña): siempre el de ahora
-    await Reg.ready; uid=Reg.uid()||uid;
+    uid=Reg.uid()||uid;
     if(!uid){ joinMsg=t().joinOff; render(); return; }
     if(!T || (T.st!=="open" && T.st!=="live")){ joinMsg=t().wait; render(); return; }
+    if(!gid && !rnd){ joinMsg=t().none; render(); return; }
     const b=document.querySelector('[data-mesa="join"]'); if(b) b.disabled=true;
+    if(!gid){
+      const L=Object.entries(GS); if(!L.length){ joinMsg=t().noMesas; if(b) b.disabled=false; render(); return; }
+      const mine=L.find(([,x])=>(x.mem||{})[uid]);
+      if(mine) gid=mine[0];
+      else { const lo=Math.min(...L.map(([,x])=>Object.keys(x.mem||{}).length)), c=L.filter(([,x])=>Object.keys(x.mem||{}).length===lo); gid=c[Math.floor(Math.random()*c.length)][0]; }
+      G=GS[gid]; save();
+    }
     joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
     try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
     catch(e){ try{ await new Promise(r=>setTimeout(r,800)); await fb.updateDoc(ref, {["mem."+uid]:m}); }
@@ -6883,13 +6921,13 @@ const Mesa = (()=>{
     if(view==="mesa-sala") return renderSala();
     if(view!=="mesa") return bar();
     const T0=t(); setTitle(T0.title);
-    if(!tid || !gid){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
+    if(!tid || (!gid && !rnd)){ set("mesaBody", `<p class="intro">${esc(T0.none)}</p>`); return; }
     if(!fb){ if(!booting) set("mesaBody", loadingHtml(esc(T0.loading))); boot(); return; }
-    if(!T || !G){
+    if(!T || (!G && !(rnd && !gid))){
       // dice cuál es el problema y lo anota en "Errores recientes" del panel
       const why=!T ? "torneo" : "mesa"; if(loadedT && !noted){ noted=true; Reg.logErr("mesa-"+why, (tid||"")+"~"+(gid||"")); }
       set("mesaBody", loadedT ? `<p class="intro">${esc(!T ? T0.noneT : T0.noneG)}</p>` : loadingHtml(esc(T0.loading))); return; }
-    let h=`<div class="mhead"><h2>${esc(mesaName(G))}</h2><p class="m">${esc(T.name)}</p></div>`;
+    let h=G ? `<div class="mhead"><h2>${esc(mesaName(G))}</h2><p class="m">${esc(T.name)}</p></div>` : `<div class="mhead"><h2>${esc(T.name)}</h2><p class="m">${esc(T0.rndNote)}</p></div>`;
     if(finished()){
       h+=`<div class="mfin"><h3>🏆 ${esc(T0.fin)}</h3>${podiumHtml()}${standHtml()}`;
       if(member()) h+= Reg.nick() ? `<p class="m">${esc(T0.saveDone(Reg.nick()))}</p>` : `<button class="primary" data-mesa="user">${esc(T0.saveQ)}</button>`;
@@ -6909,13 +6947,16 @@ const Mesa = (()=>{
     $("mesaBody").dataset.f="";
     const mem=Object.entries(G.mem||{}).sort((a,b)=>(a[1].t||0)-(b[1].t||0)), cap=G.cap===uid;
     const live=T.st==="live" && T.go, go=live ? tms(T.go) : 0, now=srv();
-    if(live && now<go) h+=`<p class="mcd">${esc(T0.startsIn)} <b data-mcd="${go}">${clock(go-now)}</b></p>`;
-    else if(live && n0()>=total()) h+=`<p class="mbig">✓ ${esc(T0.allDone)}</p>`;
-    else if(live && loaded) h+=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
-    else h+=`<p class="m">${esc(T0.waitStart)}</p>`;
-    h+=`<h3>${esc(T0.inMesa(mem.length))}</h3><ul class="mmem">${mem.map(([u,m])=>`<li><button data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}>${esc((m.e?m.e+" ":"")+m.n)}${u===uid?` (${esc(T0.you)})`:""}${u===G.cap?` · 👑 ${esc(T0.cap)}`:""}</button></li>`).join("")}</ul>`;
-    if(cap && mem.length>1) h+=`<p class="m small">${esc(T0.capNote)}</p>`;
-    if(!G.cap) h+=`<p class="m small">${esc(T0.noCap)}</p>`;
+    let st;
+    if(live && now<go) st=`<p class="mlst">${esc(T0.startsIn)}</p><p class="mlcd" data-mcd="${go}">${clock(go-now)}</p>`;
+    else if(live && n0()>=total()) st=`<p class="mlst ok">✓ ${esc(T0.allDone)}</p>`;
+    else if(live && loaded) st=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
+    else st=`<p class="mlst">${esc(T0.waitStart)}<span class="mdots"><i></i><i></i><i></i></span></p>`;
+    const chip=([u,m])=>`<button class="mpl${u===uid?" me":""}${u===G.cap?" cap":""}" data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}><span class="mav">${esc(m.e||(m.n||"?").trim().charAt(0).toUpperCase())}</span><span class="mnm">${esc(m.n)}${u===uid?` <small>(${esc(T0.you)})</small>`:""}</span>${u===G.cap?`<span class="mcap">👑 ${esc(T0.cap)}</span>`:""}</button>`;
+    h=`<div class="mlobby"><div class="mlem">${esc(G.em||"🎲")}</div><h2>${esc(G.nm||"Mesa")}</h2><p class="m">${esc(T.name)}</p>
+      <div class="mlstate">${st}</div>
+      <p class="mlcnt">${esc(T0.inMesa(mem.length))}</p><div class="mpls">${mem.map(chip).join("")}</div>
+      ${cap && mem.length>1 ? `<p class="m small">${esc(T0.capNote)}</p>` : ""}${!G.cap ? `<p class="m small">${esc(T0.noCap)}</p>` : ""}</div>`;
     h+=`<h3>${esc(T0.table)}</h3>${standHtml()}`;
     set("mesaBody", h);
   }
@@ -7042,6 +7083,8 @@ const TourAdmin = (()=>{
   const isMesa=()=>!!(TD && TD.mode==="mesas");
   const mesaUrl=g=>`${baseUrl()}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(g)}`;
   const salaUrl=()=>`${baseUrl()}/?pantalla=${encodeURIComponent(tid)}`;
+  // un solo QR para todos: a cada uno le toca la mesa con menos gente
+  const mesaUrlAll=()=>`${baseUrl()}/?mesas=${encodeURIComponent(tid)}`;
   const grpList=()=>Object.entries(GRP).sort((a,b)=>(a[1].i|0)-(b[1].i|0));
   const MST={draft:"Entrada cerrada", open:"Entrada abierta", live:"En juego", done:"Terminado"};
   function mesaCtl(){
@@ -7050,7 +7093,8 @@ const TourAdmin = (()=>{
     if(st==="draft") c+=`<button class="primary" data-ta="mopen">Habilitar la entrada a las mesas</button>`;
     if(st==="open") c+=`<button data-ta="mdraft">Cerrar la entrada</button><button class="primary" data-ta="mstart">▶ Arrancar torneo (cuenta regresiva de 15 s)</button>`;
     if(st==="live") c+=`<button data-ta="mdone">Terminar el torneo</button>`;
-    c+=`<button data-ta="mqr">🖨 QR de las mesas (para imprimir)</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
+    if(TD.asg==="azar") c+=`<button class="primary" data-ta="mqr1">📱 Mostrar el QR único (mesa al azar)</button>`;
+    c+=`<button data-ta="mqr">🖨 ${TD.asg==="azar" ? "QR único para imprimir" : "QR de las mesas (para imprimir)"}</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
     c+=`<p class="m small">Cada mesa juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los minutos que diga su columna «Minutos» (vacío o 0 = 7). Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de las mesas que se quedaron sin capitán.</p>`;
     return c;
   }
@@ -7156,7 +7200,8 @@ const TourAdmin = (()=>{
     const w=window.open("", "_blank"); if(!w){ say("El navegador bloqueó la ventana: permití las ventanas emergentes de este sitio.", true); return; }
     w.document.write("<p style='font-family:sans-serif'>Armando los QR…</p>");
     const {qrSvg}=await import("/js/qr.js");
-    const cards=L.map(([g,x])=>`<div class="c"><h1>${esc(mesaName(x))}</h1><p class="t">${esc(TD.name)}</p>${qrSvg(mesaUrl(g),8)}<p class="s">Escaneá para entrar a tu mesa · Scan to join your table</p><p class="u">${esc(mesaUrl(g).replace(/^https?:\/\//,""))}</p></div>`).join("");
+    const cards=TD.asg==="azar" ? `<div class="c"><h1>${esc(TD.name)}</h1><p class="t">${L.length} mesas · te toca una al entrar</p>${qrSvg(mesaUrlAll(),8)}<p class="s">Escaneá y entrá: te toca una mesa · Scan to join a table</p><p class="u">${esc(mesaUrlAll().replace(/^https?:\/\//,""))}</p></div>`
+      : L.map(([g,x])=>`<div class="c"><h1>${esc(mesaName(x))}</h1><p class="t">${esc(TD.name)}</p>${qrSvg(mesaUrl(g),8)}<p class="s">Escaneá para entrar a tu mesa · Scan to join your table</p><p class="u">${esc(mesaUrl(g).replace(/^https?:\/\//,""))}</p></div>`).join("");
     w.document.open();
     w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QR de las mesas · ${esc(TD.name)}</title><style>
       body{font-family:system-ui,sans-serif;margin:0;color:#111;background:#fff}.c{break-after:page;page-break-after:always;min-height:96vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;box-sizing:border-box}
@@ -7178,12 +7223,12 @@ const TourAdmin = (()=>{
       catch(e){}
     }
   }
-  async function showQr(){
+  async function showQr(url0, sub){
     if(!tid || !TD) return;
-    const url=tourUrl(tid), w=tms(TD.when);
+    const url=url0||tourUrl(tid), w=tms(TD.when);
     const when=w ? new Date(w).toLocaleString("es-AR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
     const o=document.createElement("div"); o.className="tqr"; o.setAttribute("role","dialog"); o.setAttribute("aria-label","QR para inscribirse");
-    o.innerHTML=`<h2>${esc(TD.name)}</h2><p class="tqrk">Escaneá y anotate en el torneo · Scan to join</p><div class="tqrc" id="tqrCode">…</div>
+    o.innerHTML=`<h2>${esc(TD.name)}</h2><p class="tqrk">${esc(sub||"Escaneá y anotate en el torneo · Scan to join")}</p><div class="tqrc" id="tqrCode">…</div>
       <p class="tqrw">${esc([when?"🗓 "+when:"", TD.place?"📍 "+TD.place:""].filter(Boolean).join(" · "))}</p><p class="tqru">${esc(url.replace(/^https?:\/\//,""))}</p>
       <div class="row"><button data-q="copy">Copiar link</button><button data-q="x">Cerrar</button></div>`;
     document.body.appendChild(o);
@@ -7404,6 +7449,7 @@ const TourAdmin = (()=>{
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
       if(a==="qr") return showQr();
+      if(a==="mqr1") return showQr(mesaUrlAll(), "Escaneá y entrá: te toca una mesa · Scan to join a table");
       if(a==="auto"){ await A.updateDoc(tref(),{auto:el.checked}); return; }
       if(a==="start"||a==="startnow"){
         const pl=firstPl(); if(pl.length<2){ say("Hacen falta al menos 2 jugadores.", true); return; }
@@ -7501,6 +7547,7 @@ const TourAdmin = (()=>{
     let h=`<h2>Configuración</h2><div class="tacfg">
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
       <label>Arranca (fecha y hora)<input data-f="when" type="datetime-local" value="${whenV}"></label>
+      ${T0.mode==="mesas" ? `<label>Entrada a las mesas${sel("asg",[["qr","Un QR por mesa (cada uno escanea el de su mesa)"],["azar","Un solo QR: a cada uno le toca una mesa (se reparten parejo)"]],T0.asg==="azar"?"azar":"qr")}</label>` : ""}
       <label>Arranque${sel("ast",[["0","Lo inicia la administración (botón «Arrancar»)"],["1","Automático a la hora fijada (con el panel abierto)"]],T0.ast===true?"1":"0")}</label>
       ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label class="wide">Dónde se juega (se ve en la portada y en la sala; por ejemplo «Online» o «LABITCONF, Costa Salguero»)<input data-f="place" value="${esc(T0.place||"")}" maxlength="120"></label>
@@ -7590,7 +7637,7 @@ const TourAdmin = (()=>{
       return c;
     });
     const w=v("when"), pb=v("pub"), ts=x=>x ? A.Timestamp.fromMillis(new Date(x).getTime()) : null;
-    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), ast:v("ast")==="1",
+    const c={name:v("name").trim().slice(0,80)||TD.name, when:ts(w), ast:v("ast")==="1", ...(TD.mode==="mesas" ? {asg:v("asg")==="azar"?"azar":"qr"} : {}),
       fee:Math.max(0,parseInt(v("fee"),10)||0), lnurl:v("lnurl").trim(), place:v("place").trim().slice(0,120), bases:v("bases").trim(), rounds:rs, lang:(rs[0]&&rs[0].lang)||"es"};
     if(!TD.test) c.pub=ts(pb);
     return c;

@@ -500,7 +500,9 @@ service cloud.firestore {
     function isTest(tid) { return tour(tid).get('test', false) == true; }
     function validTour(d) {
       // nck y nlv: marcas de la Cloud Function de avisos (check-in y arranque ya avisados)
-      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'ast', 'nck', 'nlv', 'test', 'src', 'inv', 'place', 'mode', 'go'])
+      return d.keys().hasOnly(['name', 'st', 'cap', 'fee', 'lnurl', 'when', 'pub', 'orgs', 'bases', 'lang', 'cur', 'rounds', 'champ', 'pool', 'at', 'auto', 'ast', 'nck', 'nlv', 'test', 'src', 'inv', 'place', 'mode', 'go', 'asg'])
+        // asg: cómo entran a las mesas (un QR por mesa o uno solo con mesa al azar)
+        && (!('asg' in d) || d.asg in ['qr', 'azar'])
         // torneo por mesas: mode 'mesas'; go = arranque simultáneo de todas las mesas
         && (!('mode' in d) || d.mode == 'mesas')
         && (!('go' in d) || d.go == null || d.go is timestamp)

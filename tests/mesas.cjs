@@ -41,9 +41,11 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const L0=await page('L0'); await L0.route(/\/(fb|__\/firebase)\//, r=>new Promise(res=>setTimeout(()=>res(r.continue()),4000))).catch(()=>{});
   await L0.goto(URL+`?mesa=M1~${g1}`, {waitUntil:'domcontentloaded'});
   ok(/Cargando/.test(await L0.$eval('#mesaBody',e=>e.textContent)) && await L0.evaluate(()=>location.hash)==='#mesa','al abrir el QR, lo primero que se ve es «Cargando tu mesa…»');
-  await L0.goto(URL+'?t=OTRO', {waitUntil:'domcontentloaded'}); await L0.waitForTimeout(300);
-  ok(/Cargando el torneo/.test(await L0.$eval('#tHead',e=>e.textContent)) && !/Sin conexión/.test(await L0.$eval('#view-torneo',e=>e.textContent)),'el QR del torneo también: «Cargando el torneo…», no «Sin conexión»');
   await L0.close();
+  const L1=await page('L1'); await L1.route(/\/(fb|__\/firebase)\//, r=>new Promise(res=>setTimeout(()=>res(r.continue()),4000))).catch(()=>{});
+  await L1.goto(URL+'?t=OTRO', {waitUntil:'commit'}); await L1.waitForSelector('#tHead .loading, #tHead .intro',{timeout:5000}).catch(()=>{});
+  { const th=await L1.$eval('#tHead',e=>e.textContent), vt=await L1.$eval('#view-torneo',e=>e.textContent); ok(/Cargando/.test(th) && !/Sin conexión/.test(vt),'el QR del torneo también: «Cargando…», no «Sin conexión»: '+th.slice(0,80)); }
+  await L1.close();
   await A.goto(URL+`?mesa=M1~${g1}`);
   await A.waitForFunction(()=>/Esperando que abra la mesa/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
   ok(/Esperando que abra la mesa/.test(await A.$eval('#mesaBody',e=>e.textContent)) && await A.evaluate(()=>location.hash)==='#mesa','sin entrada habilitada: «Esperando que abra la mesa»');
@@ -55,7 +57,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await X.waitForFunction(()=>/ya no existe/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
   ok(/pedí el QR actualizado/.test(await X.$eval('#mesaBody',e=>e.textContent)),'QR de una mesa borrada: «Esta mesa ya no existe…»');
   ok(!!(await until(async()=>{ const e=await all('errs'); return Object.values(e).some(x=>x.w==='mesa-mesa'); },10000)),'y queda en «Errores recientes»');
-  const enter=async(p,name,emo)=>{ await p.fill('#mName',name); if(emo) await p.click(`#mEmo [data-e="${emo}"]`); await p.click('[data-mesa="join"]'); await p.waitForSelector('.mmem',{timeout:15000}); };
+  const enter=async(p,name,emo)=>{ await p.fill('#mName',name); if(emo) await p.click(`#mEmo [data-e="${emo}"]`); await p.click('[data-mesa="join"]'); await p.waitForSelector('.mpls',{timeout:15000}); };
   await enter(A,'Ana','🦊');
   await B.goto(URL+`?mesa=M1~${g1}`); await B.waitForSelector('#mName',{timeout:20000}); await enter(B,'Beto');
   await C.goto(URL+`?mesa=M1~${g2}`); await C.waitForSelector('#mName',{timeout:20000}); await enter(C,'Caro','🚀');
@@ -72,7 +74,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await A.waitForFunction(()=>/👑/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
   ok(/👑/.test(await A.$eval('#mesaBody',e=>e.textContent)) && /Beto/.test(await A.$eval('#mesaBody',e=>e.textContent)),'el lobby muestra quiénes entraron y el capitán');
   // el capitán pasa el teclado tocando un nombre, y el panel lo devuelve
-  await A.click(`.mmem [data-u="${ub}"]`); await A.click(`.mmem [data-u="${ub}"]`);
+  await A.click(`.mpls [data-u="${ub}"]`); await A.click(`.mpls [data-u="${ub}"]`);
   ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ub)),'el capitán le pasa el teclado a otro tocando su nombre');
   await a.waitForSelector(`[data-ta="mcap"][data-g="${g1}"]`,{timeout:10000}); await a.selectOption(`[data-ta="mcap"][data-g="${g1}"]`, ua);
   ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ua)),'el panel reasigna el capitán');

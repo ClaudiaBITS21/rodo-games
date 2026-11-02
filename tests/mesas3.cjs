@@ -33,6 +33,27 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(r1 && r1.ok===false,'la segunda también se cierra a su tiempo');
   await p.waitForFunction(()=>location.hash==='#anagrama' && /Partida 3 de 3/.test(document.getElementById('mesaTop').textContent),null,{timeout:20000}).catch(()=>{});
   ok(/Sin resolver a los 7 min/.test(await p.$eval('#mesaTop',e=>e.textContent)) && /⏱ [67]:\d\d/.test(await p.$eval('#mesaTop',e=>e.textContent)),'sin minutos cargados, la partida dura 7: '+(await p.$eval('#mesaTop .mtop1',e=>e.textContent).catch(()=>'-')));
+  // un solo QR: a cada uno le toca la mesa con menos gente; si vuelve a escanear, vuelve a la suya
+  await db(async f=>{
+    await F.setDoc(F.doc(f,'tourneys/MR'),{name:'MESAS AL AZAR', mode:'mesas', asg:'azar', st:'open', cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0,
+      rounds:[{g:'anagrama',lang:'es',dur:7}], champ:null, go:null, at:F.Timestamp.now()});
+    for(const i of [1,2]) await F.setDoc(F.doc(f,`tourneys/MR/groups/r${i}`),{i, nm:'Mesa '+i, em:i===1?'🍀':'', mem:{}, cap:null, req:null, res:{}});
+  });
+  const who=[];
+  for(const n of ['Uno','Dos','Tres']){
+    const q=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); q.on('pageerror',e=>console.log(n,'pageerror',e.message));
+    await q.goto(URL+'?mesas=MR'); await q.waitForSelector('#mName',{timeout:20000});
+    if(n==='Uno') ok(/te toca una mesa/.test(await q.$eval('#mesaBody',e=>e.textContent)),'con el QR único, la entrada dice que te toca una mesa');
+    await q.fill('#mName',n); await q.click('[data-mesa="join"]'); await q.waitForSelector('.mlobby',{timeout:15000});
+    who.push(q);
+  }
+  const gs={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>gs[d.id]=Object.keys(d.data().mem||{}).length); });
+  ok([gs.r1,gs.r2].sort().join()==='1,2','se reparten parejo entre las mesas: '+JSON.stringify(gs));
+  const card=await who[0].$eval('.mlobby',e=>e.textContent.replace(/\s+/g,' '));
+  ok(/Esperando que empiece el torneo/.test(card) && /Uno/.test(card) && /En la mesa/.test(card),'sala de espera: tarjeta con la mesa, quiénes están y «Esperando que empiece el torneo»: '+card.slice(0,120));
+  const g0=await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid);
+  await who[0].goto(URL+'?mesas=MR'); await who[0].waitForSelector('.mlobby',{timeout:20000});
+  ok(await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid)===g0 && /Uno/.test(await who[0].$eval('.mlobby',e=>e.textContent)),'si vuelve a escanear el QR único, vuelve a su misma mesa');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
