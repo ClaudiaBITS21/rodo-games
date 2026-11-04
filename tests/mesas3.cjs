@@ -35,6 +35,36 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(r1 && r1.ok===false,'la segunda también se cierra a su tiempo');
   await p.waitForFunction(()=>location.hash==='#anagrama' && /Partida 3 de 3/.test(document.getElementById('mesaTop').textContent),null,{timeout:20000}).catch(()=>{});
   ok(/a los 7 min no la terminaron/.test(await p.$eval('#mesaTop',e=>e.textContent)) && /⏱ [67]:\d\d/.test(await p.$eval('#mesaTop',e=>e.textContent)),'sin minutos cargados, la partida dura 7: '+(await p.$eval('#mesaTop .mtop1',e=>e.textContent).catch(()=>'-')));
+  // terminaron antes de tiempo: pasan ya (se llevan lo que sobró) o esperan (la próxima arranca sola, sin extra); sin «Terminar» ni «Me rindo»
+  const P2=await p.evaluate(()=>[GAMES.anagrama.gen(), GAMES.anagrama.gen()]);
+  const T0ms=Date.now();
+  await db(async f=>{
+    await F.setDoc(F.doc(f,'tourneys/MX'),{name:'MESAS TIEMPO', mode:'mesas', st:'live', cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0,
+      rounds:[{g:'anagrama',lang:'es',dur:1},{g:'anagrama',lang:'es',dur:1}], champ:null, go:F.Timestamp.fromMillis(T0ms-20000), at:F.Timestamp.now()});
+    await F.setDoc(F.doc(f,'tourneys/MX/groups/x1'),{i:1, nm:'Grupo 1', em:'', mem:{[uid]:{n:'Ana', t:1}}, cap:uid, req:null, res:{'0':{ok:true, t0:F.Timestamp.fromMillis(T0ms-15000), at:F.Timestamp.fromMillis(T0ms-10000), e:0, h:0, s:10, R:10}}});
+    for(const i of [0,1]) await F.setDoc(F.doc(f,`tourneys/MX/mpz/${i}`),{i, g:'anagrama', k:'anagrama', lang:'es', nr:10, d:JSON.parse(JSON.stringify(P2[i]))});
+  });
+  await p.goto(URL+'?mesa=MX~x1');
+  await p.waitForFunction(()=>/Partida 1 de 2 terminada/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
+  const bt=await p.$eval('#mesaBody',e=>e.textContent);
+  ok(/Partida 1 de 2 terminada/.test(bt) && /Les sobra este tiempo/.test(bt) && !!(await p.$('[data-mesa="mnext"]')),'resuelta antes de tiempo: el grupo ve cuánto le sobra y el capitán puede pasar ya');
+  ok(!(await get('tourneys/MX/groups/x1/games/1')),'mientras no pasan, la próxima no arranca');
+  await p.click('[data-mesa="mnext"]');
+  await p.waitForFunction(()=>location.hash==='#anagrama' && !document.getElementById('mesaTop').hidden,null,{timeout:20000}).catch(()=>{});
+  const tb=await p.$eval('#mesaTop',e=>e.textContent);
+  ok(/que les sobró/.test(tb) && /⏱ 1:[45]\d/.test(tb),'al pasar ya, la próxima tiene sus minutos más lo que sobró: '+tb.slice(0,90));
+  ok(await p.$eval('#aEnd',e=>getComputedStyle(e).display)==='none','en grupos no hay «Terminar» ni «Me rindo»');
+  // otro grupo espera: la próxima arranca sola cuando se cumple el tiempo, sin extra
+  await db(async f=>{
+    await F.updateDoc(F.doc(f,'tourneys/MX'),{rounds:[{g:'anagrama',lang:'es',dur:0.2},{g:'anagrama',lang:'es',dur:1}]});
+    await F.setDoc(F.doc(f,'tourneys/MX/groups/x2'),{i:2, nm:'Grupo 2', em:'', mem:{[uid]:{n:'Ana', t:1}}, cap:uid, req:null, res:{'0':{ok:true, t0:F.Timestamp.fromMillis(Date.now()-6000), at:F.Timestamp.fromMillis(Date.now()-4000), e:0, h:0, s:10, R:10}}});
+  });
+  await p.goto(URL+'?mesa=MX~x2');
+  await p.waitForFunction(()=>/Partida 1 de 2 terminada/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
+  ok(/Partida 1 de 2 terminada/.test(await p.$eval('#mesaBody',e=>e.textContent)),'el que espera ve la cuenta regresiva');
+  await p.waitForFunction(()=>location.hash==='#anagrama' && !document.getElementById('mesaTop').hidden,null,{timeout:25000}).catch(()=>{});
+  const tw=await p.$eval('#mesaTop',e=>e.textContent);
+  ok(!/que les sobró/.test(tw) && /⏱ (1:00|0:5\d)/.test(tw),'si esperan, la próxima arranca sola sin tiempo extra: '+tw.slice(0,80));
   // un solo QR: todos entran a una sala de espera común; la organización reparte las mesas y a cada uno le aparece la suya
   await db(async f=>{
     await F.setDoc(F.doc(f,'tourneys/MR'),{name:'MESAS AL AZAR', mode:'mesas', asg:'azar', st:'open', cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0,

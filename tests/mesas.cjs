@@ -140,13 +140,18 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   for(const ch of [...new Set(W[1])]){ await B.waitForSelector(`#hKeys .key[data-k="${ch}"]:not([disabled])`,{timeout:5000}).catch(()=>{}); await B.click(`#hKeys .key[data-k="${ch}"]`).catch(()=>{}); }
   const r0=await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return x.res && x.res['0'] && x.res['0']; });
   ok(r0 && r0.ok && r0.s===2 && r0.R===2 && r0.e===1,'partida resuelta: resultado anotado '+JSON.stringify(r0&&{ok:r0.ok,s:r0.s,e:r0.e}));
-  // la mesa pasa sola a la siguiente; el capitán se rinde
+  // resuelta antes de tiempo: el grupo ve lo que le sobra; el capitán pasa ya a la próxima
+  await A.waitForFunction(()=>/Partida 1 de 2 terminada/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
+  ok(/El capitán decide/.test(await A.$eval('#mesaBody',e=>e.textContent)),'quien mira ve que el capitán decide si pasan ya');
+  await B.waitForSelector('[data-mesa="mnext"]',{timeout:20000}); await B.click('[data-mesa="mnext"]');
   for(const p of [A,B]) await p.waitForFunction(()=>location.hash==='#criptograma',null,{timeout:20000});
-  ok(true,'la mesa pasa sola a la siguiente partida');
+  ok(true,'el capitán pasa a la próxima y el grupo lo sigue');
   await B.waitForFunction(()=>!document.body.classList.contains('mesaro'),null,{timeout:5000}).catch(()=>{});
-  await B.click('#cGiveUp'); await B.click('#cGiveUp');
-  const r1=await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return x.res && x.res['1'] && x.res['1']; });
-  ok(r1 && r1.ok===false,'sin resolver: 0 puntos');
+  ok(await B.$eval('#cGiveUp',e=>getComputedStyle(e).display)==='none','en grupos no hay «Me rindo»');
+  // se acaba el tiempo sin nada bien: 0 puntos
+  await db(async f=>{ const r=(await F.getDoc(F.doc(f,T))).data().rounds; r[0].dur=0.02; r[1].dur=0.02; await F.updateDoc(F.doc(f,T),{rounds:r}); });
+  const r1=await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return x.res && x.res['1'] && x.res['1']; }, 60000);
+  ok(r1 && r1.ok===false,'sin resolver a tiempo: queda anotada sin resolver');
   // los resultados no se pueden cambiar
   const tampered=await B.evaluate(async([g])=>{ const fb=Reg.fb(); try{ await fb.updateDoc(fb.doc(fb.db,"tourneys","M1","groups",g),{"res.1":{ok:true,t0:fb.serverTimestamp(),at:fb.serverTimestamp(),e:0,h:0,s:0,R:0}}); return "ok"; }catch(e){ return e.code||"err"; } },[g1]);
   ok(tampered!=="ok",'los resultados anotados no se cambian: '+tampered);

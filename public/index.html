@@ -223,6 +223,7 @@ body.tester .testbadge{display:block}
 @media (max-width:420px){ .userdlg .uavs{grid-template-columns:repeat(5,1fr)} }
 .cell.miss,.scell.miss{color:var(--bad);background:var(--bad-soft)}
 .giveup{color:var(--bad)}
+body.mesamode .giveup{display:none!important}.mxtra{color:#1A7F37;font-weight:600}
 .giveup:disabled{color:inherit}
 button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .surenote{flex-basis:100%;margin:6px 0 0;font-size:.85rem;color:var(--bad);text-align:center}
@@ -6725,6 +6726,13 @@ const MESA_MAX=15*60000, MESA_GAP=3000;
 // duración máxima de cada partida de grupos: la columna «Minutos» de esa partida (vacío o 0 = 7 minutos)
 const mesaMin=(T, n)=>{ const d=+(((T && T.rounds) || [])[n] || {}).dur; return d>0 ? d : 7; };
 const mesaMs=(T, n)=>mesaMin(T, n)*60000;
+// tiempo de la partida n de un grupo: sus minutos + lo que le quedaba a la anterior cuando arrancó esta
+// (si la resolvieron antes y pasaron ya, se lo llevan; si esperaron a que se cumpla, no queda nada; menos de 3 s no cuenta, es la diferencia de relojes). t0n: arranque de la n, en ms
+const mesaLim=(T, G, n, t0n)=>{ const R=(G && G.res) || {}; let lim=0, end=0;
+  for(let i=0;i<=n;i++){ const t0=i===n ? t0n : tms(R[i] && R[i].t0); const lo=i>0 && end && t0 ? end-t0 : 0; lim=mesaMs(T, i)+(lo>3000 ? lo : 0); end=t0 ? t0+lim : 0; }
+  return lim; };
+// hasta cuándo corría el tiempo de la partida n (ya anotada)
+const mesaEnd=(T, G, n)=>{ const t0=tms((((G && G.res) || {})[n] || {}).t0); return t0 ? t0+mesaLim(T, G, n, t0) : 0; };
 // "Cargando…" mientras llega la información (el link del QR abre antes de que conecte)
 // QR a pantalla completa (torneo, grupos): título, bajada, una línea de datos y el link, con «Copiar link» y «Cerrar» (o Esc)
 async function qrPop(title, sub, info, url, en){
@@ -6763,7 +6771,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por grupos", wait:"Esperando que abra el grupo…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu grupo…", loadingS:"Cargando la tabla…", none:"Este grupo no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Este grupo ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar al grupo",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En el grupo (${n})`, cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a este grupo", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this group`, editL:"Nombre del grupo", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji al grupo hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay grupos armados: avisale a la organización.", rndNote:"Escribí tu nombre y entrás a la sala de espera: la organización reparte los grupos.", poolT:"Sala de espera", poolWait:"Esperando que la organización reparta los grupos", poolIn:n=>`En la sala de espera (${n})`, poolNote:"Cuando repartan, acá te aparece tu grupo. No cierres esta pantalla.", poolQr:"📱 Mostrar QR para que se sumen amigos", poolQrSub:"Escaneá y entrá a la sala de espera · Scan to join", got:"🎲 ¡Te tocó este grupo!", lateNote:"El torneo ya arrancó: entrás al grupo que tenga menos gente.", joinPool:"Entrar a la sala de espera",
+      inMesa:n=>`En el grupo (${n})`, doneN:(n,t)=>`¡Partida ${n} de ${t} terminada!`, leftNote:"Les sobra este tiempo. Si pasan ya a la próxima, se les suma; si esperan, la próxima arranca sola cuando llegue a 0:00, sin tiempo extra.", goNow:"Pasar a la próxima ya (con el tiempo que sobra)", capDecides:"El capitán decide si pasan ya; si no, la próxima arranca sola cuando llegue a 0:00.", extra:"que les sobró", cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a este grupo", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this group`, editL:"Nombre del grupo", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji al grupo hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay grupos armados: avisale a la organización.", rndNote:"Escribí tu nombre y entrás a la sala de espera: la organización reparte los grupos.", poolT:"Sala de espera", poolWait:"Esperando que la organización reparta los grupos", poolIn:n=>`En la sala de espera (${n})`, poolNote:"Cuando repartan, acá te aparece tu grupo. No cierres esta pantalla.", poolQr:"📱 Mostrar QR para que se sumen amigos", poolQrSub:"Escaneá y entrá a la sala de espera · Scan to join", got:"🎲 ¡Te tocó este grupo!", lateNote:"El torneo ya arrancó: entrás al grupo que tenga menos gente.", joinPool:"Entrar a la sala de espera",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6773,7 +6781,7 @@ const Mesa = (()=>{
     en:{title:"Group tournament", wait:"Waiting for the group to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your group…", loadingS:"Loading the standings…", none:"This group doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This group no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the group",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`In the group (${n})`, cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this group", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Group name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the group and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no groups yet: tell the organizers.", rndNote:"Enter your name to join the waiting room: the organizers will split everyone into groups.", poolT:"Waiting room", poolWait:"Waiting for the organizers to assign the groups", poolIn:n=>`In the waiting room (${n})`, poolNote:"Your group will show up here once they assign them. Keep this screen open.", poolQr:"📱 Show a QR so friends can join", poolQrSub:"Scan to join the waiting room · Escaneá y entrá", got:"🎲 This is your group!", lateNote:"The tournament already started: you'll join the group with the fewest people.", joinPool:"Join the waiting room",
+      inMesa:n=>`In the group (${n})`, doneN:(n,t)=>`Game ${n} of ${t} done!`, leftNote:"You have this time left. Move on now and it is added to the next game; wait, and the next one starts by itself at 0:00, with no extra time.", goNow:"Go to the next one now (with the time left)", capDecides:"The captain decides whether to move on now; otherwise the next one starts by itself at 0:00.", extra:"left over", cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this group", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Group name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the group and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no groups yet: tell the organizers.", rndNote:"Enter your name to join the waiting room: the organizers will split everyone into groups.", poolT:"Waiting room", poolWait:"Waiting for the organizers to assign the groups", poolIn:n=>`In the waiting room (${n})`, poolNote:"Your group will show up here once they assign them. Keep this screen open.", poolQr:"📱 Show a QR so friends can join", poolQrSub:"Scan to join the waiting room · Escaneá y entrá", got:"🎲 This is your group!", lateNote:"The tournament already started: you'll join the group with the fewest people.", joinPool:"Join the waiting room",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6783,6 +6791,7 @@ const Mesa = (()=>{
   };
   const t=()=>MT[lang]||MT.es;
   let fb=null, uid=null, tid=null, gid=null, sala=false, T=null, G=null, GS={}, PZ=null, pzFor=null, GD=null, gdN=-1, gdOk=false;
+  let between=null, goNext=-1;
   let loadedT=false, noted=false, booting=false, rnd=false, dealt=false, POOL={}, uPool=null;
   let uT=null, uG=null, uGS=null, uGD=null, loaded=null, lastKey="", lastW=0, creating=-1, finishing=-1, nextAt=0, prevN=-1, note="", joinMsg="";
   const srv=()=>Live.now(), loc=ms=>ms-(Live.now()-Date.now());
@@ -6865,6 +6874,12 @@ const Mesa = (()=>{
     if(Date.now()<nextAt){ return; }
     watchGD(n); if(!gdOk) return;
     const cap=G.cap===uid;
+    // terminaron antes de tiempo: el capitán pasa ya a la próxima (se llevan lo que sobró) o esperan a que se cumpla (arranca sola)
+    if(!GD){ const endP=n>0 ? mesaEnd(T, G, n-1) : 0, early=!!endP && srv()<endP;
+      const was=between; between=early ? {n, end:endP} : null;
+      if(early){ if(loaded){ ro(false, loaded.g); loaded=null; } if(GAMES[view]) location.hash="mesa"; if(!was || view==="mesa") render(); }
+      if(early && goNext!==n) return; }
+    else between=null;
     if(cap && !GD && creating!==n){ creating=n;
       try{ await fb.setDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(n)), {s:"", t0:fb.serverTimestamp(), at:fb.serverTimestamp(), e:0, h:0, by:uid}); }catch(e){ creating=-1; } return; }
     if(!GD || !GD.t0 || !Reg.fb()) return;
@@ -6879,7 +6894,7 @@ const Mesa = (()=>{
       if(location.hash!=="#"+p.g) location.hash=p.g;
     } else if(!cap) apply(false);
     // 15 minutos: la partida se cierra sin resolver (la cierra el capitán; si no está, el panel de la organización)
-    if(cap && finishing!==n && srv()-tms(GD.t0)>=mesaMs(T, n)) done(false);
+    if(cap && finishing!==n && srv()-tms(GD.t0)>=mesaLim(T, G, n, tms(GD.t0))) done(false);
     bar();
   }
   // aplica el tablero publicado (al cargar, también el del capitán que retoma)
@@ -6973,6 +6988,7 @@ const Mesa = (()=>{
     if(a==="deny") upd({req:null});
     if(a==="edit"){ ed={nm:G.nm||"", em:G.em||"", msg:""}; render(); const i=$("mEdNm"); if(i) i.focus(); }
     if(a==="edcancel"){ ed=null; render(); }
+    if(a==="mnext" && between && G.cap===uid){ goNext=between.n; b.disabled=true; step(); }
     if(a==="qr" && gid){ const base=/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
       qrPop(mesaName(G), t().qrSub(mesaName(G)), T && T.name || "", `${base}/?mesa=${encodeURIComponent(tid)}~${encodeURIComponent(gid)}`, lang==="en"); }
     if(a==="qrpool"){ const base=/\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? "https://games.rodo.es" : location.origin;
@@ -7041,6 +7057,8 @@ const Mesa = (()=>{
     let st;
     if(live && now<go) st=`<p class="mlst">${esc(T0.startsIn)}</p><p class="mlcd" data-mcd="${go}">${clock(go-now)}</p>`;
     else if(live && n0()>=total()) st=`<p class="mlst ok">✓ ${esc(T0.allDone)}</p>`;
+    else if(between) st=`<p class="mlst ok">✓ ${esc(T0.doneN(between.n, total()))}</p><p class="mlcd" data-mcd="${between.end}">${clock(between.end-now)}</p><p class="m">${esc(T0.leftNote)}</p>`+
+      (cap ? `<p><button class="primary" data-mesa="mnext">▶ ${esc(T0.goNow)}</button></p>` : `<p class="m small">${esc(T0.capDecides)}</p>`);
     else if(live && loaded) st=`<button class="primary" data-mesa="back">${esc(T0.back)}</button>`;
     else st=`<p class="mlst">${esc(T0.waitStart)}<span class="mdots"><i></i><i></i><i></i></span></p>`;
     const chip=([u,m])=>`<button class="mpl${u===uid?" me":""}${u===G.cap?" cap":""}" data-mesa="pass" data-u="${esc(u)}"${cap&&u!==uid?"":" disabled"}><span class="mav">${esc(m.e||(m.n||"?").trim().charAt(0).toUpperCase())}</span><span class="mnm">${esc(m.n)}${u===uid?` <small>(${esc(T0.you)})</small>`:""}</span>${u===G.cap?`<span class="mcap">👑 ${esc(T0.cap)}</span>`:""}</button>`;
@@ -7069,8 +7087,8 @@ const Mesa = (()=>{
     // en el grupo valen sus reglas: se esconden el reloj y los costos en segundos del juego
     document.body.classList.toggle("mesamode", !!on);
     el.hidden=!on; if(!on) return;
-    const T0=t(), cap=G.cap===uid, n=loaded.n, left=GD && GD.t0 ? mesaMs(T, n)-(srv()-tms(GD.t0)) : mesaMs(T, n);
-    let h=`<div class="mtop1"><b>${esc(mesaName(G))}</b> · ${esc(T0.bar(n+1, total()))} · ⏱ <span class="${left<120000?"mlow":""}">${clock(left)}</span> ${esc(T0.left)}</div>`;
+    const T0=t(), cap=G.cap===uid, n=loaded.n, lim=GD && GD.t0 ? mesaLim(T, G, n, tms(GD.t0)) : mesaMs(T, n), xtra=lim-mesaMs(T, n), left=GD && GD.t0 ? lim-(srv()-tms(GD.t0)) : lim;
+    let h=`<div class="mtop1"><b>${esc(mesaName(G))}</b> · ${esc(T0.bar(n+1, total()))} · ⏱ <span class="${left<120000?"mlow":""}">${clock(left)}</span> ${esc(T0.left)}${xtra>=1000 ? ` <span class="mxtra">(+${clock(xtra)} ${esc(T0.extra)})</span>` : ""}</div>`;
     h+=`<p class="mrule">${esc(T0.rule(mesaMin(T, n)))}</p>`;
     if(note) h+=`<p class="mnote">${esc(note)}</p>`;
     if(cap){ h+=`<p class="mrole">${esc(T0.youCap)}</p>`;
@@ -7249,7 +7267,7 @@ const TourAdmin = (()=>{
     if(srv()<go) return `<p class="mnow">Arranca en <b data-cd="${go}">${clock(go-srv())}</b></p>`;
     const d=GT[g], rc=TD.rounds[n]||{}, gn=GN[rc.g]||rc.g||"";
     if(!d || d.n!==n || !d.t0) return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ${x.cap ? "cargando…" : "⚠ sin capitán: no puede empezar"}</p>`;
-    const end=tms(d.t0)+mesaMs(TD, n), pr=mesaProg(rc.g, d.s);
+    const end=tms(d.t0)+mesaLim(TD, x, n, tms(d.t0)), pr=mesaProg(rc.g, d.s);
     return `<p class="mnow">▶ Partida ${n+1} de ${N} · ${esc(gn)} · ⏱ quedan <b data-cd="${end}">${clock(end-srv())}</b>${pr?` · ${esc(pr)}`:""}${(d.e|0)||(d.h|0)?` · ${d.e|0} error${(d.e|0)===1?"":"es"}, ${d.h|0} pista${(d.h|0)===1?"":"s"}`:""}</p>`;
   }
   // tabla de posiciones en vivo: puntos de cada partida, la que se está jugando con su tiempo, y avisos (solo muestra; no cambia nada)
@@ -7261,7 +7279,7 @@ const TourAdmin = (()=>{
       const cells=TD.rounds.map((r,i)=>{ const y=(G.res||{})[i];
         if(y) return `<td class="${y.ok?"mok":mesaPts(y)?"mpart":"mz"}">${esc(mesaNum(mesaPts(y)))}</td>`;
         if(i===n && TD.st==="live" && now>=go){
-          if(d && d.n===n && d.t0){ const end=tms(d.t0)+mesaMs(TD, i), lt=end-now<120000; if(lt) late.push(nm);
+          if(d && d.n===n && d.t0){ const end=tms(d.t0)+mesaLim(TD, G, i, tms(d.t0)), lt=end-now<120000; if(lt) late.push(nm);
             return `<td class="mcur${lt?" mlate":""}">▶ <span data-cd="${end}">${clock(end-now)}</span></td>`; }
           return `<td class="mcur">▶</td>`; }
         return `<td class="m">·</td>`; }).join("");
@@ -7278,7 +7296,7 @@ const TourAdmin = (()=>{
     const R=Object.entries(x.res||{}).sort((a,b)=>+a[0]-+b[0]); if(!R.length) return "";
     return `<details data-k="det-${esc(g)}"><summary>Partidas terminadas (${R.length})</summary><div class="atabw"><table class="atab"><thead><tr><th>#</th><th>Juego</th><th>Resultado</th><th>Tiempo</th><th>Errores</th><th>Pistas</th><th>Puntos</th></tr></thead><tbody>`+
       R.map(([i,y])=>{ const r=TD.rounds[+i]||{}, sec=Math.max(0,Math.round(((tms(y.at)||0)-(tms(y.t0)||0))/1000));
-        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=mesaMs(TD, +i)/1000 ? `⏱ se acabó el tiempo${typeof y.p==="number" ? ` (${Math.round(y.p*100)} % bien)` : ""}` : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
+        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=mesaLim(TD, x, +i, tms(y.t0))/1000-1 ? `⏱ se acabó el tiempo${typeof y.p==="number" ? ` (${Math.round(y.p*100)} % bien)` : ""}` : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
   }
   function mesaLive(){
     const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
@@ -7368,7 +7386,7 @@ const TourAdmin = (()=>{
     for(const [g,x] of L){
       const n=mesaDone(x); if(n>=N) continue;
       try{ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n))); if(!s.exists()) continue;
-        const d=s.data(); if(!d.t0 || now-tms(d.t0)<mesaMs(TD, n)+30000) continue;
+        const d=s.data(); if(!d.t0 || now-tms(d.t0)<mesaLim(TD, x, n, tms(d.t0))+30000) continue;
         await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0, p:typeof d.p==="number" ? d.p : 0}}); }
       catch(e){}
     }
