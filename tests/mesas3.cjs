@@ -8,6 +8,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const env = await initializeTestEnvironment({ projectId:'demo-rodo', firestore:{ host:'127.0.0.1', port:8080 } });
   const db = fn => env.withSecurityRulesDisabled(c => fn(c.firestore()));
   const get = async p => { let v=null; await db(async f => { const s=await F.getDoc(F.doc(f, p)); v=s.exists() ? s.data() : null; }); return v; };
+  const all = async p => { const v=[]; await db(async f => { (await F.getDocs(F.collection(f, p))).forEach(d=>v.push(d.data())); }); return v; };
   const until = async (fn, ms=30000) => { const t=Date.now(); while(Date.now()-t<ms){ const v=await fn(); if(v) return v; await new Promise(r=>setTimeout(r,400)); } return null; };
   const br=await chromium.launch();
   const p=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); p.on('pageerror',e=>console.log('pageerror',e.message));
@@ -49,7 +50,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   }
   await who[0].waitForFunction(()=>/\(3\)/.test(document.querySelector('.mpool').textContent),null,{timeout:10000}).catch(()=>{});
   const pc=await who[0].$eval('.mpool',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/Sala de espera/.test(pc) && /Esperando que la organización reparta las mesas/.test(pc) && /En la sala de espera \(3\)/.test(pc) && /Tres/.test(pc),'sala de espera común con quiénes están: '+pc.slice(0,140));
+  ok(/Sala de espera/.test(pc) && /Esperando que la organización reparta los grupos/.test(pc) && /En la sala de espera \(3\)/.test(pc) && /Tres/.test(pc),'sala de espera común con quiénes están: '+pc.slice(0,140));
   let gs={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>gs[d.id]=Object.keys(d.data().mem||{}).length); });
   ok(gs.r1===0 && gs.r2===0,'mientras esperan, nadie está en una mesa');
   await who[2].click('[data-mesa="qrpool"]'); await who[2].waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
@@ -60,13 +61,13 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.addInitScript(()=>{ window.__admTok=JSON.stringify({sub:'adm1', email:'claudia@rodo.es', email_verified:true}); try{ sessionStorage.setItem('rodo-tid','MR'); }catch(e){} });
   await a.goto(URL+'#torneo-admin'); await a.click('#taIn');
   await a.waitForSelector('[data-ta="mdeal"]:not([disabled])',{timeout:20000}).catch(()=>{});
-  ok(/Sala de espera: 3 sin mesa/.test(await a.$eval('#taCtl',e=>e.textContent).catch(()=>'')),'el panel muestra cuántos esperan mesa');
-  await a.click('[data-ta="mdeal"]');
-  ok(!!(await until(async()=>{ const x={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>x[d.id]=Object.keys(d.data().mem||{}).length); }); gs=x; return x.r1+x.r2===3; }, 15000)),'«Repartir mesas» pone a todos en una mesa');
-  ok([gs.r1,gs.r2].sort().join()==='1,2','se reparten parejo: '+JSON.stringify(gs));
+  ok(/Sala de espera: 3 sin grupo/.test(await a.$eval('#taLive',e=>e.textContent).catch(()=>'')),'el panel muestra cuántos esperan mesa');
+  await a.fill('#taDealV','3'); await a.selectOption('#taDealM','n'); await a.click('[data-ta="mdeal"]');
+  ok(!!(await until(async()=>{ const x={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>x[d.id]=Object.keys(d.data().mem||{}).length); }); gs=x; return Object.values(x).reduce((a,b)=>a+b,0)===3; }, 15000)),'«Repartir grupos» pone a todos en un grupo');
+  ok(Object.keys(gs).length===3 && Object.values(gs).every(v=>v===1),'repartir en 3 grupos crea el que falta y queda uno en cada uno: '+JSON.stringify(gs));
   await who[0].waitForSelector('.mlobby:not(.mpool)',{timeout:15000}).catch(()=>{});
   const card=await who[0].$eval('.mlobby',e=>e.textContent.replace(/\s+/g,' '));
-  ok(/Te tocó esta mesa/.test(card) && /Mesa [12]/.test(card) && /Uno/.test(card) && /Esperando que empiece el torneo/.test(card),'a cada uno le aparece su mesa: '+card.slice(0,120));
+  ok(/Te tocó este grupo/.test(card) && /(Mesa|Grupo) [123]/.test(card) && /Uno/.test(card) && /Esperando que empiece el torneo/.test(card),'a cada uno le aparece su mesa: '+card.slice(0,120));
   const g0=await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid);
   await who[0].goto(URL+'?mesas=MR'); await who[0].waitForSelector('.mlobby:not(.mpool)',{timeout:20000}).catch(()=>{});
   ok(await who[0].evaluate(()=>JSON.parse(localStorage.getItem('rodo-mesa')).gid)===g0 && /Uno/.test(await who[0].$eval('.mlobby',e=>e.textContent)),'si vuelve a escanear el QR único, vuelve a su misma mesa');
@@ -79,6 +80,17 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await q4.goto(URL+'?mesas=MR'); await q4.waitForSelector('#mName',{timeout:20000}); await q4.fill('#mName','Tarde'); await q4.click('[data-mesa="join"]');
   await q4.waitForSelector('.mlobby:not(.mpool)',{timeout:30000}).catch(()=>{});
   ok(/Tarde/.test(await q4.$eval('.mlobby',e=>e.textContent).catch(()=>'')) && !(await q4.$('.mpool')),'con el torneo en juego, el que llega tarde queda con mesa solo');
+  // de a N personas por grupo: con 2 por grupo y 4 personas en total, alcanza con los grupos que hay
+  // con un QR por grupo: «Agregar grupo y mostrar su QR» crea uno y muestra su QR
+  await db(async f=>{ await F.updateDoc(F.doc(f,'tourneys/MR'),{st:'open', go:null, asg:'qr'}); });
+  await a.waitForSelector('[data-ta="mqradd"]',{timeout:15000}).catch(()=>{});
+  const nG=(await all('tourneys/MR/groups')).length;
+  await a.click('[data-ta="mqradd"]'); await a.waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
+  const G2=await all('tourneys/MR/groups'), nw=G2.find(x=>x.i===Math.max(...G2.map(y=>y.i)));
+  ok(G2.length===nG+1 && /Grupo \d/.test(nw.nm) && (await a.$eval('.tqr',e=>e.textContent)).includes('?mesa=MR~'),'«Agregar grupo y mostrar su QR» crea un grupo y muestra su QR: '+nw.nm);
+  await a.click('.tqr [data-q="x"]');
+  await a.click('[data-ta="mqrg"]'); await a.waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
+  ok(!!(await a.$('.tqr svg')),'cada grupo de la lista tiene su botón de QR');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

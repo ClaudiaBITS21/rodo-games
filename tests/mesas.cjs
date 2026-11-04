@@ -26,7 +26,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const gs=await until(async()=>{ const x=await all(`${T}/groups`); return Object.keys(x).length===2 && x; });
   ok(!!gs,'se agregan 2 mesas');
   const [g1,g2]=Object.entries(gs).sort((x,y)=>x[1].i-y[1].i).map(([k])=>k);
-  ok(gs[g1].nm==='Mesa 1' && gs[g2].nm==='Mesa 2','con nombre por defecto: '+gs[g1].nm+', '+gs[g2].nm);
+  ok(gs[g1].nm==='Grupo 1' && gs[g2].nm==='Grupo 2','con nombre por defecto: '+gs[g1].nm+', '+gs[g2].nm);
   await a.waitForSelector(`.madm[data-g="${g1}"] [data-mg="nm"]`);
   await a.fill(`.madm[data-g="${g1}"] [data-mg="nm"]`,'Los Plebs'); await a.fill(`.madm[data-g="${g1}"] [data-mg="em"]`,'🍀'); await a.click(`.madm[data-g="${g1}"] [data-ta="mren"]`);
   ok(!!(await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return x.nm==='Los Plebs' && x.em==='🍀'; })),'nombre y emoji de la mesa');
@@ -47,8 +47,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   { const th=await L1.$eval('#tHead',e=>e.textContent), vt=await L1.$eval('#view-torneo',e=>e.textContent); ok(/Cargando/.test(th) && !/Sin conexión/.test(vt),'el QR del torneo también: «Cargando…», no «Sin conexión»: '+th.slice(0,80)); }
   await L1.close();
   await A.goto(URL+`?mesa=M1~${g1}`);
-  await A.waitForFunction(()=>/Esperando que abra la mesa/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
-  ok(/Esperando que abra la mesa/.test(await A.$eval('#mesaBody',e=>e.textContent)) && await A.evaluate(()=>location.hash)==='#mesa','sin entrada habilitada: «Esperando que abra la mesa»');
+  await A.waitForFunction(()=>/Esperando que abra el grupo/.test(document.getElementById('mesaBody').textContent),null,{timeout:20000}).catch(()=>{});
+  ok(/Esperando que abra el grupo/.test(await A.$eval('#mesaBody',e=>e.textContent)) && await A.evaluate(()=>location.hash)==='#mesa','sin entrada habilitada: «Esperando que abra la mesa»');
   await a.click('[data-ta="mopen"]');
   await A.waitForSelector('#mName',{timeout:15000});
   ok(/mismo navegador/.test(await A.$eval('#mesaBody',e=>e.textContent)),'aviso de usar el mismo navegador');
@@ -156,7 +156,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   // la otra mesa no juega: el panel la cierra por tiempo? (no: sin capitán no hay partida empezada). Se termina el torneo desde el panel
   const S=await page('sala',1280); await S.goto(URL+'?pantalla=M1');
   await S.waitForFunction(()=>/Los Plebs/.test(document.getElementById('mesaSala').textContent),null,{timeout:20000}).catch(()=>{});
-  ok(await S.evaluate(()=>location.hash)==='#mesa-sala' && /Los Plebs/.test(await S.$eval('#mesaSala',e=>e.textContent)) && /Mesa 2/.test(await S.$eval('#mesaSala',e=>e.textContent)),'pantalla de sala con la tabla entre mesas');
+  ok(await S.evaluate(()=>location.hash)==='#mesa-sala' && /Los Plebs/.test(await S.$eval('#mesaSala',e=>e.textContent)) && /Grupo 2/.test(await S.$eval('#mesaSala',e=>e.textContent)),'pantalla de sala con la tabla entre mesas');
   const pts=await S.$$eval('#mesaSala .mtab tbody tr',l=>l.map(r=>r.textContent));
   ok(await S.$$eval('#mesaSala .mtab tbody tr',l=>l.map(r=>r.children[2].textContent).join(','))==='2,1','la tabla dice cuántos hay en cada mesa');
   ok(/Los Plebs/.test(pts[0]),'la mesa con más puntos va primera: '+pts.join(' | '));
