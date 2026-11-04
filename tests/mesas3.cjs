@@ -91,6 +91,18 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.click('.tqr [data-q="x"]');
   await a.click('[data-ta="mqrg"]'); await a.waitForSelector('.tqr svg',{timeout:10000}).catch(()=>{});
   ok(!!(await a.$('.tqr svg')),'cada grupo de la lista tiene su botón de QR');
+  // ya arrancado, con QR por grupo: el que escanea el QR de un grupo lleno va al que tiene menos gente
+  await a.click('.tqr [data-q="x"]').catch(()=>{});
+  await db(async f=>{ await F.updateDoc(F.doc(f,'tourneys/MR'),{st:'live', go:F.Timestamp.fromMillis(Date.now()+600000)}); });
+  const G3={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>G3[d.id]=Object.keys(d.data().mem||{}).length); });
+  const full=Object.keys(G3).find(g=>G3[g]>0), empty=Object.keys(G3).filter(g=>G3[g]===0);
+  const q5=await (await br.newContext({viewport:{width:390,height:844}})).newPage(); q5.on('pageerror',e=>console.log('q5 pageerror',e.message));
+  await q5.goto(URL+'?mesa=MR~'+full); await q5.waitForSelector('#mName',{timeout:20000});
+  ok(/ya arrancó/.test(await q5.$eval('#mesaBody',e=>e.textContent)),'ya arrancado, la entrada avisa que va al grupo con menos gente');
+  await q5.fill('#mName','Nueva'); await q5.click('[data-mesa="join"]'); await q5.waitForSelector('.mlobby',{timeout:15000}).catch(()=>{});
+  const where=await until(async()=>{ let w=null; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>{ if(Object.values(d.data().mem||{}).some(m=>m.n==='Nueva')) w=d.id; }); }); return w; }, 10000);
+  ok(empty.length>0 && empty.includes(where),'ya arrancado, quien escanea el QR de un grupo queda en el que tiene menos gente: '+where+' de '+JSON.stringify(G3));
+  ok(/Te tocó este grupo/.test(await q5.$eval('.mlobby',e=>e.textContent).catch(()=>'')),'y le avisa qué grupo le tocó');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
