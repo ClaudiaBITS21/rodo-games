@@ -408,6 +408,14 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tacfg .wide{grid-column:1/-1}
 .tacfg input,.tacfg textarea,.tarounds select,.tarounds input,.tapick select{font:400 .95rem "Bricolage Grotesque",system-ui,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink)}
 .tacfg textarea{min-height:6em;resize:vertical}
+.tacfg label{min-width:0}
+.tamv{white-space:nowrap}
+.tamv button{min-width:34px;padding:6px 8px;margin:0 2px}
+.tacfg select{font:400 1rem "Bricolage Grotesque",system-ui,sans-serif;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--cell-bg);color:var(--ink);width:100%;max-width:100%;min-width:0;text-overflow:ellipsis}
+.tanew{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:10px 0}
+.tanew button{display:grid;gap:4px;text-align:left;padding:14px 16px;white-space:normal;height:auto}
+.tanew button b{font-size:1.05rem}
+.tanew button span{font-weight:400;font-size:.88rem;color:var(--muted)}
 .tarounds input[type=number]{width:4.5em}
 .cwtabs button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}.tacwr td{padding-top:0!important;white-space:normal}.tacwr details{max-width:min(900px,calc(100vw - 60px))}#taToast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9000;max-width:min(560px,calc(100vw - 32px));padding:12px 18px;border-radius:12px;background:#1A7F37;color:#fff;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
 #taToast.bad{background:#B3261E}#taToast[hidden]{display:none}
@@ -7118,7 +7126,7 @@ const TourAdmin = (()=>{
   const srv=()=>Live.now();
   let A=null, me=null, ALL={}, tid=null, TD=null, RS={}, INS={}, PRIV={}, RESL={}, resFor=null, resOk=false;
   let CW={}, CWok=false, rsFor=null;   // rsFor: el torneo cuyas rondas ya se leyeron   // palabras propias de cada ronda (secret/cw: solo organizadores), por cwid
-  let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="", onl=[], onlQ="", plan={};
+  let uT=null, uR=null, uI=null, uRes=null, busy=false, cfgFor=null, msgT="", newPick=false, onl=[], onlQ="", plan={};
   const isBot=u=>/^bot-\d+$/.test(u);
   const tref=()=>A.doc(A.db,"tourneys",tid), rref=id=>A.doc(A.db,"tourneys",tid,"rounds",String(id));
   const rounds=()=>Object.values(RS).sort((a,b)=>a.no-b.no);
@@ -7492,14 +7500,15 @@ const TourAdmin = (()=>{
   async function act(a, el){
     const r=last(), now=srv(); say("");
     try{
-      if(a==="new"){ const ref=A.doc(A.collection(A.db,"tourneys"));
+      if(a==="newpick"){ newPick=!newPick; render(); return; }
+      if(a==="new"){ newPick=false; const ref=A.doc(A.collection(A.db,"tourneys"));
         await A.setDoc(ref,{name:"BITCOIN.AR HALVING GAMES", st:"draft", cap:64, fee:2100, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS, champ:null, auto:true, at:A.serverTimestamp()});
         cfgFor=null; pickT(ref.id); return; }
       if(a==="pick"){ pickT(el.value); return; }
       // torneo por grupos
-      if(a==="mnew"){ const ref=A.doc(A.collection(A.db,"tourneys"));
-        await A.setDoc(ref,{name:"TORNEO POR GRUPOS", mode:"mesas", st:"draft", cap:64, fee:0, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS.map(r=>({...r, dur:7})), champ:null, go:null, at:A.serverTimestamp()});
-        cfgFor=null; pickT(ref.id); say("Torneo por grupos creado: elegí las partidas en «Rondas» y agregá los grupos."); return; }
+      if(a==="mnew"){ newPick=false; const asg=el && el.dataset.asg==="azar" ? "azar" : "qr", ref=A.doc(A.collection(A.db,"tourneys"));
+        await A.setDoc(ref,{name:"TORNEO POR GRUPOS", mode:"mesas", asg, st:"draft", cap:64, fee:0, lnurl:"", when:null, orgs:[], bases:"", lang:"es", cur:0, rounds:DEF_ROUNDS.map(r=>({...r, dur:7})), champ:null, go:null, at:A.serverTimestamp()});
+        cfgFor=null; pickT(ref.id); say(asg==="azar" ? "Torneo por grupos creado (un solo QR y sorteo): elegí las partidas y mostrá el QR único." : "Torneo por grupos creado (un QR por grupo): elegí las partidas y agregá los grupos."); return; }
       if(a==="mqrg"){ const x=GRP[el.dataset.g]; if(x) qrPop(mesaName(x), "Escaneá y entrá a este grupo · Scan to join this group", TD.name, mesaUrl(el.dataset.g)); return; }
       if(a==="mqradd"){ const L=grpList(), i0=L.reduce((m,[,x])=>Math.max(m, x.i|0), 0)+1;
         if(L.length>=60){ say("Hasta 60 grupos por torneo.", true); return; }
@@ -7587,6 +7596,12 @@ const TourAdmin = (()=>{
         let ok=true; try{ await navigator.clipboard.writeText(cwAsk(g, p.miss, L)); }catch(e){ ok=false; }
         say(ok ? `Pedido copiado (${p.miss.length} palabra${p.miss.length===1?"":"s"}). Pegalo en el chat con Claude, pegá su respuesta en esta misma caja (abajo de la lista, tal cual) y guardá.` : "No se pudo copiar: este navegador no deja usar el portapapeles.", !ok); return; }
       if(a==="addr"){ const c=readCfg(); if(c.rounds.length<8){ c.rounds.splice(c.rounds.length-1,0,{g:"anagrama",lang:c.lang,dur:10}); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
+      if(a==="mvr"){ const box=$("taCfg"), tb=box.querySelector(".tarounds tbody"), rows=[...tb.querySelectorAll("tr.tarow")], i=+el.dataset.i, d=+el.dataset.d;
+        const k=rows.findIndex(tr=>+tr.dataset.i===i), j=k+d; if(k<0 || j<0 || j>=rows.length) return;
+        const pack=tr=>{ const l=[tr]; let n=tr.nextElementSibling; while(n && !n.classList.contains("tarow")){ l.push(n); n=n.nextElementSibling; } return l; };
+        const a1=pack(rows[k]), b1=pack(rows[j]);
+        if(d<0) b1[0].before(...a1); else b1[b1.length-1].after(...a1);
+        await save1(); cfgFor=null; return; }
       if(a==="delr"){ const c=readCfg(), i=+el.dataset.i; if(c.rounds.length>1){ c.rounds.splice(i,1); await A.updateDoc(tref(),{rounds:c.rounds}); cfgFor=null; } return; }
       if(a==="st"){ const s=el.dataset.s; if(s==="done" && !sure(el, "¿Terminar el torneo ahora?")) return; await A.updateDoc(tref(),{st:s}); return; }
       if(a==="qr") return showQr();
@@ -7686,9 +7701,9 @@ const TourAdmin = (()=>{
     const dtv=x=>tms(x) ? new Date(tms(x)-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : "", whenV=dtv(T0.when), pubV=dtv(T0.pub);
     const sel=(name,opts,v,dis)=>`<select data-f="${name}"${dis?" disabled":""}>${opts.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v??"")?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
     let h=`<h2>Configuración</h2><div class="tacfg">
+      ${T0.mode==="mesas" ? `<label class="wide">Tipo de torneo${sel("asg",[["qr","👥 Por grupos · un QR por grupo"],["azar","🎲 Por grupos · un solo QR y sorteo"]],T0.asg==="azar"?"azar":"qr",ro)}</label>` : ""}
       <label>Nombre<input data-f="name" value="${esc(T0.name)}" maxlength="80"></label>
       <label>Arranca (fecha y hora)<input data-f="when" type="datetime-local" value="${whenV}"></label>
-      ${T0.mode==="mesas" ? `<label>Entrada a los grupos${sel("asg",[["qr","Un QR por grupo (cada uno escanea el de su grupo)"],["azar","Un solo QR: sala de espera y después «Repartir grupos» (al azar, parejo)"]],T0.asg==="azar"?"azar":"qr")}</label>` : ""}
       <label>Arranque${sel("ast",[["0","Lo inicia la administración (botón «Arrancar»)"],["1","Automático a la hora fijada (con el panel abierto)"]],T0.ast===true?"1":"0")}</label>
       ${T0.test?"":`<label>Visible en la web desde (vacío: apenas abrís la inscripción)<input data-f="pub" type="datetime-local" value="${pubV}"></label>`}
       <label class="wide">Dónde se juega (se ve en la portada y en la sala; por ejemplo «Online» o «LABITCONF, Costa Salguero»)<input data-f="place" value="${esc(T0.place||"")}" maxlength="120"></label>
@@ -7707,7 +7722,7 @@ const TourAdmin = (()=>{
       const hasDif=["ahorcado","anagrama","criptograma","acrostico"].includes(c.g);
       h+=`<tr class="tarow" data-i="${i}"><td>${i===T0.rounds.length-1?"Final":i+1}</td><td>${sel("g",GS.map(g=>[g,GN[g]]),c.g,dis)}</td><td>${sel("lang",[["es","ES"],["en","EN"]],c.lang||T0.lang||"es",dis)}</td>
         <td class="taopt">${o}</td><td>${hasDif?sel("dif",DIFS.map(d=>[d,DIFN[d]]),c.dif||"",dis):""}</td><td><input data-f="dur" type="number" min="0" max="120" value="${c.dur||0}"${dis?" disabled":""}></td>
-        <td>${!dis && !ro && T0.rounds.length>1?`<button data-ta="delr" data-i="${i}" title="Quitar">✕</button>`:""}</td></tr>`;
+        <td class="tamv">${!ro && !used.has(i) && i>0 && !used.has(i-1)?`<button data-ta="mvr" data-i="${i}" data-d="-1" title="Subir">↑</button>`:""}${!ro && !used.has(i) && i<T0.rounds.length-1 && !used.has(i+1)?`<button data-ta="mvr" data-i="${i}" data-d="1" title="Bajar">↓</button>`:""}${!dis && !ro && T0.rounds.length>1?`<button data-ta="delr" data-i="${i}" title="Quitar">✕</button>`:""}</td></tr>`;
       // palabras o frase propias (no en la sopa); vacío = al azar
       if(c.g!=="sopa" && !CWok) h+=`<tr class="tacwr"><td></td><td colspan="6" class="m small">Cargando las palabras elegidas…</td></tr>`;
       else if(c.g!=="sopa"){ const txt=(c.cwid && CW[c.cwid])||"", p=cwParse(c.g, txt, c.lang||T0.lang||"es"), n=p.v ? (Array.isArray(p.v) && c.g!=="criptograma" ? p.v.length : 1) : 0;
@@ -7811,7 +7826,7 @@ const TourAdmin = (()=>{
     const ok=Object.keys(ALL).filter(k=>mine(ALL[k])).sort((a,b)=>tourOrder(ALL[a],ALL[b]));
     const wh=x=>tms(x.when) ? " · "+new Date(tms(x.when)).toLocaleString("es-AR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}) : "";
     let h=`<div class="row tapick">`+(ok.length ? `<select data-ta="pick">${ok.map(k=>`<option value="${k}"${k===tid?" selected":""}>${ALL[k].test?"🧪 ":""}${esc(ALL[k].name)}${esc(wh(ALL[k]))} (${esc(T.es.tSt[ALL[k].st]||ALL[k].st)})</option>`).join("")}</select>` : `<p class="m">${isSuper()?"Todavía no hay torneos.":"No figurás como organizador de ningún torneo."}</p>`)+
-      (isSuper()?` <button data-ta="new">Nuevo torneo</button> <button data-ta="mnew">Nuevo torneo por grupos</button>`:"")+(isSuper() && TD && !TD.test?` <button class="tadel" data-ta="deltour">🗑 Borrar este torneo</button>`:"")+`</div><p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
+      (isSuper()?` <button data-ta="newpick"${newPick?' class="primary"':""}>${newPick?"✕ Cancelar":"➕ Nuevo torneo"}</button>`:"")+(isSuper() && TD && !TD.test?` <button class="tadel" data-ta="deltour">🗑 Borrar este torneo</button>`:"")+`</div>`+(isSuper() && newPick ? `<p class="m"><b>¿Qué tipo de torneo?</b></p><div class="tanew"><button data-ta="new"><b>🏆 Individual</b><span>Cada uno juega solo, por rondas, con final 1 a 1.</span></button><button data-ta="mnew" data-asg="qr"><b>👥 Por grupos · un QR por grupo</b><span>Imprimís un QR por mesa y cada uno escanea el de su grupo.</span></button><button data-ta="mnew" data-asg="azar"><b>🎲 Por grupos · un solo QR y sorteo</b><span>Todos escanean el mismo QR, esperan en una sala y después repartís los grupos al azar.</span></button></div>` : "")+`<p class="tamsg" id="taMsg">${esc(msgT)}</p>`;
     if(!TD){ $("taPick").innerHTML=h; ["taCtl","taLive","taCfg","taIns","taHist"].forEach(i=>$(i).innerHTML=""); return; }
     // al volver a dibujar no se pierde lo que se está escribiendo en los campos del bloque de arriba
     const keep={}; ["taAdmIn","taInvIn","taBotsN"].forEach(i=>{ const el=$(i); if(el) keep[i]=[el.value, document.activeElement===el]; });

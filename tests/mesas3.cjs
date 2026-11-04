@@ -104,6 +104,18 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   const where=await until(async()=>{ let w=null; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>{ if(Object.values(d.data().mem||{}).some(m=>m.n==='Nueva')) w=d.id; }); }); return w; }, 10000);
   ok(empty.length>0 && empty.includes(where),'ya arrancado, quien escanea el QR de un grupo queda en el que tiene menos gente: '+where+' de '+JSON.stringify(G3));
   ok(/Te tocó este grupo/.test(await q5.$eval('.mlobby',e=>e.textContent).catch(()=>'')),'y le avisa qué grupo le tocó');
+  // crear: «➕ Nuevo torneo» pregunta el tipo; «Por grupos · un solo QR y sorteo» lo crea con asg azar
+  await a.click('[data-ta="newpick"]'); await a.waitForSelector('.tanew',{timeout:10000});
+  ok(/Individual/.test(await a.$eval('.tanew',e=>e.textContent)) && /un QR por grupo/.test(await a.$eval('.tanew',e=>e.textContent)) && /un solo QR y sorteo/.test(await a.$eval('.tanew',e=>e.textContent)),'al crear, el panel pregunta el tipo de torneo');
+  await a.click('[data-ta="mnew"][data-asg="azar"]');
+  let NT=null; await until(async()=>{ await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys'))).forEach(d=>{ const x=d.data(); if(x.name==='TORNEO POR GRUPOS' && x.asg==='azar' && x.mode==='mesas') NT={id:d.id, ...x}; }); }); return NT; }, 15000);
+  ok(!!NT,'se crea el torneo por grupos con un solo QR y sorteo');
+  // reordenar las partidas con ↑ ↓
+  await a.waitForSelector('[data-ta="mvr"][data-i="0"][data-d="1"]',{timeout:15000}).catch(()=>{});
+  const r0g=NT && NT.rounds[0].g, r1g=NT && NT.rounds[1].g;
+  await a.click('[data-ta="mvr"][data-i="0"][data-d="1"]');
+  const moved=await until(async()=>{ const x=await get('tourneys/'+NT.id); return x && x.rounds[0].g===r1g && x.rounds[1].g===r0g && x; }, 10000);
+  ok(!!moved && r0g!==r1g,'«↓» baja la primera partida: '+r0g+' ↔ '+r1g);
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });
