@@ -450,6 +450,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .mboard td,.mboard th{text-align:center;white-space:nowrap}.mboard td:nth-child(2),.mboard th:nth-child(2){text-align:left}
 .mboard .mz{color:var(--bad)}.mboard .mcur{background:rgba(247,147,26,.15);font-weight:700}.mboard .mlate{background:rgba(179,38,30,.15);color:var(--bad)}
 .malerts{border:1px solid var(--bad);border-radius:10px;padding:6px 10px;margin:0 0 10px;background:rgba(179,38,30,.06)}.malerts p{margin:3px 0;font-weight:600}
+.mboard .mpart{color:#b26a00}
 .mpoolA{margin:10px 0;padding:8px 10px;border-radius:10px;background:rgba(247,147,26,.1)}.mpoolA p{margin:4px 0 0}
 .madms{display:grid;gap:10px}.madm .mnow{font-weight:600;background:rgba(247,147,26,.1);border-radius:8px;padding:4px 8px}.madm .mnow.ok{background:rgba(46,160,67,.12)}.madm{border:1px solid var(--line);border-radius:10px;padding:8px 10px}.madm p{margin:4px 0}.madm input[data-mg="nm"]{min-width:140px}
 body.mesaro .view.on{user-select:none}
@@ -6735,8 +6736,10 @@ async function qrPop(title, sub, info, url, en){
 }
 function loadingHtml(txt){ return `<div class="loading"><span class="spin" aria-hidden="true"></span><p>${txt}</p><p class="slow">${lang==="en"?"If it takes too long, check your connection and reload the page.":"Si tarda mucho, revisá la conexión y recargá la página."}</p></div>`; }
 // puntos de una partida: resuelta, 1000 − segundos − 100 por pista o error (piso 100); en ahorcado y anagrama, cada palabra
-// sin resolver suma 900/rondas s, como en el resto del sitio. Sin resolver a los 15 min: 0.
-const mesaPts=x=>{ if(!x || !x.ok) return 0; const sec=Math.floor(Math.max(0,(tms(x.at)||0)-(tms(x.t0)||0))/1000), miss=x.R ? (x.R-(x.s|0))*900/x.R : 0;
+// sin resolver suma 900/rondas s, como en el resto del sitio. Si se acaba el tiempo: hasta 99 por lo que tenían bien.
+// sin resolver por tiempo: hasta 99 según lo que tenían bien (p, de 0 a 1), menos 10 por pista o error; rendirse o sin p: 0
+const mesaPts=x=>{ if(!x) return 0;
+  if(!x.ok) return typeof x.p==="number" ? Math.max(0, Math.min(99, Math.round(99*x.p-10*((x.e|0)+(x.h|0))))) : 0; const sec=Math.floor(Math.max(0,(tms(x.at)||0)-(tms(x.t0)||0))/1000), miss=x.R ? (x.R-(x.s|0))*900/x.R : 0;
   return Math.max(100, Math.round(1000-sec-100*((x.e|0)+(x.h|0))-miss)); };
 const mesaTot=G=>Object.values(G.res||{}).reduce((a,x)=>a+mesaPts(x),0);
 const mesaDone=G=>Object.keys(G.res||{}).length;
@@ -6756,7 +6759,7 @@ const Mesa = (()=>{
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
-      rule:m=>`Resuelta: 1000 − 1 por segundo − 100 por pista o error (mínimo 100). Sin resolver a los ${m} min: 0.`, table:"Tabla entre grupos", pos:(p,n,x)=>`van ${p}º de ${n} · ${x} pts`, pts:"pts", games:"partidas", next:"¡Partida terminada! Pasan a la siguiente…", timeup:"Se terminó el tiempo: pasan a la siguiente.",
+      rule:m=>`Resuelta: 1000 − 1 por segundo − 100 por pista o error (mínimo 100). Si a los ${m} min no la terminaron: hasta 99 según lo que tengan bien (en el ahorcado, las palabras resueltas), menos 10 por pista o error.`, table:"Tabla entre grupos", pos:(p,n,x)=>`van ${p}º de ${n} · ${x} pts`, pts:"pts", games:"partidas", next:"¡Partida terminada! Pasan a la siguiente…", timeup:"Se terminó el tiempo: pasan a la siguiente.",
       fin:"¡Terminó el torneo!", podium:"Podio", total:"Total", saveQ:"Guardá tu resultado: creá tu usuario", saveDone:n=>`Ya está guardado con tu usuario ${n}.`,
       back:"Volver al juego", allDone:"Tu grupo terminó todas las partidas. Esperen a los demás grupos.", sala:"Pantalla de sala", waitTable:"Esperando que arranque…"},
     en:{title:"Group tournament", wait:"Waiting for the group to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
@@ -6766,7 +6769,7 @@ const Mesa = (()=>{
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
-      rule:m=>`Solved: 1000 − 1 per second − 100 per hint or mistake (at least 100). Unsolved after ${m} min: 0.`, table:"Group standings", pos:(p,n,x)=>`#${p} of ${n} · ${x} pts`, pts:"pts", games:"games", next:"Game over! Moving to the next one…", timeup:"Time's up: moving to the next one.",
+      rule:m=>`Solved: 1000 − 1 per second − 100 per hint or mistake (at least 100). Not finished after ${m} min: up to 99 for what you got right (in hangman, the words solved), minus 10 per hint or mistake.`, table:"Group standings", pos:(p,n,x)=>`#${p} of ${n} · ${x} pts`, pts:"pts", games:"games", next:"Game over! Moving to the next one…", timeup:"Time's up: moving to the next one.",
       fin:"The tournament is over!", podium:"Podium", total:"Total", saveQ:"Save your result: create your user", saveDone:n=>`Saved with your user ${n}.`,
       back:"Back to the game", allDone:"Your group finished all the games. Wait for the other groups.", sala:"Room screen", waitTable:"Waiting for the start…"}
   };
@@ -6880,23 +6883,30 @@ const Mesa = (()=>{
     if(c){ c.e=GD.e|0; c.h=GD.h|0; Reg.tick(); }
   }
   // el capitán publica su tablero cuando cambia (a lo sumo una vez por segundo)
+  // lo que tienen bien de la partida en curso, de 0 a 1 (en el ahorcado, solo las palabras resueltas)
+  function frac(g){
+    try{ const P=GAMES[g].progress ? GAMES[g].progress() : null; if(!P) return 0;
+      if(g==="ahorcado"){ const R=GAMES.ahorcado.rounds ? GAMES.ahorcado.rounds() : 0; return R ? Math.min(1,(P.s|0)/R) : 0; }
+      return Math.max(0, Math.min(1, +P.p||0)); }catch(e){ return 0; }
+  }
+  const r3=v=>Math.round(v*1000)/1000;
   async function publish(){
     if(!loaded || !loaded.cap || !GD || finishing===loaded.n || Date.now()-lastW<1000) return;
     const g=loaded.g, c=Reg.cur(g); if(!c || !c.tour || !c.tour.mesa) return;
     let js=""; try{ js=JSON.stringify(GAMES[g].snap ? GAMES[g].snap() : null); }catch(e){ return; }
-    const key=js+"|"+(c.e|0)+"|"+(c.h|0); if(key===lastKey) return;
+    const pr=r3(frac(g)), key=js+"|"+(c.e|0)+"|"+(c.h|0)+"|"+pr; if(key===lastKey) return;
     lastKey=key; lastW=Date.now(); loaded.s=js;
-    try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(loaded.n)), {s:js, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, by:uid}); }catch(e){ lastKey=""; }
+    try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid,"games",String(loaded.n)), {s:js, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, by:uid, p:pr}); }catch(e){ lastKey=""; }
   }
   // fin de la partida (resuelta, perdida o por tiempo): se anota el resultado y el grupo pasa a la siguiente
   async function done(okFromGame, rec){
     if(!loaded || !loaded.cap || finishing===loaded.n || !GD_raw) return;
     const n=loaded.n, g=loaded.g, p=PZ[n], c=Reg.cur(g)||{}; finishing=n;
     // sin rec (se acabó el tiempo) no hay palabras resueltas que contar: s tiene que ser un número igual (lo exigen las reglas)
-    const R=p.nr||0, s=R && rec ? (rec.s|0) : 0, ok = rec ? (R ? s>0 : !!rec.ok) : false;
+    const R=p.nr||0, pr=rec ? null : r3(frac(g)), s=R ? (rec ? (rec.s|0) : Math.round(pr*R)) : 0, ok = rec ? (R ? s>0 : !!rec.ok) : false;
     if(!rec){ note=t().timeup; ro(true, g); }
     lastW=0; lastKey=""; await publish().catch(()=>{});
-    const x={ok, t0:GD_raw.t0, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, s, R};
+    const x={ok, t0:GD_raw.t0, at:fb.serverTimestamp(), e:c.e|0, h:c.h|0, s, R}; if(pr!==null) x.p=pr;
     for(let i=0;i<4;i++){
       try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",gid), {["res."+n]:x}); return; }
       catch(e){ await new Promise(r=>setTimeout(r,700)); }
@@ -7220,7 +7230,7 @@ const TourAdmin = (()=>{
     if(st==="live") c+=`<button data-ta="mdone">Terminar el torneo</button>`;
     if(TD.asg==="azar") c+=`<button class="primary" data-ta="mqr1">📱 Mostrar el QR único (sala de espera)</button>`;
     c+=`<button data-ta="mqr">🖨 ${TD.asg==="azar" ? "QR único para imprimir" : "QR de los grupos (para imprimir)"}</button><a class="btn" href="${esc(salaUrl())}" target="_blank" rel="noopener">📺 Pantalla de sala</a></div>`;
-    c+=`<p class="m small">Cada grupo juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los minutos que diga su columna «Minutos» (vacío o 0 = 7). Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); sin resolver, 0. Dejá este panel abierto: cierra las partidas de los grupos que se quedaron sin capitán.</p>`;
+    c+=`<p class="m small">Cada grupo juega como un solo competidor: el capitán tipea y el resto mira el tablero en vivo. Las partidas son las de «Partidas» (abajo), en ese orden; cada una se cierra a los minutos que diga su columna «Minutos» (vacío o 0 = 7). Puntos: resuelta, 1000 − 1 por segundo − 100 por pista o error (piso 100); si se acaba el tiempo, hasta 99 según lo que tengan bien (en el ahorcado, las palabras resueltas) − 10 por pista o error; si se rinden, 0. Dejá este panel abierto: cierra las partidas de los grupos que se quedaron sin capitán.</p>`;
     return c;
   }
   // en juego: qué partida está jugando cada grupo, cuánto le queda y cuánto avanzó
@@ -7241,7 +7251,7 @@ const TourAdmin = (()=>{
     const fin=S.filter(x=>mesaDone(x.G)>=N).length, late=[], reqs=[], nocap=[];
     const rows=S.map((x,k)=>{ const g=x.id, G=x.G, n=mesaDone(G), d=GT[g], nm=mesaName(G);
       const cells=TD.rounds.map((r,i)=>{ const y=(G.res||{})[i];
-        if(y) return `<td class="${y.ok?"mok":"mz"}">${y.ok ? esc(mesaNum(mesaPts(y))) : "0"}</td>`;
+        if(y) return `<td class="${y.ok?"mok":mesaPts(y)?"mpart":"mz"}">${esc(mesaNum(mesaPts(y)))}</td>`;
         if(i===n && TD.st==="live" && now>=go){
           if(d && d.n===n && d.t0){ const end=tms(d.t0)+mesaMs(TD, i), lt=end-now<120000; if(lt) late.push(nm);
             return `<td class="mcur${lt?" mlate":""}">▶ <span data-cd="${end}">${clock(end-now)}</span></td>`; }
@@ -7260,7 +7270,7 @@ const TourAdmin = (()=>{
     const R=Object.entries(x.res||{}).sort((a,b)=>+a[0]-+b[0]); if(!R.length) return "";
     return `<details data-k="det-${esc(g)}"><summary>Partidas terminadas (${R.length})</summary><div class="atabw"><table class="atab"><thead><tr><th>#</th><th>Juego</th><th>Resultado</th><th>Tiempo</th><th>Errores</th><th>Pistas</th><th>Puntos</th></tr></thead><tbody>`+
       R.map(([i,y])=>{ const r=TD.rounds[+i]||{}, sec=Math.max(0,Math.round(((tms(y.at)||0)-(tms(y.t0)||0))/1000));
-        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=mesaMs(TD, +i)/1000 ? "⏱ se acabó el tiempo" : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
+        return `<tr><td>${+i+1}</td><td>${esc(GN[r.g]||r.g||"")}</td><td>${y.ok ? (y.R ? `✓ ${y.s}/${y.R} palabras` : "✓ resuelta") : (sec>=mesaMs(TD, +i)/1000 ? `⏱ se acabó el tiempo${typeof y.p==="number" ? ` (${Math.round(y.p*100)} % bien)` : ""}` : "✗ sin resolver")}</td><td>${clock(sec*1000)}</td><td>${y.e|0}</td><td>${y.h|0}</td><td><b>${esc(mesaNum(mesaPts(y)))}</b></td></tr>`; }).join("")+`</tbody></table></div></details>`;
   }
   function mesaLive(){
     const L=grpList(), now=srv(), S=mesaStand(GRP), pos=Object.fromEntries(S.map((x,k)=>[x.id,k+1])), N=TD.rounds.length;
@@ -7351,7 +7361,7 @@ const TourAdmin = (()=>{
       const n=mesaDone(x); if(n>=N) continue;
       try{ const s=await A.getDoc(A.doc(A.db,"tourneys",tid,"groups",g,"games",String(n))); if(!s.exists()) continue;
         const d=s.data(); if(!d.t0 || now-tms(d.t0)<mesaMs(TD, n)+30000) continue;
-        await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0}}); }
+        await A.updateDoc(A.doc(A.db,"tourneys",tid,"groups",g), {["res."+n]:{ok:false, t0:d.t0, at:A.serverTimestamp(), e:d.e|0, h:d.h|0, s:0, R:0, p:typeof d.p==="number" ? d.p : 0}}); }
       catch(e){}
     }
   }

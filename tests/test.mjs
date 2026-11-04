@@ -422,6 +422,10 @@ await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext
   const rs = (o = {}) => ({ ok: true, t0, at: serverTimestamp(), e: 1, h: 0, s: 0, R: 0, ...o });
   await t("mesas: quien no es capitán no anota el resultado", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "res.0": rs() })));
   await t("mesas: el arranque de la partida tiene que ser el del tablero", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ t0: serverTimestamp() }) })));
+  await t("mesas: el avance va de 0 a 1", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ ok: false, p: 1.5 }) })));
+  await t("mesas: el avance es solo para las que no se terminaron", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ ok: true, p: 0.5 }) })));
+  await t("mesas: el tablero puede llevar el avance", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1/games/0"), { s: "{}", at: serverTimestamp(), e: 1, h: 0, by: "B", p: 0.4 })));
+  await t("mesas: el avance del tablero va de 0 a 1", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1/games/0"), { s: "{}", at: serverTimestamp(), e: 1, h: 0, by: "B", p: 2 })));
   await t("mesas: el capitán anota el resultado", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs() })));
   await t("mesas: el resultado anotado no cambia", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "res.0": rs({ e: 0 }) })));
   await t("mesas: el tablero de una partida anotada no cambia", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1/games/0"), { s: "{}", at: serverTimestamp(), e: 0, h: 0, by: "B" })));

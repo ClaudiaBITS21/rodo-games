@@ -681,7 +681,8 @@ service cloud.firestore {
       let x = r[k];
       return signedIn() && request.auth.uid == resource.data.cap && tour(tid).st == 'live' && mesaDiff().hasOnly(['res'])
         && r.diff(o).addedKeys().hasOnly([k]) && r.diff(o).changedKeys().size() == 0 && r.diff(o).removedKeys().size() == 0
-        && x.keys().hasOnly(['ok', 't0', 'at', 'e', 'h', 's', 'R'])
+        && x.keys().hasOnly(['ok', 't0', 'at', 'e', 'h', 's', 'R', 'p'])
+        && (!('p' in x) || (x.p is number && x.p >= 0 && x.p <= 1 && x.ok == false))
         && x.ok is bool && x.at == request.time && x.e is int && x.h is int && x.s is int && x.R is int
         && x.t0 == get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)/games/$(k)).data.t0;
     }
@@ -690,7 +691,7 @@ service cloud.firestore {
       let G = get(/databases/$(database)/documents/tourneys/$(tid)/groups/$(gid)).data;
       let d = request.resource.data;
       return signedIn() && request.auth.uid == G.cap && tour(tid).st == 'live' && n == string(G.res.size())
-        && d.keys().hasOnly(['s', 't0', 'at', 'e', 'h', 'by']) && d.s is string && d.s.size() <= 60000
+        && d.keys().hasOnly(['s', 't0', 'at', 'e', 'h', 'by', 'p']) && (!('p' in d) || (d.p is number && d.p >= 0 && d.p <= 1)) && d.s is string && d.s.size() <= 60000
         && d.at == request.time && d.e is int && d.h is int && d.by == request.auth.uid;
     }
     function resOk(tid, r, uid) {

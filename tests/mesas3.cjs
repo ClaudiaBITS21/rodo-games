@@ -24,16 +24,17 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   });
   await p.goto(URL+'?mesa=MT~g1');
   await p.waitForFunction(()=>location.hash==='#anagrama' && !document.getElementById('mesaTop').hidden,null,{timeout:30000});
-  ok(/Sin resolver a los 0.15 min/.test(await p.$eval('#mesaTop',e=>e.textContent)),'la barra dice los minutos de esa partida');
+  ok(/a los 0.15 min no la terminaron/.test(await p.$eval('#mesaTop',e=>e.textContent)),'la barra dice los minutos de esa partida');
   // el capitán no hace nada: a los 9 s se cierra y pasa sola a la siguiente
   const r0=await until(async()=>{ const x=await get('tourneys/MT/groups/g1'); return x.res && x.res['0']; }, 30000);
-  ok(r0 && r0.ok===false,'al acabarse el tiempo, la partida se cierra sin resolver (0 puntos)');
+  ok(r0 && r0.ok===false && r0.p===0 && await p.evaluate(x=>mesaPts(x),r0)===0,'al acabarse el tiempo sin nada bien, la partida se cierra con 0 puntos');
+  ok(await p.evaluate(()=>[mesaPts({ok:false,p:0.5,e:0,h:0}), mesaPts({ok:false,p:1,e:0,h:0}), mesaPts({ok:false,p:0.5,e:2,h:1}), mesaPts({ok:false,e:0,h:0}), mesaPts({ok:false,p:0.05,e:3,h:0})].join())==='50,99,20,0,0','puntos parciales: 99 × lo que tienen bien − 10 por pista o error, sin bajar de 0; rendirse (sin p) da 0');
   await p.waitForFunction(()=>location.hash==='#criptograma',null,{timeout:20000}).catch(()=>{});
   ok(await p.evaluate(()=>location.hash)==='#criptograma','y la mesa pasa sola a la siguiente partida');
   const r1=await until(async()=>{ const x=await get('tourneys/MT/groups/g1'); return x.res && x.res['1']; }, 30000);
   ok(r1 && r1.ok===false,'la segunda también se cierra a su tiempo');
   await p.waitForFunction(()=>location.hash==='#anagrama' && /Partida 3 de 3/.test(document.getElementById('mesaTop').textContent),null,{timeout:20000}).catch(()=>{});
-  ok(/Sin resolver a los 7 min/.test(await p.$eval('#mesaTop',e=>e.textContent)) && /⏱ [67]:\d\d/.test(await p.$eval('#mesaTop',e=>e.textContent)),'sin minutos cargados, la partida dura 7: '+(await p.$eval('#mesaTop .mtop1',e=>e.textContent).catch(()=>'-')));
+  ok(/a los 7 min no la terminaron/.test(await p.$eval('#mesaTop',e=>e.textContent)) && /⏱ [67]:\d\d/.test(await p.$eval('#mesaTop',e=>e.textContent)),'sin minutos cargados, la partida dura 7: '+(await p.$eval('#mesaTop .mtop1',e=>e.textContent).catch(()=>'-')));
   // un solo QR: todos entran a una sala de espera común; la organización reparte las mesas y a cada uno le aparece la suya
   await db(async f=>{
     await F.setDoc(F.doc(f,'tourneys/MR'),{name:'MESAS AL AZAR', mode:'mesas', asg:'azar', st:'open', cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0,
