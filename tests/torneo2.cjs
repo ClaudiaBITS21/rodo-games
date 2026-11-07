@@ -57,6 +57,9 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
       rounds:[{g:'sopa',lang:'es',s:'media',m:'w',dur:10}], champ:null, auto:true, at:F.Timestamp.now() });
   });
   await A.evaluate(()=>location.hash='');
+  await wait(()=>document.querySelector('#tBanner [data-tdone]') && /SEGUNDO GAMES/.test(document.getElementById('tBanner').textContent));
+  ok(await A.$$eval('#tBanner .tbanner',l=>l.length)===1,'el terminado no se ve en la portada hasta tocar «Ver torneos terminados»');
+  await A.click('#tBanner [data-tdone]');
   await wait(()=>document.querySelectorAll('#tBanner .tbanner').length===2);
   const cards=await A.$$eval('#tBanner .tbanner',l=>l.map(e=>e.textContent.replace(/\s+/g,' ')));
   ok(cards.some(c=>/SEGUNDO GAMES/.test(c) && /🗓/.test(c) && /📍 Online/.test(c)) && cards.some(c=>/PRUEBA GAMES/.test(c) && /📍 LABITCONF, Costa Salguero/.test(c)),'portada con los dos torneos, hora y lugar: '+cards.join(' | '));

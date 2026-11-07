@@ -63,11 +63,9 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await C.goto(URL+`?mesa=M1~${g2}`); await C.waitForSelector('#mName',{timeout:20000}); await enter(C,'Caro','🚀');
   const ua=await A.evaluate(()=>Reg.uid()), ub=await B.evaluate(()=>Reg.uid());
   const G1=await until(async()=>{ const x=await get(`${T}/groups/${g1}`); return Object.keys(x.mem||{}).length===2 && x; });
-  ok(G1 && G1.cap===null && G1.mem[ua].e==='🦊' && !G1.mem[ub].e && G1.mem[ua].t<=G1.mem[ub].t,'nombre y emoji sin usuario; nadie queda de capitán solo');
-  await A.waitForFunction(()=>/lo elige la organización/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});
-  ok(/lo elige la organización/.test(await A.$eval('#mesaBody',e=>e.textContent)),'la mesa ve que el capitán lo elige la organización');
-  await a.waitForFunction(g=>/2<\/b> jugadores/.test(document.querySelector(`.madm[data-g="${g}"]`).innerHTML) && /sin capitán/.test(document.querySelector(`.madm[data-g="${g}"]`).textContent),g1,{timeout:10000}).catch(()=>{});
-  ok(/👥 2 jugadores/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)) && /sin capitán/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)),'el panel muestra cuántos hay en la mesa y que falta capitán');
+  ok(G1 && G1.cap===ua && G1.mem[ua].e==='🦊' && !G1.mem[ub].e && G1.mem[ua].t<=G1.mem[ub].t,'nombre y emoji sin usuario; el primero que entra queda de capitán');
+  await a.waitForFunction(g=>/2<\/b> jugadores/.test(document.querySelector(`.madm[data-g="${g}"]`).innerHTML),g1,{timeout:10000}).catch(()=>{});
+  ok(/👥 2 jugadores/.test(await a.$eval(`.madm[data-g="${g1}"]`,e=>e.textContent)) && await a.$eval(`[data-ta="mcap"][data-g="${g1}"]`,e=>e.value)===ua,'el panel muestra cuántos hay en el grupo y quién quedó de capitán');
   await a.selectOption(`[data-ta="mcap"][data-g="${g1}"]`, ua);
   ok(!!(await until(async()=>(await get(`${T}/groups/${g1}`)).cap===ua)),'la organización elige el capitán');
   await A.waitForFunction(()=>/Beto/.test(document.getElementById('mesaBody').textContent),null,{timeout:10000}).catch(()=>{});

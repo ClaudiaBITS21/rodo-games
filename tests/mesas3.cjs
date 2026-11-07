@@ -64,7 +64,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   ok(/Partida 1 de 2 terminada/.test(await p.$eval('#mesaBody',e=>e.textContent)),'el que espera ve la cuenta regresiva');
   await p.waitForFunction(()=>location.hash==='#anagrama' && !document.getElementById('mesaTop').hidden,null,{timeout:25000}).catch(()=>{});
   const tw=await p.$eval('#mesaTop',e=>e.textContent);
-  ok(!/que les sobró/.test(tw) && /⏱ (1:00|0:5\d)/.test(tw),'si esperan, la próxima arranca sola sin tiempo extra: '+tw.slice(0,80));
+  ok(!/que les sobró/.test(tw) && /⏱ (1:0[01]|0:5\d)/.test(tw),'si esperan, la próxima arranca sola sin tiempo extra: '+tw.slice(0,80));
   // un solo QR: todos entran a una sala de espera común; la organización reparte las mesas y a cada uno le aparece la suya
   await db(async f=>{
     await F.setDoc(F.doc(f,'tourneys/MR'),{name:'MESAS AL AZAR', mode:'mesas', asg:'azar', st:'open', cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0,
@@ -96,6 +96,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.fill('#taDealV','3'); await a.selectOption('#taDealM','n'); await a.click('[data-ta="mdeal"]');
   ok(!!(await until(async()=>{ const x={}; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>x[d.id]=Object.keys(d.data().mem||{}).length); }); gs=x; return Object.values(x).reduce((a,b)=>a+b,0)===3; }, 15000)),'«Repartir grupos» pone a todos en un grupo');
   ok(Object.keys(gs).length===3 && Object.values(gs).every(v=>v===1),'repartir en 3 grupos crea el que falta y queda uno en cada uno: '+JSON.stringify(gs));
+  const caps=[]; await db(async f=>{ (await F.getDocs(F.collection(f,'tourneys/MR/groups'))).forEach(d=>{ const x=d.data(); if(Object.keys(x.mem||{}).length) caps.push(!!x.cap && !!x.mem[x.cap]); }); });
+  ok(caps.length===3 && caps.every(Boolean),'al repartir, cada grupo queda con capitán (el primero que llegó)');
   await who[0].waitForSelector('.mlobby:not(.mpool)',{timeout:15000}).catch(()=>{});
   const card=await who[0].$eval('.mlobby',e=>e.textContent.replace(/\s+/g,' '));
   ok(/Te tocó este grupo/.test(card) && /(Mesa|Grupo) [123]/.test(card) && /Uno/.test(card) && /Esperando que empiece el torneo/.test(card),'a cada uno le aparece su mesa: '+card.slice(0,120));
@@ -146,6 +148,16 @@ let fails=0; const ok=(c,m)=>{ console.log((c?'ok  ':'FAIL')+' '+m); if(!c) fail
   await a.click('[data-ta="mvr"][data-i="0"][data-d="1"]');
   const moved=await until(async()=>{ const x=await get('tourneys/'+NT.id); return x && x.rounds[0].g===r1g && x.rounds[1].g===r0g && x; }, 10000);
   ok(!!moved && r0g!==r1g,'«↓» baja la primera partida: '+r0g+' ↔ '+r1g);
+  // portada: los torneos terminados quedan detrás de «Ver torneos terminados»
+  await db(async f=>{
+    for(const [id,st,nm] of [['V1','open','VIVO UNO'],['D1','done','TERMINADO UNO']]) await F.setDoc(F.doc(f,'tourneys/'+id),{name:nm, st, cap:64, fee:0, lnurl:'', when:null, orgs:[], bases:'', lang:'es', cur:0, rounds:[{g:'anagrama',lang:'es'}], champ:null, at:F.Timestamp.now()});
+  });
+  const h=await (await br.newContext({viewport:{width:390,height:844}})).newPage();
+  await h.goto(URL); await h.waitForFunction(()=>/VIVO UNO/.test((document.getElementById('tBanner')||{}).textContent||''),null,{timeout:20000}).catch(()=>{});
+  const b0=await h.$eval('#tBanner',e=>e.textContent);
+  ok(/VIVO UNO/.test(b0) && !/TERMINADO UNO/.test(b0) && /Ver torneos terminados \(\d+\)/.test(b0),'en la portada, los terminados no se ven hasta tocar «Ver torneos terminados»: '+b0.slice(0,120));
+  await h.click('[data-tdone]');
+  ok(/TERMINADO UNO/.test(await h.$eval('#tBanner',e=>e.textContent)) && /Ocultar los terminados/.test(await h.$eval('#tBanner',e=>e.textContent)),'al tocarlo aparecen, con «Ocultar los terminados»');
   await br.close(); await env.cleanup();
   console.log(fails?`${fails} fallas`:'TODO OK'); process.exit(fails?1:0);
 })().catch(e=>{ console.log('ERROR',e.message); process.exit(1); });

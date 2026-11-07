@@ -649,8 +649,8 @@ service cloud.firestore {
         && m[me].keys().hasOnly(['n', 'e', 't']) && m[me].n is string && m[me].n.size() > 0 && m[me].n.size() <= 24
         && (!('e' in m[me]) || (m[me].e is string && m[me].e.size() <= 8))
         && (!('t' in m[me]) || m[me].t is int)
-        // el capitán lo elige la organización (al arrancar, si falta, queda el primero que entró)
-        && request.resource.data.cap == resource.data.cap;
+        // si el grupo no tiene capitán, el que entra puede quedar de capitán; si ya tiene, no se toca
+        && (request.resource.data.cap == resource.data.cap || (resource.data.cap == null && request.resource.data.cap == me));
     }
     // el capitán pasa el teclado a otro de la mesa (o acepta/rechaza un pedido)
     function mesaCap(tid) {

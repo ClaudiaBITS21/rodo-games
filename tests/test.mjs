@@ -391,9 +391,11 @@ await t("otro mail no es admin", assertFails(getDoc(doc(env.authenticatedContext
   await t("mesas: un jugador no crea mesas", assertFails(setDoc(doc(A, "tourneys/M9/groups/g2"), { i: 2, nm: "Mesa 2", em: "", mem: {}, cap: null, req: null, res: {} })));
   await t("mesas: con la entrada cerrada no se entra", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana" }, cap: "A" })));
   await t("mesas: abre la entrada", assertSucceeds(updateDoc(doc(ADM, "tourneys/M9"), { st: "open" })));
-  await t("mesas: nadie se pone de capitán al entrar", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana", e: "🦊" }, cap: "A" })));
+  await t("mesas: nadie pone de capitán a otro al entrar", assertFails(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana", e: "🦊" }, cap: "B" })));
+  await t("mesas: el primero que entra a un grupo sin capitán queda de capitán", assertSucceeds(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana", e: "🦊" }, cap: "A" })));
   await t("mesas: el primero entra (con orden de llegada)", assertSucceeds(updateDoc(doc(A, "tourneys/M9/groups/g1"), { "mem.A": { n: "Ana", e: "🦊", t: 1 } })));
   await t("mesas: el segundo entra", assertSucceeds(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.B": { n: "Beto", t: 2 } })));
+  await t("mesas: si ya hay capitán, el que entra no se lo saca", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.B": { n: "Beto", t: 2 }, cap: "B" })));
   await t("mesas: la organización elige el capitán", assertSucceeds(updateDoc(doc(ADM, "tourneys/M9/groups/g1"), { cap: "A" })));
   await t("mesas: nadie agrega a otro", assertFails(updateDoc(doc(B, "tourneys/M9/groups/g1"), { "mem.X": { n: "Falso" } })));
   await t("mesas: la tabla entre mesas es pública", assertSucceeds(getDoc(doc(C, "tourneys/M9/groups/g1"))));

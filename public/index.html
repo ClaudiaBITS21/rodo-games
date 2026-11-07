@@ -289,7 +289,7 @@ button.sure{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .tbanner{--sq:23px;display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:-4px 0 18px;padding:16px 18px;border-radius:14px;background:var(--paper);color:var(--ink);text-decoration:none;
   border:1px solid var(--line);border-left:6px solid var(--btc);transition:border-color .15s, transform .15s}
 .tbanner:hover{border-color:var(--btc);transform:translateY(-2px)}
-.tbanners[hidden]{display:none}.tbanners{display:flex;flex-direction:column;gap:10px;margin:-4px 0 18px}.tbanners .tbanner{margin:0}
+.tbanners[hidden]{display:none}.tbmore{align-self:flex-start;font-size:.9rem;padding:6px 12px}.tbanners{display:flex;flex-direction:column;gap:10px;margin:-4px 0 18px}.tbanners .tbanner{margin:0}
 .tbtx .tbw{color:var(--ink);font-weight:600}.tbanner.small{--sq:16px;padding:12px 16px}.tbanner.small .tbtx b{font-size:1.1rem}
 .tpicks{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.tpicks button[aria-pressed=true]{background:var(--ink);color:var(--paper,#fff)}
 .tbtx{display:flex;flex-direction:column;gap:4px;flex:1 1 150px;min-width:0}
@@ -6057,7 +6057,7 @@ Object.assign(T.es,{
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} de ${n} terminaron · pasan ${a}`, tNoteNL:(d,n)=>`${d} de ${n} terminaron`, tNoteX:"Jugás sin competir.",
   tPos:(p,n)=>`Puesto provisorio: ${p}° (de ${n} que terminaron).`, tSeeTable:"Ver la tabla", tPts:p=>`${p} puntos`,
   tLoadFail:"No se pudo abrir la partida de la ronda. Probá de nuevo.", tWaitStart:"Abriendo la partida…",
-  tBanner:{open:"Inscribite", checkin:"Confirmá que estás", live:"En juego ahora", done:"Ver resultados"},
+  tBanner:{open:"Inscribite", checkin:"Confirmá que estás", live:"En juego ahora", done:"Ver resultados"}, tDoneShow:n=>`Ver torneos terminados (${n})`, tDoneHide:"Ocultar los terminados",
   tTest:"🧪 Ensayo: lo ven solo los invitados. Los resultados no cuentan.", tTestPill:"Ensayo", tBarInv:n=>`🧪 Te invitaron a probar «${n}»`,
   tShare:"Compartir imagen", tShareText:n=>`Sumate a ${n} en RODO ₿ Games`, tImgCta:"Inscribite en games.rodo.es/#torneo",
   tScoreHow:"Puntos: si terminás, 100 por resolverla más 1 por cada segundo antes de los 15 minutos (errores y ayudas suman segundos, como siempre). Si se acaba el tiempo, 1 punto por cada 1 % resuelto, menos 1 por cada 10 segundos de penalidad. El tiempo corre para todos desde el arranque de la ronda."
@@ -6101,7 +6101,7 @@ Object.assign(T.en,{
   tNote:(l,d,n,a)=>`⏱ ${l} · ${d} of ${n} finished · ${a} advance`, tNoteNL:(d,n)=>`${d} of ${n} finished`, tNoteX:"You're playing without competing.",
   tPos:(p,n)=>`Provisional rank: #${p} (of ${n} who finished).`, tSeeTable:"See standings", tPts:p=>`${p} points`,
   tLoadFail:"Couldn't open the round's game. Please try again.", tWaitStart:"Opening the game…",
-  tBanner:{open:"Register", checkin:"Check in", live:"Live now", done:"See results"},
+  tBanner:{open:"Register", checkin:"Check in", live:"Live now", done:"See results"}, tDoneShow:n=>`See finished tournaments (${n})`, tDoneHide:"Hide finished ones",
   tTest:"🧪 Rehearsal: only invited players can see it. Results don't count.", tTestPill:"Rehearsal", tBarInv:n=>`🧪 You've been invited to try out «${n}»`,
   tShare:"Share image", tShareText:n=>`Join ${n} on RODO ₿ Games`, tImgCta:"Register at games.rodo.es/#torneo",
   tScoreHow:"Points: if you finish, 100 for solving it plus 1 for every second under 15 minutes (mistakes and hints add seconds, as usual). If time runs out, 1 point per 1% solved, minus 1 per 10 seconds of penalties. The clock runs for everyone from the start of the round."
@@ -6245,7 +6245,7 @@ const Tour = (()=>{
   let RES={}, resId=null, resUnsub=null, closedRes={};
   let play=null, pushSt=null, myRes={}, form={ok:false}, flash="";
   let tReady=false, tLoaded=false, regOk=false;
-  let LIST=[], wantT=null; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
+  let LIST=[], wantT=null, showDone=false; try{ wantT=sessionStorage.getItem("rodo-tid"); }catch(e){}
   // QR: quien llega por el QR va directo a armar su usuario y queda anotado (y con check-in, si está abierto), sin más botones
   const QR={on:false, asked:false, busy:false, loaded:false};
   // link del QR del torneo (games.rodo.es/?t={id}): elige ese torneo y abre su sala
@@ -6483,13 +6483,15 @@ const Tour = (()=>{
   function banner(){
     const el=$("tBanner"), ib=$("ivBtn"); if(!el) return;
     if(ib) ib.hidden=blocks();
-    const ids=LIST.slice(0,4);
-    if(!ids.length){ el.hidden=true; return; }
+    // los terminados quedan detrás de «Ver torneos terminados» (salvo el que eligió); el resto, hasta 4
+    const done=LIST.filter(k=>ALL[k].st==="done" && k!==wantT), ids=LIST.filter(k=>showDone || !done.includes(k)).slice(0, showDone ? 8 : 4);
+    const more=done.length ? `<button class="tbmore" data-tdone>${esc(showDone ? t().tDoneHide : t().tDoneShow(done.length))}</button>` : "";
+    if(!ids.length && !more){ el.hidden=true; return; }
     el.hidden=false;
     // una tarjeta por torneo, con la hora y el lugar; la primera, con las fichas grandes
     const h=ids.map((k,i)=>{ const x=ALL[k], w=whenOf(x,true);
       return `<a class="tbanner${i?" small":""}" href="#torneo" data-tid="${esc(k)}">${scrabHtml()}<div class="tbtx"><b>${esc(x.name)}</b><span>${x.test?`<em>${esc(t().tTestPill)}</em> `:""}${esc(t().tSt[x.st]||"")}</span>`+
-        (w||x.place ? `<span class="tbw">${w?"🗓 "+esc(w):""}${w&&x.place?" · ":""}${x.place?"📍 "+esc(x.place):""}</span>` : "")+`<i>${esc(t().tBanner[x.st]||"")} →</i></div></a>`; }).join("");
+        (w||x.place ? `<span class="tbw">${w?"🗓 "+esc(w):""}${w&&x.place?" · ":""}${x.place?"📍 "+esc(x.place):""}</span>` : "")+`<i>${esc(t().tBanner[x.st]||"")} →</i></div></a>`; }).join("")+more;
     if(el.dataset.h!==h){ el.dataset.h=h; el.innerHTML=h; }
   }
 
@@ -6675,7 +6677,7 @@ const Tour = (()=>{
   }
 
   // ---------- acciones ----------
-  $("tBanner").addEventListener("click",e=>{ const a=e.target.closest("[data-tid]"); if(a) choose(a.dataset.tid); });
+  $("tBanner").addEventListener("click",e=>{ if(e.target.closest("[data-tdone]")){ showDone=!showDone; banner(); return; } const a=e.target.closest("[data-tid]"); if(a) choose(a.dataset.tid); });
   $("view-torneo").addEventListener("click",async e=>{
     const pk=e.target.closest("[data-tpick]"); if(pk){ choose(pk.dataset.tpick); return; }
     const b=e.target.closest("[data-act]"); if(!b || !fb) return;
@@ -6771,7 +6773,7 @@ const Mesa = (()=>{
     es:{title:"Torneo por grupos", wait:"Esperando que abra el grupo…", waitSub:"Cuando la organización habilite la entrada, vas a poder sumarte.",
       loading:"Cargando tu grupo…", loadingS:"Cargando la tabla…", none:"Este grupo no existe o el torneo ya no está disponible.", noneT:"Este torneo ya no está disponible.", noneG:"Este grupo ya no existe (quizás se borró y se armó de nuevo): pedí el QR actualizado a la organización.", nameL:"Tu nombre", emoL:"Emoji (opcional)", join:"Entrar al grupo",
       same:"Usá siempre este mismo navegador durante el torneo.", badName:"Escribí tu nombre.", joinFail:"No se pudo entrar. Probá de nuevo.", code:"Código", joinOff:"No hay conexión con el servidor: recargá la página y probá de nuevo.",
-      inMesa:n=>`En el grupo (${n})`, doneN:(n,t)=>`¡Partida ${n} de ${t} terminada!`, leftNote:"Les sobra este tiempo. Si pasan ya a la próxima, se les suma; si esperan, la próxima arranca sola cuando llegue a 0:00, sin tiempo extra.", goNow:"Pasar a la próxima ya (con el tiempo que sobra)", capDecides:"El capitán decide si pasan ya; si no, la próxima arranca sola cuando llegue a 0:00.", extra:"que les sobró", cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: lo elige la organización.", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a este grupo", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this group`, editL:"Nombre del grupo", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji al grupo hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay grupos armados: avisale a la organización.", rndNote:"Escribí tu nombre y entrás a la sala de espera: la organización reparte los grupos.", poolT:"Sala de espera", poolWait:"Esperando que la organización reparta los grupos", poolIn:n=>`En la sala de espera (${n})`, poolNote:"Cuando repartan, acá te aparece tu grupo. No cierres esta pantalla.", poolQr:"📱 Mostrar QR para que se sumen amigos", poolQrSub:"Escaneá y entrá a la sala de espera · Scan to join", got:"🎲 ¡Te tocó este grupo!", lateNote:"El torneo ya arrancó: entrás al grupo que tenga menos gente.", joinPool:"Entrar a la sala de espera",
+      inMesa:n=>`En el grupo (${n})`, doneN:(n,t)=>`¡Partida ${n} de ${t} terminada!`, leftNote:"Les sobra este tiempo. Si pasan ya a la próxima, se les suma; si esperan, la próxima arranca sola cuando llegue a 0:00, sin tiempo extra.", goNow:"Pasar a la próxima ya (con el tiempo que sobra)", capDecides:"El capitán decide si pasan ya; si no, la próxima arranca sola cuando llegue a 0:00.", extra:"que les sobró", cap:"capitán · tipea", capNote:"Tocá un nombre para pasarle el teclado.", noCap:"Todavía no hay capitán: el primero que entra queda de capitán (la organización lo puede cambiar).", edit:"✏️ Cambiar nombre y emoji", qrB:"📱 Mostrar QR para sumar amigos a este grupo", qrSub:n=>`Escaneá y sumate a ${n} · Scan to join this group`, editL:"Nombre del grupo", emoOther:"u otro:", saveB:"Guardar", cancelB:"Cancelar", editFail:"No se pudo guardar. Probá de nuevo.", capEdit:"Como capitán, podés ponerle nombre y emoji al grupo hasta que empiece.", waitStart:"Esperando que empiece el torneo", noMesas:"Todavía no hay grupos armados: avisale a la organización.", rndNote:"Escribí tu nombre y entrás a la sala de espera: la organización reparte los grupos.", poolT:"Sala de espera", poolWait:"Esperando que la organización reparta los grupos", poolIn:n=>`En la sala de espera (${n})`, poolNote:"Cuando repartan, acá te aparece tu grupo. No cierres esta pantalla.", poolQr:"📱 Mostrar QR para que se sumen amigos", poolQrSub:"Escaneá y entrá a la sala de espera · Scan to join", got:"🎲 ¡Te tocó este grupo!", lateNote:"El torneo ya arrancó: entrás al grupo que tenga menos gente.", joinPool:"Entrar a la sala de espera",
       startsIn:"Arranca en", you:"vos", giveTo:n=>`¿Pasarle el teclado a ${n}?`,
       bar:(p,n)=>`Partida ${p} de ${n}`, left:"quedan", youCap:"⌨️ Tenés el teclado", watching:n=>`👀 Mirando cómo juega ${n}`,
       take:"Tomar el teclado", asked:"Pediste el teclado: esperá que acepte.", cancel:"Cancelar", wants:n=>`${n} pide el teclado`, give:"Dárselo", no:"No",
@@ -6781,7 +6783,7 @@ const Mesa = (()=>{
     en:{title:"Group tournament", wait:"Waiting for the group to open…", waitSub:"When the organizers open the entrance, you'll be able to join.",
       loading:"Loading your group…", loadingS:"Loading the standings…", none:"This group doesn't exist or the tournament is no longer available.", noneT:"This tournament is no longer available.", noneG:"This group no longer exists (it may have been deleted and recreated): ask the organizers for the updated QR.", nameL:"Your name", emoL:"Emoji (optional)", join:"Join the group",
       same:"Always use this same browser during the tournament.", badName:"Enter your name.", joinFail:"Couldn't join. Please try again.", code:"Code", joinOff:"No connection to the server: reload the page and try again.",
-      inMesa:n=>`In the group (${n})`, doneN:(n,t)=>`Game ${n} of ${t} done!`, leftNote:"You have this time left. Move on now and it is added to the next game; wait, and the next one starts by itself at 0:00, with no extra time.", goNow:"Go to the next one now (with the time left)", capDecides:"The captain decides whether to move on now; otherwise the next one starts by itself at 0:00.", extra:"left over", cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the organizers choose one.", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this group", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Group name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the group and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no groups yet: tell the organizers.", rndNote:"Enter your name to join the waiting room: the organizers will split everyone into groups.", poolT:"Waiting room", poolWait:"Waiting for the organizers to assign the groups", poolIn:n=>`In the waiting room (${n})`, poolNote:"Your group will show up here once they assign them. Keep this screen open.", poolQr:"📱 Show a QR so friends can join", poolQrSub:"Scan to join the waiting room · Escaneá y entrá", got:"🎲 This is your group!", lateNote:"The tournament already started: you'll join the group with the fewest people.", joinPool:"Join the waiting room",
+      inMesa:n=>`In the group (${n})`, doneN:(n,t)=>`Game ${n} of ${t} done!`, leftNote:"You have this time left. Move on now and it is added to the next game; wait, and the next one starts by itself at 0:00, with no extra time.", goNow:"Go to the next one now (with the time left)", capDecides:"The captain decides whether to move on now; otherwise the next one starts by itself at 0:00.", extra:"left over", cap:"captain · types", capNote:"Tap a name to hand over the keyboard.", noCap:"No captain yet: the first one to join becomes captain (the organizers can change it).", edit:"✏️ Change name and emoji", qrB:"📱 Show a QR so friends join this group", qrSub:n=>`Scan to join ${n} · Escaneá y sumate`, editL:"Group name", emoOther:"or another:", saveB:"Save", cancelB:"Cancel", editFail:"Couldn't save. Try again.", capEdit:"As captain, you can name the group and pick its emoji until it starts.", waitStart:"Waiting for the tournament to start", noMesas:"There are no groups yet: tell the organizers.", rndNote:"Enter your name to join the waiting room: the organizers will split everyone into groups.", poolT:"Waiting room", poolWait:"Waiting for the organizers to assign the groups", poolIn:n=>`In the waiting room (${n})`, poolNote:"Your group will show up here once they assign them. Keep this screen open.", poolQr:"📱 Show a QR so friends can join", poolQrSub:"Scan to join the waiting room · Escaneá y entrá", got:"🎲 This is your group!", lateNote:"The tournament already started: you'll join the group with the fewest people.", joinPool:"Join the waiting room",
       startsIn:"Starts in", you:"you", giveTo:n=>`Hand the keyboard to ${n}?`,
       bar:(p,n)=>`Game ${p} of ${n}`, left:"left", youCap:"⌨️ You have the keyboard", watching:n=>`👀 Watching ${n} play`,
       take:"Take the keyboard", asked:"You asked for the keyboard: wait for them to accept.", cancel:"Cancel", wants:n=>`${n} wants the keyboard`, give:"Hand it over", no:"No",
@@ -6836,7 +6838,8 @@ const Mesa = (()=>{
     if(placing || !POOL[uid] || POOL[uid].g) return; placing=true;
     const p=POOL[uid], g=liveGroup(); if(!g){ placing=false; return; }
     const m={n:p.n, t:typeof p.t==="number" ? p.t : Date.now()}; if(p.e) m.e=p.e;
-    try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",g), {["mem."+uid]:m}); gid=g; G=GS[gid]; dealt=true; save(); poolWatch(); }
+    const G1=GS[g];
+    try{ await fb.updateDoc(fb.doc(fb.db,"tourneys",tid,"groups",g), G1 && !G1.cap ? {["mem."+uid]:m, cap:uid} : {["mem."+uid]:m}); gid=g; G=GS[gid]; dealt=true; save(); poolWatch(); }
     catch(e){ Reg.logErr("mesa-tarde", e.code||e.message||"?"); setTimeout(()=>{ placing=false; render(); }, 3000); return; }
     placing=false; render();
   }
@@ -6965,8 +6968,9 @@ const Mesa = (()=>{
       try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
       joinMsg=""; $("mesaBody").dataset.f=""; render(); return;
     }
-    joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid);
-    try{ await fb.updateDoc(ref, {["mem."+uid]:m}); }
+    joinMsg=""; const ref=fb.doc(fb.db,"tourneys",tid,"groups",gid), G1=GS[gid];
+    // si el grupo todavía no tiene capitán, el que entra queda de capitán (la organización lo puede cambiar)
+    try{ await fb.updateDoc(ref, G1 && !G1.cap ? {["mem."+uid]:m, cap:uid} : {["mem."+uid]:m}); }
     catch(e){ try{ await new Promise(r=>setTimeout(r,800)); await fb.updateDoc(ref, {["mem."+uid]:m}); }
       catch(e2){ const c=e2.code||e2.message||e.code||"?"; Reg.logErr("mesa", c, nm); joinMsg=`${t().joinFail} (${t().code}: ${c})`; if(b) b.disabled=false; $("mesaBody").dataset.f=""; render(); return; } }
     try{ localStorage.setItem("rodo-mesa-nm", nm); }catch(e){}
@@ -7229,13 +7233,17 @@ const TourAdmin = (()=>{
     if(!L.length) throw new Error("Primero agregá los grupos (o elegí cuántos al repartir).");
     const sh=W.map(x=>[Math.random(), x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
     const cnt={}; L.forEach(([g,x])=>cnt[g]=Object.keys(x.mem||{}).length);
-    const ops=[];
+    const ops=[], ADD={};
     for(const [u,p] of sh){
       const lo=Math.min(...Object.values(cnt)), c=Object.keys(cnt).filter(g=>cnt[g]===lo), g=c[Math.floor(Math.random()*c.length)]; cnt[g]++;
       const m={n:p.n, t:typeof p.t==="number" ? p.t : Date.now()}; if(p.e) m.e=p.e;
-      if(NEW[g]) NEW[g].mem[u]=m; else ops.push(b=>b.update(A.doc(A.db,"tourneys",tid,"groups",g), {["mem."+u]:m}));
+      if(NEW[g]) NEW[g].mem[u]=m; else { (ADD[g]=ADD[g]||{})[u]=m; ops.push(b=>b.update(A.doc(A.db,"tourneys",tid,"groups",g), {["mem."+u]:m})); }
       ops.push(b=>b.update(A.doc(A.db,"tourneys",tid,"pool",u), {g}));
     }
+    // capitán: en los grupos que no tienen, el primero que llegó
+    for(const [g,x] of L){ if(NEW[g] ? NEW[g].cap : x.cap) continue;
+      const mem=Object.entries({...(x.mem||{}), ...(ADD[g]||{})}).sort((a,b)=>(a[1].t||0)-(b[1].t||0)); if(!mem.length) continue;
+      if(NEW[g]) NEW[g].cap=mem[0][0]; else ops.push(b=>b.update(A.doc(A.db,"tourneys",tid,"groups",g), {cap:mem[0][0]})); }
     // los grupos nuevos (ya con su gente) primero; después, de a 400 escrituras
     const all=[...Object.entries(NEW).map(([g,x])=>b=>b.set(A.doc(A.db,"tourneys",tid,"groups",g), x)), ...ops];
     for(let i=0;i<all.length;i+=400){ const b=A.writeBatch(A.db); all.slice(i,i+400).forEach(f=>f(b)); await b.commit(); }
@@ -7555,7 +7563,8 @@ const TourAdmin = (()=>{
         const L=grpList(), sin=L.filter(([,x])=>!Object.keys(x.mem||{}).length).length;
         const PW=TD.asg==="azar" ? poolWait().length : 0;
         if(!L.length && !PW){ say("No hay grupos.", true); return; }
-        const sc=L.filter(([,x])=>!x.cap && Object.keys(x.mem||{}).length).length;
+        const scL=L.filter(([,x])=>!x.cap && Object.keys(x.mem||{}).length), sc=scL.length;
+        if(sc){ say(`No se puede arrancar: falta capitán en ${scL.map(([,x])=>mesaName(x)).join(", ")}. Elegilo en la lista de grupos.`, true); return; }
         if(!sure(el, PW ? `Quedan ${PW} en la sala de espera: se reparten al arrancar. ¿Arrancar?` : sin ? `${sin} grupo${sin===1?"":"s"} sin nadie. ¿Arrancar igual?` : sc ? `${sc} grupo${sc===1?"":"s"} sin capitán (queda el primero que entró). ¿Arrancar?` : `¿Arrancar con ${L.length} grupos?`)) return;
         busy=true; el.disabled=true; say("Armando las partidas…");
         try{
